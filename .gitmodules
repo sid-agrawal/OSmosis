@@ -1,0 +1,6 @@
+[submodule "seL4"]
+	path = seL4
+	url = git@github.com:sid-agrawal/seL4.git
+[submodule "sel4cp"]
+	path = sel4cp
+	url = git@github.com:sid-agrawal/sel4cp.git
