@@ -53,13 +53,3 @@ $(BUILD_DIR)/hello.elf: $(addprefix $(BUILD_DIR)/, $(HELLO_OBJS))
 
 $(IMAGE_FILE) $(REPORT_FILE): $(addprefix $(BUILD_DIR)/, $(IMAGES)) hello.system
 	$(SEL4CP_TOOL) hello.system --search-path $(BUILD_DIR) --board $(SEL4CP_BOARD) --config $(SEL4CP_CONFIG) -o $(IMAGE_FILE) -r $(REPORT_FILE)
-
-run: $(IMAGE_FILE)
-	qemu-system-aarch64 -machine virt,virtualization=on \
-		-cpu $(CPU) \
-		-serial mon:stdio \
-		-device loader,file=$(IMAGE_FILE),addr=0x70000000,cpu-num=0 \
-		-m size=2G \
-		-nographic \
-		-netdev user,id=mynet0 \
-		-device virtio-net-device,netdev=mynet0,mac=52:55:00:d1:55:01
