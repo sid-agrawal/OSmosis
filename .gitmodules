@@ -4,3 +4,6 @@
 [submodule "sel4cp"]
 	path = sel4cp
 	url = git@github.com:sid-agrawal/sel4cp.git
+[submodule "vmm"]
+	path = vmm
+	url = git@github.com:Ivan-Velickovic/sel4cp_vmm.git
