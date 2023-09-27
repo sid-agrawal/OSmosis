@@ -1,5 +1,7 @@
 {
     "files.associations": {
         "debug.h": "c"
-    }
+    },
+    "cmake.sourceDirectory": "/home/siagraw/OSmosis/seL4",
+    "cmake.configureOnOpen": false
 }
