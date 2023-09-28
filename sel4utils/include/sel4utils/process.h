@@ -15,7 +15,7 @@
 #include <sel4utils/process_config.h>
 #include <sel4utils/vspace.h>
 #include <sel4utils/elf.h>
-#include <sel4platsupport/timer.h>
+//#include <sel4platsupport/timer.h>
 
 #define WORD_STRING_SIZE ((CONFIG_WORD_SIZE / 3) + 1)
 
@@ -292,5 +292,7 @@ seL4_CPtr sel4utils_process_init_cap(void *data, seL4_CPtr cap);
  *
  * @return 0 on success.
  */
+/*
 int sel4utils_copy_timer_caps_to_process(timer_objects_t *to, timer_objects_t *from, vka_t *vka,
                                          sel4utils_process_t *process);
+*/
