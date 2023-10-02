@@ -23,7 +23,15 @@
 #include <simple/simple.h>
 #include <simple/simple_helpers.h>
 #include <utils/arith.h>
-#include <sel4platsupport/pmem.h>
+//#include <sel4platsupport/pmem.h>
+int sel4platsupport_get_num_pmem_regions(UNUSED simple_t *simple) {
+    return 0;
+}
+
+int sel4platsupport_get_pmem_region_list(UNUSED simple_t *simple, UNUSED size_t max_length, UNUSED pmem_region_t *region_list) {
+    ZF_LOGW("Not implemented");
+    return -1;
+}
 
 /* configure the choice of boot strapping allocators */
 #define UTMAN split

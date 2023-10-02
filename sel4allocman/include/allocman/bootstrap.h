@@ -54,7 +54,33 @@
 #include <allocman/utspace/twinkle.h>
 #include <vspace/vspace.h>
 #include <simple/simple.h>
-#include <sel4platsupport/pmem.h>
+//
+//#include <sel4platsupport/pmem.h>
+//
+//
+//
+typedef enum pmem_type {    
+    PMEM_TYPE_RAM,    
+    PMEM_TYPE_UNKNOWN,    
+    PMEM_TYPE_DEVICE,    
+    PMEM_NUM_REGION_TYPES,    
+} pmem_type_t;    
+    
+typedef struct pmem_region {    
+    pmem_type_t type;    
+    /* these specifically match the grub boot header struct definitions,        
+     * so must both be 64 bit on all systems */    
+    uint64_t base_addr;    
+    uint64_t length;    
+} pmem_region_t;    
+    
+    
+typedef struct {    
+    pmem_region_t region;    
+    vka_object_t obj;    
+} sel4ps_pmem_t;  
+
+
 /**
  * Internal data structure for storing bootstrapping information. If you need to break
  * open the boot strapping process, then you will be given a pointer to one of these

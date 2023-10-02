@@ -10,7 +10,7 @@
 #include <stddef.h>
 #include <vka/object.h>
 #include <vspace/page.h>
-
+#define CONFIG_SEL4UTILS_STACK_SIZE 65536
 typedef struct vspace vspace_t;
 
 typedef struct reservation {

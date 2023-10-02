@@ -62,7 +62,7 @@ $(BUILD_DIR)/libsel4vka.a: ../sel4vka/Makefile $(BUILD_DIR)/libutils.a
 	$(MAKE) ARCH=aarch64 BUILD_DIR=`pwd`/$(BUILD_DIR) TOOLCHAIN=$(TOOLCHAIN)- GCC_CPU=$(CPU) -C ../sel4vka
 
 $(BUILD_DIR)/libsel4allocman.a: ../sel4allocman/Makefile
-	$(MAKE) ARCH=aarch64 BUILD_DIR=`pwd`/$(BUILD_DIR) TOOLCHAIN=$(TOOLCHAIN)- GCC_CPU=$(CPU) -C ../sel4allocman
+	$(MAKE) ARCH=aarch64 BUILD_DIR=`pwd`/$(BUILD_DIR) TOOLCHAIN=$(TOOLCHAIN)- GCC_CPU=$(CPU) -C ../sel4allocman `pwd`/build/libsel4allocman.a
 
 $(BUILD_DIR)/libosmosis.a: ../libosmosis/Makefile
 	$(MAKE) ARCH=aarch64 BUILD_DIR=`pwd`/$(BUILD_DIR) TOOLCHAIN=$(TOOLCHAIN)- GCC_CPU=$(CPU) -C ../libosmosis
