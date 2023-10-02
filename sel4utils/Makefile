@@ -27,15 +27,17 @@ BOARD_DIR := ../sel4cp/release/sel4cp-sdk-1.2.6/board/$(SEL4CP_BOARD)/$(SEL4CP_C
 C_FLAGS := -std=gnu11 -g3 -O3 -nostdlib -ffreestanding -Wall -Wno-maybe-uninitialized -Wno-unused-function -Werror \
 		   -I$(SEL4_SDK)/include \
 		   $(C_FLAGS_ARCH) \
-		   -Iinclude/ \
 		   -I$(BOARD_DIR)/include  \
-		   -Iinclude/sel4_arch/$(ARCH_DIR) \
-		   -Iinclude/sel4utils \
+		   -Iinclude/ \
+		   -Iarch_include/arm/ \
+		   -Isel4_arch/$(ARCH) \
 		   -I../sel4vka/include \
 		   -I../sel4vka/sel4_arch_include/$(ARCH) \
 		   -I../sel4vka/arch_include/arm \
 		   -I../sel4vspace/include \
-		   -I../utils/include
+		   -I../sel4vspace/arch_include/arm \
+		   -I../utils/include \
+		   -I../utils/arch_include/arm
 
 
 ASM_CPP_FLAGS := -x assembler-with-cpp -c -g3 $(ASM_CPP_FLAGS_ARCH)
@@ -55,7 +57,10 @@ OBJS := elff.o mapping.o process.o profile.o arch.o slab.o stack.o strerror.o th
 		elf.o elf64.o elf32.o
 
 $(BUILD_DIR)/libutils.a: ../utils/Makefile
-	$(MAKE) ARCH=aarch64 BUILD_DIR=`pwd`/$(BUILD_DIR) TOOLCHAIN=$(TOOLCHAIN)- GCC_CPU=$(CPU) -C ../utils
+	$(MAKE) ARCH=aarch64 BUILD_DIR=$(BUILD_DIR) TOOLCHAIN=$(TOOLCHAIN)- GCC_CPU=$(CPU) -C ../utils
+
+$(BUILD_DIR)/libsel4vspace.a: ../sel4vspace/Makefile
+	$(MAKE) ARCH=aarch64 BUILD_DIR=$(BUILD_DIR) -C ../sel4vspace
 
 $(BUILD_DIR)/%.o : src/%.c Makefile $(BUILD_DIR)/libsel4vspace.a $(BUILD_DIR)/libutils.a
 	$(GCC) -c $(C_FLAGS) $< -o $@

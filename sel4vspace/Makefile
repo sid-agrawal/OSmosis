@@ -2,17 +2,10 @@ ifeq ($(strip $(BUILD_DIR)),)
 $(error BUILD_DIR must be specified)
 endif
 
-ifeq ($(strip $(GCC_CPU)),)
-$(error GCC_CPU must be specified)
-endif
+TOOLCHAIN := aarch64-none-elf-
+GCC_CPU := cortex-a53
+ARCH := aarch64
 
-ifeq ($(strip $(ARCH)),)
-$(error ARCH must be specified)
-endif
-
-ifeq ($(strip $(TOOLCHAIN)),)
-$(error TOOLCHAIN must be specified)
-endif
 
 ifeq ($(ARCH),aarch64)
 	C_FLAGS_ARCH := -mcpu=$(GCC_CPU) -mgeneral-regs-only
@@ -33,13 +26,15 @@ C_FLAGS := -std=gnu11 -g3 -O3 -nostdlib -ffreestanding -Wall -Wno-maybe-uninitia
 		   -I$(SEL4_SDK)/include \
 		   $(C_FLAGS_ARCH) \
 		   -Iinclude/ \
-		   -Iinclude/mode/64/ \
+		   -Iarch_include/arm/ \
 		   -I$(BOARD_DIR)/include  \
 		   -Iinclude/sel4_arch/$(ARCH_DIR) \
 		   -I../sel4vka/include \
 		   -I../sel4vka/arch_include \
 		   -I../sel4vka/include/sel4_arch/$(ARCH)/ \
-		   -I../sel4utils/include
+		   -I../sel4utils/include \
+		   -I../utils/arch_include/arm/ \
+		   -I../utils/include
 
 
 ASM_CPP_FLAGS := -x assembler-with-cpp -c -g3 $(ASM_CPP_FLAGS_ARCH)

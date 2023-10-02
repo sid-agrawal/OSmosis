@@ -35,11 +35,12 @@ CFLAGS := -mcpu=$(CPU) -mstrict-align -nostdlib -ffreestanding -g3 -O3 -Wall  -W
 	  -I../libosmosis/include \
 	  -I../sel4vka/include \
 	  -I../sel4allocman/include \
-	  -I../sel4simple/include
+	  -I../sel4simple/include \
+	  -I../sel4utils/include
 
 LDFLAGS := -L$(BOARD_DIR)/lib -L$(BUILD_DIR)
 LIBS := -lsel4cp -Tsel4cp.ld
-OSLIBS := -losmosis -lsel4vka -lsel4allocman
+OSLIBS := -losmosis -lsel4vka -lsel4allocman -lsel4utils
 
 
 IMAGE_FILE = $(BUILD_DIR)/loader.img
@@ -54,8 +55,11 @@ $(BUILD_DIR)/app.elf: app/Makefile
 $(BUILD_DIR)/global_data.o: global_data.S Makefile $(BUILD_DIR)/app.elf
 	$(CC) -c -g3 -DBLOB_PATH=\"/bin/ls\"  -x assembler-with-cpp  $< -o $@
 
-$(BUILD_DIR)/libutils.a: ../sel4simple/Makefile
+$(BUILD_DIR)/libutils.a: ../utils/Makefile
 	$(MAKE) ARCH=aarch64 BUILD_DIR=`pwd`/$(BUILD_DIR) TOOLCHAIN=$(TOOLCHAIN)- GCC_CPU=$(CPU) -C ../utils
+
+$(BUILD_DIR)/libsel4utils.a: ../sel4utils/Makefile
+	$(MAKE) ARCH=aarch64 BUILD_DIR=`pwd`/$(BUILD_DIR) TOOLCHAIN=$(TOOLCHAIN)- GCC_CPU=$(CPU) -C ../sel4utils `pwd`/build/libsel4utils.a
 
 $(BUILD_DIR)/libsimple.a: ../sel4simple/Makefile
 	$(MAKE) ARCH=aarch64 BUILD_DIR=`pwd`/$(BUILD_DIR) TOOLCHAIN=$(TOOLCHAIN)- GCC_CPU=$(CPU) -C ../sel4simple
@@ -70,7 +74,7 @@ $(BUILD_DIR)/libosmosis.a: ../libosmosis/Makefile
 	$(MAKE) ARCH=aarch64 BUILD_DIR=`pwd`/$(BUILD_DIR) TOOLCHAIN=$(TOOLCHAIN)- GCC_CPU=$(CPU) -C ../libosmosis
 
 
-$(BUILD_DIR)/%.o: %.c Makefile $(BUILD_DIR)/libutils.a $(BUILD_DIR)/libsel4vka.a $(BUILD_DIR)/libsel4allocman.a $(BUILD_DIR)/libosmosis.a $(BUILD_DIR)/libsimple.a
+$(BUILD_DIR)/%.o: %.c Makefile $(BUILD_DIR)/libutils.a $(BUILD_DIR)/libsel4vka.a $(BUILD_DIR)/libsel4allocman.a $(BUILD_DIR)/libosmosis.a $(BUILD_DIR)/libsimple.a $(BUILD_DIR)/libsel4utils.a
 	$(CC) -c $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/%.o: %.s Makefile $(BUILD_DIR)/libutils.a $(BUILD_DIR)/libsel4vka.a $(BUILD_DIR)/libsel4allocman.a $(BUILD_DIR)/libosmosis.a

@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <sel4cp.h>
 #include <allocator.h>
+#include <elf/elf.h>
 
 extern char _test_blob[];
 extern char _test_blob_end[];
@@ -145,6 +146,26 @@ init(void)
           sel4cp_dbg_puts("\n");
 
      }
+
+     sel4cp_dbg_puts("SYMBOLS\n");
+     sel4cp_dbg_puts("_test_blob: ");
+     puthex32((uint64_t)_test_blob);
+     sel4cp_dbg_puts("\n");
+     sel4cp_dbg_puts("_test_blob_end: ");
+     puthex32((uint64_t)_test_blob_end);
+     sel4cp_dbg_puts("\n");
+     sel4cp_dbg_puts("_test_blob_size: ");
+     puthex32((uint64_t)_test_blob_end - (uint64_t)_test_blob);
+     sel4cp_dbg_puts("\n");
+
+     elf_t elf ;
+     error = elf_newFile(_test_blob, (uint64_t)_test_blob_end - (uint64_t)_test_blob, &elf);
+     if (error) {
+          sel4cp_dbg_puts("Error parsing elf file\n");
+          puthex32(error);
+          sel4cp_dbg_puts("\n");
+     }
+
 
 
 
