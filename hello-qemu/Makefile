@@ -48,8 +48,10 @@ REPORT_FILE = $(BUILD_DIR)/report.txt
 all: $(IMAGE_FILE)
 
 
+$(BUILD_DIR)/app.elf: app/Makefile
+	$(MAKE) ARCH=aarch64 BUILD_DIR=`pwd`/$(BUILD_DIR) -C ./app
 
-$(BUILD_DIR)/global_data.o: global_data.S Makefile
+$(BUILD_DIR)/global_data.o: global_data.S Makefile $(BUILD_DIR)/app.elf
 	$(CC) -c -g3 -DBLOB_PATH=\"/bin/ls\"  -x assembler-with-cpp  $< -o $@
 
 $(BUILD_DIR)/libutils.a: ../sel4simple/Makefile

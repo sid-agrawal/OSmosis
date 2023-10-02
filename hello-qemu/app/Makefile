@@ -8,10 +8,6 @@ ifeq ($(strip $(BUILD_DIR)),)
 $(error BUILD_DIR must be specified)
 endif
 
-ifeq ($(strip $(SEL4CP_SDK)),)
-$(error SEL4CP_SDK must be specified)
-endif
-
 ifeq ($(strip $(SEL4CP_CONFIG)),)
 $(error SEL4CP_CONFIG must be specified)
 endif
@@ -23,12 +19,11 @@ CPU := cortex-a53
 CC := $(TOOLCHAIN)-gcc
 LD := $(TOOLCHAIN)-ld
 AS := $(TOOLCHAIN)-as
-SEL4CP_TOOL ?= $(SEL4CP_SDK)/bin/sel4cp
 SEL4CP_BOARD := qemu_arm_virt
 
 APP_OBJS := app.o
 
-BOARD_DIR := $(SEL4CP_SDK)/board/$(SEL4CP_BOARD)/$(SEL4CP_CONFIG)
+BOARD_DIR := ../../sel4cp/release/sel4cp-sdk-1.2.6/board/$(SEL4CP_BOARD)/$(SEL4CP_CONFIG)
 
 IMAGES := app.elf
 CFLAGS := -mcpu=$(CPU) -mstrict-align -nostdlib -ffreestanding -g3 -O3 -Wall  -Wno-unused-function -Werror -I$(BOARD_DIR)/include -I../../sel4runtime/include
@@ -40,7 +35,7 @@ OSLIBS := -lsel4runtime
 all: $(BUILD_DIR)/app.elf
 
 $(BUILD_DIR)/libsel4runtime.a: ../../sel4runtime/Makefile
-	$(MAKE) ARCH=aarch64 BUILD_DIR=`pwd`/$(BUILD_DIR) TOOLCHAIN=$(TOOLCHAIN)- GCC_CPU=$(CPU) -C ../../sel4runtime
+	$(MAKE) ARCH=aarch64 BUILD_DIR=$(BUILD_DIR) TOOLCHAIN=$(TOOLCHAIN)- GCC_CPU=$(CPU) -C ../../sel4runtime
 
 $(BUILD_DIR)/%.o: %.c Makefile $(BUILD_DIR)/libsel4runtime.a
 	$(CC) -c $(CFLAGS) $< -o $@
