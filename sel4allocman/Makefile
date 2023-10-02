@@ -2,17 +2,9 @@ ifeq ($(strip $(BUILD_DIR)),)
 $(error BUILD_DIR must be specified)
 endif
 
-ifeq ($(strip $(GCC_CPU)),)
-$(error GCC_CPU must be specified)
-endif
-
-ifeq ($(strip $(ARCH)),)
-$(error ARCH must be specified)
-endif
-
-ifeq ($(strip $(TOOLCHAIN)),)
-$(error TOOLCHAIN must be specified)
-endif
+GCC_CPU := cortex-a53
+TOOLCHAIN := aarch64-none-elf-
+ARCH := aarch64
 
 ifeq ($(ARCH),aarch64)
 	C_FLAGS_ARCH := -mcpu=$(GCC_CPU) -mgeneral-regs-only
@@ -36,7 +28,19 @@ C_FLAGS := -std=gnu11 -g3 -O3 -nostdlib -ffreestanding -Wall -Wno-maybe-uninitia
 		   -Iinclude/mode/64/ \
 		   -I$(BOARD_DIR)/include  \
 		   -Iinclude/sel4_arch/$(ARCH_DIR) \
-		   -I../sel4utils/include
+		   -I../sel4utils/include \
+		   -I../sel4utils/arch_include/arm \
+		   -I../sel4utils/sel4_arch_include/$(ARCH) \
+		   -I../sel4vka/include \
+		   -I../sel4vka/include/gen_config \
+		   -I../sel4vka/arch_include/arm/ \
+		   -I../sel4vka/sel4_arch_include/$(ARCH)/ \
+		   -I../utils/include \
+		   -I../utils/arch_include/arm/ \
+		   -I../sel4vspace/include/ \
+		   -I../sel4vspace/arch_include/arm \
+		   -I../sel4simple/include \
+		   -I../sel4simple/arch_include/arm
 
 
 ASM_CPP_FLAGS := -x assembler-with-cpp -c -g3 $(ASM_CPP_FLAGS_ARCH)
@@ -56,10 +60,10 @@ OBJS := allocman.o bootstrap.o \
 		dual_pool.o fixed_pool.o k_r_malloc.o malloc.o virtual_pool.o vspace_pool.o \
 		split.o twinkle.o
 
-$(BUILD_DIR)/libsel4utils.a: ../sel4utils/Makefile
-	$(MAKE) ARCH=aarch64 BUILD_DIR=$(BUILD_DIR) TOOLCHAIN=$(TOOLCHAIN) GCC_CPU=$(GCC_CPU) -C ../sel4utils
+# $(BUILD_DIR)/libsel4utils.a: ../sel4utils/Makefile
+# 	$(MAKE) ARCH=aarch64 BUILD_DIR=$(BUILD_DIR) TOOLCHAIN=$(TOOLCHAIN) GCC_CPU=$(GCC_CPU) -C ../sel4utils
 
-$(BUILD_DIR)/%.o : src/%.c Makefile $(BUILD_DIR)/libsel4utils.a
+$(BUILD_DIR)/%.o : src/%.c Makefile #$(BUILD_DIR)/libsel4utils.a
 	$(GCC) -c $(C_FLAGS) $< -o $@
 
 $(BUILD_DIR)/%.o : src/cspace/%.c Makefile $(BUILD_DIR)/libsel4utils.a

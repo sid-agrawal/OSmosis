@@ -13,7 +13,7 @@
  * to look at the cspacepath_t definition again!
  */
 #include <autoconf.h>
-#include <sel4vka/gen_config.h>
+#include <vka/gen_config.h>
 #include <vka/cspacepath_t.h>
 #include <vka/object.h>
 

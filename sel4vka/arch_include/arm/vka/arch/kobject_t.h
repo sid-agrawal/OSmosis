@@ -9,8 +9,7 @@
 #include <sel4/types.h>
 #include <assert.h>
 #include <autoconf.h>
-#include <sel4vka/gen_config.h>
-#include <utils/util.h>
+//#include <utils/util.h>
 #include <vka/sel4_arch/kobject_t.h>
 
 enum _arm_kobject_type {

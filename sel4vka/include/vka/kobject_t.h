@@ -9,8 +9,6 @@
 #include <sel4/types.h>
 #include <assert.h>
 #include <autoconf.h>
-#include <sel4vka/gen_config.h>
-#include <utils/util.h>
 #include <vka/arch/kobject_t.h>
 
 /* Generic Kernel Object Type used by generic allocator */

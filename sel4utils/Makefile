@@ -2,17 +2,12 @@ ifeq ($(strip $(BUILD_DIR)),)
 $(error BUILD_DIR must be specified)
 endif
 
-ifeq ($(strip $(GCC_CPU)),)
-$(error GCC_CPU must be specified)
-endif
 
-ifeq ($(strip $(ARCH)),)
-$(error ARCH must be specified)
-endif
+GCC_CPU := cortex-a53
+TOOLCHAIN := aarch64-none-elf-
+ARCH := aarch64
 
-ifeq ($(strip $(TOOLCHAIN)),)
-$(error TOOLCHAIN must be specified)
-endif
+
 
 ifeq ($(ARCH),aarch64)
 	C_FLAGS_ARCH := -mcpu=$(GCC_CPU) -mgeneral-regs-only
@@ -35,7 +30,12 @@ C_FLAGS := -std=gnu11 -g3 -O3 -nostdlib -ffreestanding -Wall -Wno-maybe-uninitia
 		   -Iinclude/ \
 		   -I$(BOARD_DIR)/include  \
 		   -Iinclude/sel4_arch/$(ARCH_DIR) \
-		   -Iinclude/sel4utils
+		   -Iinclude/sel4utils \
+		   -I../sel4vka/include \
+		   -I../sel4vka/sel4_arch_include/$(ARCH) \
+		   -I../sel4vka/arch_include/arm \
+		   -I../sel4vspace/include \
+		   -I../utils/include
 
 
 ASM_CPP_FLAGS := -x assembler-with-cpp -c -g3 $(ASM_CPP_FLAGS_ARCH)
@@ -50,16 +50,23 @@ else
 endif
 
 LIBS := libsel4utils.a
-OBJS := elf.o mapping.o process.o profile.o arch.o slab.o stack.o strerror.o thread.o \
-		bootstrap.o vspace.o
+OBJS := elff.o mapping.o process.o profile.o arch.o slab.o stack.o strerror.o thread.o \
+		bootstrap.o vspace.o \
+		elf.o elf64.o elf32.o
 
-$(BUILD_DIR)/%.o : src/%.c
+$(BUILD_DIR)/libutils.a: ../utils/Makefile
+	$(MAKE) ARCH=aarch64 BUILD_DIR=`pwd`/$(BUILD_DIR) TOOLCHAIN=$(TOOLCHAIN)- GCC_CPU=$(CPU) -C ../utils
+
+$(BUILD_DIR)/%.o : src/%.c Makefile $(BUILD_DIR)/libsel4vspace.a $(BUILD_DIR)/libutils.a
 	$(GCC) -c $(C_FLAGS) $< -o $@
 
-$(BUILD_DIR)/%.o : src/vspace/%.c
+$(BUILD_DIR)/%.o : src/vspace/%.c Makefile $(BUILD_DIR)/libsel4vspace.a $(BUILD_DIR)/libutils.a
 	$(GCC) -c $(C_FLAGS) $< -o $@
 
-$(BUILD_DIR)/%.o : src/sel4_arch/$(ARCH)/%.c
+$(BUILD_DIR)/%.o : src/elf/%.c Makefile $(BUILD_DIR)/libsel4vspace.a $(BUILD_DIR)/libutils.a
+	$(GCC) -c $(C_FLAGS) $< -o $@
+
+$(BUILD_DIR)/%.o : src/sel4_arch/$(ARCH)/%.c Makefile $(BUILD_DIR)/libsel4vspace.a $(BUILD_DIR)/libutils.a
 	$(GCC) -c $(C_FLAGS) $< -o $@
 
 LIB = $(addprefix $(BUILD_DIR)/, $(LIBS))

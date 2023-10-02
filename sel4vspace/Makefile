@@ -36,6 +36,9 @@ C_FLAGS := -std=gnu11 -g3 -O3 -nostdlib -ffreestanding -Wall -Wno-maybe-uninitia
 		   -Iinclude/mode/64/ \
 		   -I$(BOARD_DIR)/include  \
 		   -Iinclude/sel4_arch/$(ARCH_DIR) \
+		   -I../sel4vka/include \
+		   -I../sel4vka/arch_include \
+		   -I../sel4vka/include/sel4_arch/$(ARCH)/ \
 		   -I../sel4utils/include
 
 
@@ -50,25 +53,10 @@ else
 	AS := $(TOOLCHAIN)as
 endif
 
-LIBS := libsel4allocman.a
-OBJS := allocman.o bootstrap.o \
-		simple1level.o single_level.o two_level.o \
-		dual_pool.o fixed_pool.o k_r_malloc.o malloc.o virtual_pool.o vspace_pool.o \
-		split.o twinkle.o
+LIBS := libsel4vspace.a
+OBJS := mapping.o
 
-$(BUILD_DIR)/libsel4utils.a: ../sel4utils/Makefile
-	$(MAKE) ARCH=aarch64 BUILD_DIR=$(BUILD_DIR) TOOLCHAIN=$(TOOLCHAIN) GCC_CPU=$(GCC_CPU) -C ../sel4utils
-
-$(BUILD_DIR)/%.o : src/%.c Makefile $(BUILD_DIR)/libsel4utils.a
-	$(GCC) -c $(C_FLAGS) $< -o $@
-
-$(BUILD_DIR)/%.o : src/cspace/%.c Makefile $(BUILD_DIR)/libsel4utils.a
-	$(GCC) -c $(C_FLAGS) $< -o $@
-
-$(BUILD_DIR)/%.o : src/mspace/%.c Makefile $(BUILD_DIR)/libsel4utils.a
-	$(GCC) -c $(C_FLAGS) $< -o $@
-
-$(BUILD_DIR)/%.o : src/utspace/%.c 	Makefile $(BUILD_DIR)/libsel4utils.a
+$(BUILD_DIR)/%.o : src/sel4_arch/aarch64/%.c Makefile
 	$(GCC) -c $(C_FLAGS) $< -o $@
 
 LIB = $(addprefix $(BUILD_DIR)/, $(LIBS))

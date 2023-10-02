@@ -42,9 +42,9 @@ vka_arm_mode_get_object_size(seL4_Word objectType)
     switch (objectType) {
     case seL4_ARM_HugePageObject:
         return seL4_HugePageBits;
-    case seL4_ARM_PageGlobalDirectoryObject:
+    case seL4_ARM_VSpaceObject:
         return seL4_PGDBits;
-    case seL4_ARM_PageUpperDirectoryObject:
+    case seL4_ARM_PageTableObject:
         return seL4_PUDBits;
     default:
         /* Unknown object type. */

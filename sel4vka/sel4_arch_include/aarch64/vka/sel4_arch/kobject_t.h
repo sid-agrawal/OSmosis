@@ -9,8 +9,7 @@
 #include <sel4/types.h>
 #include <assert.h>
 #include <autoconf.h>
-#include <sel4vka/gen_config.h>
-#include <utils/util.h>
+//#include <utils/util.h>
 
 enum _arm_mode_kobject_type {
     KOBJECT_FRAME = 0,
@@ -56,9 +55,9 @@ static inline seL4_Word arm_mode_kobject_get_type(kobject_t type, seL4_Word obje
             return -1;
         }
     case KOBJECT_PAGE_GLOBAL_DIRECTORY:
-        return seL4_ARM_PageGlobalDirectoryObject;
+        return seL4_ARM_VSpaceObject;
     case KOBJECT_PAGE_UPPER_DIRECTORY:
-        return seL4_ARM_PageUpperDirectoryObject;
+        return seL4_ARM_PageTableObject;
     default:
         /* Unknown object type. */
         ZF_LOGE("Unknown object type %d", type);

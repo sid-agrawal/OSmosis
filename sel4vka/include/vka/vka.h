@@ -16,10 +16,9 @@
 #endif
 #include <assert.h>
 #include <stdint.h>
-//#include <utils/util.h>
+#include <utils/util.h>
 #include <vka/cspacepath_t.h>
 
-#define bool char
 /**
  * Allocate a slot in a cspace.
  *

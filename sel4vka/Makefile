@@ -2,17 +2,14 @@ ifeq ($(strip $(BUILD_DIR)),)
 $(error BUILD_DIR must be specified)
 endif
 
-ifeq ($(strip $(GCC_CPU)),)
-$(error GCC_CPU must be specified)
-endif
 
 ifeq ($(strip $(ARCH)),)
 $(error ARCH must be specified)
 endif
 
-ifeq ($(strip $(TOOLCHAIN)),)
-$(error TOOLCHAIN must be specified)
-endif
+
+GCC_CPU := cortex-a53
+TOOLCHAIN := aarch64-none-elf-
 
 ifeq ($(ARCH),aarch64)
 	C_FLAGS_ARCH := -mcpu=$(GCC_CPU) -mgeneral-regs-only
@@ -35,7 +32,9 @@ C_FLAGS := -std=gnu11 -g3 -O3 -nostdlib -ffreestanding -Wall -Wno-maybe-uninitia
 		   -Iinclude/ \
 		   -Iinclude/mode/64/ \
 		   -I$(BOARD_DIR)/include  \
-		   -Iinclude/sel4_arch/$(ARCH_DIR)
+		   -Iinclude/sel4_arch/$(ARCH_DIR) \
+		   -I../utils/include \
+		   -I../utils/arch_include/arm/
 
 
 ASM_CPP_FLAGS := -x assembler-with-cpp -c -g3 $(ASM_CPP_FLAGS_ARCH)
@@ -50,9 +49,10 @@ else
 endif
 
 LIBS := libsel4vka.a
-OBJS := debug-vka.o null-vka.o
+OBJS := null-vka.o
+#OBJS := debug-vka.o null-vka.o
 
-$(BUILD_DIR)/%.o : src/%.c
+$(BUILD_DIR)/%.o : src/%.c Makefile $(BUILD_DIR)/libutils.a
 	$(GCC) -c $(C_FLAGS) $< -o $@
 
 LIB = $(addprefix $(BUILD_DIR)/, $(LIBS))

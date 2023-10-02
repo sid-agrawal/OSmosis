@@ -626,7 +626,7 @@ int allocman_configure_mspace_reserve(allocman_t *alloc, struct allocman_mspace_
     return 0;
 }
 
-
+/*
 int allocman_add_untypeds_from_timer_objects(allocman_t *alloc, timer_objects_t *to) {
     int error = 0;
     for (size_t i = 0; i < to->nobjs; i++) {
@@ -641,3 +641,4 @@ int allocman_add_untypeds_from_timer_objects(allocman_t *alloc, timer_objects_t 
     }
     return 0;
 }
+*/

@@ -30,10 +30,16 @@ HELLO_OBJS := hello.o global_data.o
 BOARD_DIR := $(SEL4CP_SDK)/board/$(SEL4CP_BOARD)/$(SEL4CP_CONFIG)
 
 IMAGES := hello.elf
-CFLAGS := -mcpu=$(CPU) -mstrict-align -nostdlib -ffreestanding -g3 -O3 -Wall  -Wno-unused-function -Werror -I$(BOARD_DIR)/include -I../libosmosis/include
+CFLAGS := -mcpu=$(CPU) -mstrict-align -nostdlib -ffreestanding -g3 -O3 -Wall  -Wno-unused-function -Werror \
+	  -I$(BOARD_DIR)/include \
+	  -I../libosmosis/include \
+	  -I../sel4vka/include \
+	  -I../sel4allocman/include \
+	  -I../sel4simple/include
+
 LDFLAGS := -L$(BOARD_DIR)/lib -L$(BUILD_DIR)
 LIBS := -lsel4cp -Tsel4cp.ld
-OSLIBS := -losmosis
+OSLIBS := -losmosis -lsel4vka -lsel4allocman
 
 
 IMAGE_FILE = $(BUILD_DIR)/loader.img
@@ -46,18 +52,29 @@ all: $(IMAGE_FILE)
 $(BUILD_DIR)/global_data.o: global_data.S Makefile
 	$(CC) -c -g3 -DBLOB_PATH=\"/bin/ls\"  -x assembler-with-cpp  $< -o $@
 
+$(BUILD_DIR)/libutils.a: ../sel4simple/Makefile
+	$(MAKE) ARCH=aarch64 BUILD_DIR=`pwd`/$(BUILD_DIR) TOOLCHAIN=$(TOOLCHAIN)- GCC_CPU=$(CPU) -C ../utils
+
+$(BUILD_DIR)/libsimple.a: ../sel4simple/Makefile
+	$(MAKE) ARCH=aarch64 BUILD_DIR=`pwd`/$(BUILD_DIR) TOOLCHAIN=$(TOOLCHAIN)- GCC_CPU=$(CPU) -C ../sel4simple
+
+$(BUILD_DIR)/libsel4vka.a: ../sel4vka/Makefile $(BUILD_DIR)/libutils.a
+	$(MAKE) ARCH=aarch64 BUILD_DIR=`pwd`/$(BUILD_DIR) TOOLCHAIN=$(TOOLCHAIN)- GCC_CPU=$(CPU) -C ../sel4vka
+
+$(BUILD_DIR)/libsel4allocman.a: ../sel4allocman/Makefile
+	$(MAKE) ARCH=aarch64 BUILD_DIR=`pwd`/$(BUILD_DIR) TOOLCHAIN=$(TOOLCHAIN)- GCC_CPU=$(CPU) -C ../sel4allocman
 
 $(BUILD_DIR)/libosmosis.a: ../libosmosis/Makefile
 	$(MAKE) ARCH=aarch64 BUILD_DIR=`pwd`/$(BUILD_DIR) TOOLCHAIN=$(TOOLCHAIN)- GCC_CPU=$(CPU) -C ../libosmosis
 
 
-$(BUILD_DIR)/%.o: %.c Makefile $(BUILD_DIR)/libosmosis.a
+$(BUILD_DIR)/%.o: %.c Makefile $(BUILD_DIR)/libutils.a $(BUILD_DIR)/libsel4vka.a $(BUILD_DIR)/libsel4allocman.a $(BUILD_DIR)/libosmosis.a $(BUILD_DIR)/libsimple.a
 	$(CC) -c $(CFLAGS) $< -o $@
 
-$(BUILD_DIR)/%.o: %.s Makefile
+$(BUILD_DIR)/%.o: %.s Makefile $(BUILD_DIR)/libutils.a $(BUILD_DIR)/libsel4vka.a $(BUILD_DIR)/libsel4allocman.a $(BUILD_DIR)/libosmosis.a
 	$(AS) -g3 -mcpu=$(CPU) $< -o $@
 
-$(BUILD_DIR)/hello.elf: $(addprefix $(BUILD_DIR)/, $(HELLO_OBJS))
+$(BUILD_DIR)/hello.elf: $(addprefix $(BUILD_DIR)/, $(HELLO_OBJS)) $(BUILD_DIR)/libutils.a $(BUILD_DIR)/libsel4vka.a $(BUILD_DIR)/libsel4allocman.a $(BUILD_DIR)/libosmosis.a
 	$(LD) $(LDFLAGS) $^ $(LIBS) $(OSLIBS) -o $@
 
 $(IMAGE_FILE) $(REPORT_FILE): $(addprefix $(BUILD_DIR)/, $(IMAGES)) hello.system

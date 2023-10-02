@@ -6,8 +6,6 @@
 
 #pragma once
 
-#include <sel4utils/gen_config.h>
-
 #include <assert.h>
 #include <stddef.h>
 #include <vka/object.h>

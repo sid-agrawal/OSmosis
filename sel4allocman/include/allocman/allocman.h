@@ -46,14 +46,14 @@
 #pragma once
 
 #include <assert.h>
-#include <autoconf.h>
+//#include <autoconf.h>
 #include <sel4/types.h>
 #include <allocman/util.h>
 #include <allocman/cspace/cspace.h>
 #include <allocman/mspace/mspace.h>
 #include <allocman/utspace/utspace.h>
 #include <vka/cspacepath_t.h>
-#include <sel4platsupport/timer.h>
+//#include <sel4platsupport/timer.h>
 
 /**
  * Describes a reservation chunk for the memory system.
@@ -407,12 +407,12 @@ static inline uintptr_t allocman_utspace_paddr(allocman_t *alloc, seL4_Word cook
 }
 
 /**
- * Helper function for adding device untypeds from platform specific timer objects
- *
- * @param alloc The allocman to query
- * @param to struct containing untyped metadata
- *
- * @return 0 on success, otherwise error.
- */
-int allocman_add_untypeds_from_timer_objects(allocman_t *alloc, timer_objects_t *to);
+//  * Helper function for adding device untypeds from platform specific timer objects
+//  *
+//  * @param alloc The allocman to query
+//  * @param to struct containing untyped metadata
+//  *
+//  * @return 0 on success, otherwise error.
+//  */
+// int allocman_add_untypeds_from_timer_objects(allocman_t *alloc, timer_objects_t *to);
 
