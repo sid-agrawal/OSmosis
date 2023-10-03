@@ -30,6 +30,7 @@ C_FLAGS := -std=gnu11 -g3 -O3 -nostdlib -ffreestanding -Wall -Wno-maybe-uninitia
 		   -I$(BOARD_DIR)/include  \
 		   -Iinclude/ \
 		   -Iarch_include/arm/ \
+		   -Isel4_arch_include/$(ARCH) \
 		   -Isel4_arch/$(ARCH) \
 		   -I../sel4vka/include \
 		   -I../sel4vka/sel4_arch_include/$(ARCH) \
@@ -37,7 +38,11 @@ C_FLAGS := -std=gnu11 -g3 -O3 -nostdlib -ffreestanding -Wall -Wno-maybe-uninitia
 		   -I../sel4vspace/include \
 		   -I../sel4vspace/arch_include/arm \
 		   -I../utils/include \
-		   -I../utils/arch_include/arm
+		   -I../utils/arch_include/arm \
+		   -I../sel4simple/arch_include/arm \
+		   -I../sel4simple/include \
+		   -I../sel4runtime/include \
+		   -I../sel4runtime/include/sel4_arch/$(ARCH)
 
 
 ASM_CPP_FLAGS := -x assembler-with-cpp -c -g3 $(ASM_CPP_FLAGS_ARCH)
@@ -59,10 +64,13 @@ OBJS := elff.o mapping.o process.o profile.o arch.o slab.o stack.o strerror.o th
 $(BUILD_DIR)/libutils.a: ../utils/Makefile
 	$(MAKE) ARCH=aarch64 BUILD_DIR=$(BUILD_DIR) TOOLCHAIN=$(TOOLCHAIN)- GCC_CPU=$(CPU) -C ../utils
 
+$(BUILD_DIR)/libsel4simple.a: ../sel4simple/Makefile
+	$(MAKE) ARCH=aarch64 BUILD_DIR=$(BUILD_DIR) TOOLCHAIN=$(TOOLCHAIN)- GCC_CPU=$(CPU) -C ../sel4simple
+
 $(BUILD_DIR)/libsel4vspace.a: ../sel4vspace/Makefile
 	$(MAKE) ARCH=aarch64 BUILD_DIR=$(BUILD_DIR) -C ../sel4vspace
 
-$(BUILD_DIR)/%.o : src/%.c Makefile $(BUILD_DIR)/libsel4vspace.a $(BUILD_DIR)/libutils.a
+$(BUILD_DIR)/%.o : src/%.c Makefile $(BUILD_DIR)/libsel4vspace.a $(BUILD_DIR)/libutils.a $(BUILD_DIR)/libsel4simple.a
 	$(GCC) -c $(C_FLAGS) $< -o $@
 
 $(BUILD_DIR)/%.o : src/vspace/%.c Makefile $(BUILD_DIR)/libsel4vspace.a $(BUILD_DIR)/libutils.a

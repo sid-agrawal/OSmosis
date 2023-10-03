@@ -9,6 +9,7 @@
 #include <elf/elf64.h>
 #include <string.h>
 #include <stdio.h>
+#include <utils/string-copied.h>
 
 /* ELF header functions */
 int elf_newFile(const void *file, size_t size, elf_t *res)

@@ -2,8 +2,6 @@ ifeq ($(strip $(BUILD_DIR)),)
 $(error BUILD_DIR must be specified)
 endif
 
-
-
 GCC_CPU := cortex-a53
 TOOLCHAIN := aarch64-none-elf-
 ARCH := aarch64
@@ -26,12 +24,12 @@ BOARD_DIR := ../sel4cp/release/sel4cp-sdk-1.2.6/board/$(SEL4CP_BOARD)/$(SEL4CP_C
 C_FLAGS := -std=gnu11 -g3 -O3 -nostdlib -ffreestanding -Wall -Wno-maybe-uninitialized -Wno-unused-function -Werror \
 		   -I$(SEL4_SDK)/include \
 		   $(C_FLAGS_ARCH) \
+		   -I$(BOARD_DIR)/include  \
 		   -Iinclude/ \
 		   -Iarch_include/arm/ \
-		   -I$(BOARD_DIR)/include  \
+		   -I../sel4vka/include \
 		   -I../utils/include \
-		   -I../utils/arch_include/arm/ \
-		   -I../sel4vka/include
+		   -I../utils/arch_include/arm/
 
 
 ASM_CPP_FLAGS := -x assembler-with-cpp -c -g3 $(ASM_CPP_FLAGS_ARCH)
@@ -45,7 +43,7 @@ else
 	AS := $(TOOLCHAIN)as
 endif
 
-LIBS := libsimple.a
+LIBS := libsel4simple.a
 OBJS := simple.o
 
 $(BUILD_DIR)/%.o : src/%.c Makefile

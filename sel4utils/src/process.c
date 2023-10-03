@@ -736,7 +736,7 @@ seL4_CPtr sel4utils_process_init_cap(void *data, seL4_CPtr cap)
         return seL4_CapNull;
     }
 };
-
+#if 0
 int sel4utils_copy_timer_caps_to_process(timer_objects_t *to, timer_objects_t *from, vka_t *vka,
                                          sel4utils_process_t *process)
 {
@@ -760,3 +760,5 @@ int sel4utils_copy_timer_caps_to_process(timer_objects_t *to, timer_objects_t *f
     }
     return 0;
 }
+
+#endif

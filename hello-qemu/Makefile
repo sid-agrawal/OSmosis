@@ -40,7 +40,7 @@ CFLAGS := -mcpu=$(CPU) -mstrict-align -nostdlib -ffreestanding -g3 -O3 -Wall  -W
 
 LDFLAGS := -L$(BOARD_DIR)/lib -L$(BUILD_DIR)
 LIBS := -lsel4cp -Tsel4cp.ld
-OSLIBS := -losmosis -lsel4vka -lsel4allocman -lsel4utils
+OSLIBS := -losmosis -lsel4vka -lsel4allocman -lsel4utils -lutils
 
 
 IMAGE_FILE = $(BUILD_DIR)/loader.img
@@ -95,3 +95,5 @@ run: $(IMAGE_FILE)
 		-nographic \
 		-netdev user,id=mynet0 \
 		-device virtio-net-device,netdev=mynet0,mac=52:55:00:d1:55:01
+clean:
+	rm -rf $(BUILD_DIR)/*

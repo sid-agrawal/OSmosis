@@ -52,8 +52,9 @@ endif
 
 LIBS := libutils.a
 OBJS := stack.o \
-		debug.o list.o xml.o zf_log.o # \
-		#cbor64.o
+		debug.o list.o xml.o zf_log.o  \
+		cp-memset.o cp-memcpy.o cp-strcmp.o cp-memcmp.o
+# cbor64.o
 
 $(BUILD_DIR)/%.o : src/%.c Makefile
 	$(GCC) -c $(C_FLAGS) $< -o $@

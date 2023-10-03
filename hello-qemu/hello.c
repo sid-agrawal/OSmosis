@@ -31,6 +31,25 @@ puthex32(uint32_t val)
     sel4cp_dbg_puts(buffer);
 }
 
+static bool is_loadable_section(const elf_t *elf_file, int index)
+{
+    return elf_getProgramHeaderType(elf_file, index) == PT_LOAD;
+}
+
+static int count_loadable_regions(const elf_t *elf_file)
+{
+    int num_headers = elf_getNumProgramHeaders(elf_file);
+    int loadable_headers = 0;
+
+    for (int i = 0; i < num_headers; i++) {
+        /* Skip non-loadable segments (such as debugging data). */
+        if (is_loadable_section(elf_file, i)) {
+            loadable_headers++;
+        }
+    }
+    return loadable_headers;
+}
+
 void
 init(void)
 {
@@ -158,13 +177,17 @@ init(void)
      puthex32((uint64_t)_test_blob_end - (uint64_t)_test_blob);
      sel4cp_dbg_puts("\n");
 
-     elf_t elf ;
-     error = elf_newFile(_test_blob, (uint64_t)_test_blob_end - (uint64_t)_test_blob, &elf);
+     elf_t elf_file ;
+     error = elf_newFile(_test_blob, (uint64_t)_test_blob_end - (uint64_t)_test_blob, &elf_file);
      if (error) {
           sel4cp_dbg_puts("Error parsing elf file\n");
           puthex32(error);
           sel4cp_dbg_puts("\n");
      }
+     int num_regions = count_loadable_regions(&elf_file);
+     sel4cp_dbg_puts("Num reigons found: ");
+     puthex32(num_regions);
+     sel4cp_dbg_puts("\n");
 
 
 
