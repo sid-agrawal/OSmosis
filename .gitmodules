@@ -7,3 +7,6 @@
 [submodule "vmm"]
 	path = vmm
 	url = git@github.com:Ivan-Velickovic/sel4cp_vmm.git
+[submodule "microkit_tutorial"]
+	path = microkit_tutorial
+	url = git@github.com:au-ts/microkit_tutorial.git
