@@ -91,6 +91,7 @@ int sel4utils_map_page(vka_t *vka, seL4_CPtr vspace_root, seL4_CPtr frame, void 
 }
 
 #ifndef CONFIG_ARCH_RISCV
+#if 0
 int sel4utils_map_iospace_page(vka_t *vka, seL4_CPtr iospace, seL4_CPtr frame, seL4_Word vaddr,
                                seL4_CapRights_t rights, int cacheable, seL4_Word size_bits,
                                vka_object_t *pts, int *num_pts)
@@ -98,6 +99,7 @@ int sel4utils_map_iospace_page(vka_t *vka, seL4_CPtr iospace, seL4_CPtr frame, s
     return map_page(vka, vspace_iospace_map_page, vspace_get_iospace_map_obj, iospace, frame, (void *) vaddr, rights,
                     cacheable, pts, num_pts);
 }
+#endif
 #endif /* CONFIG_ARCH_RISCV */
 #ifdef CONFIG_VTX
 

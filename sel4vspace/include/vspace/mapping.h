@@ -49,7 +49,7 @@ typedef int (*vspace_get_map_obj_fn)(seL4_Word failed_bits, vspace_map_obj_t *ob
  */
 int vspace_get_map_obj(seL4_Word failed_bits, vspace_map_obj_t *obj);
 /* As per vspace_get_map_obj but returns operations and sizes for an iospace (IOMMU). */
-int vspace_get_iospace_map_obj(UNUSED seL4_Word failed_bits, vspace_map_obj_t *obj);
+// int vspace_get_iospace_map_obj(UNUSED seL4_Word failed_bits, vspace_map_obj_t *obj);
 /* As per vspace_get_map_obj but returns operations and sizes for virtual page tables */
 int vspace_get_ept_map_obj(seL4_Word failed_bits, vspace_map_obj_t *obj);
 

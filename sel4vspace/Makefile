@@ -30,8 +30,8 @@ C_FLAGS := -std=gnu11 -g3 -O3 -nostdlib -ffreestanding -Wall -Wno-maybe-uninitia
 		   -I$(BOARD_DIR)/include  \
 		   -Iinclude/sel4_arch/$(ARCH_DIR) \
 		   -I../sel4vka/include \
-		   -I../sel4vka/arch_include \
-		   -I../sel4vka/include/sel4_arch/$(ARCH)/ \
+		   -I../sel4vka/arch_include/arm \
+		   -I../sel4vka/sel4_arch_include/$(ARCH) \
 		   -I../sel4utils/include \
 		   -I../utils/arch_include/arm/ \
 		   -I../utils/include
@@ -49,9 +49,13 @@ else
 endif
 
 LIBS := libsel4vspace.a
-OBJS := mapping.o
+OBJS := mapping.o vspace.o
+
 
 $(BUILD_DIR)/%.o : src/sel4_arch/aarch64/%.c Makefile
+	$(GCC) -c $(C_FLAGS) $< -o $@
+
+$(BUILD_DIR)/%.o : src/%.c Makefile
 	$(GCC) -c $(C_FLAGS) $< -o $@
 
 LIB = $(addprefix $(BUILD_DIR)/, $(LIBS))
