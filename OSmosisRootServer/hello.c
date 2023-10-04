@@ -3,6 +3,9 @@
  *
  * SPDX-License-Identifier: BSD-2-Clause
  */
+
+#define __thread
+
 #include <stdint.h>
 #include <sel4cp.h>
 #include <allocator.h>
@@ -15,7 +18,9 @@
 extern char _test_blob[];
 extern char _test_blob_end[];
 
-seL4_IPCBuffer __sel4_ipc_buffer_obj;
+extern char _cpio_archive[];
+extern char _cpio_archive_end[];
+
 static char
 hexchar(unsigned int v)
 {

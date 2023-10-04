@@ -51,7 +51,7 @@ CFLAGS := -mcpu=$(CPU) -mstrict-align -nostdlib -ffreestanding -g3 -Wall  -Wno-u
 
 LDFLAGS := -L$(BOARD_DIR)/lib -L$(BUILD_DIR)
 LIBS := -lsel4cp -Tsel4cp.ld
-OSLIBS := -losmosis -lsel4vka -lsel4allocman -lsel4utils -lutils -lsel4simple-default -lsel4simple -lsel4runtime -lsel4vspace
+OSLIBS := -losmosis -lsel4vka -lsel4allocman -lsel4utils -lutils -lsel4simple-default -lsel4simple -lsel4vspace
 
 
 IMAGE_FILE = $(BUILD_DIR)/loader.img

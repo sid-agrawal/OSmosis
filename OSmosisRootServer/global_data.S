@@ -10,6 +10,13 @@ _test_blob:
 _test_blob_end:
 #endif
 
+#if defined(BLOB_PATH)
+.section .cpio_archive, "aw", @progbits
+.global _cpio_archive, _cpio_archive_end
+_cpio_archive:
+.incbin BLOB_PATH
+_cpio_archive_end:
+#endif
 /*
 if defined(VM_KERNEL_IMAGE_PATH)
 .section .guest_kernel_image, "aw", @progbits
