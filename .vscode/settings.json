@@ -1,6 +1,8 @@
 {
     "files.associations": {
-        "debug.h": "c"
+        "debug.h": "c",
+        "allocator.h": "c",
+        "vka.h": "c"
     },
     "cmake.sourceDirectory": "/home/siagraw/OSmosis/seL4",
     "cmake.configureOnOpen": false

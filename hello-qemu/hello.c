@@ -8,9 +8,14 @@
 #include <allocator.h>
 #include <elf/elf.h>
 
+#include <simple/simple.h>
+#include <sel4utils/process.h>
+#include <simple-default/simple-default.h>
+
 extern char _test_blob[];
 extern char _test_blob_end[];
 
+seL4_IPCBuffer __sel4_ipc_buffer_obj;
 static char
 hexchar(unsigned int v)
 {
@@ -188,6 +193,18 @@ init(void)
      sel4cp_dbg_puts("Num reigons found: ");
      puthex32(num_regions);
      sel4cp_dbg_puts("\n");
+
+     /*
+          Create an allocator, it will need untyped info and
+          first empty cslot
+     */
+
+     /*Adding this below makes it fails */
+     uint64_t x = (uint64_t) sel4utils_allocated_object ;
+     sel4cp_dbg_puts("FOun func simple_default_init_bootinfo: ");
+     puthex32(x);
+     sel4cp_dbg_puts("\n");
+     assert(0);
 
 
 

@@ -59,7 +59,8 @@ endif
 LIBS := libsel4utils.a
 OBJS := elff.o mapping.o process.o profile.o arch.o slab.o stack.o strerror.o thread.o \
 		bootstrap.o vspace.o \
-		elf.o elf64.o elf32.o
+		elf.o elf64.o elf32.o \
+		cpio.o
 
 $(BUILD_DIR)/libutils.a: ../utils/Makefile
 	$(MAKE) ARCH=aarch64 BUILD_DIR=$(BUILD_DIR) TOOLCHAIN=$(TOOLCHAIN)- GCC_CPU=$(CPU) -C ../utils
