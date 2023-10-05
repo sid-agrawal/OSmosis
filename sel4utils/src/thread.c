@@ -24,6 +24,7 @@
 #include <sel4utils/arch/util.h>
 #include <sel4utils/helpers.h>
 #include <utils/stack.h>
+#include <utils/mk-printf.h>
 
 
 int sel4utils_configure_thread(vka_t *vka, vspace_t *parent, vspace_t *alloc, seL4_CPtr fault_endpoint,

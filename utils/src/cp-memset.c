@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stdint.h>
+#include <utils/string-copied.h>
 
 void *memset(void *dest, int c, size_t n)
 {

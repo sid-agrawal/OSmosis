@@ -8,7 +8,8 @@
 
 /* Macros relevant for verification. */
 
-#include <assert.h>
+//#include <assert.h>
+#include <utils/mk-util.h>
 
 /* This induces a guard containing the given expression in the lifted
  * specification of your function in Isabelle. You can think of this as an

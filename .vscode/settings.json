@@ -2,7 +2,16 @@
     "files.associations": {
         "debug.h": "c",
         "allocator.h": "c",
-        "vka.h": "c"
+        "vka.h": "c",
+        "zf_log_config.h": "c",
+        "k_r_malloc.h": "c",
+        "mk-printf.h": "c",
+        "strerror.h": "c",
+        "zf_log_if.h": "c",
+        "mk-util.h": "c",
+        "string-copied.h": "c",
+        "sel4runtime.h": "c",
+        "util.h": "c"
     },
     "cmake.sourceDirectory": "/home/siagraw/OSmosis/seL4",
     "cmake.configureOnOpen": false

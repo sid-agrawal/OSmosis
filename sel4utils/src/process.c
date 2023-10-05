@@ -8,7 +8,7 @@
 
 #define _GNU_SOURCE
 #include <stdlib.h>
-#include <string.h>
+//#include <string.h>
 #include <stdio.h>
 #include <inttypes.h>
 #include <elf/elf.h>
@@ -24,6 +24,8 @@
 #include <sel4utils/elf.h>
 #include <sel4utils/mapping.h>
 #include <sel4utils/helpers.h>
+#include <utils/mk-printf.h>
+#include <utils/mk-util.h>
 
 /* This library works with our cpio set up in the build system */
 extern char _cpio_archive[];

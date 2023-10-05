@@ -8,7 +8,8 @@
 
 /* macros for accessing compiler builtins */
 
-#include <assert.h>
+//#include <assert.h>
+#include <utils/mk-util.h>
 
 #define CTZ(x) __builtin_ctz(x)
 #define CLZ(x) __builtin_clz(x)

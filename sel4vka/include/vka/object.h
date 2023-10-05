@@ -6,12 +6,14 @@
 
 #pragma once
 
-#include <assert.h>
+//#include <assert.h>
+#include <utils/mk-util.h>
 #include <errno.h>
 #include <vka/vka.h>
 #include <vka/kobject_t.h>
 #include <stdio.h>
-#include <string.h>
+//#include <string.h>
+#include <utils/string-copied.h>
 #include <utils/util.h>
 
 /*

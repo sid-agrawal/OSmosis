@@ -21,5 +21,7 @@
  * @return The number of characters printed.
  */
 int utils_put_xml_escape(const char *string,
-                         int (*print)(void *arg, const char *format, ...) FORMAT(printf, 2, 3),
+                         int (*print)(void *arg, const char *format, ...)
+                         // FORMAT(printf, 2, 3)
+                         ,
                          void *arg) NONNULL(1);

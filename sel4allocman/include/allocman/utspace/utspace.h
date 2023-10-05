@@ -12,6 +12,7 @@
 #include <allocman/cspace/cspace.h>
 #include <vka/vka.h>
 #include <vka/object.h>
+#include <utils/string-copied.h>
 
 /*
  * Marks an untyped as being usable for creating arbitrary kernel objects. Objects

@@ -6,8 +6,10 @@
 
 #pragma once
 
-#include <assert.h>
+//#include <assert.h>
+#include <utils/mk-util.h>
 #include <stddef.h>
+#include <utils/mk-printf.h>
 #include <vka/object.h>
 #include <vspace/page.h>
 #define CONFIG_SEL4UTILS_STACK_SIZE 65536

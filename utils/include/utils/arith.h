@@ -8,7 +8,8 @@
 
 /* macros for doing basic math */
 
-#include <assert.h>
+//#include <assert.h>
+#include <utils/mk-util.h>
 #include <limits.h>
 #include <stdint.h>
 #include <utils/attribute.h>

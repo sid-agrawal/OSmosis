@@ -6,7 +6,13 @@
  */
 
 #include <utils/zf_log_config.h>
+#include <utils/mk-printf.h>
 
+
+int isprint(int c)
+{
+	return (unsigned)c-0x20 < 0x5f;
+}
 /* Controls Android log (android/log.h) support. When defined, must be 1
  * (enable) or 0 (disable). Disabled by default.
  */
@@ -65,7 +71,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <ctype.h>
+// #include <ctype.h>
 #include <unistd.h>
 #include <time.h>
 #include <sys/time.h>
@@ -243,12 +249,14 @@ static void output_callback(zf_log_output_ctx *const ctx)
 	*ctx->p = 0;
 	CFLog(apple_lvl(ctx->lvl), CFSTR("%s"), ctx->tag_b);
 #else
-	strcpy(ctx->p, ZF_LOG_EOL);
-	fputs(ctx->buf, stderr);
+	// strcpy(ctx->p, ZF_LOG_EOL);
+	// fputs(ctx->buf, stderr);
+	printf("\n");
+	printf("%s", ctx->buf);
 #endif
 	if (ZF_LOG_FATAL == ctx->lvl)
 	{
-		fflush(stderr);
+		// fflush(stderr);
 		abort();
 	}
 }

@@ -45,7 +45,7 @@
 
 #pragma once
 
-#include <assert.h>
+//#include <assert.h>
 //#include <autoconf.h>
 #include <sel4/types.h>
 #include <allocman/util.h>

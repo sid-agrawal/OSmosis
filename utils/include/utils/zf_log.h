@@ -250,18 +250,18 @@ extern int _zf_log_output_lvl;
 void _zf_log_write_d(const char *const func,
 					 const char *const file, const unsigned line,
 					 const int lvl, const char *const tag,
-					 const char *const fmt, ...) _ZF_LOG_PRINTFLIKE(6, 7);
+					 const char *const fmt, ...) ;//_ZF_LOG_PRINTFLIKE(6, 7);
 void _zf_log_write(const int lvl, const char *const tag,
-				   const char *const fmt, ...) _ZF_LOG_PRINTFLIKE(3, 4);
+				   const char *const fmt, ...) ;//_ZF_LOG_PRINTFLIKE(3, 4);
 
 void _zf_log_write_mem_d(const char *const func,
 						 const char *const file, const unsigned line,
 						 const int lvl, const char *const tag,
 						 const void *const d, const unsigned d_sz,
-						 const char *const fmt, ...) _ZF_LOG_PRINTFLIKE(8, 9);
+						 const char *const fmt, ...);// _ZF_LOG_PRINTFLIKE(8, 9);
 void _zf_log_write_mem(const int lvl, const char *const tag,
 					   const void *const d, const unsigned d_sz,
-					   const char *const fmt, ...) _ZF_LOG_PRINTFLIKE(5, 6);
+					   const char *const fmt, ...) ;//_ZF_LOG_PRINTFLIKE(5, 6);
 #ifdef __cplusplus
 }
 #endif

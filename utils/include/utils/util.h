@@ -6,7 +6,8 @@
 
 #pragma once
 
-#include <assert.h>
+//#include <assert.h>
+#include <utils/mk-util.h>
 #include <autoconf.h>
 #include <utils/gen_config.h>
 #include <stdbool.h>

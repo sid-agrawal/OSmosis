@@ -15,7 +15,7 @@ $(error TOOLCHAIN must be specified)
 endif
 
 ifeq ($(ARCH),aarch64)
-	C_FLAGS_ARCH := -mcpu=$(GCC_CPU) -mgeneral-regs-only
+	C_FLAGS_ARCH := -mcpu=$(GCC_CPU)
 	ASM_CPP_FLAGS_ARCH := -mcpu=$(GCC_CPU)
 	ASM_FLAGS_ARCH := -mcpu=$(GCC_CPU)
 	ARCH_DIR := aarch64
@@ -34,9 +34,14 @@ C_FLAGS := -std=gnu11 -g3 -O3 -nostdlib -ffreestanding -Wall -Wno-maybe-uninitia
 		   $(C_FLAGS_ARCH) \
 		   -Iinclude/ \
 		   -Iarch_include/arm/ \
+		   -I../sel4vspace/include \
+		   -I../sel4vspace/include \
+		   -I../sel4vspace/arch_include/arm \
 		   -I$(BOARD_DIR)/include  \
 		   -Iinclude/sel4_arch/$(ARCH_DIR) \
-		   -I../sel4utils/include
+		   -I../sel4utils/include \
+		   -I../sel4utils/arch_include/arm \
+		   -I../sel4utils/sel4_arch_include/$(ARCH)
 
 
 ASM_CPP_FLAGS := -x assembler-with-cpp -c -g3 $(ASM_CPP_FLAGS_ARCH)
@@ -53,7 +58,10 @@ endif
 LIBS := libutils.a
 OBJS := stack.o \
 		debug.o list.o xml.o zf_log.o  \
-		cp-memset.o cp-memcpy.o cp-strcmp.o cp-memcmp.o
+		cp-memset.o cp-memcpy.o cp-strcmp.o cp-memcmp.o \
+		mk-printf.o mk-util.o \
+		sid-abort.o \
+		sid-malloc.o
 # cbor64.o
 
 $(BUILD_DIR)/%.o : src/%.c Makefile

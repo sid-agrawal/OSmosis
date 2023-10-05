@@ -8,7 +8,7 @@
 
 #include <autoconf.h>
 
-#include <assert.h>
+//#include <assert.h>
 #include <sel4/sel4.h>
 #include <stdlib.h>
 #include <utils/util.h>

@@ -14,7 +14,8 @@
 #ifdef CONFIG_DEBUG_BUILD2
 #include <sel4debug/debug.h>
 #endif
-#include <assert.h>
+//#include <assert.h>
+#include <utils/mk-util.h>
 #include <stdint.h>
 #include <utils/util.h>
 #include <vka/cspacepath_t.h>

@@ -8,7 +8,7 @@
 
 #include <autoconf.h>
 
-#include <assert.h>
+//#include <assert.h>
 #include <sel4/sel4.h>
 #include <sel4/macros.h>
 #include <simple/arch/simple.h>

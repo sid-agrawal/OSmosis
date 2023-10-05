@@ -7,7 +7,8 @@
 
 #include <autoconf.h>
 #include <sel4utils/gen_config.h>
-#include <assert.h>
+//#include <assert.h>
+#include <utils/mk-util.h>
 #include <stdint.h>
 
 #include <utils/util.h>

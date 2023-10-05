@@ -6,6 +6,7 @@
 
 #pragma once
 
-#include <assert.h>
+//#include <assert.h>
+#include <utils/mk-util.h>
 
 #define compile_time_assert(name, expr) static_assert((expr), #name)
