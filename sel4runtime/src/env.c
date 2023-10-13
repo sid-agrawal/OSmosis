@@ -159,10 +159,9 @@ sel4runtime_uintptr_t sel4runtime_write_tls_image(void *tls_memory)
 
     return tls_base_from_tls_region(tls_memory);
 }
-
 sel4runtime_uintptr_t sel4runtime_move_initial_tls(void *tls_memory)
 {
-    #if 0
+    #if 1
     if (tls_memory == SEL4RUNTIME_NULL) {
         return (sel4runtime_uintptr_t)SEL4RUNTIME_NULL;
     }
@@ -180,7 +179,7 @@ sel4runtime_uintptr_t sel4runtime_move_initial_tls(void *tls_memory)
 
     env.initial_thread_tls_base = tls_base;
 
-#if defined(CONFIG_DEBUG_BUILD)
+#if 0//defined(CONFIG_DEBUG_BUILD)
     if (env.initial_thread_tcb && env.initial_thread_ipc_buffer && env.process_name) {
         // The thread can only be named after the TLS is initialised
         // and if an IPC buffer is present.
@@ -256,6 +255,7 @@ void __sel4runtime_load_env(
     empty_tls();
     parse_auxv(auxv);
     parse_phdrs();
+
     if (argc > 0) {
         name_process(argv[0]);
     }
@@ -355,6 +355,8 @@ static void load_tls_data(Elf_Phdr *header)
 static void try_init_static_tls(void)
 {
     if (env.tls.region_size <= sizeof(static_tls)) {
+        /*
+        (siagraw%At the beginning region_size is 0, so this will always get called.*/
         sel4runtime_move_initial_tls(static_tls);
     }
 }

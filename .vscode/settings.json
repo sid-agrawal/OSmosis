@@ -11,7 +11,8 @@
         "mk-util.h": "c",
         "string-copied.h": "c",
         "sel4runtime.h": "c",
-        "util.h": "c"
+        "util.h": "c",
+        "sel4.h": "c"
     },
     "cmake.sourceDirectory": "/home/siagraw/OSmosis/seL4",
     "cmake.configureOnOpen": false

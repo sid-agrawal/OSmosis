@@ -26,7 +26,9 @@ APP_OBJS := app.o
 BOARD_DIR := ../../sel4cp/release/sel4cp-sdk-1.2.6/board/$(SEL4CP_BOARD)/$(SEL4CP_CONFIG)
 
 IMAGES := app.elf
-CFLAGS := -mcpu=$(CPU) -mstrict-align -nostdlib -ffreestanding -g3 -O3 -Wall  -Wno-unused-function -Werror -I$(BOARD_DIR)/include -I../../sel4runtime/include
+CFLAGS := -mcpu=$(CPU) -mstrict-align -nostdlib -ffreestanding -g3 -O3 -Wall  -Wno-unused-function -Werror \
+		-I$(BOARD_DIR)/include \
+		-I../../sel4runtime/include
 LDFLAGS := -L$(BOARD_DIR)/lib -L$(BUILD_DIR)
 LIBS := # -lsel4cp
 OSLIBS := -lsel4runtime

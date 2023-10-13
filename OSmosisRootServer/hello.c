@@ -143,15 +143,95 @@ void thread_2(void) {
     /* never exit */
     while (1);
 }
+
+vspace_t vspace;
+UNUSED static sel4utils_alloc_data_t data;
+
+#define ALLOCATOR_VIRTUAL_POOL_SIZE (BIT(seL4_PageBits) * 100)
+void test_process_create() {
+
+     /*
+          Create an allocator
+     */
+
+     int error;
+    allocman_t *allocman;
+    seL4_CPtr root_cnode = 0x7;
+    size_t cnode_size_bits = 10;
+    seL4_CPtr empty_slot_start = 0x40;
+    seL4_CPtr empty_slot_end = 0x200;
+    allocman = bootstrap_use_current_1level(root_cnode,
+                                             cnode_size_bits,
+                                             empty_slot_start,
+                                             empty_slot_end,
+                                            sizeof(initial_mem_pool),
+                                            initial_mem_pool);
+
+    assert(allocman);
+    /* have to add all our resources manually */
+    //for (i = bi->untyped.start; i < bi->untyped.end; i++) {
+        cspacepath_t slot = allocman_cspace_make_path(allocman, 0x20);
+        /*check for error*/
+        cspacepath_t_print(&slot);
+#if 1
+        size_t size_bits = 29;
+        uintptr_t paddr = 0x80000000;
+        error = allocman_utspace_add_uts(allocman, 1, &slot, &size_bits, &paddr, ALLOCMAN_UT_KERNEL);
+        assert(!error);
+        printf("Added untyped no error\n");
+   // }
+//     error = allocman_fill_reserves(allocman);
+//     assert(!error);
+#endif
+
+    /*
+          Get a vka interface for the allcotor
+    */
+     vka_t vka;
+    allocman_make_vka(&vka, allocman);
+
+   /*
+          Get curent PDs CSpace and VSpace
+   */
+    //seL4_CPtr root_cnode = 0x7;
+    seL4_CPtr vspace_cap = 0x3;
+
+    error = sel4utils_bootstrap_vspace_leaky(&vspace, &data, vspace_cap, &vka, NULL);
+     assert(error == 0);
+
+
+    /* fill the allocator with virtual memory */
+    void *vaddr;
+    UNUSED reservation_t virtual_reservation;
+    virtual_reservation = vspace_reserve_range(&vspace,
+                                               ALLOCATOR_VIRTUAL_POOL_SIZE, seL4_AllRights, 1, &vaddr);
+    if (virtual_reservation.res == NULL)
+    {
+         printf("Failed to reserve a chunk of memory.\n");
+         assert(0);
+    }
+         printf("Reserved a chunk chunk of memory starting at: 0x%p \n", vaddr);
+    bootstrap_configure_virtual_pool(allocman, vaddr,
+                                      ALLOCATOR_VIRTUAL_POOL_SIZE, vspace_cap);
+
+
+     /*
+          Setup the config explictly
+     */
+
+    UNUSED sel4utils_process_config_t config = {
+        .is_elf = true,
+
+    };
+
+}
 void test_thread_create() {
 
      /*
           Create an allocator
      */
 
-
      int error;
-//     seL4_CPtr i;
     allocman_t *allocman;
     seL4_CPtr root_cnode = 0x7;
     size_t cnode_size_bits = 10;
@@ -502,7 +582,8 @@ init(void)
      //test_symbols();
      //test_malloc10();
      populateBootInfo();
-     test_thread_create();
+     //test_thread_create();
+     test_process_create();
 }
 void
 notified(sel4cp_channel ch)

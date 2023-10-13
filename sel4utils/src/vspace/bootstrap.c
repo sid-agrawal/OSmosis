@@ -217,7 +217,7 @@ static int reserve_range(vspace_t *vspace, uintptr_t start, uintptr_t end)
  */
 void sel4utils_get_image_region(uintptr_t *va_start, uintptr_t *va_end)
 {
-    abort();
+    //abort();
     // extern char __executable_start[];
     // extern char _end[];
 
@@ -250,6 +250,10 @@ static int reserve_initial_task_regions(vspace_t *vspace, void *existing_frames[
                 return -1;
             }
         }
+    }
+    if (reserve_range(vspace, 0, 0xA0000000)) {
+        ZF_LOGE("Error reserving code/data segment");
+        return -1;
     }
 
     return 0;
@@ -376,12 +380,14 @@ int sel4utils_bootstrap_vspace(vspace_t *vspace, sel4utils_alloc_data_t *data,
         return -1;
     }
 
+    printf("1vspace->data: %p\n", vspace->data);
     data->bootstrap = NULL;
 
     if (bootstrap_page_table(vspace)) {
         return -1;
     }
 
+    printf("2vspace->data: %p\n", vspace->data);
     /* Reserve Code and existig frames, there re alrady mapped.
        So just book keeping
     */
@@ -389,6 +395,7 @@ int sel4utils_bootstrap_vspace(vspace_t *vspace, sel4utils_alloc_data_t *data,
         return -1;
     }
 
+    printf("3vspace->data: %p\n", vspace->data);
     common_init_post_bootstrap(vspace, sel4utils_map_page_pd);
 
     return 0;
