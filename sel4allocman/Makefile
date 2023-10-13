@@ -60,7 +60,7 @@ LIBS := libsel4allocman.a
 OBJS := allocman.o bootstrap.o \
 		simple1level.o single_level.o two_level.o \
 		dual_pool.o fixed_pool.o k_r_malloc.o malloc.o virtual_pool.o vspace_pool.o \
-		split.o twinkle.o
+		split.o twinkle.o vka.o
 
 $(BUILD_DIR)/libsel4utils.a: ../sel4utils/Makefile
 	$(MAKE) ARCH=aarch64 BUILD_DIR=$(BUILD_DIR) TOOLCHAIN=$(TOOLCHAIN) GCC_CPU=$(GCC_CPU) -C ../sel4utils

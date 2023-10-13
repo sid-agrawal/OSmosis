@@ -60,6 +60,7 @@ OBJS := stack.o \
 		debug.o list.o xml.o zf_log.o  \
 		cp-memset.o cp-memcpy.o cp-strcmp.o cp-memcmp.o \
 		mk-printf.o mk-util.o \
+		strcpy.o \
 		sid-abort.o \
 		sid-malloc.o
 # cbor64.o

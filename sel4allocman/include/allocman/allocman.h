@@ -386,6 +386,7 @@ static inline int allocman_utspace_add_uts(allocman_t *alloc, size_t num, const 
     assert(alloc->have_utspace);
     error = alloc->utspace.add_uts(alloc, alloc->utspace.utspace, num, uts, size_bits, paddr, utType);
     if (error) {
+        printf(" allocman_utspace_add_uts: error %d\n", error);
         return error;
     }
     allocman_fill_reserves(alloc);

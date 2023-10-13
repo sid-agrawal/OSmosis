@@ -20,22 +20,6 @@
 #include <vspace/page.h>
 #include <vka/kobject_t.h>
 
-void *simple_default_get_frame_info(void *data, void *paddr, int size_bits, seL4_CPtr *frame_cap, seL4_Word *offset)
-{
-    unsigned int i;
-    seL4_BootInfo *bi = (seL4_BootInfo *) data;
-    assert(bi && paddr && offset && frame_cap);
-
-    for (i = 0; i < bi->untyped.end - bi->untyped.start; i++) {
-        if (bi->untypedList[i].paddr <= (seL4_Word)paddr &&
-            bi->untypedList[i].paddr + BIT(bi->untypedList[i].sizeBits) >= (seL4_Word)paddr + BIT(size_bits)) {
-            *frame_cap = bi->untyped.start + i;
-            *offset = (seL4_Word)paddr - bi->untypedList[i].paddr;
-            break;
-        }
-    }
-    return NULL;
-}
 seL4_Error simple_default_get_frame_cap(void *data, void *paddr, int size_bits, cspacepath_t *path)
 {
     unsigned int i;
@@ -54,6 +38,23 @@ seL4_Error simple_default_get_frame_cap(void *data, void *paddr, int size_bits, 
 
 void *simple_default_get_frame_mapping(void *data, void *paddr, int size_bits)
 {
+    return NULL;
+}
+
+void *simple_default_get_frame_info(void *data, void *paddr, int size_bits, seL4_CPtr *frame_cap, seL4_Word *offset)
+{
+    unsigned int i;
+    seL4_BootInfo *bi = (seL4_BootInfo *) data;
+    assert(bi && paddr && offset && frame_cap);
+
+    for (i = 0; i < bi->untyped.end - bi->untyped.start; i++) {
+        if (bi->untypedList[i].paddr <= (seL4_Word)paddr &&
+            bi->untypedList[i].paddr + BIT(bi->untypedList[i].sizeBits) >= (seL4_Word)paddr + BIT(size_bits)) {
+            *frame_cap = bi->untyped.start + i;
+            *offset = (seL4_Word)paddr - bi->untypedList[i].paddr;
+            break;
+        }
+    }
     return NULL;
 }
 
@@ -254,9 +255,9 @@ void simple_default_init_bootinfo(simple_t *simple, seL4_BootInfo *bi)
     // assert(bi);
 
     simple->data = bi;
-    simple->frame_info = &simple_default_get_frame_info;
     simple->frame_cap = &simple_default_get_frame_cap;
     simple->frame_mapping = &simple_default_get_frame_mapping;
+    simple->frame_info = &simple_default_get_frame_info;
     simple->ASID_assign = &simple_default_set_ASID;
     simple->cap_count = &simple_default_cap_count;
     simple->nth_cap = &simple_default_nth_cap;

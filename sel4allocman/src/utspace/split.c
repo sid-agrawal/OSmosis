@@ -94,6 +94,7 @@ void utspace_split_create(utspace_split_t *split)
 int _utspace_split_add_uts(allocman_t *alloc, void *_split, size_t num, const cspacepath_t *uts, size_t *size_bits,
                            uintptr_t *paddr, int utType)
 {
+    ZF_LOGE("Adding %zu untypeds to split allocator\n", num);
     utspace_split_t *split = (utspace_split_t *) _split;
     int error;
     size_t i;
@@ -101,11 +102,14 @@ int _utspace_split_add_uts(allocman_t *alloc, void *_split, size_t num, const cs
     switch (utType) {
     case ALLOCMAN_UT_KERNEL:
         list = split->heads;
+        ZF_LOGE("In case ALLOCMAN_UT_KERNEL\n");
         break;
     case ALLOCMAN_UT_DEV:
+        ZF_LOGE("In case ALLOCMAN_UT_DEV\n");
         list = split->dev_heads;
         break;
     case ALLOCMAN_UT_DEV_MEM:
+        ZF_LOGE("In case ALLOCMAN_UT_DEV_MEM\n");
         list = split->dev_mem_heads;
         break;
     default:
@@ -113,6 +117,7 @@ int _utspace_split_add_uts(allocman_t *alloc, void *_split, size_t num, const cs
     }
     for (i = 0; i < num; i++) {
         error = _insert_new_node(alloc, &list[size_bits[i]], uts[i], paddr ? paddr[i] : ALLOCMAN_NO_PADDR);
+        ZF_LOGE("_insert_new_node returned %d\n", error);
         if (error) {
             return error;
         }

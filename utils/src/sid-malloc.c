@@ -12,7 +12,7 @@ typedef long Align;
  * huge amount of infrastructure.
  */
 
-#define CONFIG_LIB_SEL4_MUSLC_SYS_MORECORE_BYTES (1024*1024*64)
+#define CONFIG_LIB_SEL4_MUSLC_SYS_MORECORE_BYTES (1024*64)
 char __attribute__((aligned(PAGE_SIZE_4K))) morecore_area[CONFIG_LIB_SEL4_MUSLC_SYS_MORECORE_BYTES];
 
 size_t morecore_size = CONFIG_LIB_SEL4_MUSLC_SYS_MORECORE_BYTES;
@@ -28,17 +28,23 @@ void * sbrk(size_t bytes)
 {
 
     uintptr_t ret;
-    uintptr_t newbrk = bytes;
+    static uintptr_t newbrk = (uintptr_t )NULL;
 
+    printf("calling sbkr with a request of %ld\n", bytes);
     /*if the newbrk is 0, return the bottom of the heap*/
     if (!newbrk) {
+        ZF_LOGE("sbrk for the first time, returning bottom of heap\n");
         ret = morecore_base;
-    } else if (newbrk < morecore_top && newbrk > (uintptr_t)&morecore_area[0]) {
-        ret = morecore_base = newbrk;
+        newbrk = morecore_base + bytes;
+    } else if (newbrk + bytes < morecore_top) {
+        ZF_LOGE("sbrk called with %p, returning %p\n", (void *) newbrk, (void *) newbrk + bytes);
+        ret = newbrk;
+        newbrk += bytes;
     } else {
+        ZF_LOGF("sbrk called with %p, returning 0\n", (void *) newbrk);
         ret = 0;
     }
-
+    printf("returning 0x%p from sbkr\n", (void *) ret);
     return (void *) ret;
 }
 
@@ -60,6 +66,7 @@ static Header *morecore(size_t nu);
 void* malloc(size_t nbytes) {
     Header *p, *prevp;
     size_t nunits;
+    printf("calling malloc\n");
 
      /* Kleinstes Vielfaches von sizeof(Header), das die
 	geforderte Byte-Zahl enthalten kann, plus 1 fuer den Header selbst: */
@@ -100,18 +107,20 @@ void* malloc(size_t nbytes) {
 
 /* Eine static-Funktion ist ausserhalb ihres Files nicht sichtbar	*/
 
-static Header *morecore(size_t nu) {
+static Header *morecore(size_t nu)
+{
+    printf("calling morecore with a request for %ld bytes\n", nu);
     char *cp;
-    void free(void*);
+    void free(void *);
     Header *up;
     if (nu < NALLOC)
-	nu = NALLOC;
+        nu = NALLOC;
     cp = sbrk(nu * sizeof(Header));
-    if (cp == (char *) -1)		/* sbrk liefert -1 im Fehlerfall */
-	return NULL;
-    up = (Header*) cp;
-    up->s.size = nu;			/* Groesse wird eingetragen	*/
-    free((void*)(up+1));		/* Einbau in Free-Liste		*/
+    if (cp == (char *)-1) /* sbrk liefert -1 im Fehlerfall */
+        return NULL;
+    up = (Header *)cp;
+    up->s.size = nu;        /* Groesse wird eingetragen	*/
+    free((void *)(up + 1)); /* Einbau in Free-Liste		*/
     return freep;
 }
 

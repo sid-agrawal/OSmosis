@@ -212,7 +212,7 @@ void sel4runtime_exit(int code)
         code = env.pre_exit_cb(code);
     }
 
-    __sel4runtime_run_destructors();
+    //__sel4runtime_run_destructors();
 
     /* If the exit is never set this will try and call a NULL function
      * pointer which should result in a fault. This is as good a way as
@@ -266,7 +266,7 @@ void __sel4runtime_load_env(
     env.auxv = auxv;
     env.envp = envp;
 
-    __sel4runtime_run_constructors();
+    //__sel4runtime_run_constructors();
 }
 
 static void name_process(char const *name)

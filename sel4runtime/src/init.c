@@ -12,6 +12,7 @@ typedef void (*routine)(void);
 /*
  * Constructors
  */
+#if 0
 void _init(void);
 extern routine __preinit_array_start[];
 extern routine __preinit_array_end[];
@@ -52,3 +53,5 @@ void __sel4runtime_run_destructors(void)
     }
     _fini();
 }
+
+#endif
