@@ -26,8 +26,10 @@ LEAKY(page_upper_directory)
 static inline int vka_alloc_vspace_root(vka_t *vka, vka_object_t *result)
 {
     if (config_set(CONFIG_ARM_HYPERVISOR_SUPPORT) && config_set(CONFIG_ARM_PA_SIZE_BITS_40)) {
+        ZF_LOGE("case 1\n");
         return vka_alloc_page_upper_directory(vka, result);
     } else {
+        ZF_LOGE("case 2\n");
         return vka_alloc_page_global_directory(vka, result);
     }
 }

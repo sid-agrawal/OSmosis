@@ -31,6 +31,9 @@
 extern char _cpio_archive[];
 extern char _cpio_archive_end[];
 
+extern char _test_blob[];
+extern char _test_blob_end[];
+
 void sel4utils_allocated_object(void *cookie, vka_object_t object)
 {
     static bool recurse = false;
@@ -425,11 +428,15 @@ static seL4_CPtr get_asid_pool(seL4_CPtr asid_pool)
     return asid_pool;
 }
 
-static seL4_CPtr assign_asid_pool(seL4_CPtr asid_pool, seL4_CPtr pd)
+static seL4_CPtr assign_asid_pool(seL4_CPtr asid_pool, seL4_CPtr vspace)
 {
-    int error = seL4_ARCH_ASIDPool_Assign(get_asid_pool(asid_pool), pd);
+    int error = seL4_ARCH_ASIDPool_Assign(get_asid_pool(asid_pool), vspace);
     if (error) {
-        ZF_LOGE("Failed to assign asid pool\n");
+        ZF_LOGE("Failed[Error = %d] to assign asid pool, asid_pool cptr (0x%x - Type 0x%x) new_vspace (0x%x - Type 0x%x), \n",
+                error, asid_pool,
+                seL4_DebugCapIdentify(asid_pool),
+                vspace,
+                seL4_DebugCapIdentify(vspace));
     }
 
     return error;
@@ -509,11 +516,17 @@ int sel4utils_configure_process_custom(sel4utils_process_t *process, vka_t *vka,
         if (error) {
             ZF_LOGE("Failed to allocate page directory for new process: %d\n", error);
             goto error;
+        } else {
+            ZF_LOGE("Allocated page directory for new process: %x - Type 0x%x\n",
+            process->pd.cptr,
+            seL4_DebugCapIdentify(process->pd.cptr));
         }
+
 
         /* assign an asid pool */
         if (!config_set(CONFIG_X86_64) &&
             assign_asid_pool(config.asid_pool, process->pd.cptr) != seL4_NoError) {
+
             goto error;
         }
     } else {
@@ -555,11 +568,16 @@ int sel4utils_configure_process_custom(sel4utils_process_t *process, vka_t *vka,
 
     /* finally elf load */
     if (config.is_elf) {
-        unsigned long size;
-        unsigned long cpio_len = _cpio_archive_end - _cpio_archive;
-        char const *file = cpio_get_file(_cpio_archive, cpio_len, config.image_name, &size);
+        // unsigned long size;
+        // unsigned long cpio_len = _cpio_archive_end - _cpio_archive;
+        // char const *file = cpio_get_file(_cpio_archive, cpio_len, config.image_name, &size);
+        // elf_newFile(file, size, &elf);
         elf_t elf;
-        elf_newFile(file, size, &elf);
+        error = elf_newFile(_test_blob, (uint64_t)_test_blob_end - (uint64_t)_test_blob, &elf);
+        if(error) {
+            ZF_LOGE("Failed to load elf file\n");
+            goto error;
+        }
 
         if (config.do_elf_load) {
             process->entry_point = sel4utils_elf_load(&process->vspace, spawner_vspace, vka, vka, &elf);

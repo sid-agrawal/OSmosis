@@ -130,7 +130,7 @@ static char initial_mem_pool[MEM_POOL_SIZE];
 
 /* stack for the new thread */
 #define THREAD_2_STACK_SIZE 4096
-static char thread_2_stack[THREAD_2_STACK_SIZE];
+UNUSED static char thread_2_stack[THREAD_2_STACK_SIZE];
 
 /* function to run in the new thread */
 void thread_2(void) {
@@ -159,7 +159,7 @@ void test_process_create() {
     seL4_CPtr root_cnode = 0x7;
     size_t cnode_size_bits = 10;
     seL4_CPtr empty_slot_start = 0x40;
-    seL4_CPtr empty_slot_end = 0x200;
+    seL4_CPtr empty_slot_end = 0x400;
     allocman = bootstrap_use_current_1level(root_cnode,
                                              cnode_size_bits,
                                              empty_slot_start,
@@ -210,20 +210,70 @@ void test_process_create() {
          printf("Failed to reserve a chunk of memory.\n");
          assert(0);
     }
-         printf("Reserved a chunk chunk of memory starting at: 0x%p \n", vaddr);
+    printf("Reserved a chunk chunk of memory starting at: 0x%p \n", vaddr);
     bootstrap_configure_virtual_pool(allocman, vaddr,
                                       ALLOCATOR_VIRTUAL_POOL_SIZE, vspace_cap);
 
 
+    printf("Bootstraped virtual pool\n");
      /*
           Setup the config explictly
      */
 
+    /*
+         Get this for the confi
+    */
+    seL4_CPtr current_tcb = 0x06;
+    seL4_CPtr current_asid_pool = 0x22;
+
     UNUSED sel4utils_process_config_t config = {
         .is_elf = true,
+        .image_name = "app",
+        .do_elf_load = true,
+        //.entry_point = app_entrypoint,
+        //.sysinfo = 0,
 
+        .create_cspace = true,
+        .one_level_cspace_size_bits = 12,
+        //    .dest_cspace_tcb_cptr = ? ?,
+        //    .cnode = ? ?,
+
+        .create_vspace = true,
+        .reservations = NULL,
+        .num_reservations = 0,
+
+        .create_fault_endpoint = true,
+        .sched_params.auth = current_tcb,
+        .asid_pool = current_asid_pool,
     };
 
+
+        vka_object_t root_pd = {0};
+        error = vka_alloc_vspace_root(&vka, &root_pd);
+        if (error) {
+            ZF_LOGE("Failed to allocate page directory for new process: %d\n", error);
+            return;
+        } else {
+            ZF_LOGE("Allocated page directory for new process: %x - Type 0x%x\n",
+            root_pd.cptr,
+            seL4_DebugCapIdentify(root_pd.cptr));
+        }
+
+
+#if 0
+    sel4utils_process_t new_process;
+    error = sel4utils_configure_process_custom(&new_process, &vka, &vspace, config);
+    if (error)
+    {
+         printf("Failed to configure new process.\n");
+         assert(0);
+    }
+    else
+    {
+         printf("Success configuring new process.\n");
+    }
+    NAME_THREAD(new_process.thread.tcb.cptr, "dynamic-3: process_2");
+#endif
 }
 void test_thread_create() {
 
@@ -368,7 +418,7 @@ void test_thread_create() {
         /*
               Setup new priority, entry, stack-pointer etc.
         */
-        seL4_CPtr current_tcb = 0x6;
+        seL4_CPtr current_tcb = 0x06;
         error = seL4_TCB_SetPriority(tcb_object.cptr, current_tcb, 254);
         if (error)
         {
@@ -508,7 +558,7 @@ init(void)
      seL4_MessageInfo_t msg = seL4_MessageInfo_new(seL4_Fault_SendUntyped, 0, 0, 0);
 
      // Set receipt path
-     for (int i = 0; i < 2; i++) {
+     for (int i = 0; i < 3; i++) {
           seL4_SetCapReceivePath(7, 0x20 + i, foo);
           msg = seL4_Call(MONITOR_ENDPOINT_CAP, msg);
           if (seL4_MessageInfo_get_extraCaps(msg) != 1)
@@ -532,7 +582,7 @@ init(void)
           }
 }
 
-     for (int i = 0; i < 0x21 ;i++){
+     for (int i = 0; i < 0x25 ;i++){
           puthex32(i);
           sel4cp_dbg_puts("> ");
           puthex32(seL4_DebugCapIdentify(i));
