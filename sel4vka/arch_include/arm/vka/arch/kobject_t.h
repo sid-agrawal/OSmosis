@@ -57,6 +57,7 @@ static inline seL4_Word arch_kobject_get_type(kobject_t type, seL4_Word objectSi
             return arm_mode_kobject_get_type(type, objectSize);
         }
     default:
+        ZF_LOGE("%s: Default case", __func__);
         return arm_mode_kobject_get_type(type, objectSize);
     }
 }

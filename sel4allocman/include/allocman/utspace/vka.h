@@ -26,6 +26,7 @@ static inline seL4_Word _utspace_vka_alloc(struct allocman *alloc, void *_vka, s
 {
     vka_t *vka = (vka_t *)_vka;
     size_t sel4_size_bits = get_sel4_object_size(type, size_bits);
+    ZF_LOGE("%s: sel4_size_bits = %d size_bits = %d", __func__, sel4_size_bits, size_bits);
     utspace_vka_cookie_t *cookie = (utspace_vka_cookie_t*)malloc(sizeof(*cookie));
     if (!cookie) {
         SET_ERROR(error, 1);
@@ -34,8 +35,10 @@ static inline seL4_Word _utspace_vka_alloc(struct allocman *alloc, void *_vka, s
     int _error;
     if (paddr == ALLOCMAN_NO_PADDR) {
         _error = vka_utspace_alloc(vka, slot, type, sel4_size_bits, &cookie->original_cookie);
+        ZF_LOGE("%s: paddr == ALLOCMAN_NO_PADDR. ERROR = %d", __func__, error);
     } else {
         _error = vka_utspace_alloc_at(vka, slot, type, sel4_size_bits, paddr, &cookie->original_cookie);
+        ZF_LOGE("%s: paddr == case 2. ERROR = %d", __func__, error);
     }
     SET_ERROR(error, _error);
     if (!_error) {

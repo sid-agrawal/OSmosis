@@ -98,6 +98,7 @@ static inline seL4_Word kobject_get_type(kobject_t type, seL4_Word objectSize)
         return seL4_KernelImageObject;
 #endif
     default:
+        ZF_LOGE("%s: Default case", __func__);
         return arch_kobject_get_type(type, objectSize);
     }
 }

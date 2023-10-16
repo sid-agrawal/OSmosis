@@ -34,7 +34,8 @@ C_FLAGS := -std=gnu11 -g3 -O3 -nostdlib -ffreestanding -Wall -Wno-maybe-uninitia
 		   -I$(BOARD_DIR)/include  \
 		   -Iinclude/sel4_arch/$(ARCH_DIR) \
 		   -I../utils/include \
-		   -I../utils/arch_include/arm/
+		   -I../utils/arch_include/arm/ \
+		   -DZF_LOG_DEF_LEVEL=ZF_LOG_VERBOSE
 
 
 ASM_CPP_FLAGS := -x assembler-with-cpp -c -g3 $(ASM_CPP_FLAGS_ARCH)

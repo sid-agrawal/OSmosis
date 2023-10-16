@@ -17,7 +17,9 @@ static inline int vka_alloc_page_global_directory(vka_t *vka, vka_object_t *resu
 
 static inline int vka_alloc_page_upper_directory(vka_t *vka, vka_object_t *result)
 {
-    return vka_alloc_object(vka, kobject_get_type(KOBJECT_PAGE_UPPER_DIRECTORY, 0), seL4_PUDBits, result);
+        seL4_Word otype = kobject_get_type(KOBJECT_PAGE_UPPER_DIRECTORY, 0);
+    ZF_LOGE("%s: otype: %ld", __func__, otype);
+    return vka_alloc_object(vka, otype, seL4_PUDBits, result);
 }
 
 LEAKY(page_global_directory)

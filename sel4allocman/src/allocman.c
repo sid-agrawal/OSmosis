@@ -270,7 +270,7 @@ static seL4_Word _allocman_utspace_alloc(allocman_t *alloc, size_t size_bits, se
         if (use_watermark && paddr == ALLOCMAN_NO_PADDR) {
             ret = _try_watermark_utspace(alloc, size_bits, type, path, _error);
             if (ret == 0) {
-                ZF_LOGI("Failed to allocate utspace from watermark. size %zu type %ld\n", size_bits, (long)type);
+                ZF_LOGE("Failed to allocate utspace from watermark. size %zu type %ld\n", size_bits, (long)type);
             }
             return ret;
         } else {
@@ -294,7 +294,7 @@ static seL4_Word _allocman_utspace_alloc(allocman_t *alloc, size_t size_bits, se
         ret = _try_watermark_utspace(alloc, size_bits, type, path, _error);
         _end_operation(alloc, root_op);
         if (ret == 0) {
-            ZF_LOGI("Regular utspace alloc failed and not watermark for size %zu type %ld\n", size_bits, (long)type);
+            ZF_LOGE("Regular utspace alloc failed and not watermark for size %zu type %ld\n", size_bits, (long)type);
         }
         return ret;
     } else {
