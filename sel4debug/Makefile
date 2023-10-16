@@ -2,10 +2,14 @@ ifeq ($(strip $(BUILD_DIR)),)
 $(error BUILD_DIR must be specified)
 endif
 
-TOOLCHAIN := aarch64-none-elf-
-GCC_CPU := cortex-a53
-ARCH := aarch64
 
+ifeq ($(strip $(ARCH)),)
+$(error ARCH must be specified)
+endif
+
+
+GCC_CPU := cortex-a53
+TOOLCHAIN := aarch64-none-elf-
 
 ifeq ($(ARCH),aarch64)
 	C_FLAGS_ARCH := -mcpu=$(GCC_CPU) -mgeneral-regs-only
@@ -27,15 +31,12 @@ C_FLAGS := -std=gnu11 -g3 -O3 -nostdlib -ffreestanding -Wall -Wno-maybe-uninitia
 		   $(C_FLAGS_ARCH) \
 		   -Iinclude/ \
 		   -Iarch_include/arm/ \
+		   -Isel4_arch_include/$(ARCH_DIR) \
+		   -Iinclude/mode/64/ \
 		   -I$(BOARD_DIR)/include  \
 		   -Iinclude/sel4_arch/$(ARCH_DIR) \
-		   -I../sel4vka/include \
-		   -I../sel4vka/arch_include/arm \
-		   -I../sel4vka/sel4_arch_include/$(ARCH) \
-		   -I../sel4utils/include \
-		   -I../utils/arch_include/arm/ \
 		   -I../utils/include \
-		   -I../sel4debug/include/
+		   -I../utils/arch_include/arm/ \
 
 
 ASM_CPP_FLAGS := -x assembler-with-cpp -c -g3 $(ASM_CPP_FLAGS_ARCH)
@@ -49,12 +50,9 @@ else
 	AS := $(TOOLCHAIN)as
 endif
 
-LIBS := libsel4vspace.a
-OBJS := mapping.o vspace.o
-
-
-$(BUILD_DIR)/%.o : src/sel4_arch/aarch64/%.c Makefile
-	$(GCC) -c $(C_FLAGS) $< -o $@
+LIBS := libsel4debug.a
+OBJS := alloc.o backtrace.o bootinfo.o caps.o identity.o \
+		printf.o register_dump.o stack.o trace.o
 
 $(BUILD_DIR)/%.o : src/%.c Makefile
 	$(GCC) -c $(C_FLAGS) $< -o $@

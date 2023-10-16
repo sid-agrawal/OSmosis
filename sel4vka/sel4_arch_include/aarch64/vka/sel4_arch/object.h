@@ -28,10 +28,8 @@ LEAKY(page_upper_directory)
 static inline int vka_alloc_vspace_root(vka_t *vka, vka_object_t *result)
 {
     if (config_set(CONFIG_ARM_HYPERVISOR_SUPPORT) && config_set(CONFIG_ARM_PA_SIZE_BITS_40)) {
-        ZF_LOGE("case 1\n");
         return vka_alloc_page_upper_directory(vka, result);
     } else {
-        ZF_LOGE("case 2\n");
         return vka_alloc_page_global_directory(vka, result);
     }
 }
@@ -47,9 +45,7 @@ vka_arm_mode_get_object_size(seL4_Word objectType)
     case seL4_ARM_HugePageObject:
         return seL4_HugePageBits;
     case seL4_ARM_VSpaceObject:
-        return seL4_PGDBits;
-    case seL4_ARM_PageTableObject:
-        return seL4_PUDBits;
+        return seL4_VSpaceBits;
     default:
         /* Unknown object type. */
         ZF_LOGE("Unknown object type");

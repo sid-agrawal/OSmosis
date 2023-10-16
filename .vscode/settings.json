@@ -14,7 +14,8 @@
         "util.h": "c",
         "sel4.h": "c",
         "object.h": "c",
-        "allocman.h": "c"
+        "allocman.h": "c",
+        "assert.h": "c"
     },
     "cmake.sourceDirectory": "/home/siagraw/OSmosis/seL4",
     "cmake.configureOnOpen": false,

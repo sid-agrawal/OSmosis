@@ -9,6 +9,8 @@
 #include <sel4/types.h>
 #include <assert.h>
 #include <autoconf.h>
+#include <vka/gen_config.h>
+#include <utils/util.h>
 #include <vka/arch/kobject_t.h>
 
 /* Generic Kernel Object Type used by generic allocator */
@@ -98,7 +100,6 @@ static inline seL4_Word kobject_get_type(kobject_t type, seL4_Word objectSize)
         return seL4_KernelImageObject;
 #endif
     default:
-        ZF_LOGE("%s: Default case", __func__);
         return arch_kobject_get_type(type, objectSize);
     }
 }

@@ -10,7 +10,7 @@
 #include <sel4/sel4.h>
 
 /* --- Debug --- */
-#define DEBUG 1
+
 #ifdef DEBUG
 #include <stdio.h>
 #define CSPACEPATHPRINT     printf

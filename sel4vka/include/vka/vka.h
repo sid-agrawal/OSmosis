@@ -7,14 +7,14 @@
 #pragma once
 
 #include <autoconf.h>
-#include <sel4/gen_config.h>
+#include <vka/gen_config.h>
 
 #include <sel4/sel4.h>
 #include <sel4/types.h>
-#ifdef CONFIG_DEBUG_BUILD2
+#ifdef CONFIG_DEBUG_BUILD
 #include <sel4debug/debug.h>
 #endif
-//#include <assert.h>
+// #include <assert.h>
 #include <utils/mk-util.h>
 #include <stdint.h>
 #include <utils/util.h>
@@ -137,17 +137,17 @@ typedef struct vka {
 static inline int vka_cspace_alloc(vka_t *vka, seL4_CPtr *res)
 {
     if (!vka) {
-        //ZF_LOGE("vka is NULL");
+        ZF_LOGE("vka is NULL");
         return -1;
     }
 
     if (!res) {
-        //ZF_LOGE("res is NULL");
+        ZF_LOGE("res is NULL");
         return -1;
     }
 
     if (!vka->cspace_alloc) {
-        //ZF_LOGE("Unimplemented");
+        ZF_LOGE("Unimplemented");
         return -1;
     }
 
@@ -158,15 +158,15 @@ static inline void vka_cspace_make_path(vka_t *vka, seL4_CPtr slot, cspacepath_t
 {
 
     if (!res) {
-        //ZF_LOGF("res is NULL");
+        ZF_LOGF("res is NULL");
     }
 
     if (!vka) {
-        //ZF_LOGF("vka is NULL");
+        ZF_LOGF("vka is NULL");
     }
 
     if (!vka->cspace_make_path) {
-        //ZF_LOGF("Unimplmented");
+        ZF_LOGF("Unimplmented");
     }
 
     vka->cspace_make_path(vka->data, slot, res);
@@ -189,7 +189,7 @@ static inline int vka_cspace_alloc_path(vka_t *vka, cspacepath_t *res)
 
 static inline void vka_cspace_free(vka_t *vka, seL4_CPtr slot)
 {
-#ifdef CONFIG_DEBUG_BUILD2
+#ifdef CONFIG_DEBUG_BUILD
     if (debug_cap_is_valid(slot)) {
         ZF_LOGF("slot is not free: call vka_cnode_delete first");
         /* this terminates the system */
@@ -197,7 +197,7 @@ static inline void vka_cspace_free(vka_t *vka, seL4_CPtr slot)
 #endif
 
     if (!vka->cspace_free) {
-        //ZF_LOGE("Not implemented");
+        ZF_LOGE("Not implemented");
         return;
     }
 
@@ -213,17 +213,17 @@ static inline int vka_utspace_alloc(vka_t *vka, const cspacepath_t *dest, seL4_W
                                     seL4_Word *res)
 {
     if (!vka) {
-        //ZF_LOGE("vka is NULL");
+        ZF_LOGE("vka is NULL");
         return -1;
     }
 
     if (!res) {
-        //ZF_LOGE("res is NULL");
+        ZF_LOGE("res is NULL");
         return -1;
     }
 
     if (!vka->utspace_alloc) {
-        //ZF_LOGE("Not implemented");
+        ZF_LOGE("Not implemented");
         return -1;
     }
 
@@ -234,17 +234,17 @@ static inline int vka_utspace_alloc_maybe_device(vka_t *vka, const cspacepath_t 
                                                  seL4_Word size_bits, bool can_use_dev, seL4_Word *res)
 {
     if (!vka) {
-        //ZF_LOGE("vka is NULL");
+        ZF_LOGE("vka is NULL");
         return -1;
     }
 
     if (!res) {
-        //ZF_LOGE("res is NULL");
+        ZF_LOGE("res is NULL");
         return -1;
     }
 
     if (!vka->utspace_alloc_maybe_device) {
-        //ZF_LOGE("Not implemented");
+        ZF_LOGE("Not implemented");
         return -1;
     }
 
@@ -255,15 +255,15 @@ static inline int vka_utspace_alloc_at(vka_t *vka, const cspacepath_t *dest, seL
                                        uintptr_t paddr, seL4_Word *cookie)
 {
     if (!vka) {
-        //ZF_LOGE("vka is NULL");
+        ZF_LOGE("vka is NULL");
         return -1;
     }
     if (!cookie) {
-        //ZF_LOGE("cookie is NULL");
+        ZF_LOGE("cookie is NULL");
         return -1;
     }
     if (!vka->utspace_alloc_at) {
-        //ZF_LOGE("Not implemented");
+        ZF_LOGE("Not implemented");
         return -1;
     }
 
@@ -273,13 +273,13 @@ static inline int vka_utspace_alloc_at(vka_t *vka, const cspacepath_t *dest, seL
 static inline void vka_utspace_free(vka_t *vka, seL4_Word type, seL4_Word size_bits, seL4_Word target)
 {
     if (!vka) {
-        //ZF_LOGE("vka is NULL");
+        ZF_LOGE("vka is NULL");
         return ;
     }
 
     if (!vka->utspace_free) {
 #ifndef CONFIG_LIB_VKA_ALLOW_MEMORY_LEAKS
-        //ZF_LOGF("Not implemented");
+        ZF_LOGF("Not implemented");
         /* This terminates the system */
 #endif
         return;
@@ -292,12 +292,12 @@ static inline uintptr_t vka_utspace_paddr(vka_t *vka, seL4_Word target, seL4_Wor
 {
 
     if (!vka) {
-        //ZF_LOGE("vka is NULL");
+        ZF_LOGE("vka is NULL");
         return VKA_NO_PADDR;
     }
 
     if (!vka->utspace_paddr) {
-        //ZF_LOGE("Not implemented");
+        ZF_LOGE("Not implemented");
         return VKA_NO_PADDR;
     }
 

@@ -9,7 +9,8 @@
 #include <sel4/types.h>
 #include <assert.h>
 #include <autoconf.h>
-//#include <utils/util.h>
+#include <vka/gen_config.h>
+#include <utils/util.h>
 #include <vka/sel4_arch/kobject_t.h>
 
 enum _arm_kobject_type {
@@ -57,7 +58,6 @@ static inline seL4_Word arch_kobject_get_type(kobject_t type, seL4_Word objectSi
             return arm_mode_kobject_get_type(type, objectSize);
         }
     default:
-        ZF_LOGE("%s: Default case", __func__);
         return arm_mode_kobject_get_type(type, objectSize);
     }
 }

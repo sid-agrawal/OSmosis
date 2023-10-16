@@ -29,7 +29,8 @@ C_FLAGS := -std=gnu11 -g3 -O3 -nostdlib -ffreestanding -Wall -Wno-maybe-uninitia
 		   -Iarch_include/arm/ \
 		   -I../sel4vka/include \
 		   -I../utils/include \
-		   -I../utils/arch_include/arm/
+		   -I../utils/arch_include/arm/ \
+		   -I../sel4debug/include/
 
 
 ASM_CPP_FLAGS := -x assembler-with-cpp -c -g3 $(ASM_CPP_FLAGS_ARCH)

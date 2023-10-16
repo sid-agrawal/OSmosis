@@ -35,6 +35,7 @@ C_FLAGS := -std=gnu11 -g3 -O3 -nostdlib -ffreestanding -Wall -Wno-maybe-uninitia
 		   -Iinclude/sel4_arch/$(ARCH_DIR) \
 		   -I../utils/include \
 		   -I../utils/arch_include/arm/ \
+		   -I../sel4debug/include/ \
 		   -DZF_LOG_DEF_LEVEL=ZF_LOG_VERBOSE
 
 

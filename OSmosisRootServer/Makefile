@@ -47,11 +47,12 @@ CFLAGS := -mcpu=$(CPU) -mstrict-align -nostdlib -ffreestanding -g3 -Wall  -Wno-u
 	  -I../sel4utils/sel4_arch_include/$(ARCH) \
 		   -I../sel4utils/arch_include/arm \
  	  -I../utils/include \
-	  -I../utils/arch_include/arm/
+	  -I../utils/arch_include/arm/ \
+ 	  -I../sel4debug/include \
 
 LDFLAGS := -L$(BOARD_DIR)/lib -L$(BUILD_DIR)
 LIBS := -lsel4cp -Tsel4cp.ld
-OSLIBS := -losmosis -lsel4vka -lsel4allocman -lsel4utils -lutils -lsel4simple-default -lsel4simple -lsel4vspace -lsel4runtime
+OSLIBS := -losmosis -lsel4vka -lsel4allocman -lsel4utils -lutils -lsel4simple-default -lsel4simple -lsel4vspace -lsel4runtime -lsel4debug
 
 
 IMAGE_FILE = $(BUILD_DIR)/loader.img
@@ -65,6 +66,9 @@ $(BUILD_DIR)/app.elf: app/Makefile
 
 $(BUILD_DIR)/global_data.o: global_data.S Makefile $(BUILD_DIR)/app.elf
 	$(CC) -c -g3 -DBLOB_PATH=\"/bin/ls\"  -x assembler-with-cpp  $< -o $@
+
+$(BUILD_DIR)/libsel4debug.a: ../sel4debug/Makefile
+	$(MAKE) ARCH=aarch64 BUILD_DIR=`pwd`/$(BUILD_DIR) TOOLCHAIN=$(TOOLCHAIN)- GCC_CPU=$(CPU) -C ../sel4debug
 
 $(BUILD_DIR)/libutils.a: ../utils/Makefile
 	$(MAKE) ARCH=aarch64 BUILD_DIR=`pwd`/$(BUILD_DIR) TOOLCHAIN=$(TOOLCHAIN)- GCC_CPU=$(CPU) -C ../utils
@@ -91,7 +95,7 @@ $(BUILD_DIR)/libosmosis.a: ../libosmosis/Makefile
 	$(MAKE) ARCH=aarch64 BUILD_DIR=`pwd`/$(BUILD_DIR) TOOLCHAIN=$(TOOLCHAIN)- GCC_CPU=$(CPU) -C ../libosmosis
 
 
-$(BUILD_DIR)/%.o: %.c Makefile $(BUILD_DIR)/libutils.a $(BUILD_DIR)/libsel4vka.a $(BUILD_DIR)/libsel4allocman.a $(BUILD_DIR)/libosmosis.a $(BUILD_DIR)/libsimple.a $(BUILD_DIR)/libsel4utils.a $(BUILD_DIR)/libsimple-default.a $(BUILD_DIR)/libsel4runtime.a
+$(BUILD_DIR)/%.o: %.c Makefile $(BUILD_DIR)/libutils.a $(BUILD_DIR)/libsel4vka.a $(BUILD_DIR)/libsel4allocman.a $(BUILD_DIR)/libosmosis.a $(BUILD_DIR)/libsimple.a $(BUILD_DIR)/libsel4utils.a $(BUILD_DIR)/libsimple-default.a $(BUILD_DIR)/libsel4runtime.a $(BUILD_DIR)/libsel4debug.a
 	$(CC) -c $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/%.o: %.s Makefile $(BUILD_DIR)/libutils.a $(BUILD_DIR)/libsel4vka.a $(BUILD_DIR)/libsel4allocman.a $(BUILD_DIR)/libosmosis.a

@@ -92,9 +92,7 @@ static int am_vka_utspace_alloc_maybe_device (void *data, const cspacepath_t *de
 
     /* allocman uses the size in memory internally, where as vka expects size_bits
      * as passed to Untyped_Retype, so do a conversion here */
-    ZF_LOGE("am_vka_utspace_alloc_maybe_device: type = %d, size_bits (int) = %d", type, size_bits);
     size_bits = vka_get_object_size(type, size_bits);
-    ZF_LOGE("am_vka_utspace_alloc_maybe_device: type = %d, size_bits (out) = %d", type, size_bits);
 
     *res = allocman_utspace_alloc((allocman_t *) data, size_bits, type, (cspacepath_t*)dest, can_use_dev, &error);
 

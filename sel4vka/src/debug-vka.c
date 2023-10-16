@@ -6,7 +6,7 @@
 
 #include <assert.h>
 #include <autoconf.h>
-#include <sel4/gen_config.h>
+#include <sel4vka/gen_config.h>
 #include <sel4/sel4.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -15,12 +15,12 @@
 #include <vka/cspacepath_t.h>
 #include <vka/vka.h>
 
-// #ifndef CONFIG_LIB_SEL4_VKA_DEBUG_LIVE_SLOTS_SZ
+#ifndef CONFIG_LIB_SEL4_VKA_DEBUG_LIVE_SLOTS_SZ
 #define CONFIG_LIB_SEL4_VKA_DEBUG_LIVE_SLOTS_SZ 0
-// #endif
-// #ifndef CONFIG_LIB_SEL4_VKA_DEBUG_LIVE_OBJS_SZ
-#define CONFIG_LIB_SEL4_VKA_DEBUG_LIVE_OBJS_SZ 0
-// #endif
+#endif
+#ifndef CONFIG_LIB_SEL4_VKA_DEBUG_LIVE_OBJS_SZ
+#define CONFIG_LIB_SEL4_VKA_DEBUG_LIVE_SLOTS_SZ 0
+#endif
 
 /* Kconfig-set sizes for buffers to track live slots and objects. */
 static size_t live_slots_sz = CONFIG_LIB_SEL4_VKA_DEBUG_LIVE_SLOTS_SZ;

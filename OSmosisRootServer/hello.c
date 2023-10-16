@@ -248,19 +248,19 @@ void test_process_create() {
     };
 
 
-        vka_object_t root_pd = {0};
-        error = vka_alloc_vspace_root(&vka, &root_pd);
-        if (error) {
-            ZF_LOGE("Failed to allocate page directory for new process: %d\n", error);
-            return;
-        } else {
-            ZF_LOGE("Allocated page directory for new process: %x - Type 0x%x\n",
-            root_pd.cptr,
-            seL4_DebugCapIdentify(root_pd.cptr));
-        }
+     //    vka_object_t root_pd = {0};
+     //    error = vka_alloc_vspace_root(&vka, &root_pd);
+     //    if (error) {
+     //        ZF_LOGE("Failed to allocate page directory for new process: %d\n", error);
+     //        return;
+     //    } else {
+     //        ZF_LOGE("Allocated page directory for new process: %x - Type 0x%x\n",
+     //        root_pd.cptr,
+     //        seL4_DebugCapIdentify(root_pd.cptr));
+     //    }
 
 
-#if 0
+#if 1
     sel4utils_process_t new_process;
     error = sel4utils_configure_process_custom(&new_process, &vka, &vspace, config);
     if (error)

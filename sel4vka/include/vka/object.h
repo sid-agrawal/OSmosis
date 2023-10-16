@@ -6,7 +6,7 @@
 
 #pragma once
 
-//#include <assert.h>
+// #include <assert.h>
 #include <utils/mk-util.h>
 #include <errno.h>
 #include <vka/vka.h>
@@ -56,7 +56,7 @@ static inline int vka_alloc_object_at_maybe_dev(vka_t *vka, seL4_Word type, seL4
     if (paddr == VKA_NO_PADDR) {
         error = vka_utspace_alloc_maybe_device(vka, &path, type, size_bits, can_use_dev, &result->ut);
         if (unlikely(error)) {
-            ZF_LOGE("1.Failed to allocate object of size %lu, error %d",
+            ZF_LOGE("Failed to allocate object of size %lu, error %d",
                     BIT(size_bits), error);
             goto error;
         }
