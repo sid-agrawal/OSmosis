@@ -12,8 +12,12 @@
         "string-copied.h": "c",
         "sel4runtime.h": "c",
         "util.h": "c",
-        "sel4.h": "c"
+        "sel4.h": "c",
+        "object.h": "c",
+        "allocman.h": "c"
     },
     "cmake.sourceDirectory": "/home/siagraw/OSmosis/seL4",
-    "cmake.configureOnOpen": false
+    "cmake.configureOnOpen": false,
+    "C_Cpp.default.compileCommands": "/home/siagraw/OSmosis/OSmosisRootServer/compile_commands.json",
+    "C_Cpp.codeAnalysis.clangTidy.useBuildPath": true
 }
