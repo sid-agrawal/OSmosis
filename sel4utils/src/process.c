@@ -113,9 +113,10 @@ seL4_CPtr sel4utils_mint_cap_to_process(sel4utils_process_t *process, cspacepath
         return 0;
     }
 
+    cspacepath_t_print(&src);
     int error = vka_cnode_mint(&dest, &src, rights, data);
     if (error != seL4_NoError) {
-        ZF_LOGE("Failed to mint cap\n");
+        ZF_LOGE("Failed to mint cap. Error %d\n", error);
         return 0;
     }
 
@@ -451,14 +452,24 @@ static int create_cspace(vka_t *vka, int size_bits, sel4utils_process_t *process
         ZF_LOGE("Failed to create cspace: %d\n", error);
         return error;
     }
+        ZF_LOGE("Created create cspace of size : %d bits\n", size_bits);
 
     process->cspace_size = size_bits;
     /* first slot is always 1, never allocate 0 as a cslot */
     process->cspace_next_free = 1;
 
+
+    /*
+       (siagraw): Check what we just allocated
+    */
+
+    ZF_LOGE("Allocated cspace for new process: %x - Type Cnode: %s\n",
+    process->cspace.cptr,debug_cap_is_valid(process->cspace.cptr)? "true" : "false");
+
     /*  mint the cnode cap into the process cspace */
     cspacepath_t src;
     vka_cspace_make_path(vka, process->cspace.cptr, &src);
+    src.capDepth = 64;
     UNUSED seL4_CPtr slot = sel4utils_mint_cap_to_process(process, src, seL4_AllRights, cspace_root_data);
     assert(slot == SEL4UTILS_CNODE_SLOT);
 

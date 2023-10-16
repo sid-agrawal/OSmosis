@@ -15,6 +15,7 @@
 #include <sel4utils/process.h>
 #include <allocman/bootstrap.h>
 #include <allocman/vka.h>
+#include <vka/capops.h>
 #include <allocman/allocman.h>
 #include <utils/mk-printf.h>
 #include <utils/zf_log.h>
@@ -223,6 +224,7 @@ void test_process_create() {
     /*
          Get this for the confi
     */
+#if 0
     seL4_CPtr current_tcb = 0x06;
     seL4_CPtr current_asid_pool = 0x22;
 
@@ -260,7 +262,6 @@ void test_process_create() {
      //    }
 
 
-#if 1
     sel4utils_process_t new_process;
     error = sel4utils_configure_process_custom(&new_process, &vka, &vspace, config);
     if (error)
@@ -274,6 +275,53 @@ void test_process_create() {
     }
     NAME_THREAD(new_process.thread.tcb.cptr, "dynamic-3: process_2");
 #endif
+
+
+
+     /*
+          Create a cap
+     */
+
+     vka_object_t some_edp = {0};
+     error = vka_alloc_endpoint(&vka, &some_edp);
+     if (error)
+     {
+          printf("Failed to allocate new endpoint.\n");
+          assert(0);
+     }
+     else
+     {
+          printf("Success allocating endpoint at slot: %lx, type: %d\n",
+                 some_edp.cptr,
+                 seL4_DebugCapIdentify(some_edp.cptr));
+     }
+   cspacepath_t src_path = {0};
+   vka_cspace_make_path(&vka, some_edp.cptr, &src_path);
+   cspacepath_t_print(&src_path);
+
+    /*
+          Mint it
+    */
+   cspacepath_t dst_minted_edp = {0};
+   error = vka_cspace_alloc_path(&vka, &dst_minted_edp);
+   if (error)
+   {
+        printf("Failed to allocate new dst slot.\n");
+        assert(0);
+   }
+   else
+   {
+        printf("Success allocating dst path: %lx\n", dst_minted_edp.capPtr);
+        cspacepath_t_print(&dst_minted_edp);
+   }
+     error = vka_cnode_mint(&dst_minted_edp, &src_path, seL4_AllRights, 0);
+     if (error ) {
+          printf("Failed to mint endpoint.\n");
+          assert(0);
+     } else {
+          printf("Success minting endpoint.\n");
+     }
+
 }
 void test_thread_create() {
 

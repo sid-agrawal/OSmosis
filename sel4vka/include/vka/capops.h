@@ -53,6 +53,17 @@ static inline int vka_cnode_delete(const cspacepath_t *src)
 static inline int vka_cnode_mint(const cspacepath_t *dest, const cspacepath_t *src,
                                  seL4_CapRights_t rights, seL4_Word badge)
 {
+    ZF_LOGE("vka_cnode_mint\n"
+     "\t src->root: %d\n"
+     "\t src->capPtr: %d\n"
+     "\t src->capDepth: %d\n"
+     "\n"
+     "\t dest->root: %d\n"
+        "\t dest->capPtr: %d\n"
+        "\t dest->capDepth: %d\n",
+    src->root, src->capPtr, src->capDepth,
+    dest->root, dest->capPtr, dest->capDepth);
+
     return seL4_CNode_Mint(
                /* _service */      dest->root,
                /* dest_index */    dest->capPtr,

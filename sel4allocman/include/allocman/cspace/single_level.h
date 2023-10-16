@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <sel4/types.h>
 #include <allocman/cspace/cspace.h>
+#include <utils/mk-printf.h>
 
 struct cspace_single_level_config {
     /* A cptr to the cnode that we are managing slots in */
@@ -41,8 +42,15 @@ int _cspace_single_level_alloc_at(struct allocman *alloc, void *_cspace, seL4_CP
 void _cspace_single_level_free(struct allocman *alloc, void *_cspace, const cspacepath_t *slot);
 
 static inline cspacepath_t _cspace_single_level_make_path(void *_cspace, seL4_CPtr slot)
+
 {
     cspace_single_level_t *cspace = (cspace_single_level_t*) _cspace;
+    printf("cspace_single_level_make_path with slot: %ld capDepth: %ld\n ",
+    slot,
+    cspace->config.cnode_size_bits + cspace->config.cnode_guard_bits);
+    printf("\t size_bits: %ld guard_bits: %ld\n",
+
+    cspace->config.cnode_size_bits, cspace->config.cnode_guard_bits);
     return (cspacepath_t) {
         .root = cspace->config.cnode,
         .capPtr = slot,
