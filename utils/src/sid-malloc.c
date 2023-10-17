@@ -66,7 +66,6 @@ static Header *morecore(size_t nu);
 void* malloc(size_t nbytes) {
     Header *p, *prevp;
     size_t nunits;
-    printf("calling malloc\n");
 
      /* Kleinstes Vielfaches von sizeof(Header), das die
 	geforderte Byte-Zahl enthalten kann, plus 1 fuer den Header selbst: */

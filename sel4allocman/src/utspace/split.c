@@ -94,7 +94,6 @@ void utspace_split_create(utspace_split_t *split)
 int _utspace_split_add_uts(allocman_t *alloc, void *_split, size_t num, const cspacepath_t *uts, size_t *size_bits,
                            uintptr_t *paddr, int utType)
 {
-    ZF_LOGE("Adding %zu untypeds to split allocator\n", num);
     utspace_split_t *split = (utspace_split_t *) _split;
     int error;
     size_t i;
@@ -102,14 +101,11 @@ int _utspace_split_add_uts(allocman_t *alloc, void *_split, size_t num, const cs
     switch (utType) {
     case ALLOCMAN_UT_KERNEL:
         list = split->heads;
-        ZF_LOGE("In case ALLOCMAN_UT_KERNEL\n");
         break;
     case ALLOCMAN_UT_DEV:
-        ZF_LOGE("In case ALLOCMAN_UT_DEV\n");
         list = split->dev_heads;
         break;
     case ALLOCMAN_UT_DEV_MEM:
-        ZF_LOGE("In case ALLOCMAN_UT_DEV_MEM\n");
         list = split->dev_mem_heads;
         break;
     default:
@@ -117,7 +113,6 @@ int _utspace_split_add_uts(allocman_t *alloc, void *_split, size_t num, const cs
     }
     for (i = 0; i < num; i++) {
         error = _insert_new_node(alloc, &list[size_bits[i]], uts[i], paddr ? paddr[i] : ALLOCMAN_NO_PADDR);
-        ZF_LOGE("_insert_new_node returned %d\n", error);
         if (error) {
             return error;
         }
@@ -250,7 +245,6 @@ seL4_Word _utspace_split_alloc(allocman_t *alloc, void *_split, size_t size_bits
     /* get size of untyped call */
     sel4_size_bits = get_sel4_object_size(type, size_bits);
     if (size_bits != vka_get_object_size(type, sel4_size_bits) || size_bits == 0) {
-        ZF_LOGE("Invalid size_bits %zu for type %d", size_bits, type);
         SET_ERROR(error, 1);
         return 0;
     }
@@ -269,13 +263,13 @@ seL4_Word _utspace_split_alloc(allocman_t *alloc, void *_split, size_t size_bits
         }
         if (!head) {
             SET_ERROR(error, 1);
-            ZF_LOGE("Failed to find any untyped capable of creating an object at address %p", (void *)paddr);
+            ZF_LOGV("Failed to find any untyped capable of creating an object at address %p", (void *)paddr);
             return 0;
         }
         if (_refill_pool(alloc, split, head, size_bits, paddr)) {
             /* out of memory? */
             SET_ERROR(error, 1);
-            ZF_LOGE("Failed to refill pool to allocate object of size %zu", size_bits);
+            ZF_LOGV("Failed to refill pool to allocate object of size %zu", size_bits);
             return 0;
         }
         /* search for the node we want to use. We have the advantage of knowing that
@@ -289,8 +283,8 @@ seL4_Word _utspace_split_alloc(allocman_t *alloc, void *_split, size_t size_bits
         if (canBeDev) {
             if (_refill_pool(alloc, split, split->dev_mem_heads, size_bits, ALLOCMAN_NO_PADDR)) {
                 /* out of memory? Try fall through */
-                ZF_LOGE("Failed to refill device memory pool to allocate object of size %zu", size_bits);
-                ZF_LOGE("Trying regular untyped pool");
+                ZF_LOGV("Failed to refill device memory pool to allocate object of size %zu", size_bits);
+                ZF_LOGV("Trying regular untyped pool");
             } else {
                 head = split->dev_mem_heads;
             }
@@ -301,7 +295,7 @@ seL4_Word _utspace_split_alloc(allocman_t *alloc, void *_split, size_t size_bits
             if (_refill_pool(alloc, split, head, size_bits, ALLOCMAN_NO_PADDR)) {
                 /* out of memory? */
                 SET_ERROR(error, 1);
-                ZF_LOGE("Failed to refill pool to allocate object of size %zu", size_bits);
+                ZF_LOGV("Failed to refill pool to allocate object of size %zu", size_bits);
                 return 0;
             }
         }

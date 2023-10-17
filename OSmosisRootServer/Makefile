@@ -61,11 +61,11 @@ REPORT_FILE = $(BUILD_DIR)/report.txt
 all: $(IMAGE_FILE)
 
 
-$(BUILD_DIR)/app.elf: app/Makefile
+$(BUILD_DIR)/app.elf: app/Makefile app/app.c
 	$(MAKE) ARCH=aarch64 BUILD_DIR=`pwd`/$(BUILD_DIR) -C ./app
 
-$(BUILD_DIR)/global_data.o: global_data.S Makefile $(BUILD_DIR)/app.elf
-	$(CC) -c -g3 -DBLOB_PATH=\"build/app.elf\"  -x assembler-with-cpp  $< -o $@
+$(BUILD_DIR)/global_data.o: global_data.S Makefile $(BUILD_DIR)/app2.elf
+	$(CC) -c -g3 -DBLOB_PATH=\"build/app2.elf\"  -x assembler-with-cpp  $< -o $@
 
 $(BUILD_DIR)/libsel4debug.a: ../sel4debug/Makefile
 	$(MAKE) ARCH=aarch64 BUILD_DIR=`pwd`/$(BUILD_DIR) TOOLCHAIN=$(TOOLCHAIN)- GCC_CPU=$(CPU) -C ../sel4debug
@@ -95,7 +95,7 @@ $(BUILD_DIR)/libosmosis.a: ../libosmosis/Makefile
 	$(MAKE) ARCH=aarch64 BUILD_DIR=`pwd`/$(BUILD_DIR) TOOLCHAIN=$(TOOLCHAIN)- GCC_CPU=$(CPU) -C ../libosmosis
 
 
-$(BUILD_DIR)/%.o: %.c Makefile $(BUILD_DIR)/libutils.a $(BUILD_DIR)/libsel4vka.a $(BUILD_DIR)/libsel4allocman.a $(BUILD_DIR)/libosmosis.a $(BUILD_DIR)/libsimple.a $(BUILD_DIR)/libsel4utils.a $(BUILD_DIR)/libsimple-default.a $(BUILD_DIR)/libsel4runtime.a $(BUILD_DIR)/libsel4debug.a
+$(BUILD_DIR)/%.o: %.c Makefile $(BUILD_DIR)/libutils.a $(BUILD_DIR)/libsel4vka.a $(BUILD_DIR)/libsel4allocman.a $(BUILD_DIR)/libosmosis.a $(BUILD_DIR)/libsimple.a $(BUILD_DIR)/libsel4utils.a $(BUILD_DIR)/libsimple-default.a $(BUILD_DIR)/libsel4runtime.a $(BUILD_DIR)/libsel4debug.a # $(BUILD_DIR)/app.elf
 	$(CC) -c $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/%.o: %.s Makefile $(BUILD_DIR)/libutils.a $(BUILD_DIR)/libsel4vka.a $(BUILD_DIR)/libsel4allocman.a $(BUILD_DIR)/libosmosis.a

@@ -45,12 +45,12 @@ static inline cspacepath_t _cspace_single_level_make_path(void *_cspace, seL4_CP
 
 {
     cspace_single_level_t *cspace = (cspace_single_level_t*) _cspace;
-    printf("cspace_single_level_make_path with slot: %ld capDepth: %ld\n ",
-    slot,
-    cspace->config.cnode_size_bits + cspace->config.cnode_guard_bits);
-    printf("\t size_bits: %ld guard_bits: %ld\n",
+    // printf("cspace_single_level_make_path with slot: %ld capDepth: %ld\n ",
+    // slot,
+    // cspace->config.cnode_size_bits + cspace->config.cnode_guard_bits);
+    // printf("\t size_bits: %ld guard_bits: %ld\n",
+    //cspace->config.cnode_size_bits, cspace->config.cnode_guard_bits);
 
-    cspace->config.cnode_size_bits, cspace->config.cnode_guard_bits);
     return (cspacepath_t) {
         .root = cspace->config.cnode,
         .capPtr = slot,

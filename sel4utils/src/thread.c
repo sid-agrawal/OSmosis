@@ -94,6 +94,8 @@ int sel4utils_configure_thread_config(vka_t *vka, vspace_t *parent, vspace_t *al
             ZF_LOGE("Failed to configure sched context");
             sel4utils_clean_up_thread(vka, alloc, res);
             return -1;
+        } else {
+            ZF_LOGE("--------------Configured sched context");
         }
         res->own_sc = true;
     } else {
@@ -139,6 +141,7 @@ int sel4utils_configure_thread_config(vka_t *vka, vspace_t *parent, vspace_t *al
     } else {
         res->stack_size = BYTES_TO_4K_PAGES(CONFIG_SEL4UTILS_STACK_SIZE);
     }
+    ZF_LOGE("Stack size set to %zu\n", res->stack_size);
 
     if (res->stack_size > 0) {
         res->stack_top = vspace_new_sized_stack(alloc, res->stack_size);

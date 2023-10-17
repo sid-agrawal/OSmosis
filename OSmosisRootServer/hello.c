@@ -337,16 +337,16 @@ void test_process_create() {
           .create_sc = true,
           .auth = current_tcb,
           .sched_ctrl =  current_sch_control,
-          .budget = 1000000,
-          .period = 1000000,
+          .budget = 500000,
+          .period = 500000,
           .priority = 254,
+          .mcp = 254,
         },
 
 
         .asid_pool = current_asid_pool,
     };
 
-#if 1
 
      int error;
      //    vka_object_t root_pd = {0};
@@ -373,8 +373,9 @@ void test_process_create() {
          printf("Success configuring new process.\n");
     }
      NAME_THREAD(new_process.thread.tcb.cptr, "app");
-
          printf("Success naming new process.\n");
+
+#if 1
 
          /* create an endpoint */
          vka_object_t ep_object = {0};
@@ -388,7 +389,7 @@ void test_process_create() {
          seL4_CPtr new_ep_cap = 0;
          vka_cspace_make_path(&vka, ep_object.cptr, &ep_cap_path);
          new_ep_cap = sel4utils_mint_cap_to_process(&new_process, ep_cap_path,
-                                                    seL4_AllRights, 0x55); /*badge*/
+                                                    seL4_AllRights, ep_object.cptr);
           if (new_ep_cap == 0) {
 
          ZF_LOGF("Failed to mint a badged copy of the IPC endpoint into the new thread's CSpace.\n"
@@ -417,6 +418,7 @@ void test_process_create() {
     /* we are done, say hello */
     printf("main: hello world\n");
     seL4_DebugDumpScheduler();
+    seL4_Yield();
     while(1);
 #endif
 }

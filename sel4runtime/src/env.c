@@ -161,7 +161,7 @@ sel4runtime_uintptr_t sel4runtime_write_tls_image(void *tls_memory)
 }
 sel4runtime_uintptr_t sel4runtime_move_initial_tls(void *tls_memory)
 {
-    #if 1
+    #if 0
     if (tls_memory == SEL4RUNTIME_NULL) {
         return (sel4runtime_uintptr_t)SEL4RUNTIME_NULL;
     }

@@ -294,7 +294,7 @@ static seL4_Word _allocman_utspace_alloc(allocman_t *alloc, size_t size_bits, se
         ret = _try_watermark_utspace(alloc, size_bits, type, path, _error);
         _end_operation(alloc, root_op);
         if (ret == 0) {
-            ZF_LOGE("Regular utspace alloc failed and not watermark for size %zu type %ld\n", size_bits, (long)type);
+            ZF_LOGI("Regular utspace alloc failed and not watermark for size %zu type %ld\n", size_bits, (long)type);
         }
         return ret;
     } else {
@@ -517,36 +517,39 @@ int allocman_configure_utspace_reserve(allocman_t *alloc, struct allocman_utspac
     size_t *new_counts;
     struct allocman_utspace_allocation **new_chunks;
     struct allocman_utspace_allocation *new_alloc;
-    int error;
+    int error = 0;
     /* ensure this chunk hasn't already been added. would be nice to handle both decreasing and
      * icnreasing reservations, but I cannot see the use case for that */
     for (i = 0; i < alloc->num_utspace_chunks; i++) {
         if (alloc->utspace_chunk[i].size_bits == chunk.size_bits && alloc->utspace_chunk[i].type == chunk.type) {
-            return 1;
+            ZF_LOGE("Failed to set reserve for {type: %d size_bits: %d} as one already exists.", chunk.type, chunk.size_bits);
+            ZF_LOGE("Ignoring this could cause the allocator to break in hard-to-identify ways.");
+            error = 1;
+            goto exit;
         }
     }
     /* tack this chunk on */
     new_chunk = allocman_mspace_alloc(alloc, sizeof(struct allocman_utspace_chunk) * (alloc->num_utspace_chunks + 1), &error);
     if (error) {
-        return error;
+        goto exit;
     }
     new_counts = allocman_mspace_alloc(alloc, sizeof(size_t) * (alloc->num_utspace_chunks + 1), &error);
     if (error) {
         allocman_mspace_free(alloc, new_chunk, sizeof(struct allocman_utspace_chunk) * (alloc->num_utspace_chunks + 1));
-        return error;
+        goto exit;
     }
     new_chunks = allocman_mspace_alloc(alloc, sizeof(struct allocman_utspace_allocation *) * (alloc->num_utspace_chunks + 1), &error);
     if (error) {
         allocman_mspace_free(alloc, new_chunk, sizeof(struct allocman_utspace_chunk) * (alloc->num_utspace_chunks + 1));
         allocman_mspace_free(alloc, new_counts, sizeof(size_t) * (alloc->num_utspace_chunks + 1));
-        return error;
+        goto exit;
     }
     new_alloc = allocman_mspace_alloc(alloc, sizeof(struct allocman_utspace_allocation) * chunk.count, &error);
     if (error) {
         allocman_mspace_free(alloc, new_chunk, sizeof(struct allocman_utspace_chunk) * (alloc->num_utspace_chunks + 1));
         allocman_mspace_free(alloc, new_counts, sizeof(size_t) * (alloc->num_utspace_chunks + 1));
         allocman_mspace_free(alloc, new_chunks, sizeof(struct allocman_utspace_allocation *) * (alloc->num_utspace_chunks + 1));
-        return error;
+        goto exit;
     }
     if (alloc->num_utspace_chunks > 0) {
         memcpy(new_chunk, alloc->utspace_chunk, sizeof(struct allocman_utspace_chunk) * alloc->num_utspace_chunks);
@@ -564,8 +567,9 @@ int allocman_configure_utspace_reserve(allocman_t *alloc, struct allocman_utspac
     alloc->utspace_chunks = new_chunks;
     alloc->num_utspace_chunks++;
     alloc->used_watermark = 1;
+exit:
     _end_operation(alloc, root);
-    return 0;
+    return error;
 }
 
 int allocman_configure_mspace_reserve(allocman_t *alloc, struct allocman_mspace_chunk chunk) {
@@ -575,36 +579,39 @@ int allocman_configure_mspace_reserve(allocman_t *alloc, struct allocman_mspace_
     size_t *new_counts;
     void ***new_chunks;
     void **new_alloc;
-    int error;
+    int error = 0;
     /* ensure this chunk hasn't already been added. would be nice to handle both decreasing and
      * icnreasing reservations, but I cannot see the use case for that */
     for (i = 0; i < alloc->num_mspace_chunks; i++) {
         if (alloc->mspace_chunk[i].size == chunk.size) {
-            return 1;
+            ZF_LOGE("Failed to set reserve for {size: %d} as one already exists.", chunk.size);
+            ZF_LOGE("Ignoring this could cause the allocator to break in hard-to-identify ways.");
+            error = 1;
+            goto exit;
         }
     }
     /* tack this chunk on */
     new_chunk = allocman_mspace_alloc(alloc, sizeof(struct allocman_mspace_chunk) * (alloc->num_mspace_chunks + 1), &error);
     if (error) {
-        return error;
+        goto exit;
     }
     new_counts = allocman_mspace_alloc(alloc, sizeof(size_t) * (alloc->num_mspace_chunks + 1), &error);
     if (error) {
         allocman_mspace_free(alloc, new_chunk, sizeof(struct allocman_mspace_chunk) * (alloc->num_mspace_chunks + 1));
-        return error;
+        goto exit;
     }
     new_chunks = allocman_mspace_alloc(alloc, sizeof(void **) * (alloc->num_mspace_chunks + 1), &error);
     if (error) {
         allocman_mspace_free(alloc, new_chunk, sizeof(struct allocman_mspace_chunk) * (alloc->num_mspace_chunks + 1));
         allocman_mspace_free(alloc, new_counts, sizeof(size_t) * (alloc->num_mspace_chunks + 1));
-        return error;
+        goto exit;
     }
     new_alloc = allocman_mspace_alloc(alloc, sizeof(void *) * chunk.count, &error);
     if (error) {
         allocman_mspace_free(alloc, new_chunk, sizeof(struct allocman_mspace_chunk) * (alloc->num_mspace_chunks + 1));
         allocman_mspace_free(alloc, new_counts, sizeof(size_t) * (alloc->num_mspace_chunks + 1));
         allocman_mspace_free(alloc, new_chunks, sizeof(void **) * (alloc->num_mspace_chunks + 1));
-        return error;
+        goto exit;
     }
     if (alloc->num_mspace_chunks > 0) {
         memcpy(new_chunk, alloc->mspace_chunk, sizeof(struct allocman_mspace_chunk) * alloc->num_mspace_chunks);
@@ -622,8 +629,9 @@ int allocman_configure_mspace_reserve(allocman_t *alloc, struct allocman_mspace_
     alloc->mspace_chunks = new_chunks;
     alloc->num_mspace_chunks++;
     alloc->used_watermark = 1;
+exit:
     _end_operation(alloc, root);
-    return 0;
+    return error;
 }
 
 /*

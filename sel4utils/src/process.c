@@ -114,6 +114,7 @@ seL4_CPtr sel4utils_mint_cap_to_process(sel4utils_process_t *process, cspacepath
     }
 
     cspacepath_t_print(&src);
+    src.capDepth = 10;
     int error = vka_cnode_mint(&dest, &src, rights, data);
     if (error != seL4_NoError) {
         ZF_LOGE("Failed to mint cap. Error %d\n", error);
@@ -132,6 +133,7 @@ seL4_CPtr sel4utils_copy_path_to_process(sel4utils_process_t *process, cspacepat
         return 0;
     }
 
+    src.capDepth = 10;
     int error = vka_cnode_copy(&dest, &src, seL4_AllRights);
     if (error != seL4_NoError) {
         ZF_LOGE("Failed to copy cap\n");
@@ -380,7 +382,7 @@ int sel4utils_spawn_process_v(sel4utils_process_t *process, vka_t *vka, vspace_t
         return -1;
     }
 
-    ZF_LOGD("Starting process at %p, stack %p\n", process->entry_point, (void *) initial_stack_pointer);
+    ZF_LOGE("Starting process at EP: 0x%p, stack: 0x%p\n", process->entry_point, (void *) initial_stack_pointer);
     assert(initial_stack_pointer % (2 * sizeof(seL4_Word)) == 0);
     error = sel4utils_arch_init_context(process->entry_point, (void *) initial_stack_pointer, &context);
     if (error) {
@@ -468,9 +470,10 @@ static int create_cspace(vka_t *vka, int size_bits, sel4utils_process_t *process
 
     /*  mint the cnode cap into the process cspace */
     cspacepath_t src;
-    vka_cspace_make_path(vka, process->cspace.cptr, &src);
-    src.capDepth = 64;
-    UNUSED seL4_CPtr slot = sel4utils_mint_cap_to_process(process, src, seL4_AllRights, cspace_root_data);
+    UNUSED seL4_CPtr slot;
+     vka_cspace_make_path(vka, process->cspace.cptr, &src);
+    src.capDepth = 10;
+    slot = sel4utils_mint_cap_to_process(process, src, seL4_AllRights, cspace_root_data);
     assert(slot == SEL4UTILS_CNODE_SLOT);
 
     /* copy fault endpoint cap into process cspace */
@@ -588,10 +591,14 @@ int sel4utils_configure_process_custom(sel4utils_process_t *process, vka_t *vka,
         if(error) {
             ZF_LOGE("Failed to load elf file\n");
             goto error;
+        } else {
+            ZF_LOGE("Loaded elf file: class %d\n", elf.elfClass);
         }
 
         if (config.do_elf_load) {
             process->entry_point = sel4utils_elf_load(&process->vspace, spawner_vspace, vka, vka, &elf);
+            // process->entry_point = (void *)0x400000;
+            ZF_LOGE("Loaded elf file at %p\n", process->entry_point);
         } else {
             process->num_elf_regions = sel4utils_elf_num_regions(&elf);
             process->elf_regions = calloc(process->num_elf_regions, sizeof(*process->elf_regions));

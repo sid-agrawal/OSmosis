@@ -59,26 +59,26 @@
 //
 //
 //
-typedef enum pmem_type {    
-    PMEM_TYPE_RAM,    
-    PMEM_TYPE_UNKNOWN,    
-    PMEM_TYPE_DEVICE,    
-    PMEM_NUM_REGION_TYPES,    
-} pmem_type_t;    
-    
-typedef struct pmem_region {    
-    pmem_type_t type;    
-    /* these specifically match the grub boot header struct definitions,        
-     * so must both be 64 bit on all systems */    
-    uint64_t base_addr;    
-    uint64_t length;    
-} pmem_region_t;    
-    
-    
-typedef struct {    
-    pmem_region_t region;    
-    vka_object_t obj;    
-} sel4ps_pmem_t;  
+typedef enum pmem_type {
+    PMEM_TYPE_RAM,
+    PMEM_TYPE_UNKNOWN,
+    PMEM_TYPE_DEVICE,
+    PMEM_NUM_REGION_TYPES,
+} pmem_type_t;
+
+typedef struct pmem_region {
+    pmem_type_t type;
+    /* these specifically match the grub boot header struct definitions,
+     * so must both be 64 bit on all systems */
+    uint64_t base_addr;
+    uint64_t length;
+} pmem_region_t;
+
+
+typedef struct {
+    pmem_region_t region;
+    vka_object_t obj;
+} sel4ps_pmem_t;
 
 
 /**
