@@ -40,44 +40,6 @@
     "arguments": [
       "/opt/gcc-arm-x86_64-aarch64-none-elf/bin/aarch64-none-elf-gcc",
       "-c",
-      "-mcpu=cortex-a53",
-      "-mstrict-align",
-      "-ffreestanding",
-      "-g3",
-      "-O3",
-      "-Wall",
-      "-Wno-unused-function",
-      "-Werror",
-      "-I../../sel4cp/release/sel4cp-sdk-1.2.6/board/qemu_arm_virt/debug/include",
-      "-I../../sel4runtime/include",
-      "-o",
-      "/home/siagraw/OSmosis/OSmosisRootServer/build/app.o",
-      "app.c"
-    ],
-    "directory": "/home/siagraw/OSmosis/OSmosisRootServer/app",
-    "file": "/home/siagraw/OSmosis/OSmosisRootServer/app/app.c",
-    "output": "/home/siagraw/OSmosis/OSmosisRootServer/build/app.o"
-  },
-  {
-    "arguments": [
-      "/opt/gcc-arm-x86_64-aarch64-none-elf/bin/aarch64-none-elf-gcc",
-      "-c",
-      "-g3",
-      "-DBLOB_PATH=\"/bin/ls\"",
-      "-x",
-      "assembler-with-cpp",
-      "-o",
-      "build/global_data.o",
-      "global_data.S"
-    ],
-    "directory": "/home/siagraw/OSmosis/OSmosisRootServer",
-    "file": "/home/siagraw/OSmosis/OSmosisRootServer/global_data.S",
-    "output": "/home/siagraw/OSmosis/OSmosisRootServer/build/global_data.o"
-  },
-  {
-    "arguments": [
-      "/opt/gcc-arm-x86_64-aarch64-none-elf/bin/aarch64-none-elf-gcc",
-      "-c",
       "-std=gnu11",
       "-g3",
       "-O3",
@@ -2430,6 +2392,83 @@
     "directory": "/home/siagraw/OSmosis/sel4debug",
     "file": "/home/siagraw/OSmosis/sel4debug/src/trace.c",
     "output": "/home/siagraw/OSmosis/OSmosisRootServer/build/trace.o"
+  },
+  {
+    "arguments": [
+      "/opt/gcc-arm-x86_64-aarch64-none-elf/bin/aarch64-none-elf-gcc",
+      "-c",
+      "-mcpu=cortex-a53",
+      "-mstrict-align",
+      "-ffreestanding",
+      "-g3",
+      "-O3",
+      "-Wall",
+      "-Wno-unused-function",
+      "-Werror",
+      "-I../../sel4cp/release/sel4cp-sdk-1.2.6/board/qemu_arm_virt/debug/include",
+      "-I../../sel4runtime/include",
+      "-I../../utils/include",
+      "-o",
+      "/home/siagraw/OSmosis/OSmosisRootServer/build/app.o",
+      "app.c"
+    ],
+    "directory": "/home/siagraw/OSmosis/OSmosisRootServer/app",
+    "file": "/home/siagraw/OSmosis/OSmosisRootServer/app/app.c",
+    "output": "/home/siagraw/OSmosis/OSmosisRootServer/build/app.o"
+  },
+  {
+    "arguments": [
+      "/opt/gcc-arm-x86_64-aarch64-none-elf/bin/aarch64-none-elf-gcc",
+      "-c",
+      "-g3",
+      "-DBLOB_PATH=\"build/app.elf\"",
+      "-x",
+      "assembler-with-cpp",
+      "-o",
+      "build/global_data.o",
+      "global_data.S"
+    ],
+    "directory": "/home/siagraw/OSmosis/OSmosisRootServer",
+    "file": "/home/siagraw/OSmosis/OSmosisRootServer/global_data.S",
+    "output": "/home/siagraw/OSmosis/OSmosisRootServer/build/global_data.o"
+  },
+  {
+    "arguments": [
+      "/opt/gcc-arm-x86_64-aarch64-none-elf/bin/aarch64-none-elf-gcc",
+      "-c",
+      "-g3",
+      "-DBLOB_PATH=\"/bin/ls\"",
+      "-x",
+      "assembler-with-cpp",
+      "-o",
+      "build/global_data.o",
+      "global_data.S"
+    ],
+    "directory": "/home/siagraw/OSmosis/OSmosisRootServer",
+    "file": "/home/siagraw/OSmosis/OSmosisRootServer/global_data.S",
+    "output": "/home/siagraw/OSmosis/OSmosisRootServer/build/global_data.o"
+  },
+  {
+    "arguments": [
+      "/opt/gcc-arm-x86_64-aarch64-none-elf/bin/aarch64-none-elf-gcc",
+      "-c",
+      "-mcpu=cortex-a53",
+      "-mstrict-align",
+      "-ffreestanding",
+      "-g3",
+      "-O3",
+      "-Wall",
+      "-Wno-unused-function",
+      "-Werror",
+      "-I../../sel4cp/release/sel4cp-sdk-1.2.6/board/qemu_arm_virt/debug/include",
+      "-I../../sel4runtime/include",
+      "-o",
+      "/home/siagraw/OSmosis/OSmosisRootServer/build/app.o",
+      "app.c"
+    ],
+    "directory": "/home/siagraw/OSmosis/OSmosisRootServer/app",
+    "file": "/home/siagraw/OSmosis/OSmosisRootServer/app/app.c",
+    "output": "/home/siagraw/OSmosis/OSmosisRootServer/build/app.o"
   },
   {
     "arguments": [

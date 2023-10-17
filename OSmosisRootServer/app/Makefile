@@ -28,10 +28,11 @@ BOARD_DIR := ../../sel4cp/release/sel4cp-sdk-1.2.6/board/$(SEL4CP_BOARD)/$(SEL4C
 IMAGES := app.elf
 CFLAGS := -mcpu=$(CPU) -mstrict-align -nostdlib -ffreestanding -g3 -O3 -Wall  -Wno-unused-function -Werror \
 		-I$(BOARD_DIR)/include \
-		-I../../sel4runtime/include
-LDFLAGS := -L$(BOARD_DIR)/lib -L$(BUILD_DIR)
+		-I../../sel4runtime/include \
+		-I../../utils/include
+LDFLAGS := -L$(BOARD_DIR)/lib -L$(BUILD_DIR) -e_start
 LIBS := # -lsel4cp
-OSLIBS := -lsel4runtime
+OSLIBS := -lsel4runtime -lutils
 
 
 all: $(BUILD_DIR)/app.elf
