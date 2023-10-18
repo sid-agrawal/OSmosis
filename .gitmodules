@@ -1,9 +1,9 @@
 [submodule "kernel"]
 	path = kernel
-	url = https://github.com/sid-agrawal/seL4.git
+	url = https://github.com/seL4/seL4.git
 [submodule "projects/musllibc"]
 	path = projects/musllibc
-	url = https://github.com/sid-agrawal/musllibc.git
+	url = https://github.com/seL4/musllibc.git
 [submodule "projects/seL4_libs"]
 	path = projects/seL4_libs
 	url = https://github.com/seL4/seL4_libs
