@@ -10,9 +10,6 @@
 [submodule "projects/sel4runtime"]
 	path = projects/sel4runtime
 	url = git@github.com:seL4/seL4runtime.git
-[submodule "projects/sel4test"]
-	path = projects/sel4test
-	url = git@github.com:seL4/seL4test.git
 [submodule "projects/util_libs"]
 	path = projects/util_libs
 	url = git@github.com:seL4/util_libs.git
@@ -28,3 +25,6 @@
 [submodule "tools/seL4"]
 	path = tools/seL4
 	url = git@github.com:seL4/seL4_tools.git
+[submodule "projects/sel4-gpi"]
+	path = projects/sel4-gpi
+	url = git@github.com:sid-agrawal/sel4-gpi.git

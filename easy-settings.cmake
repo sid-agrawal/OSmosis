@@ -1,1 +1,1 @@
-projects/sel4test/easy-settings.cmake
+projects/sel4-gpi/easy-settings.cmake
