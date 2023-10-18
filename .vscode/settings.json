@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "assert.h": "c"
+    },
+    "C_Cpp.default.compileCommands": "/home/siagraw/OSmosis/compile_commands.json",
+    "C_Cpp.codeAnalysis.clangTidy.useBuildPath": true
+}
