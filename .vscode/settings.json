@@ -1,7 +1,15 @@
 {
     "files.associations": {
-        "assert.h": "c"
+        "assert.h": "c",
+        "sel4.h": "c",
+        "gpi_server.h": "c",
+        "cpu_component.h": "c",
+        "cpu_obj.h": "c",
+        "vspace.h": "c",
+        "page.h": "c",
+        "attribute.h": "c"
     },
     "C_Cpp.default.compileCommands": "/home/siagraw/OSmosis/compile_commands.json",
-    "C_Cpp.codeAnalysis.clangTidy.useBuildPath": true
+    "C_Cpp.codeAnalysis.clangTidy.useBuildPath": true,
+    "C_Cpp.errorSquiggles": "disabled"
 }
