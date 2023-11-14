@@ -1,2 +1,3 @@
 .sel4_cache
-build*
+build-qemu
+odroidc4-build
