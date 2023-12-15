@@ -1,0 +1,49 @@
+
+
+{
+    "Comment": [
+        "Every key is a resource and it has a list of values which are also resources.",
+        "Every resource can be one of the following types:",
+        {
+            "Virtual-OSM":
+             [
+                "The resource is supplied by another PD [V]",
+                "There is also a dependency on the PD that supplies the resource [PD_V]"
+            ],
+            "Virtual-seL4":
+            [
+                "This resource is supplied by the seL4 kernel [K]",
+                "There is also a dependency on the seL4 kernel [PD_K]"
+            ],
+            "Physical": [
+                "This resource is supplied by the underlying hardware [P]"
+            ]
+        }
+    ],
+    "ADS_V": [
+        {
+            "Code_V": [
+                "1_K",
+                "2_K"
+            ]
+        },
+        {
+            "Heap_V": [
+                "3_K",
+                "4_K"
+            ]
+        },
+        {
+            "Stack_V": [
+                "5_K",
+                "6_K"
+            ]
+        }
+    ],
+    "Thread_V": [
+        "1_K"
+    ],
+    "File_V": [
+        "1_V"
+    ]
+}
