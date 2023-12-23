@@ -47,7 +47,9 @@
         "fstream": "c",
         "ranges": "c",
         "*.inc": "c",
-        "vspace_internal.h": "c"
+        "vspace_internal.h": "c",
+        "process.h": "c",
+        "thread": "c"
     },
     "C_Cpp.default.compileCommands": "/home/siagraw/OSmosis/compile_commands.json",
     "C_Cpp.codeAnalysis.clangTidy.useBuildPath": true,
