@@ -9,7 +9,7 @@
 	url = git@github.com:sid-agrawal/seL4_libs.git
 [submodule "projects/sel4runtime"]
 	path = projects/sel4runtime
-	url = git@github.com:seL4/seL4runtime.git
+	url = git@github.com:sid-agrawal/seL4runtime.git
 [submodule "projects/util_libs"]
 	path = projects/util_libs
 	url = git@github.com:sid-agrawal/util_libs.git
@@ -24,7 +24,7 @@
 	url = https://github.com/riscv/opensbi
 [submodule "tools/seL4"]
 	path = tools/seL4
-	url = git@github.com:seL4/seL4_tools.git
+	url = git@github.com:sid-agrawal/seL4_tools.git
 [submodule "projects/sel4-gpi"]
 	path = projects/sel4-gpi
 	url = git@github.com:sid-agrawal/sel4-gpi.git
