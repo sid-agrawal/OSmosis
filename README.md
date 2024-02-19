@@ -14,6 +14,7 @@ and with a fork from `sid-agrawal`.
 ```bash
 git clone --recursive git@github.com:sid-agrawal/OSmosis.git
 cd OSmosis
+git submodule foreach git checkout cellulos
 ```
 
 ## Build & Runt
