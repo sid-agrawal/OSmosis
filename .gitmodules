@@ -3,7 +3,7 @@
 	url = git@github.com:sid-agrawal/seL4.git
 [submodule "projects/musllibc"]
 	path = projects/musllibc
-	url = https://github.com/seL4/musllibc.git
+	url = git@github.com:sid-agrawal/musllibc.git
 [submodule "projects/seL4_libs"]
 	path = projects/seL4_libs
 	url = git@github.com:sid-agrawal/seL4_libs.git
@@ -15,13 +15,13 @@
 	url = git@github.com:sid-agrawal/util_libs.git
 [submodule "projects/sel4_projects_libs"]
 	path = projects/sel4_projects_libs
-	url = git@github.com:seL4/seL4_projects_libs.git
+	url = git@github.com:sid-agrawal/seL4_projects_libs.git
 [submodule "tools/nanopb"]
 	path = tools/nanopb
-	url = https://github.com/nanopb/nanopb
+	url = git@github.com:sid-agrawal/nanopb.git
 [submodule "tools/opensbi"]
 	path = tools/opensbi
-	url = https://github.com/riscv/opensbi
+	url = git@github.com:sid-agrawal/opensbi.git
 [submodule "tools/seL4"]
 	path = tools/seL4
 	url = git@github.com:sid-agrawal/seL4_tools.git
