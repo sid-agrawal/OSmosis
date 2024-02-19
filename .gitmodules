@@ -1,30 +1,39 @@
 [submodule "kernel"]
 	path = kernel
 	url = git@github.com:sid-agrawal/seL4.git
+	branch = cellulos
 [submodule "projects/musllibc"]
 	path = projects/musllibc
 	url = git@github.com:sid-agrawal/musllibc.git
+	branch = cellulos
 [submodule "projects/seL4_libs"]
 	path = projects/seL4_libs
 	url = git@github.com:sid-agrawal/seL4_libs.git
+	branch = cellulos
 [submodule "projects/sel4runtime"]
 	path = projects/sel4runtime
 	url = git@github.com:sid-agrawal/seL4runtime.git
+	branch = cellulos
 [submodule "projects/util_libs"]
 	path = projects/util_libs
 	url = git@github.com:sid-agrawal/util_libs.git
+	branch = cellulos
 [submodule "projects/sel4_projects_libs"]
 	path = projects/sel4_projects_libs
 	url = git@github.com:sid-agrawal/seL4_projects_libs.git
+	branch = cellulos
 [submodule "tools/nanopb"]
 	path = tools/nanopb
 	url = git@github.com:sid-agrawal/nanopb.git
+	branch = cellulos
 [submodule "tools/opensbi"]
 	path = tools/opensbi
 	url = git@github.com:sid-agrawal/opensbi.git
 [submodule "tools/seL4"]
 	path = tools/seL4
 	url = git@github.com:sid-agrawal/seL4_tools.git
+	branch = cellulos
 [submodule "projects/sel4-gpi"]
 	path = projects/sel4-gpi
 	url = git@github.com:sid-agrawal/sel4-gpi.git
+	branch = cellulos
