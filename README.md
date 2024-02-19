@@ -6,11 +6,23 @@ Instructions to setup and run are the same as [sel4test](https://docs.sel4.syste
 
 
 ## Information on branches and submodules
-This repo is working off the `main` branch, but for every sub-module we are working
-with a fork from `sid-agrawal`, and `celluos` branch.
+This repo and all its submodules are working off the `cellulos` branch
+and with a fork from `sid-agrawal`.
 
 
 ## Setup a new workspace
+```bash
+git clone --recursive git@github.com:sid-agrawal/OSmosis.git
+cd OSmosis
+```
+
+## Build & Runt
+```bash
+mkdir build
+../init-build.sh -DAARCH64=TRUE  -DPLATFORM=qemu-arm-virt -DSIMULATION=TRUE -DDEBUG=TRUE
+ninja
+./simulate
+```
 
 ## Bring in new changes
 
