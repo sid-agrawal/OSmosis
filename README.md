@@ -56,16 +56,34 @@ In other words let's keep them in sync.
 ### Commit your changes
 TLDR; Commit and push individual sub-modules first, and then do the same in the parent repo.
 
+Just once set up this alias, which will get added to your repo local `.git/config`
 ```bash
-[Code Code Code]
-git submodule foreach git add .
-git submodule foreach git commit -m "good description"
-git submodule foreach git push
+git config alias.supercommit '!./supercommit.sh "$@"; #'
+```
 
-# Now update refs in OSmosis
-git add .
-git commit -m "good description"
-git push
+Then to commit do:
+```bash
+git supercommit "some message"
+```
+
+```bash
+cat ./supercommit.sh
+#!/bin/bash -e
+if [ -z "$1" ]; then
+    echo "You need to provide a commit message"
+    exit
+fi
+
+git submodule foreach "
+    git add -A .
+    git update-index --refresh
+    commits=\$(git diff-index HEAD)
+    if [ ! -z \"\$commits\" ]; then
+        git commit -am \"$1\"
+    fi"
+
+git add -A .
+git commit -am "$1"
 ```
 
 ### Bring in new changes
