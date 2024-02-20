@@ -25,31 +25,48 @@ ninja
 ./simulate
 ```
 
+## Generate new compile commands
+Compile commands file is used for code navigation. This workspace's
+vscode settings file is configured to use it.
+
+```bash
+cd build
+bear --output ../compile_commands.json -- ninja
+```
+
 ## Typical workflow
 Some rules to make our lives easier
 * Let's not push code to submodules that we do not reflect in OSmosis repo yet.
 In other words let's keep them in sync.
 
 
-`I am unsure if this is the right way`
 
 ### Commit your changes
+TLDR; Commit and push individual sub-modules first, and then do the same in the parent repo.
+
 ```bash
 [Code Code Code]
 git submodule foreach git add .
 git submodule foreach git commit -m "good description"
-```
-###
-Bring in new changes
-```bash
-git submodule foreach git pull --rebase
-[Resolve conflicts, commit in individuals as needed]
-git submodule foreach git push origin cellulos
+git submodule foreach git push
 
 # Now update refs in OSmosis
 git add .
-git commit -m "update refs in OSmosis"
+git commit -m "good description"
 git push
+```
+
+###
+Bring in new changes
+
+`I am unsure if this is the right way, we will see.`
+
+```bash
+# bring in new refs for submodules
+git pull --rebase
+git submodule update --remote
+[Resolve conflicts, commit in individuals as needed]
+git submodule foreach git push origin cellulos
 ```
 
 

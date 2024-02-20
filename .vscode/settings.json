@@ -59,9 +59,9 @@
         "capops.h": "c",
         "stdint.h": "c"
     },
-    "C_Cpp.default.compileCommands": "/home/siagraw/OSmosis/compile_commands.json",
+    "C_Cpp.default.compileCommands": "./compile_commands.json",
     "C_Cpp.codeAnalysis.clangTidy.useBuildPath": true,
     "C_Cpp.errorSquiggles": "disabled",
-    "cmake.sourceDirectory": "/home/siagraw/OSmosis/kernel",
+    "cmake.sourceDirectory": "./kernel",
     "cmake.configureOnOpen": false
 }
