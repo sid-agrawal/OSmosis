@@ -57,7 +57,8 @@
         "badge_usage.h": "c",
         "mutex.h": "c",
         "capops.h": "c",
-        "stdint.h": "c"
+        "stdint.h": "c",
+        "types.h": "c"
     },
     "C_Cpp.default.compileCommands": "./compile_commands.json",
     "C_Cpp.codeAnalysis.clangTidy.useBuildPath": true,
