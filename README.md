@@ -143,7 +143,7 @@ git push --recurse-submodules=on-demand
 # bring in new refs for submodules
 git pull --rebase
 # Update the code in the modules, if there is a conflict with local, this should complain.
-git submodule update --rebase
+
 # Then Resolve conflicts, supercommit
 [...]
 # Push
