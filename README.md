@@ -1,16 +1,45 @@
 # CellulOS: An implementation of the OSmosis model.
 The details of the OSmosis model are available [here](https://arxiv.org/abs/2309.09291)
 
-## Running the project
-Instructions to setup and run are the same as [sel4test](https://docs.sel4.systems/projects/sel4test/)
 
+## Setup the dev machine
 
-## Information on branches and submodules
-This repo and all its submodules are working off the `cellulos` branch
-and with a fork from `sid-agrawal`.
+Instructions copied verbatim from [sel4test](https://docs.sel4.systems/projects/sel4test/).
 
+The basic build package on Ubuntu is the build-essential package. To install run:
+```bash
+sudo apt-get update
+sudo apt-get install build-essential
+```
+Additional base dependencies for building seL4 projects on Ubuntu include installing:
 
+```bash
+sudo apt-get install cmake ccache ninja-build cmake-curses-gui
+sudo apt-get install libxml2-utils ncurses-dev
+sudo apt-get install curl git doxygen device-tree-compiler
+sudo apt-get install u-boot-tools
+sudo apt-get install python3-dev python3-pip python-is-python3
+sudo apt-get install protobuf-compiler python3-protobuf
+```
+#### Simulating with QEMU
+
+In order to run seL4 projects on a simulator you will need QEMU:
+```bash
+sudo apt-get install qemu-system-arm qemu-system-x86 qemu-system-misc
+```
+
+#### Cross-compiling for ARM targets
+To build for ARM targets you will need a cross compiler:
+```bash
+sudo apt-get install gcc-arm-linux-gnueabi g++-arm-linux-gnueabi
+sudo apt-get install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+# (you can install the hardware floating point versions as well if you wish)
+
+sudo apt-get install gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
+```
 ## Setup a new workspace
+
+
 ```bash
 # Clone OSmosis and all the submodules
 git clone --recurse-submodules git@github.com:sid-agrawal/OSmosis.git
@@ -67,6 +96,8 @@ Set up this alias once. This alias will get added to your repo-local `.git/confi
 ```bash
 git config alias.supercommit '!./supercommit.sh "$@"; #'
 ```
+
+| Note: This will add and commit everything, which may be you do not want sometimes.
 
 Then to commit do:
 ```bash
