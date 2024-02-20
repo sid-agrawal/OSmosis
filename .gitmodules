@@ -29,6 +29,7 @@
 [submodule "tools/opensbi"]
 	path = tools/opensbi
 	url = git@github.com:sid-agrawal/opensbi.git
+	branch = cellulos
 [submodule "tools/seL4"]
 	path = tools/seL4
 	url = git@github.com:sid-agrawal/seL4_tools.git
