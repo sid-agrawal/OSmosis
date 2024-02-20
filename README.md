@@ -75,7 +75,7 @@ git push
 ```bash
 # bring in new refs for submodules
 git pull --rebase
-git submodule update --remote
+git submodule update --rebase
 [Resolve conflicts, commit in individuals as needed]
 git submodule foreach git push origin cellulos
 ```
