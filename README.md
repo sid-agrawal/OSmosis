@@ -18,11 +18,23 @@ git submodule foreach git checkout cellulos
 ```
 
 ## Build & Run
+### Qemu
 ```bash
 mkdir build
+cd build
 ../init-build.sh -DAARCH64=TRUE  -DPLATFORM=qemu-arm-virt -DSIMULATION=TRUE -DDEBUG=TRUE
 ninja
 ./simulate
+```
+
+### Odroid C4
+
+```bash
+mkdir build
+cd build
+ ../init-build.sh -DAARCH64=TRUE  -DPLATFORM=odroidc4 -DDEBUG=TRUE
+ninja
+# Look at notion for steps on how to copy the binary to the board via TFTP
 ```
 
 ## Generate new compile commands
@@ -35,8 +47,8 @@ bear --output ../compile_commands.json -- ninja
 ```
 
 ## Typical workflow
-Some rules to make our lives easier
-* Let's not push code to submodules that we do not reflect in OSmosis repo yet.
+Some rules to make our lives easier.
+| Let's not push code to submodules that we do not reflect in OSmosis repo yet.
 In other words let's keep them in sync.
 
 
@@ -56,8 +68,7 @@ git commit -m "good description"
 git push
 ```
 
-###
-Bring in new changes
+### Bring in new changes
 
 `I am unsure if this is the right way, we will see.`
 
