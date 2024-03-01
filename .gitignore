@@ -2,3 +2,4 @@
 qemu-build
 build
 odroid-build
+compile_commands.json
