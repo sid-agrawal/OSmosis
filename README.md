@@ -69,6 +69,15 @@ ninja
 # Look at notion for steps on how to copy the binary to the board via TFTP
 ```
 
+### Running with SMP Enabled
+#### Build Arguments
+`../init-build.sh -DAARCH64=TRUE  -DPLATFORM=qemu-arm-virt -DSIMULATION=TRUE -DSMP=TRUE -DDEBUG=TRUE`
+This will enable 4 cores by default, pass in `-DKernelMaxNumNodes=<CORES>` to change this
+
+#### SMP with QEMU
+1. If running on WSL, in the [config](https://learn.microsoft.com/en-us/windows/wsl/wsl-config) files, give it at least 8GB in RAM (otherwise tests won't run at all) and at least 4 virtual processors (otherwise it will run very slowly).
+2. invoke `./simulate -m 8G`, with 8G as a minimum. QEMU is run with 4 cores by default, pass in `-smp <CORES>` to change this.
+
 ## Generate new compile commands
 Compile commands file is used for code navigation. This workspace's
 vscode settings file is configured to use it.
