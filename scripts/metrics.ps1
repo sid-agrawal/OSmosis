@@ -37,55 +37,26 @@ function Exec-Query {
 
 # Get RSI metric
 $rsiQuery = @"
-// Define the starting nodes
 WITH "$pd1" as pd1, "$pd2" as pd2
-MATCH (startNode1:PD {PD_ID: pd1}), (startNode2:PD {PD_ID: pd2})
-WITH startNode1, startNode2
 
-// First BFT from startNode1
-CALL apoc.path.expandConfig(startNode1, {
-    relationshipFilter: "HAS_ACCESS_TO>|MAP>",
-    labelFilter: "Resource",
-    filterStartNode: false,
-    algorithm: "BFS",
-    maxLevel : 4
-}) YIELD path as pathrr1
+// Find all accessible resources
+MATCH (:PD {PD_ID: pd1})-[:HAS_ACCESS_TO|MAP*1..4]->(r1:Resource)
+WITH pd2, COLLECT(DISTINCT r1) as r1
+MATCH (:PD {PD_ID: pd2})-[:HAS_ACCESS_TO|MAP*1..4]->(r2:Resource)
+WITH r1, COLLECT(DISTINCT r2) as r2
 
-// Collect nodes from the first BFT
-WITH startNode2, collect(DISTINCT nodes(pathrr1)) as nodes1
+// Split by type
+WITH r1, r2, ["VMR","PMR","PCPU","FILE","BLOCK","ADS","MO","VCPU"] AS types
+WITH [t IN types | [n in r1 WHERE n.RES_TYPE = t] ] as r1, [t IN types | [n in r2 WHERE n.RES_TYPE = t] ] as r2 
+WITH r1, r2, apoc.coll.zip(r1, r2) as r_zip
 
-// Second BFT from startNode2
-CALL apoc.path.expandConfig(startNode2, {
-    relationshipFilter: "HAS_ACCESS_TO>|MAP>",
-    labelFilter: "Resource",
-    filterStartNode: false,
-    algorithm: "BFS",
-    maxLevel : 4
-}) YIELD path as pathrr2
+// Intersection
+WITH r1, r2, [entry in r_zip | apoc.coll.intersection(entry[0], entry[1])] as inter
 
-// Collect nodes from the second BFT
-WITH nodes1, collect(DISTINCT nodes(pathrr2)) as nodes2
+// Counts
+WITH [t in r1 | size(t)] as c1, [t in r2 | size(t)] as c2, [t in inter | size(t)] as cI
 
-// nodes1 and nodes2 are nested arrays, so
-UNWIND nodes1 as uw_nodes1
-UNWIND nodes2 as uw_nodes2
-
-// filter out PD nodes
-WITH [n in uw_nodes1 WHERE n:Resource] as res1, [n in uw_nodes2 WHERE n:Resource] as res2
-UNWIND res1 as uw_res1
-UNWIND res2 as uw_res2
-
-WITH collect(DISTINCT uw_res1) as res1, collect(DISTINCT uw_res2) as res2, ["VMR","PMR","PCPU","FILE","BLOCK","ADS","MO","VCPU"] AS types
-WITH [t IN types | [n in res1 WHERE n.RES_TYPE = t] ] as res1_by_type, [t IN types | [n in res2 WHERE n.RES_TYPE = t] ] as res2_by_type 
-WITH res1_by_type, res2_by_type, apoc.coll.zip(res1_by_type, res2_by_type) as res_zipped
-
-// intersection
-WITH res1_by_type, res2_by_type, [entry in res_zipped | apoc.coll.intersection(entry[0], entry[1])] as intersection_by_type
-
-// counts
-WITH [t in res1_by_type | size(t)] as counts1, [t in res2_by_type | size(t)] as counts2, [t in intersection_by_type | size(t)] as counts_intersect
-
-return {counts1: counts1, counts2: counts2, counts_intersect:counts_intersect}
+return {c1: c1, c2: c2, cI:cI}
 "@
 
 $result = Exec-Query -cypherQuery $rsiQuery
@@ -96,8 +67,8 @@ $parts = $result -split ': '
 
 # Extract the last three parts as string arrays
 $counts1 = $parts[-1] -replace '(\[|\].*)', '' -split ','
-$counts2 = $parts[-2] -replace '(\[|\].*)', '' -split ','
-$counts_intersect = $parts[-3] -replace '(\[|\].*)', '' -split ','
+$counts_intersect = $parts[-2] -replace '(\[|\].*)', '' -split ','
+$counts2 = $parts[-3] -replace '(\[|\].*)', '' -split ','
 
 # Convert the extracted strings to arrays of integers
 $counts1 = $counts1 | ForEach-Object { [int]$_ }
