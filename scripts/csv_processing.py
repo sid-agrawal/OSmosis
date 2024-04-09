@@ -70,6 +70,40 @@ def split_by_ads(df):
 
     return df
 
+def split_by_cpu(df):
+    # Find resource ID of all CPU
+    cpu_ids = df[df['RES_TYPE'] == 'VCPU']['RES_ID']
+    cpu_ids = cpu_ids.dropna().unique().tolist()
+
+    # Find which CPU each PD has access to
+    cpu_rows = df[df['RESOURCE_TO'].isin(cpu_ids) & df['PD_FROM'].notnull()]
+    cpu_rows = cpu_rows[['RESOURCE_TO','PD_FROM']]
+    cpu_rows = cpu_rows[cpu_rows['PD_FROM'] != ROOT_TASK_PD]   # Ignore the root task
+    cpu_rows_grouped = cpu_rows.groupby('PD_FROM')
+
+    # Check which PDs have more than one ADS
+    for pd_id, group in cpu_rows_grouped:
+        # Get all relations of the original PD
+        pd_relations = df[(df['PD_FROM'] == pd_id) | (df['PD_ID'] == pd_id)]
+
+        # Remove the original PD relations from the df
+        df = df[(df['PD_FROM'] != pd_id) & (df['PD_ID'] != pd_id)]
+
+        for i, cpu_id in enumerate(group['RESOURCE_TO']):
+            # Replace pd id
+            new_pd_id = f"{pd_id}.{i}"
+
+            # Copy all relations except to the other CPUs
+            exclude_cpu = [id for id in cpu_ids if id != cpu_id]
+            new_pd_relations = pd_relations[~pd_relations['RESOURCE_TO'].isin(exclude_cpu)]
+            new_pd_relations = new_pd_relations.replace(pd_id, new_pd_id)
+            df = df.replace(pd_id, new_pd_id)
+
+            # Add to the DF
+            df = pd.concat([df, new_pd_relations], ignore_index=True)
+
+    return df
+
 if __name__ == "__main__":
     # Define the folder path and regex pattern
     folder_path = "./"
@@ -90,6 +124,8 @@ if __name__ == "__main__":
             df = read_csv_to_dataframe(filename)
 
             # Process data
+            df = split_by_cpu(df)
+            print("Split PDs by CPU")
             df = split_by_ads(df)
             print("Split PDs by ADS")
 
