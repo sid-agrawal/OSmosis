@@ -51,12 +51,13 @@ WITH [t IN types | [n in r1 WHERE n.RES_TYPE = t] ] as r1, [t IN types | [n in r
 WITH r1, r2, apoc.coll.zip(r1, r2) as r_zip
 
 // Intersection
-WITH r1, r2, [entry in r_zip | apoc.coll.intersection(entry[0], entry[1])] as inter
+WITH [entry in r_zip | apoc.coll.intersection(entry[0], entry[1])] as inter,
+    [entry in r_zip | apoc.coll.union(entry[0], entry[1])] as union
 
 // Counts
-WITH [t in r1 | size(t)] as c1, [t in r2 | size(t)] as c2, [t in inter | size(t)] as cI
+WITH [t in union | size(t)] as cU, [t in inter | size(t)] as cI
 
-return {c1: c1, c2: c2, cI:cI}
+return {cU: cU, cI:cI}
 "@
 
 $result = Exec-Query -cypherQuery $rsiQuery
@@ -66,21 +67,17 @@ Write-Output "$result"
 $parts = $result -split ': '
 
 # Extract the last three parts as string arrays
-$counts1 = $parts[-1] -replace '(\[|\].*)', '' -split ','
+$counts_union = $parts[-1] -replace '(\[|\].*)', '' -split ','
 $counts_intersect = $parts[-2] -replace '(\[|\].*)', '' -split ','
-$counts2 = $parts[-3] -replace '(\[|\].*)', '' -split ','
 
 # Convert the extracted strings to arrays of integers
-$counts1 = $counts1 | ForEach-Object { [int]$_ }
-$counts2 = $counts2 | ForEach-Object { [int]$_ }
+$counts_union = $counts_union | ForEach-Object { [int]$_ }
 $counts_intersect = $counts_intersect | ForEach-Object { [int]$_ }
 
 # Calculate the RSIs from counts
 for ($i = 0; $i -lt $types.Length; $i++) {
     $type = $types[$i]
-    $rsi1 = if ($counts1[$i] -gt 0) {$counts_intersect[$i] / $counts1[$i]} Else {0}
-    $rsi2 = if ($counts2[$i] -gt 0) {$counts_intersect[$i] / $counts2[$i]} Else {0}
-    $rsi = [Math]::Max($rsi1, $rsi2)
+    $rsi = if ($counts_union[$i] -gt 0) {$counts_intersect[$i] / $counts_union[$i]} Else {0}
 
     # Process or display elements from all arrays
     Write-Output "RSI $type : $rsi"
