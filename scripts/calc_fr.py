@@ -32,11 +32,24 @@ def read_csv_to_graph(filename):
             G.add_node(row['RES_ID'], type=row['RES_TYPE'])
         elif pd.notna(row['PD_ID']) and pd.notna(row['PD_NAME']):
             G.add_node(row['PD_ID'], name=row['PD_NAME'])
-        elif pd.notna(row['RESOURCE_FROM']) and pd.notna(row['RESOURCE_TO']):
+        elif pd.notna(row['RESOURCE_FROM']) and pd.notna(row['RESOURCE_TO']) and not G.has_edge(row['RESOURCE_FROM'], row['RESOURCE_TO']):
             G.add_edge(row['RESOURCE_FROM'], row['RESOURCE_TO'], type=row['REL_TYPE'])
         elif pd.notna(row['PD_FROM']) and pd.notna(row['PD_TO']):
+            # Avoid adding duplicate RDE edge
+            if G.has_edge(row['PD_FROM'], row['PD_TO']):
+                edge_data = G.get_edge_data(row['PD_FROM'], row['PD_TO'])
+
+                edge_exists = False
+                for _, data in edge_data.items():
+                    if 'restype' in data and data['restype'] == row['RES_TYPE']:
+                        # This RDE edge already exists
+                        edge_exists = True
+                        break
+
+                if edge_exists: continue
+
             G.add_edge(row['PD_FROM'], row['PD_TO'], type='REQUEST', restype=row['RES_TYPE'])
-        elif pd.notna(row['PD_FROM']) and pd.notna(row['RESOURCE_TO']):
+        elif pd.notna(row['PD_FROM']) and pd.notna(row['RESOURCE_TO']) and not G.has_edge(row['PD_FROM'], row['RESOURCE_TO']):
             G.add_edge(row['PD_FROM'], row['RESOURCE_TO'], type='HOLD')
 
     return G
@@ -55,11 +68,14 @@ space_defns = {}
 def flatten_graph(G):
     print('------FLATTEN GRAPH------')
 
+
     # Obtain a set of all resource spaces
     spaces = set()
     for _, dst, data in G.out_edges(data=True):
         if data.get('type') == 'SUBSET':
             spaces.add((dst))
+
+    print(f'Spaces {spaces}')
 
     # For each space: Find managing PDs, and dependent PDs
     # Flatten relationship with an edge
@@ -100,7 +116,7 @@ def flatten_graph(G):
 
         # Add space defn
         space_defns[space_type] = {'space': space, 'map_types': map_types}
-        #print(f'Space {space} owners {owners}, dependents {dependents}, map types {map_types}')
+        # print(f'Space {space} owners {owners}, dependents {dependents}, map types {map_types}')
 
     return G
 
@@ -140,7 +156,11 @@ def fr_bfs(G, pd_0):
             if data.get('type') == 'REQUEST' and data.get('restype') in types_set:
 
                 # Update the types set with types that this space maps to
-                rde_map_types = space_defns[data.get('restype')]['map_types']
+                rde_map_types = {}
+                if data.get('restype') in space_defns:
+                    rde_map_types = space_defns[data.get('restype')]['map_types']
+                else:
+                    print(f'Warning: "{data.get("restype")}" not in space types\n')
                 new_types_set = types_set.union(rde_map_types)
 
                 Q.append((dst, fr + 1, new_types_set))
@@ -164,8 +184,8 @@ def calc_fr(G, pd_0, pd_1):
 
 # Files to load, and PDs of interest per file
 files = [
-    {'file': '2fs.csv', 'pd1': 'APP_1', 'pd2': 'APP_2'},
-    # {'file': 'kvstore_2_diff_pd.csv', 'pd1': 'PD_4.0.0', 'pd2': 'PD_5.0.0'},
+    # {'file': '2fs.csv', 'pd1': 'APP_1', 'pd2': 'APP_2'},
+    {'file': 'kvstore_2_diff_pd.csv', 'pd1': 'PD_4.0.0', 'pd2': 'PD_5.0.0'},
     # {'file': 'kvstore_3_diff_ns.csv', 'pd1': 'PD_4.0.0', 'pd2': 'PD_4.0.0'},
     # {'file': 'kvstore_4_diff_fs.csv', 'pd1': 'PD_5.0.0', 'pd2': 'PD_6.0.0'},
     # {'file': 'kvstore_5_diff_ads.csv', 'pd1': 'PD_4.0.0', 'pd2': 'PD_4.0.1'},
@@ -173,6 +193,8 @@ files = [
 ]
 
 if __name__ == "__main__":
+    print("Version 1")
+
     # Iterate through all files
     for file in files:
         # Load CSV to dataframe

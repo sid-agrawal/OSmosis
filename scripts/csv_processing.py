@@ -11,6 +11,8 @@ import os
 import re
 
 ROOT_TASK_PD = "PD_1"
+TEST_TASK_PD = "PD_0"
+IGNORE_PDS = [ROOT_TASK_PD,TEST_TASK_PD]
 
 def read_csv_to_dataframe(filename):
     try:
@@ -32,7 +34,7 @@ def split_by_ads(df):
     # Find which ADS each PD has access to
     ads_rows = df[df['RESOURCE_TO'].isin(ads_ids) & df['PD_FROM'].notnull()]
     ads_rows = ads_rows[['RESOURCE_TO','PD_FROM']]
-    ads_rows = ads_rows[ads_rows['PD_FROM'] != ROOT_TASK_PD]   # Ignore the root task
+    ads_rows = ads_rows[~ads_rows['PD_FROM'].isin(IGNORE_PDS)]   # Ignore the root/test task
     ads_rows_grouped = ads_rows.groupby('PD_FROM')
 
     # Check which PDs have more than one ADS
@@ -78,7 +80,7 @@ def split_by_cpu(df):
     # Find which CPU each PD has access to
     cpu_rows = df[df['RESOURCE_TO'].isin(cpu_ids) & df['PD_FROM'].notnull()]
     cpu_rows = cpu_rows[['RESOURCE_TO','PD_FROM']]
-    cpu_rows = cpu_rows[cpu_rows['PD_FROM'] != ROOT_TASK_PD]   # Ignore the root task
+    cpu_rows = cpu_rows[~cpu_rows['PD_FROM'].isin(IGNORE_PDS)]   # Ignore the root task
     cpu_rows_grouped = cpu_rows.groupby('PD_FROM')
 
     # Check which PDs have more than one ADS
