@@ -53,6 +53,7 @@ space_defns = {}
 
 # Also flatten the pd->res->subset<-manager edges to current_pd->manager
 def flatten_graph(G):
+    print('------FLATTEN GRAPH------')
 
     # Obtain a set of all resource spaces
     spaces = set()
@@ -93,14 +94,20 @@ def flatten_graph(G):
             for dependent in dependents:
                 if not G.has_edge(dependent, owner):
                     G.add_edge(dependent, owner, type='REQUEST', restype=space_type)
+                    print(f'Add RDE: ({dependent})--[REQUEST {space_type}]-->({owner})')
+                else:
+                    print(f'Existing RDE: ({dependent})--[REQUEST {space_type}]-->({owner})')
 
         # Add space defn
         space_defns[space_type] = {'space': space, 'map_types': map_types}
-        print(f'Space {space} owners {owners}, dependents {dependents}, map types {map_types}')
+        #print(f'Space {space} owners {owners}, dependents {dependents}, map types {map_types}')
 
     return G
 
 def fr_bfs(G, pd_0):
+    print()
+    print(f'------BFS {pd_0}------')
+
     acc_key = f'accumulator_{pd_0}'
 
     # Find the start types as all resources the PD holds
@@ -109,7 +116,7 @@ def fr_bfs(G, pd_0):
         if data.get('type') == 'HOLD':
             start_types_set.add(G.nodes[dst]['type'])
 
-    print(f'{pd_0} types {start_types_set}')
+    print(f'Start types {start_types_set}')
 
     # Flatten graph
     Q = deque([(pd_0, 0, start_types_set)])
@@ -117,16 +124,23 @@ def fr_bfs(G, pd_0):
     while Q:
         current_pd, fr, types_set = Q.popleft()
 
+        print()
+        print(f'{current_pd}')
+        print(f'- Types: [{types_set}]')
+
         # Set accum value
-        G.nodes[current_pd][acc_key] = fr
-        print(f'Set {acc_key}={fr} for {current_pd}')
+        if acc_key not in G.nodes[current_pd]:
+            G.nodes[current_pd][acc_key] = fr
+            print(f'- Set {acc_key}={fr}')
+        else:
+            print(f'- {acc_key} already set')
 
         # Follow RDEs within the types set
         for _, dst, data in G.out_edges(current_pd, data=True):
             if data.get('type') == 'REQUEST' and data.get('restype') in types_set:
 
                 # Update the types set with types that this space maps to
-                rde_map_types = space_defns[data.get('restype')]
+                rde_map_types = space_defns[data.get('restype')]['map_types']
                 new_types_set = types_set.union(rde_map_types)
 
                 Q.append((dst, fr + 1, new_types_set))
@@ -134,12 +148,16 @@ def fr_bfs(G, pd_0):
     return G
 
 def calc_fr(G, pd_0, pd_1):
+    print()
+    print(f'------CALCULATE FR------')
+
     acc_key_0 = f'accumulator_{pd_0}'
     acc_key_1 = f'accumulator_{pd_1}'
     min_fr = float('inf')
 
-    for _, data in G.nodes(data=True):
+    for node, data in G.nodes(data=True):
         if acc_key_0 in data and acc_key_1 in data:
+            print(f'Node {node} in union, {acc_key_0}={data[acc_key_0]}, {acc_key_1}={data[acc_key_1]}')
             min_fr = min(min_fr, data[acc_key_0], data[acc_key_1])
     
     return min_fr
