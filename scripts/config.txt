@@ -1,4 +1,4 @@
-cypherExePath=<Your cypher exe path>
-neo4jServer=<Your neo4j server instance url>
-neo4jUsername=<Your neo4j username>
-neo4jPassword=<Your neo4j password>
+[neo4j]
+url = neo4j+s:// <...>
+user = neo4j
+pass = <...>
