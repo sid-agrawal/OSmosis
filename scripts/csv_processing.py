@@ -3,12 +3,15 @@ Convert a raw CSV output from the CellulOS implementation to the OSmosis model
 
 Transformations:
 - Any PD with access to more than one ADS is converted into separate PDs per ADS 
+- Any PD with access to more than one CPU is converted into separate PDs per CPU
 """
 
-import numpy as np
 import pandas as pd
 import os
 import re
+import logging, sys
+
+logging.basicConfig(stream=sys.stderr, level=logging.INFO)
 
 ROOT_TASK_PD = "PD_1"
 TEST_TASK_PD = "PD_0"
@@ -20,84 +23,94 @@ def read_csv_to_dataframe(filename):
         df = pd.read_csv(filename, on_bad_lines='skip')
         return df
     except FileNotFoundError:
-        print(f"Error: File '{filename}' not found.")
+        logging.error(f"Error: File '{filename}' not found.")
         return None
     except Exception as e:
-        print(f"An error occurred: {e}")
+        logging.error(f"An error occurred: {e}")
         return None
     
 def split_by_ads(df):
+    resource_rows = df[df['NODE_TYPE'] == 'RESOURCE']
+
+    vmr_rows = resource_rows[resource_rows['DATA'] == 'VMR']
+    vmr_ids = vmr_rows['NODE_ID'].dropna().unique().tolist()
+    vmr_out_edges = df[df['EDGE_FROM'].isin(vmr_ids)]
+
+    pd_rows = df[df['NODE_TYPE'] == 'PD']
+    pd_ids = pd_rows['NODE_ID'].dropna().unique().tolist()
+
+    logging.debug(f"VMR IDS {vmr_ids}")
+
     # Find resource ID of all ADS
-    ads_ids = df[df['RES_TYPE'] == 'ADS']['RES_ID']
+    ads_ids = resource_rows[resource_rows['DATA'] == 'ADS']['NODE_ID']
     ads_ids = ads_ids.dropna().unique().tolist()
 
     # Find which ADS each PD has access to
-    ads_rows = df[df['RESOURCE_TO'].isin(ads_ids) & df['PD_FROM'].notnull()]
-    ads_rows = ads_rows[['RESOURCE_TO','PD_FROM']]
-    ads_rows = ads_rows[~ads_rows['PD_FROM'].isin(IGNORE_PDS)]   # Ignore the root/test task
-    ads_rows_grouped = ads_rows.groupby('PD_FROM')
+    ads_rows = df[df['EDGE_TO'].isin(ads_ids) & df['EDGE_FROM'].isin(pd_ids)]
+    ads_rows = ads_rows[['EDGE_TO','EDGE_FROM']]
+    ads_rows = ads_rows[~ads_rows['EDGE_FROM'].isin(IGNORE_PDS)]   # Ignore the root/test task
+    ads_rows_grouped = ads_rows.groupby('EDGE_FROM')
 
     # Check which PDs have more than one ADS
     for pd_id, group in ads_rows_grouped:
-        #if group.shape[0] == 1:
-        #    continue # No operation necessary for PD with 1 ADS
+        logging.debug(f"{pd_id} has ADS: {list(group['EDGE_TO'])}")
 
         # Get all relations of the original PD
-        pd_relations = df[(df['PD_FROM'] == pd_id) | (df['PD_ID'] == pd_id)]
+        pd_relations = df[(df['EDGE_FROM'] == pd_id) | (df['NODE_ID'] == pd_id)]
 
         # Remove the original PD relations from the df
-        df = df[(df['PD_FROM'] != pd_id) & (df['PD_ID'] != pd_id)]
+        df = df[(df['EDGE_FROM'] != pd_id) & (df['NODE_ID'] != pd_id)]
 
-        for i, ads_id in enumerate(group['RESOURCE_TO']):
+        for i, ads_id in enumerate(group['EDGE_TO']):
+            # Get the VMRs in this ADS
+            vmr_ids_in_ads = vmr_out_edges[vmr_out_edges['EDGE_TO'] == ads_id]['EDGE_FROM'].dropna().unique().tolist()
+
             # Replace pd id
             new_pd_id = f"{pd_id}.{i}"
 
-            # Copy all relations except to the other ADSs
-            # exclude_ads = [id for id in ads_ids if id != ads_id] 
-            exclude_ads = [] # Don't actually want to exclude the other ADS?
-            new_pd_relations = pd_relations[~pd_relations['RESOURCE_TO'].isin(exclude_ads)]
+            # Copy all relations except to the VMRs from other ADS
+            exclude_ids = list(set(vmr_ids) - set(vmr_ids_in_ads))
+            new_pd_relations = pd_relations[~pd_relations['EDGE_TO'].isin(exclude_ids)]
             new_pd_relations = new_pd_relations.replace(pd_id, new_pd_id)
             df = df.replace(pd_id, new_pd_id)
 
             # Add to the DF
             df = pd.concat([df, new_pd_relations], ignore_index=True)
 
-            # Create relations to all VMR in this ADS
-            vmr_ids = df[(df['RESOURCE_TO'] == ads_id) & (df['RESOURCE_FROM'].str.startswith("VMR"))]['RESOURCE_FROM']
-            vmr_ids = vmr_ids.dropna().unique().tolist()
-            new_rows = [{'PD_FROM': new_pd_id, 'RESOURCE_TO': vmr_id} for vmr_id in vmr_ids]
-            temp_df = pd.DataFrame(new_rows)
-
-            df = pd.concat([df, temp_df], ignore_index=True)
-
     return df
 
 def split_by_cpu(df):
+    resource_rows = df[df['NODE_TYPE'] == 'RESOURCE']
+    pd_rows = df[df['NODE_TYPE'] == 'PD']
+    pd_ids = pd_rows['NODE_ID'].dropna().unique().tolist()
+
     # Find resource ID of all CPU
-    cpu_ids = df[df['RES_TYPE'] == 'VCPU']['RES_ID']
+    cpu_ids = resource_rows[resource_rows['DATA'] == 'VCPU']['NODE_ID']
     cpu_ids = cpu_ids.dropna().unique().tolist()
 
     # Find which CPU each PD has access to
-    cpu_rows = df[df['RESOURCE_TO'].isin(cpu_ids) & df['PD_FROM'].notnull()]
-    cpu_rows = cpu_rows[['RESOURCE_TO','PD_FROM']]
-    cpu_rows = cpu_rows[~cpu_rows['PD_FROM'].isin(IGNORE_PDS)]   # Ignore the root task
-    cpu_rows_grouped = cpu_rows.groupby('PD_FROM')
+    cpu_rows = df[df['EDGE_TO'].isin(cpu_ids) & df['EDGE_FROM'].isin(pd_ids)]
+    cpu_rows = cpu_rows[['EDGE_TO','EDGE_FROM']]
+    cpu_rows = cpu_rows[~cpu_rows['EDGE_FROM'].isin(IGNORE_PDS)]   # Ignore the root/test task
+    cpu_rows_grouped = cpu_rows.groupby('EDGE_FROM')
 
-    # Check which PDs have more than one ADS
+    # Check which PDs have more than one CPU
     for pd_id, group in cpu_rows_grouped:
+        logging.debug(f"{pd_id} has CPU: {list(group['EDGE_TO'])}")
+
         # Get all relations of the original PD
-        pd_relations = df[(df['PD_FROM'] == pd_id) | (df['PD_ID'] == pd_id)]
+        pd_relations = df[(df['EDGE_FROM'] == pd_id) | (df['NODE_ID'] == pd_id)]
 
         # Remove the original PD relations from the df
-        df = df[(df['PD_FROM'] != pd_id) & (df['PD_ID'] != pd_id)]
+        df = df[(df['EDGE_FROM'] != pd_id) & (df['NODE_ID'] != pd_id)]
 
-        for i, cpu_id in enumerate(group['RESOURCE_TO']):
+        for i, cpu_id in enumerate(group['EDGE_TO']):
             # Replace pd id
             new_pd_id = f"{pd_id}.{i}"
 
             # Copy all relations except to the other CPUs
-            exclude_cpu = [id for id in cpu_ids if id != cpu_id]
-            new_pd_relations = pd_relations[~pd_relations['RESOURCE_TO'].isin(exclude_cpu)]
+            exclude_ids = [id for id in cpu_ids if id != cpu_id]
+            new_pd_relations = pd_relations[~pd_relations['EDGE_TO'].isin(exclude_ids)]
             new_pd_relations = new_pd_relations.replace(pd_id, new_pd_id)
             df = df.replace(pd_id, new_pd_id)
 
@@ -126,14 +139,14 @@ if __name__ == "__main__":
             df = read_csv_to_dataframe(filename)
 
             # Process data
+            logging.info("Splitting PDs by CPU")
             df = split_by_cpu(df)
-            print("Split PDs by CPU")
+            logging.info("Splitting PDs by ADS")
             df = split_by_ads(df)
-            print("Split PDs by ADS")
 
             # Save dataframe to CSV file
             out_filename = filename[4:]
             df.to_csv(out_filename, index=False)
 
-            print(f"DataFrame saved to '{out_filename}'")
+            print(f"Processed file saved to '{out_filename}'")
 

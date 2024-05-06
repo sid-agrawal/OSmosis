@@ -32,6 +32,8 @@ def upload_csv(file_url):
         driver.verify_connectivity()
 
         # Delete nodes
+        print("Deleting old graph...")
+
         query = """
                 MATCH (n) 
                 DETACH DELETE n;"""
@@ -39,6 +41,8 @@ def upload_csv(file_url):
         driver.execute_query(query)
         
         # Load nodes
+        print("Importing new nodes...")
+
         query = """
                 LOAD CSV WITH HEADERS FROM '%s' AS row
                 WITH row
@@ -51,6 +55,8 @@ def upload_csv(file_url):
         driver.execute_query(query)
         
         # Load edges
+        print("Importing new edges...")
+
         query = """
                 LOAD CSV WITH HEADERS FROM '%s' AS row
                 WITH row
@@ -63,6 +69,8 @@ def upload_csv(file_url):
                 """ % file_url
         
         driver.execute_query(query)
+
+        print("Complete")
 
 if __name__ == "__main__":
     file_url = gdriveUrls[args.file]
