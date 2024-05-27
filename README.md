@@ -159,6 +159,15 @@ git pull --rebase
 git push --recurse-submodules=on-demand
 ```
 
+# Building and Viewing the Doxygen Documentation
+Run the following command from the root `OSmosis` folder:
 
+```bash
+doxygen Doxyfile
+```
 
+A `doxygen` directory should've been created, with the `html` and `latex` versions of the documentation. 
+Only contents of `sel4gpi` have been configured for doxygen.
+
+For configuration, see the [official doxygen documentation](https://www.doxygen.nl/manual/index.html).
 
