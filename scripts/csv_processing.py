@@ -13,8 +13,8 @@ import logging, sys
 
 logging.basicConfig(stream=sys.stderr, level=logging.INFO)
 
-ROOT_TASK_PD = "PD_1"
-TEST_TASK_PD = "PD_0"
+ROOT_TASK_PD = "PD_0"
+TEST_TASK_PD = "PD_2"
 IGNORE_PDS = [ROOT_TASK_PD,TEST_TASK_PD]
 
 def read_csv_to_dataframe(filename):
@@ -122,7 +122,7 @@ def split_by_cpu(df):
 if __name__ == "__main__":
     # Define the folder path and regex pattern
     folder_path = "./"
-    regex_pattern = r"raw_kvstore.*\.csv"
+    regex_pattern = r"raw_.*\.csv"
 
     # Compile the regex pattern
     pattern = re.compile(regex_pattern)

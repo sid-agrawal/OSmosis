@@ -17,14 +17,14 @@ logging.basicConfig(stream=sys.stderr, level=logging.INFO)
 configurations = [
     {},
     {},
-    {'file': 'kvstore_2_diff_pd.csv', 'pd1': 'PD_4.0.0', 'pd2': 'PD_5.0.0'},
-    {'file': 'kvstore_3_diff_ns.csv', 'pd1': 'PD_4.0.0', 'pd2': 'PD_5.0.0'},
-    {'file': 'kvstore_4_diff_fs.csv', 'pd1': 'PD_5.0.0', 'pd2': 'PD_6.0.0'},
-    {'file': 'kvstore_5_diff_ads.csv', 'pd1': 'PD_4.0.0', 'pd2': 'PD_4.0.1'},
-    {'file': 'kvstore_6_diff_threads.csv', 'pd1': 'PD_4.0.0', 'pd2': 'PD_4.1.0'},
+    {'file': 'kvstore_2_diff_pd.csv', 'pd1': 'PD_5.0.0', 'pd2': 'PD_6.0.0'},
+    {'file': 'kvstore_3_diff_ns.csv', 'pd1': 'PD_5.0.0', 'pd2': 'PD_6.0.0'},
+    {'file': 'kvstore_4_diff_fs.csv', 'pd1': 'PD_6.0.0', 'pd2': 'PD_7.0.0'},
+    {'file': 'kvstore_5_diff_ads.csv', 'pd1': 'PD_5.0.0', 'pd2': 'PD_5.0.1'},
+    {'file': 'kvstore_6_diff_threads.csv', 'pd1': 'PD_5.0.0', 'pd2': 'PD_5.1.0'},
 ]
 
-parser = argparse.ArgumentParser("import_csv")
+parser = argparse.ArgumentParser("metrics")
 parser.add_argument("config", help="Which configuration index to use", type=int)
 args = parser.parse_args()
 
@@ -36,7 +36,7 @@ AUTH = (config.get("neo4j", "user"), config.get("neo4j", "pass"))
 
 def calc_rsi(pd1, pd2):
     # Resource types of interest
-    types = ["VMR","PMR","VCPU","PCPU","FILE","BLOCK"]
+    types = ["VMR","MO","VCPU","PCPU","FILE","BLOCK"]
 
     query = """
         WITH "%s" as pd1, "%s" as pd2
@@ -48,7 +48,7 @@ def calc_rsi(pd1, pd2):
         WITH r1, COLLECT(DISTINCT r2) as r2
 
         // Split by type
-        WITH r1, r2, ["VMR","PMR","VCPU","PCPU","FILE","BLOCK"] AS types
+        WITH r1, r2, ["VMR","MO","VCPU","PCPU","FILE","BLOCK"] AS types
         WITH [t IN types | [n in r1 WHERE n.DATA = t] ] as r1, [t IN types | [n in r2 WHERE n.DATA = t] ] as r2 
         WITH r1, r2, apoc.coll.zip(r1, r2) as r_zip
 
@@ -57,9 +57,10 @@ def calc_rsi(pd1, pd2):
         [entry in r_zip | apoc.coll.union(entry[0], entry[1])] as union
 
         // Counts
-        WITH [t in union | size(t)] as cU, [t in inter | size(t)] as cI
+        WITH [t in union | size(t)] as cU, [t in inter | size(t)] as cI,
+        [t in union | [node IN t | node.EXTRA]] as extrasU, [t in inter | [node IN t | node.EXTRA]] as extrasI
 
-        with  {cU: cU, cI:cI} as info
+        with  {cU: cU, cI:cI, extrasU:extrasU, extrasI:extrasI} as info
         return info
         """ % (pd1, pd2)
 
@@ -68,11 +69,19 @@ def calc_rsi(pd1, pd2):
 
         records, _, _ = driver.execute_query(query)
 
-        counts_intersect = records[0]['info']['cI']
-        counts_union = records[0]['info']['cU']
+        zip_vals = zip(types, records[0]['info']['cU'], records[0]['info']['cI'], 
+                       records[0]['info']['extrasU'], records[0]['info']['extrasI'])
+        
+        for type,count_union,count_intersect,extras_union,extras_intersect in zip_vals:
+            rsi = 0
+            if (type == "MO"):
+                # Treat MOs specially, we use the number of pages to calculate RSI for PMR
+                # The 'extras' field contains the number of physical pages
+                rsi = float(sum([float(i) for i in extras_intersect])) / sum([float(i) for i in extras_union])
+            elif count_union > 0:
+                rsi = count_intersect / count_union
 
-        for type,union,intersect in zip(types, counts_union, counts_intersect):
-             print(f"RSI {type}: {intersect / union if union > 0 else 0}")
+            print(f"RSI {type}: {rsi}")
 
 # Read a CSV to a networkx graph
 def read_csv_to_graph(filename):
@@ -92,7 +101,7 @@ def read_csv_to_graph(filename):
     # Add nodes and edges
     for _, row in df.iterrows():
         if pd.notna(row['NODE_TYPE']):
-            G.add_node(row['NODE_ID'], type=row['NODE_TYPE'], data=row['DATA'])
+            G.add_node(row['NODE_ID'], type=row['NODE_TYPE'], data=row['DATA'], extra=row['EXTRA'])
         elif pd.notna(row['EDGE_TYPE']):
             G.add_edge(row['EDGE_FROM'], row['EDGE_TO'], type=row['EDGE_TYPE'], data=row['DATA'])
         else:

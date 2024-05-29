@@ -25,6 +25,7 @@ gdriveUrls = [
 "https://drive.google.com/uc?export=download&id=1pY6ftNAMiShIq2CgurVbmxPgredawu-g", # 4
 "https://drive.google.com/uc?export=download&id=1X3648_Tq0VAw-UVVnwOqMRsZ7el0aVMV", # 5
 "https://drive.google.com/uc?export=download&id=17Dbzko_liuN-YPkxjuItWjHk72gPDrJn", # 6
+"https://drive.google.com/uc?export=download&id=1yZyo9uMzjseCbr4vuWtgE-5PhiRyDteQ", # 7, test
 ]
 
 def upload_csv(file_url):
@@ -47,7 +48,7 @@ def upload_csv(file_url):
                 LOAD CSV WITH HEADERS FROM '%s' AS row
                 WITH row
                 WHERE row.NODE_TYPE IS NOT NULL
-                CALL apoc.merge.node([row.NODE_TYPE], {ID: row.NODE_ID, DATA: row.DATA}, {}, {})
+                CALL apoc.merge.node([row.NODE_TYPE], {ID: row.NODE_ID, DATA: row.DATA, EXTRA: coalesce(row.EXTRA, "0")}, {}, {})
                 YIELD node
                 RETURN null;
                 """ % file_url
