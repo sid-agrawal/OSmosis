@@ -3,3 +3,5 @@ qemu-build
 build
 odroid-build
 compile_commands.json
+doxygen/
+.vscode/settings.json
