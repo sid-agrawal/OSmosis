@@ -5,27 +5,21 @@
 from neo4j import GraphDatabase
 import argparse
 import configparser
+import os
 
 parser = argparse.ArgumentParser("import_csv")
 parser.add_argument("file", help="ID of csv to upload", type=int)
 args = parser.parse_args()
 
 config = configparser.ConfigParser()   
-config.read("config.txt")
+config.read('config.txt')
 
 URI = config.get("neo4j", "url")
 AUTH = (config.get("neo4j", "user"), config.get("neo4j", "pass"))
 
 # Public CSV file for upload
 gdriveUrls = [
-"", #0
-"https://drive.google.com/uc?export=download&id=18x8W0HIMJhkRw3YRZzGMLD1gYYPG9Rpe", # 1
-"https://drive.google.com/uc?export=download&id=12n97Zlo4UNkt7T9tx9ePlkmn6pw72NLS", # 2
-"https://drive.google.com/uc?export=download&id=1K-qNGXI1uafKqMPt4bDNTBhH3DEZ7DYy", # 3
-"https://drive.google.com/uc?export=download&id=1pY6ftNAMiShIq2CgurVbmxPgredawu-g", # 4
-"https://drive.google.com/uc?export=download&id=1X3648_Tq0VAw-UVVnwOqMRsZ7el0aVMV", # 5
-"https://drive.google.com/uc?export=download&id=17Dbzko_liuN-YPkxjuItWjHk72gPDrJn", # 6
-"https://drive.google.com/uc?export=download&id=1yZyo9uMzjseCbr4vuWtgE-5PhiRyDteQ", # 7, test
+"https://docs.google.com/spreadsheets/d/e/2PACX-1vTxfSLozI_E8YOpvK3qOy0Ynb0iOw8-iKlxTPg8kZvKmWsPHFrzD4LTqIE6yjyCF1KnkzZ3EQ-j2Cd5/pub?gid=1413058884&single=true&output=csv"
 ]
 
 def upload_csv(file_url):

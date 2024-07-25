@@ -139,10 +139,10 @@ if __name__ == "__main__":
             df = read_csv_to_dataframe(filename)
 
             # Process data
-            logging.info("Splitting PDs by CPU")
-            df = split_by_cpu(df)
-            logging.info("Splitting PDs by ADS")
-            df = split_by_ads(df)
+            # logging.info("Splitting PDs by CPU")
+            # df = split_by_cpu(df)
+            # logging.info("Splitting PDs by ADS")
+            # df = split_by_ads(df)
 
             # Save dataframe to CSV file
             out_filename = filename[4:]
