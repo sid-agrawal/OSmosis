@@ -17,6 +17,7 @@ build_image_path = "./images/sel4test-driver-image-arm-odroidc4" # from the buil
 # Print options
 print_uboot = False
 print_sel4test = False
+print_logs = True
 
 # CSV filename for output
 csv_path = "./benchmarks.csv"
@@ -37,7 +38,7 @@ cleanup_fs_names = ["PD cleanup fs"]
 
 # Test configurations
 n_iters = 500       # Number of iterations for reboot tests
-max_n_retries = 5   # Number of times to try retry if serial is not working, before we abort the script
+max_n_boot_retries = 5   # Number of times to try retry if serial is not working, before we abort the script
 
 ipc_test_configurations = [
     {
@@ -451,7 +452,7 @@ cleanup_test_configurations = [
         "rs_deletion_depth": 0,
     },
 ]
-selected_tests = basic_test_configurations[1:]
+selected_tests = [basic_test_configurations[5], basic_test_configurations[7]]
 
 # Configuration for tftpboot
 lindt_ip = "10.42.0.1"
@@ -469,11 +470,31 @@ uboot_input = b'=> '
 uboot_starting = b'## Starting application at 0x20000000 ...\r\n'
 tests_finished = b'All is well in the universe\r\n'
 test_result = "RESULT>"
+fail_assertion = "Assertion failed:"
+fail_test = "        Error: result == SUCCESS"
+fail_test_2 = "        Failure: result == SUCCESS"
+fail_abort = "seL4 root server abort()ed"
+fail_panic = "PANIC:"
+fail_messages = [fail_assertion, fail_test, fail_test_2, fail_abort, fail_panic]
 
 # Commands
 off_command_bytes = bytearray([0xa0, 0x01, 0x00, 0xa1])
 on_command_bytes = bytearray([0xa0, 0x01, 0x01, 0xa2])
 
+# Exceptions
+class BootTimeout(Exception):
+    pass
+
+class TestTimeout(Exception):
+    pass
+
+class TestFailure(Exception):
+    pass
+
+def log(*args):
+    if print_logs:
+        print(*args)
+        
 def image_name_from_config(config):
     """
     Generate an image name for a test configuration
@@ -499,7 +520,7 @@ def build_images(build_folder, configurations):
     
     for config in configurations:
         # Configure the cmake options
-        print("../init-build.sh", 
+        log("../init-build.sh", 
              "-DPLATFORM=odroidc4", 
              f'-DLibSel4TestPrinterRegex={config["test_name"]}',
              f'-DGPIServerEnabled={"ON" if config["system_type"] == system_type_osm else "OFF"}',
@@ -523,7 +544,7 @@ def build_images(build_folder, configurations):
         dest_path = path.join(tftboot_folder, image_name)
         copyfile(build_image_path, dest_path)
         
-        print(f"Wrote image to {dest_path}")
+        log(f"Wrote image to {dest_path}")
         
     # Return to previous dir
     chdir(cwd)
@@ -534,7 +555,7 @@ def power_off(uart_device):
     Send a message to power off the board
     """
     
-    print("Powering off")
+    log("Powering off")
     uart_device.write(off_command_bytes)
     sleep(1)
     uart_device.write(off_command_bytes)
@@ -544,7 +565,7 @@ def power_on(uart_device):
     Send a message to power on the board
     """
     
-    print("Powering on")
+    log("Powering on")
     uart_device.write(on_command_bytes)
     sleep(1)
     uart_device.write(on_command_bytes)
@@ -556,7 +577,7 @@ def boot(serial_device, config):
     Sends a tftpboot command to load the desired image
     """
     
-    print("Booting odroid with uboot...")
+    log("Booting odroid with uboot...")
 
     line = ""
     image_name = image_name_from_config(config)
@@ -568,10 +589,9 @@ def boot(serial_device, config):
             print(line.decode(), end='')
 
         if (len(line) == 0):
-            print("Timeout while reading from serial")
-            return
+            raise BootTimeout("Timeout while reading from serial")
     
-    print(f"Loading image {image_name}...")
+    log(f"Loading image {image_name}...")
     serial_device.write(str.encode(f'tftpboot 0x20000000 {lindt_ip}:{image_name}; go 0x20000000\n'))
 
     while (line != uboot_starting):
@@ -581,35 +601,39 @@ def boot(serial_device, config):
             print(line.decode(), end='')
 
         if (len(line) == 0):
-            print("Timeout while reading from serial")
-            return
+            raise BootTimeout("Timeout while reading from serial")
     
-    print("Running sel4...")
+    log("Running sel4...")
 
-def read_result(serial_device, n_columns):
+def read_result(serial_device, n_columns, results):
     """
     Reads the serial output from the sel4 image
+    
+    :param serial.Serial serial_device: The initialized serial device to read test output from
+    :param int n_columns: The expected number of columns in one row of test results
+    :param list[list[int]] results: Array to write results to
+    :raises TestFailure: if the output indicates any test failed
+    :raises TestTimeout: if there is a timeout while reading from serial
+    
     Saves benchmark results to an array of dimension (n_results, n_columns)
     - n_columns is given
     - n_results is the number of results read from terminal divided by n_columns
     """
     line = ""
-    results = []    # total results of this boot
     row_idx = 0     # current result row
     column_idx = 0  # current result column
 
     while (line != tests_finished):
         line = serial_device.readline()
 
-        # Uncomment this line to see running messages
         if print_sel4test:
             print(line.decode(), end='')
         
         line_str = line.decode()
 
         if len(line) == 0:
-            print("Timeout while reading from serial")
-            return results
+            raise TestTimeout("Timeout while reading from serial")
+        
         elif line_str.startswith(test_result):
             # Start a new row if needed
             if column_idx == 0:
@@ -625,12 +649,15 @@ def read_result(serial_device, n_columns):
             if column_idx == n_columns:
                 row_idx += 1
                 column_idx = 0
-
-    return results
+        
+        elif any([line_str.startswith(fail_msg) for fail_msg in fail_messages]):
+            # Test failed for some reason
+            raise TestFailure(f"Test failed with message: {line_str}")
+            
 
 if __name__ == "__main__":
     # Build the images
-    build_images(build_folder, selected_tests)
+    # build_images(build_folder, selected_tests)
     
     # Run the Benchmarks
     uart_device = serial.Serial(uart_device_name, timeout=3)
@@ -646,10 +673,10 @@ if __name__ == "__main__":
         results = []
         
         i = 0
-        n_retries = 0
+        n_boot_retries = 0
         while i < test_config["n_reboots"]:
             try:
-                print(f"--> Begin Iteration {i}")
+                log(f"--> Begin Iteration {i}")
                 
                 # New serial connection
                 serial_device = serial.Serial(serial_device_name, baudrate=115200, timeout=10)
@@ -657,26 +684,22 @@ if __name__ == "__main__":
                 # Boot
                 power_on(uart_device)
                 boot(serial_device, test_config)
-                result = read_result(serial_device, len(test_config["bench_names"]))
+                read_result(serial_device, len(test_config["bench_names"]), results)
 
-                if (len(result) == 0):
-                    raise Exception("Result has no value")
-
-                # Store result and shutdown
-                results.extend(result)
+                # Shutdown
                 power_off(uart_device)
                 serial_device.close()
                 
-                # Flush output, for nohup
+                # Flush output for nohup
                 stdout.flush()
 
                 i += 1
-                n_retries = 0
-            except:
-                # Something went wrong, try to recover
-                print(f'Failed cycle {i}')
+                n_boot_retries = 0
+            except BootTimeout:
+                # Something went wrong while booting, try to recover
+                print(f'Boot timeout for cycle {i}')
                 
-                if (n_retries >= max_n_retries):
+                if (n_boot_retries >= max_n_boot_retries):
                     print(f'Max number of retries reached, abort')
                     break
                 
@@ -688,7 +711,14 @@ if __name__ == "__main__":
                 power_off(uart_device)
                 sleep(2)
                 
-                n_retries += 1
+                n_boot_retries += 1
+            except TestFailure as e:
+                print(f'Test failure for cycle {i}, abort')
+                print(e)
+                break
+            except TestTimeout:
+                print(f'Test timeout for cycle {i}, abort')
+                break
             
         # Read the old CSV
         if not first_run:
@@ -717,7 +747,7 @@ if __name__ == "__main__":
         df = None
         
         # Quit if we reached the maximum number of retries
-        if (n_retries >= max_n_retries):
+        if (n_boot_retries >= max_n_boot_retries):
             break
 
     uart_device.close()
