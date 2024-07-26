@@ -5,7 +5,7 @@ This script builds and runs a series of images for benchmarking CellulOS on the 
 ### Setup 
 (Assumes that `python 3.10` and `virtualenv` are already installed)
 
-1. Create the virtualenv: `python -m virtualenv venv` 
+1. Create the virtualenv: `python -m venv venv` 
 2. Activate the virtualenv: `source ./venv/bin/activate`
 3. Install requirements: `pip install -r requirements.txt`
     - If this doesn't work, these are the packages I installed manually: 
@@ -92,4 +92,5 @@ selected_tests = test_configurations
 1. Choose which test configurations to run: in the script set, the `selected_tests` variable
 2. From within the virtualenv: `sudo -E env PATH=$PATH python run_benchmarks.py`
     - `sudo` is needed for the script to access `/dev/ttyUSB0` & `/dev/ttyUSB0`, and copy build images to `/srv/tftp`
+    - Alternatively, to run a process in the background that will not be killed when the ssh session closes: `bash ./run`
 3. Results are saved to `benchmarks.csv`

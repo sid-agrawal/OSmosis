@@ -5,6 +5,7 @@ import os.path as path
 from subprocess import run
 from os import chdir, getcwd
 from shutil import copyfile
+from sys import stdout
 
 ### CONFIGURATION ###
 
@@ -35,53 +36,198 @@ cleanup_ramdisk_names = ["PD cleanup ramdisk"]
 cleanup_fs_names = ["PD cleanup fs"]
 
 # Test configurations
-n_iters = 50 # Number of iterations for reboot tests
+n_iters = 500       # Number of iterations for reboot tests
+max_n_retries = 5   # Number of times to try retry if serial is not working, before we abort the script
 
 ipc_test_configurations = [
     {
-        "test_name": "GPIBM010",
-        "n_reboots": n_iters,
-        "bench_names": ["Regular IPC to RT"],
-        "system_type": system_type_sel4test,
-        "pd_deletion_depth": 0,
-        "rs_deletion_depth": 0,
-    },
-    {
-        "test_name": "GPIBM011",
-        "n_reboots": n_iters,
-        "bench_names": ["NanoPB to RT"],
-        "system_type": system_type_sel4test,
-        "pd_deletion_depth": 0,
-        "rs_deletion_depth": 0,
-    },
-    {
-        "test_name": "GPIBM010",
+        "test_name": "GPIBM100",
         "n_reboots": 1,
-        "bench_names": ["Regular IPC to RT"],
+        "bench_names": ["Regular IPC Short"],
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
     },
     {
-        "test_name": "GPIBM011",
+        "test_name": "GPIBM101",
         "n_reboots": 1,
-        "bench_names": ["NanoPB to RT"],
+        "bench_names": ["Regular IPC Long"],
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
     },
     {
-        "test_name": "GPIBM012",
+        "test_name": "GPIBM102",
         "n_reboots": 1,
-        "bench_names": ["Repeated IPC to RT"],
+        "bench_names": ["Regular IPC Cap Short"],
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
     },
     {
-        "test_name": "GPIBM013",
+        "test_name": "GPIBM103",
         "n_reboots": 1,
-        "bench_names": ["Repeated NanoPB to RT"],
+        "bench_names": ["Regular IPC Cap Long"],
+        "system_type": system_type_sel4test,
+        "pd_deletion_depth": 0,
+        "rs_deletion_depth": 0,
+    },
+    {
+        "test_name": "GPIBM104",
+        "n_reboots": 1,
+        "bench_names": ["Regular IPC 1 Unwrapped Short"],
+        "system_type": system_type_sel4test,
+        "pd_deletion_depth": 0,
+        "rs_deletion_depth": 0,
+    },
+    {
+        "test_name": "GPIBM105",
+        "n_reboots": 1,
+        "bench_names": ["Regular IPC 1 Unwrapped Long"],
+        "system_type": system_type_sel4test,
+        "pd_deletion_depth": 0,
+        "rs_deletion_depth": 0,
+    },
+    {
+        "test_name": "GPIBM106",
+        "n_reboots": 1,
+        "bench_names": ["Regular IPC Cap 1 Unwrapped Short"],
+        "system_type": system_type_sel4test,
+        "pd_deletion_depth": 0,
+        "rs_deletion_depth": 0,
+    },
+    {
+        "test_name": "GPIBM107",
+        "n_reboots": 1,
+        "bench_names": ["Regular IPC Cap 1 Unwrapped Long"],
+        "system_type": system_type_sel4test,
+        "pd_deletion_depth": 0,
+        "rs_deletion_depth": 0,
+    },
+    {
+        "test_name": "GPIBM108",
+        "n_reboots": 1,
+        "bench_names": ["Regular IPC 2 Unwrapped Short"],
+        "system_type": system_type_sel4test,
+        "pd_deletion_depth": 0,
+        "rs_deletion_depth": 0,
+    },
+    {
+        "test_name": "GPIBM109",
+        "n_reboots": 1,
+        "bench_names": ["Regular IPC 2 Unwrapped Long"],
+        "system_type": system_type_sel4test,
+        "pd_deletion_depth": 0,
+        "rs_deletion_depth": 0,
+    },
+    {
+        "test_name": "GPIBM110",
+        "n_reboots": 1,
+        "bench_names": ["Regular IPC Cap 2 Unwrapped Short"],
+        "system_type": system_type_sel4test,
+        "pd_deletion_depth": 0,
+        "rs_deletion_depth": 0,
+    },
+    {
+        "test_name": "GPIBM111",
+        "n_reboots": 1,
+        "bench_names": ["Regular IPC Cap 2 Unwrapped Long"],
+        "system_type": system_type_sel4test,
+        "pd_deletion_depth": 0,
+        "rs_deletion_depth": 0,
+    },
+    {
+        "test_name": "GPIBM112",
+        "n_reboots": 1,
+        "bench_names": ["NanoPB IPC Short"],
+        "system_type": system_type_sel4test,
+        "pd_deletion_depth": 0,
+        "rs_deletion_depth": 0,
+    },
+    {
+        "test_name": "GPIBM113",
+        "n_reboots": 1,
+        "bench_names": ["NanoPB IPC Long"],
+        "system_type": system_type_sel4test,
+        "pd_deletion_depth": 0,
+        "rs_deletion_depth": 0,
+    },
+    {
+        "test_name": "GPIBM114",
+        "n_reboots": 1,
+        "bench_names": ["NanoPB IPC Cap Short"],
+        "system_type": system_type_sel4test,
+        "pd_deletion_depth": 0,
+        "rs_deletion_depth": 0,
+    },
+    {
+        "test_name": "GPIBM115",
+        "n_reboots": 1,
+        "bench_names": ["Regular IPC Cap Long"],
+        "system_type": system_type_sel4test,
+        "pd_deletion_depth": 0,
+        "rs_deletion_depth": 0,
+    },
+    {
+        "test_name": "GPIBM116",
+        "n_reboots": 1,
+        "bench_names": ["NanoPB IPC 1 Unwrapped Short"],
+        "system_type": system_type_sel4test,
+        "pd_deletion_depth": 0,
+        "rs_deletion_depth": 0,
+    },
+    {
+        "test_name": "GPIBM117",
+        "n_reboots": 1,
+        "bench_names": ["NanoPB IPC 1 Unwrapped Long"],
+        "system_type": system_type_sel4test,
+        "pd_deletion_depth": 0,
+        "rs_deletion_depth": 0,
+    },
+    {
+        "test_name": "GPIBM118",
+        "n_reboots": 1,
+        "bench_names": ["NanoPB IPC Cap 1 Unwrapped Short"],
+        "system_type": system_type_sel4test,
+        "pd_deletion_depth": 0,
+        "rs_deletion_depth": 0,
+    },
+    {
+        "test_name": "GPIBM119",
+        "n_reboots": 1,
+        "bench_names": ["NanoPB IPC Cap 1 Unwrapped Long"],
+        "system_type": system_type_sel4test,
+        "pd_deletion_depth": 0,
+        "rs_deletion_depth": 0,
+    },
+    {
+        "test_name": "GPIBM120",
+        "n_reboots": 1,
+        "bench_names": ["NanoPB IPC Cap 2 Unwrapped Short"],
+        "system_type": system_type_sel4test,
+        "pd_deletion_depth": 0,
+        "rs_deletion_depth": 0,
+    },
+    {
+        "test_name": "GPIBM121",
+        "n_reboots": 1,
+        "bench_names": ["NanoPB IPC 2 Unwrapped Long"],
+        "system_type": system_type_sel4test,
+        "pd_deletion_depth": 0,
+        "rs_deletion_depth": 0,
+    },
+    {
+        "test_name": "GPIBM122",
+        "n_reboots": 1,
+        "bench_names": ["NanoPB IPC 2 Unwrapped Short"],
+        "system_type": system_type_sel4test,
+        "pd_deletion_depth": 0,
+        "rs_deletion_depth": 0,
+    },
+    {
+        "test_name": "GPIBM123",
+        "n_reboots": 1,
+        "bench_names": ["NanoPB IPC Cap 2 Unwrapped Long"],
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
@@ -128,12 +274,15 @@ basic_test_configurations = [
         "system_type": system_type_osm,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
+        
     }, 
     {
         "test_name": "GPIBM002",
         "n_reboots": 1,
         "bench_names": basic_bench_names,
         "system_type": system_type_osm,
+        "pd_deletion_depth": 0,
+        "rs_deletion_depth": 0,
     },
     {
         "test_name": "GPIBM004",
@@ -302,7 +451,7 @@ cleanup_test_configurations = [
         "rs_deletion_depth": 0,
     },
 ]
-selected_tests = ipc_test_configurations
+selected_tests = basic_test_configurations[1:]
 
 # Configuration for tftpboot
 lindt_ip = "10.42.0.1"
@@ -374,6 +523,8 @@ def build_images(build_folder, configurations):
         dest_path = path.join(tftboot_folder, image_name)
         copyfile(build_image_path, dest_path)
         
+        print(f"Wrote image to {dest_path}")
+        
     # Return to previous dir
     chdir(cwd)
         
@@ -420,7 +571,7 @@ def boot(serial_device, config):
             print("Timeout while reading from serial")
             return
     
-    print("Loading image...")
+    print(f"Loading image {image_name}...")
     serial_device.write(str.encode(f'tftpboot 0x20000000 {lindt_ip}:{image_name}; go 0x20000000\n'))
 
     while (line != uboot_starting):
@@ -480,11 +631,11 @@ def read_result(serial_device, n_columns):
 if __name__ == "__main__":
     # Build the images
     build_images(build_folder, selected_tests)
-     
+    
     # Run the Benchmarks
-    df = pd.DataFrame()
     uart_device = serial.Serial(uart_device_name, timeout=3)
     power_off(uart_device)
+    first_run = True
 
     for test_config in selected_tests:
         print("")
@@ -494,22 +645,57 @@ if __name__ == "__main__":
         
         results = []
         
-        for i in range(test_config["n_reboots"]):
-            # New serial connection
-            serial_device = serial.Serial(serial_device_name, baudrate=115200, timeout=10)
+        i = 0
+        n_retries = 0
+        while i < test_config["n_reboots"]:
+            try:
+                print(f"--> Begin Iteration {i}")
+                
+                # New serial connection
+                serial_device = serial.Serial(serial_device_name, baudrate=115200, timeout=10)
 
-            # Boot
-            power_on(uart_device)
-            boot(serial_device, test_config)
-            result = read_result(serial_device, len(test_config["bench_names"]))
+                # Boot
+                power_on(uart_device)
+                boot(serial_device, test_config)
+                result = read_result(serial_device, len(test_config["bench_names"]))
 
-            if (len(result) == 0):
+                if (len(result) == 0):
+                    raise Exception("Result has no value")
+
+                # Store result and shutdown
+                results.extend(result)
+                power_off(uart_device)
+                serial_device.close()
+                
+                # Flush output, for nohup
+                stdout.flush()
+
+                i += 1
+                n_retries = 0
+            except:
+                # Something went wrong, try to recover
                 print(f'Failed cycle {i}')
-
-            # Store result and shutdown
-            results.extend(result)
-            power_off(uart_device)
-            serial_device.close()
+                
+                if (n_retries >= max_n_retries):
+                    print(f'Max number of retries reached, abort')
+                    break
+                
+                power_off(uart_device)
+                sleep(2)
+                uart_device.close()
+                
+                uart_device = serial.Serial(uart_device_name, timeout=3)
+                power_off(uart_device)
+                sleep(2)
+                
+                n_retries += 1
+            
+        # Read the old CSV
+        if not first_run:
+            df = pd.read_csv(csv_path, header=0)
+        else:
+            df = pd.DataFrame()
+            first_run = False
 
         # Update the CSV
         columns = [(f'{x}'
@@ -521,8 +707,17 @@ if __name__ == "__main__":
 
         # Combine new data with old data
         df = pd.merge(df, df_new, how="outer", left_index=True, right_index=True)
+        
+        # Save to file
+        df.to_csv(csv_path, header=True, index=False)
+        
+        # Clear df from memory
+        # This means we don't need to keep the entire csv in memory for long runs
+        del df
+        df = None
+        
+        # Quit if we reached the maximum number of retries
+        if (n_retries >= max_n_retries):
+            break
 
     uart_device.close()
-    df.to_csv(csv_path, header=True, index=False)
-
-    
