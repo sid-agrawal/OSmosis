@@ -1,8 +1,8 @@
-## Benchmarking
+# Benchmarking
 
 This script builds and runs a series of images for benchmarking CellulOS on the Odroid-C4 board.
 
-### Setup 
+## Setup 
 (Assumes that `python 3.10` and `virtualenv` are already installed)
 
 1. Create the virtualenv: `python -m venv venv` 
@@ -13,7 +13,7 @@ This script builds and runs a series of images for benchmarking CellulOS on the 
 4. Set configuration options in `run_benchmarks.py` (currently just hardcoded in the script)
     - Set the `build_folder` to a folder in the OSmosis repo
 
-### Test Configuration
+## Test Configuration
 - Tests first need to be configured in `sel4test` using `sel4bench` to output timing results:
 ```c
 static void print_result(uint64_t result)
@@ -88,7 +88,7 @@ test_configurations = [
 selected_tests = test_configurations
 ```
 
-### Running Benchmarks
+## Running Benchmarks
 1. Choose which test configurations to run: in the script set, the `selected_tests` variable
 2. From within the virtualenv: `sudo -E env PATH=$PATH python run_benchmarks.py`
     - `sudo` is needed for the script to access `/dev/ttyUSB0` & `/dev/ttyUSB0`, and copy build images to `/srv/tftp`

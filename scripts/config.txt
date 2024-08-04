@@ -1,4 +1,0 @@
-[neo4j]
-url = neo4j+s:// <...>
-user = neo4j
-pass = <...>

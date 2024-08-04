@@ -12,9 +12,10 @@ import re
 import logging, sys
 
 logging.basicConfig(stream=sys.stderr, level=logging.INFO)
+pd.set_option('future.no_silent_downcasting', True)
 
 ROOT_TASK_PD = "PD_0"
-TEST_TASK_PD = "PD_2"
+TEST_TASK_PD = "PD_1"
 IGNORE_PDS = [ROOT_TASK_PD,TEST_TASK_PD]
 
 def read_csv_to_dataframe(filename):

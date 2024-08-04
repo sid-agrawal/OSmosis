@@ -9,6 +9,7 @@ import pandas as pd
 import networkx as nx
 from collections import deque
 import logging, sys
+import re as re
 
 logging.basicConfig(stream=sys.stderr, level=logging.INFO)
 
@@ -22,6 +23,7 @@ configurations = [
     {'file': 'kvstore_4_diff_fs.csv', 'pd1': 'PD_6.0.0', 'pd2': 'PD_7.0.0'},
     {'file': 'kvstore_5_diff_ads.csv', 'pd1': 'PD_5.0.0', 'pd2': 'PD_5.0.1'},
     {'file': 'kvstore_6_diff_threads.csv', 'pd1': 'PD_5.0.0', 'pd2': 'PD_5.1.0'},
+    {'file': 'kvstore_007.csv', 'pd1': 'PD_6.0', 'pd2': 'PD_7.0'}
 ]
 
 parser = argparse.ArgumentParser("metrics")
@@ -33,6 +35,9 @@ config.read("config.txt")
 
 URI = config.get("neo4j", "url")
 AUTH = (config.get("neo4j", "user"), config.get("neo4j", "pass"))
+
+# The MO extras field is of the format 0xaddr_pages_sizebits
+mo_extra_pages_regex = r'(?<=_)\d+(?=_)'
 
 def calc_rsi(pd1, pd2):
     # Resource types of interest
@@ -77,7 +82,8 @@ def calc_rsi(pd1, pd2):
             if (type == "MO"):
                 # Treat MOs specially, we use the number of pages to calculate RSI for PMR
                 # The 'extras' field contains the number of physical pages
-                rsi = float(sum([float(i) for i in extras_intersect])) / sum([float(i) for i in extras_union])
+                rsi = float(sum([float(re.search(mo_extra_pages_regex, extra).group(0)) for extra in extras_intersect])) / \
+                      sum([float(re.search(mo_extra_pages_regex, extra).group(0)) for extra in extras_union])
             elif count_union > 0:
                 rsi = count_intersect / count_union
 

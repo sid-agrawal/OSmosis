@@ -1,5 +1,5 @@
 # Import a CSV file to Neo4j
-# Usage: pass the command line argument for the gdrive url index to upload
+# Usage: pass the command line argument for the public url index to upload
 # eg: python import_csv.py 3
 
 from neo4j import GraphDatabase
@@ -17,15 +17,9 @@ URI = config.get("neo4j", "url")
 AUTH = (config.get("neo4j", "user"), config.get("neo4j", "pass"))
 
 # Public CSV file for upload
-gdriveUrls = [
-"", #0
-"https://drive.google.com/uc?export=download&id=18x8W0HIMJhkRw3YRZzGMLD1gYYPG9Rpe", # 1
-"https://drive.google.com/uc?export=download&id=12n97Zlo4UNkt7T9tx9ePlkmn6pw72NLS", # 2
-"https://drive.google.com/uc?export=download&id=1K-qNGXI1uafKqMPt4bDNTBhH3DEZ7DYy", # 3
-"https://drive.google.com/uc?export=download&id=1pY6ftNAMiShIq2CgurVbmxPgredawu-g", # 4
-"https://drive.google.com/uc?export=download&id=1X3648_Tq0VAw-UVVnwOqMRsZ7el0aVMV", # 5
-"https://drive.google.com/uc?export=download&id=17Dbzko_liuN-YPkxjuItWjHk72gPDrJn", # 6
-"https://drive.google.com/uc?export=download&id=1yZyo9uMzjseCbr4vuWtgE-5PhiRyDteQ", # 7, test
+public_urls = [
+"https://drive.google.com/uc?id=1A361wLYEt5RKB8BHg6zD8XCWRVifQjui&export=download", #0
+"https://drive.google.com/file/d/1A361wLYEt5RKB8BHg6zD8XCWRVifQjui/view?usp=drive_link"
 ]
 
 def upload_csv(file_url):
@@ -74,5 +68,5 @@ def upload_csv(file_url):
         print("Complete")
 
 if __name__ == "__main__":
-    file_url = gdriveUrls[args.file]
+    file_url = public_urls[args.file]
     upload_csv(file_url)

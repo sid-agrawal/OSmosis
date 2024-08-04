@@ -5,3 +5,6 @@ odroid-build
 compile_commands.json
 doxygen/
 .vscode/settings.json
+**/venv/
+scripts/model_state/config.txt
+scripts/model_state/*.csv
