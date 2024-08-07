@@ -7,7 +7,8 @@ import argparse
 import configparser
 
 parser = argparse.ArgumentParser("import_csv")
-parser.add_argument("file", help="ID of csv to upload", type=int)
+parser.add_argument("-f", "--file", help="a LOCAL CSV file to upload")
+parser.add_argument("--uidx", help="index of a URL in public_urls to upload", type=int)
 args = parser.parse_args()
 
 config = configparser.ConfigParser()   
@@ -68,5 +69,14 @@ def upload_csv(file_url):
         print("Complete")
 
 if __name__ == "__main__":
-    file_url = public_urls[args.file]
+    if args.file is not None and len(args.file) > 0:
+        file_url = "file:///" + args.file
+    elif args.uidx is not None:
+        file_url = public_urls[args.uidx]
+    else:
+        print(
+            "Please provide either a local CSV file or an index for a remote CSV URL in the public_urls array"
+        )
+        parser.parse_args(['-h'])
+        raise SystemExit()
     upload_csv(file_url)
