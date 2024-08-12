@@ -37,6 +37,7 @@ cleanup_toy_file_server_names = ["PD cleanup toy file server"]
 cleanup_toy_db_server_names = ["PD cleanup toy db server"]
 cleanup_ramdisk_names = ["PD cleanup ramdisk"]
 cleanup_fs_names = ["PD cleanup fs"]
+cleanup_kvstore_names = ["PD cleanup kvstore"]
 
 # Test configurations
 n_iters = 500       # Number of iterations for reboot tests
@@ -406,55 +407,104 @@ toy_cleanup_test_configurations = [
 
 cleanup_test_configurations = [
     {
-        "test_name": "GPIBM0014",
-        "n_reboots": n_iters,
+        "test_name": "GPIBM009",
+        "n_reboots": 1,
         "bench_names": cleanup_ramdisk_names,
         "system_type": system_type_osm,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
     },
     {
-        "test_name": "GPIBM0014",
-        "n_reboots": n_iters,
+        "test_name": "GPIBM009",
+        "n_reboots": 1,
         "bench_names": cleanup_ramdisk_names,
         "system_type": system_type_osm,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 1,
     },
     {
-        "test_name": "GPIBM0014",
-        "n_reboots": n_iters,
+        "test_name": "GPIBM009",
+        "n_reboots": 1,
+        "bench_names": cleanup_ramdisk_names,
+        "system_type": system_type_osm,
+        "pd_deletion_depth": 0,
+        "rs_deletion_depth": 2,
+    },
+    {
+        "test_name": "GPIBM009",
+        "n_reboots": 1,
         "bench_names": cleanup_ramdisk_names,
         "system_type": system_type_osm,
         "pd_deletion_depth": 1,
         "rs_deletion_depth": 0,
     },
     {
-        "test_name": "GPIBM0014",
-        "n_reboots": n_iters,
+        "test_name": "GPIBM009",
+        "n_reboots": 1,
+        "bench_names": cleanup_ramdisk_names,
+        "system_type": system_type_osm,
+        "pd_deletion_depth": 1,
+        "rs_deletion_depth": 2,
+    },
+    {
+        "test_name": "GPIBM009",
+        "n_reboots": 1,
         "bench_names": cleanup_ramdisk_names,
         "system_type": system_type_osm,
         "pd_deletion_depth": 2,
         "rs_deletion_depth": 0,
     },
     {
-        "test_name": "GPIBM0015",
-        "n_reboots": n_iters,
+        "test_name": "GPIBM009",
+        "n_reboots": 1,
+        "bench_names": cleanup_ramdisk_names,
+        "system_type": system_type_osm,
+        "pd_deletion_depth": 3,
+        "rs_deletion_depth": 0,
+    },
+    {
+        "test_name": "GPIBM010",
+        "n_reboots": 1,
         "bench_names": cleanup_fs_names,
         "system_type": system_type_osm,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
     },
     {
-        "test_name": "GPIBM0015",
-        "n_reboots": n_iters,
+        "test_name": "GPIBM010",
+        "n_reboots": 1,
+        "bench_names": cleanup_fs_names,
+        "system_type": system_type_osm,
+        "pd_deletion_depth": 0,
+        "rs_deletion_depth": 1,
+    },
+    {
+        "test_name": "GPIBM010",
+        "n_reboots": 1,
         "bench_names": cleanup_fs_names,
         "system_type": system_type_osm,
         "pd_deletion_depth": 1,
         "rs_deletion_depth": 0,
     },
+    {
+        "test_name": "GPIBM010",
+        "n_reboots": 1,
+        "bench_names": cleanup_fs_names,
+        "system_type": system_type_osm,
+        "pd_deletion_depth": 2,
+        "rs_deletion_depth": 0,
+    },
+    {
+        "test_name": "GPIBM011",
+        "n_reboots": 1,
+        "bench_names": cleanup_kvstore_names,
+        "system_type": system_type_osm,
+        "pd_deletion_depth": 0,
+        "rs_deletion_depth": 0,
+    },
 ]
-selected_tests = basic_test_configurations
+
+selected_tests = cleanup_test_configurations
 
 # Configuration for tftpboot
 lindt_ip = "10.42.0.1"
