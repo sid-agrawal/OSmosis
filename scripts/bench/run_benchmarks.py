@@ -452,7 +452,7 @@ cleanup_test_configurations = [
         "rs_deletion_depth": 0,
     },
 ]
-selected_tests = [basic_test_configurations[5], basic_test_configurations[7]]
+selected_tests = basic_test_configurations
 
 # Configuration for tftpboot
 lindt_ip = "10.42.0.1"
@@ -620,8 +620,8 @@ def read_result(serial_device, n_columns, results):
     - n_results is the number of results read from terminal divided by n_columns
     """
     line = ""
-    row_idx = 0     # current result row
-    column_idx = 0  # current result column
+    row_idx = len(results)     # current result row
+    column_idx = 0             # current result column
 
     while (line != tests_finished):
         line = serial_device.readline()
@@ -657,7 +657,7 @@ def read_result(serial_device, n_columns, results):
 
 if __name__ == "__main__":
     # Build the images
-    # build_images(build_folder, selected_tests)
+    build_images(build_folder, selected_tests)
     
     # Run the Benchmarks
     uart_device = serial.Serial(uart_device_name, timeout=3)
