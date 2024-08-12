@@ -1,4 +1,5 @@
 import serial
+import os
 from time import sleep
 import pandas as pd
 import os.path as path
@@ -10,7 +11,8 @@ from sys import stdout
 ### CONFIGURATION ###
 
 # Paths
-build_folder = "/home/arya/OSmosis/odroid-build/"
+username = os.getlogin()
+build_folder = "/home/"+username+"/OSmosis/odroid-build/"
 tftboot_folder = "/srv/tftp/"
 build_image_path = "./images/sel4test-driver-image-arm-odroidc4" # from the build folder
 
