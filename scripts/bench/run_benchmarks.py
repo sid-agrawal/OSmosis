@@ -25,6 +25,9 @@ print_logs = True
 csv_path = "./benchmarks.csv"
 
 # Definitions for test configurations
+run_type_reboot = "reboot"
+run_type_noreboot = "no reboot"
+
 system_type_sel4test = "sel4test"
 system_type_osm = "osm"
 
@@ -40,13 +43,13 @@ cleanup_fs_names = ["PD cleanup fs"]
 cleanup_kvstore_names = ["PD cleanup kvstore"]
 
 # Test configurations
-n_iters = 500       # Number of iterations for reboot tests
+n_iter_bits = 6          # Number of iterations for tests is 2^n_iter_bits
 max_n_boot_retries = 5   # Number of times to try retry if serial is not working, before we abort the script
 
 ipc_test_configurations = [
     {
         "test_name": "GPIBM100",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": ["Regular IPC Short"],
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
@@ -54,7 +57,7 @@ ipc_test_configurations = [
     },
     {
         "test_name": "GPIBM101",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": ["Regular IPC Long"],
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
@@ -62,7 +65,7 @@ ipc_test_configurations = [
     },
     {
         "test_name": "GPIBM102",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": ["Regular IPC Cap Short"],
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
@@ -70,7 +73,7 @@ ipc_test_configurations = [
     },
     {
         "test_name": "GPIBM103",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": ["Regular IPC Cap Long"],
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
@@ -78,7 +81,7 @@ ipc_test_configurations = [
     },
     {
         "test_name": "GPIBM104",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": ["Regular IPC 1 Unwrapped Short"],
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
@@ -86,7 +89,7 @@ ipc_test_configurations = [
     },
     {
         "test_name": "GPIBM105",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": ["Regular IPC 1 Unwrapped Long"],
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
@@ -94,7 +97,7 @@ ipc_test_configurations = [
     },
     {
         "test_name": "GPIBM106",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": ["Regular IPC Cap 1 Unwrapped Short"],
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
@@ -102,7 +105,7 @@ ipc_test_configurations = [
     },
     {
         "test_name": "GPIBM107",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": ["Regular IPC Cap 1 Unwrapped Long"],
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
@@ -110,7 +113,7 @@ ipc_test_configurations = [
     },
     {
         "test_name": "GPIBM108",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": ["Regular IPC 2 Unwrapped Short"],
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
@@ -118,7 +121,7 @@ ipc_test_configurations = [
     },
     {
         "test_name": "GPIBM109",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": ["Regular IPC 2 Unwrapped Long"],
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
@@ -126,7 +129,7 @@ ipc_test_configurations = [
     },
     {
         "test_name": "GPIBM110",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": ["Regular IPC Cap 2 Unwrapped Short"],
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
@@ -134,7 +137,7 @@ ipc_test_configurations = [
     },
     {
         "test_name": "GPIBM111",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": ["Regular IPC Cap 2 Unwrapped Long"],
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
@@ -142,7 +145,7 @@ ipc_test_configurations = [
     },
     {
         "test_name": "GPIBM112",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": ["NanoPB IPC Short"],
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
@@ -150,7 +153,7 @@ ipc_test_configurations = [
     },
     {
         "test_name": "GPIBM113",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": ["NanoPB IPC Long"],
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
@@ -158,7 +161,7 @@ ipc_test_configurations = [
     },
     {
         "test_name": "GPIBM114",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": ["NanoPB IPC Cap Short"],
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
@@ -166,7 +169,7 @@ ipc_test_configurations = [
     },
     {
         "test_name": "GPIBM115",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": ["Regular IPC Cap Long"],
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
@@ -174,7 +177,7 @@ ipc_test_configurations = [
     },
     {
         "test_name": "GPIBM116",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": ["NanoPB IPC 1 Unwrapped Short"],
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
@@ -182,7 +185,7 @@ ipc_test_configurations = [
     },
     {
         "test_name": "GPIBM117",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": ["NanoPB IPC 1 Unwrapped Long"],
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
@@ -190,7 +193,7 @@ ipc_test_configurations = [
     },
     {
         "test_name": "GPIBM118",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": ["NanoPB IPC Cap 1 Unwrapped Short"],
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
@@ -198,7 +201,7 @@ ipc_test_configurations = [
     },
     {
         "test_name": "GPIBM119",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": ["NanoPB IPC Cap 1 Unwrapped Long"],
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
@@ -206,7 +209,7 @@ ipc_test_configurations = [
     },
     {
         "test_name": "GPIBM120",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": ["NanoPB IPC Cap 2 Unwrapped Short"],
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
@@ -214,7 +217,7 @@ ipc_test_configurations = [
     },
     {
         "test_name": "GPIBM121",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": ["NanoPB IPC 2 Unwrapped Long"],
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
@@ -222,7 +225,7 @@ ipc_test_configurations = [
     },
     {
         "test_name": "GPIBM122",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": ["NanoPB IPC 2 Unwrapped Short"],
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
@@ -230,7 +233,7 @@ ipc_test_configurations = [
     },
     {
         "test_name": "GPIBM123",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": ["NanoPB IPC Cap 2 Unwrapped Long"],
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
@@ -241,7 +244,7 @@ ipc_test_configurations = [
 basic_test_configurations = [
     {
         "test_name": "GPIBM001",
-        "n_reboots": n_iters,
+        "run_type": run_type_reboot,
         "bench_names": basic_bench_names,
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
@@ -249,7 +252,7 @@ basic_test_configurations = [
     }, 
     {
         "test_name": "GPIBM001",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": basic_bench_names,
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
@@ -257,7 +260,7 @@ basic_test_configurations = [
     },
     {
         "test_name": "GPIBM003",
-        "n_reboots": n_iters,
+        "run_type": run_type_reboot,
         "bench_names": spawn_bench_names,
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
@@ -265,7 +268,7 @@ basic_test_configurations = [
     }, 
     {
         "test_name": "GPIBM003",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": spawn_bench_names,
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
@@ -273,7 +276,7 @@ basic_test_configurations = [
     },
     {
         "test_name": "GPIBM002",
-        "n_reboots": n_iters,
+        "run_type": run_type_reboot,
         "bench_names": basic_bench_names,
         "system_type": system_type_osm,
         "pd_deletion_depth": 0,
@@ -282,7 +285,7 @@ basic_test_configurations = [
     }, 
     {
         "test_name": "GPIBM002",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": basic_bench_names,
         "system_type": system_type_osm,
         "pd_deletion_depth": 0,
@@ -290,7 +293,7 @@ basic_test_configurations = [
     },
     {
         "test_name": "GPIBM004",
-        "n_reboots": n_iters,
+        "run_type": run_type_reboot,
         "bench_names": spawn_bench_names,
         "system_type": system_type_osm,
         "pd_deletion_depth": 0,
@@ -298,7 +301,7 @@ basic_test_configurations = [
     }, 
     {
         "test_name": "GPIBM004",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": spawn_bench_names,
         "system_type": system_type_osm,
         "pd_deletion_depth": 0,
@@ -309,7 +312,7 @@ basic_test_configurations = [
 toy_cleanup_test_configurations = [
     {
         "test_name": "GPIBM006",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": cleanup_toy_block_server_names,
         "system_type": system_type_osm,
         "pd_deletion_depth": 0,
@@ -317,7 +320,7 @@ toy_cleanup_test_configurations = [
     },
     {
         "test_name": "GPIBM006",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": cleanup_toy_block_server_names,
         "system_type": system_type_osm,
         "pd_deletion_depth": 0,
@@ -325,7 +328,7 @@ toy_cleanup_test_configurations = [
     },
     {
         "test_name": "GPIBM006",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": cleanup_toy_block_server_names,
         "system_type": system_type_osm,
         "pd_deletion_depth": 0,
@@ -333,7 +336,7 @@ toy_cleanup_test_configurations = [
     },
     {
         "test_name": "GPIBM006",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": cleanup_toy_block_server_names,
         "system_type": system_type_osm,
         "pd_deletion_depth": 1,
@@ -341,7 +344,7 @@ toy_cleanup_test_configurations = [
     },
     {
         "test_name": "GPIBM006",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": cleanup_toy_block_server_names,
         "system_type": system_type_osm,
         "pd_deletion_depth": 1,
@@ -349,7 +352,7 @@ toy_cleanup_test_configurations = [
     },
     {
         "test_name": "GPIBM006",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": cleanup_toy_block_server_names,
         "system_type": system_type_osm,
         "pd_deletion_depth": 2,
@@ -357,7 +360,7 @@ toy_cleanup_test_configurations = [
     },
     {
         "test_name": "GPIBM006",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": cleanup_toy_block_server_names,
         "system_type": system_type_osm,
         "pd_deletion_depth": 3,
@@ -365,7 +368,7 @@ toy_cleanup_test_configurations = [
     },
     {
         "test_name": "GPIBM007",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": cleanup_toy_file_server_names,
         "system_type": system_type_osm,
         "pd_deletion_depth": 0,
@@ -373,7 +376,7 @@ toy_cleanup_test_configurations = [
     },
     {
         "test_name": "GPIBM007",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": cleanup_toy_file_server_names,
         "system_type": system_type_osm,
         "pd_deletion_depth": 0,
@@ -381,7 +384,7 @@ toy_cleanup_test_configurations = [
     },
     {
         "test_name": "GPIBM007",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": cleanup_toy_file_server_names,
         "system_type": system_type_osm,
         "pd_deletion_depth": 1,
@@ -389,7 +392,7 @@ toy_cleanup_test_configurations = [
     },
     {
         "test_name": "GPIBM007",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": cleanup_toy_file_server_names,
         "system_type": system_type_osm,
         "pd_deletion_depth": 2,
@@ -397,7 +400,7 @@ toy_cleanup_test_configurations = [
     },
     {
         "test_name": "GPIBM008",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": cleanup_toy_db_server_names,
         "system_type": system_type_osm,
         "pd_deletion_depth": 0,
@@ -408,7 +411,7 @@ toy_cleanup_test_configurations = [
 cleanup_test_configurations = [
     {
         "test_name": "GPIBM009",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": cleanup_ramdisk_names,
         "system_type": system_type_osm,
         "pd_deletion_depth": 0,
@@ -416,7 +419,7 @@ cleanup_test_configurations = [
     },
     {
         "test_name": "GPIBM009",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": cleanup_ramdisk_names,
         "system_type": system_type_osm,
         "pd_deletion_depth": 0,
@@ -424,7 +427,7 @@ cleanup_test_configurations = [
     },
     {
         "test_name": "GPIBM009",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": cleanup_ramdisk_names,
         "system_type": system_type_osm,
         "pd_deletion_depth": 0,
@@ -432,7 +435,7 @@ cleanup_test_configurations = [
     },
     {
         "test_name": "GPIBM009",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": cleanup_ramdisk_names,
         "system_type": system_type_osm,
         "pd_deletion_depth": 1,
@@ -440,7 +443,7 @@ cleanup_test_configurations = [
     },
     {
         "test_name": "GPIBM009",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": cleanup_ramdisk_names,
         "system_type": system_type_osm,
         "pd_deletion_depth": 1,
@@ -448,7 +451,7 @@ cleanup_test_configurations = [
     },
     {
         "test_name": "GPIBM009",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": cleanup_ramdisk_names,
         "system_type": system_type_osm,
         "pd_deletion_depth": 2,
@@ -456,7 +459,7 @@ cleanup_test_configurations = [
     },
     {
         "test_name": "GPIBM009",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": cleanup_ramdisk_names,
         "system_type": system_type_osm,
         "pd_deletion_depth": 3,
@@ -464,7 +467,7 @@ cleanup_test_configurations = [
     },
     {
         "test_name": "GPIBM010",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": cleanup_fs_names,
         "system_type": system_type_osm,
         "pd_deletion_depth": 0,
@@ -472,7 +475,7 @@ cleanup_test_configurations = [
     },
     {
         "test_name": "GPIBM010",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": cleanup_fs_names,
         "system_type": system_type_osm,
         "pd_deletion_depth": 0,
@@ -480,7 +483,7 @@ cleanup_test_configurations = [
     },
     {
         "test_name": "GPIBM010",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": cleanup_fs_names,
         "system_type": system_type_osm,
         "pd_deletion_depth": 1,
@@ -488,7 +491,7 @@ cleanup_test_configurations = [
     },
     {
         "test_name": "GPIBM010",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": cleanup_fs_names,
         "system_type": system_type_osm,
         "pd_deletion_depth": 2,
@@ -496,7 +499,7 @@ cleanup_test_configurations = [
     },
     {
         "test_name": "GPIBM011",
-        "n_reboots": 1,
+        "run_type": run_type_noreboot,
         "bench_names": cleanup_kvstore_names,
         "system_type": system_type_osm,
         "pd_deletion_depth": 0,
@@ -554,7 +557,7 @@ def image_name_from_config(config):
     return (
         f'{config["test_name"]}'
         f'-{config["system_type"]}'
-        f'-{"reboot" if config["n_reboots"] > 1 else "noreboot"}'
+        f'-{config["run_type"]}'
         f'-{config["pd_deletion_depth"]}'
         f'-{config["rs_deletion_depth"]}'
     )
@@ -576,7 +579,7 @@ def build_images(build_folder, configurations):
              "-DPLATFORM=odroidc4", 
              f'-DLibSel4TestPrinterRegex={config["test_name"]}',
              f'-DGPIServerEnabled={"ON" if config["system_type"] == system_type_osm else "OFF"}',
-             f'-DGPIBenchmarkMultiple={"ON" if config["n_reboots"] == 1 else "OFF"}',
+             f'-DGPIBenchmarkIterBits={n_iter_bits if config["run_type"] == run_type_noreboot else 0}',
              f'-DGPIPDDeletionDepth={config["pd_deletion_depth"]}',
              f'-DGPIRSDeletionDepth={config["rs_deletion_depth"]}')
         
@@ -584,7 +587,7 @@ def build_images(build_folder, configurations):
              "-DPLATFORM=odroidc4", 
              f'-DLibSel4TestPrinterRegex={config["test_name"]}',
              f'-DGPIServerEnabled={"ON" if config["system_type"] == system_type_osm else "OFF"}',
-             f'-DGPIBenchmarkMultiple={"ON" if config["n_reboots"] == 1 else "OFF"}',
+             f'-DGPIBenchmarkIterBits={n_iter_bits if config["run_type"] == run_type_noreboot else 0}',
              f'-DGPIPDDeletionDepth={config["pd_deletion_depth"]}',
              f'-DGPIRSDeletionDepth={config["rs_deletion_depth"]}'])
         
@@ -720,13 +723,14 @@ if __name__ == "__main__":
         print("")
         print("Running test: ", test_config["test_name"], "-",
               test_config["system_type"], "-",
-              "reboot" if test_config["n_reboots"] > 1 else "no reboot")
+              test_config["run_type"])
         
         results = []
         
         i = 0
         n_boot_retries = 0
-        while i < test_config["n_reboots"]:
+        n_reboots = 1 if test_config["run_type"] == run_type_noreboot else pow(2,n_iter_bits)
+        while i < n_reboots:
             try:
                 log(f"--> Begin Iteration {i}")
                 
@@ -782,7 +786,7 @@ if __name__ == "__main__":
         # Update the CSV
         columns = [(f'{x}'
                     f' - {test_config["system_type"]}'
-                    f' - {"reboot" if test_config["n_reboots"] > 1 else "no reboot"}'
+                    f' - {test_config["run_type"]}'
                     f' - [{test_config["pd_deletion_depth"]}, {test_config["rs_deletion_depth"]}]') 
                    for x in test_config["bench_names"]]
         df_new = pd.DataFrame.from_records(results, columns=columns)
