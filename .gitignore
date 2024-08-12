@@ -1,6 +1,7 @@
 .sel4_cache
 qemu-build
 build
+build*
 odroid-build
 compile_commands.json
 doxygen/
