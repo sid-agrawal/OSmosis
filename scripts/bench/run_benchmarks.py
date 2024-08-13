@@ -16,17 +16,20 @@ build_folder = "/home/"+username+"/OSmosis/odroid-build/"
 tftboot_folder = "/srv/tftp/"
 build_image_path = "./images/sel4test-driver-image-arm-odroidc4" # from the build folder
 
+# Options
+rebuild = True         # Rebuild the images
+
 # Print options
-print_uboot = False
-print_sel4test = False
-print_logs = True
+print_uboot = False         # Print the uboot logs
+print_sel4test = False      # Print the sel4test output
+print_logs = True           # Print logs from the benchmark script
 
 # CSV filename for output
 csv_path = "./benchmarks.csv"
 
 # Definitions for test configurations
 run_type_reboot = "reboot"
-run_type_noreboot = "no reboot"
+run_type_noreboot = "no_reboot"
 
 system_type_sel4test = "sel4test"
 system_type_osm = "osm"
@@ -43,7 +46,7 @@ cleanup_fs_names = ["PD cleanup fs"]
 cleanup_kvstore_names = ["PD cleanup kvstore"]
 
 # Test configurations
-n_iter_bits = 6          # Number of iterations for tests is 2^n_iter_bits
+n_iter_bits = 3          # Number of iterations for tests is 2^n_iter_bits
 max_n_boot_retries = 5   # Number of times to try retry if serial is not working, before we abort the script
 
 ipc_test_configurations = [
@@ -712,7 +715,8 @@ def read_result(serial_device, n_columns, results):
 
 if __name__ == "__main__":
     # Build the images
-    build_images(build_folder, selected_tests)
+    if rebuild:
+        build_images(build_folder, selected_tests)
     
     # Run the Benchmarks
     uart_device = serial.Serial(uart_device_name, timeout=3)
