@@ -1,5 +1,6 @@
 # CellulOS: An implementation of the OSmosis model.
-The details of the OSmosis model are available [here](https://arxiv.org/abs/2309.09291)
+The details of the OSmosis model are available [here](https://arxiv.org/abs/2309.09291) and [here](https://sid-agrawal.ca/agrawal_osmosis_2024.pdf).
+A wiki of CellulOS is available [here](https://cellulosdocs.readthedocs.io/en/cellulos/index.html)
 
 
 ## Setup the dev machine
