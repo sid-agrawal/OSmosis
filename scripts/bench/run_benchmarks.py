@@ -7,6 +7,7 @@ from subprocess import run
 from os import chdir, getcwd
 from shutil import copyfile
 from sys import stdout
+import re
 
 ### CONFIGURATION ###
 
@@ -17,11 +18,12 @@ tftboot_folder = "/srv/tftp/"
 build_image_path = "./images/sel4test-driver-image-arm-odroidc4" # from the build folder
 
 # Options
-rebuild = True         # Rebuild the images
+rebuild = True               # Rebuild the images
+track_nano_benchmarks = True # If true, record benchmark points part of larger ops
 
 # Print options
 print_uboot = False         # Print the uboot logs
-print_sel4test = False      # Print the sel4test output
+print_sel4test = True      # Print the sel4test output
 print_logs = True           # Print logs from the benchmark script
 
 # CSV filename for output
@@ -39,6 +41,7 @@ basic_bench_names = ["PD create", "Frame create", "ADS create", "ADS attach", "C
 spawn_bench_names = ["PD Spawn", "Send cap", "IPC to PD"]
 fs_bench_names = ["File Create"]
 cleanup_toy_block_server_names = ["PD cleanup toy block server"]
+cleanup_toy_block_server_nano_names = ["Stop CPU", "Dec CPU", "Dec ADS", "Destroy CNode", "Destroy Notif", "Free ELF", "Cleanup Hold Registry", "Mark Linked PDs", "Free Init Data MO", "Free VKA", "Sweep Resource Spaces", "Sweep PDs", "Cleanup PD resource", "Clear Pending Work"]
 cleanup_toy_file_server_names = ["PD cleanup toy file server"]
 cleanup_toy_db_server_names = ["PD cleanup toy db server"]
 cleanup_ramdisk_names = ["PD cleanup ramdisk"]
@@ -46,7 +49,7 @@ cleanup_fs_names = ["PD cleanup fs"]
 cleanup_kvstore_names = ["PD cleanup kvstore"]
 
 # Test configurations
-n_iter_bits = 3          # Number of iterations for tests is 2^n_iter_bits
+n_iter_bits = 6          # Number of iterations for tests is 2^n_iter_bits
 max_n_boot_retries = 5   # Number of times to try retry if serial is not working, before we abort the script
 
 ipc_test_configurations = [
@@ -57,6 +60,7 @@ ipc_test_configurations = [
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM101",
@@ -65,6 +69,7 @@ ipc_test_configurations = [
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM102",
@@ -73,6 +78,7 @@ ipc_test_configurations = [
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM103",
@@ -81,6 +87,7 @@ ipc_test_configurations = [
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM104",
@@ -89,6 +96,7 @@ ipc_test_configurations = [
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM105",
@@ -97,6 +105,7 @@ ipc_test_configurations = [
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM106",
@@ -105,6 +114,7 @@ ipc_test_configurations = [
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM107",
@@ -113,6 +123,7 @@ ipc_test_configurations = [
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM108",
@@ -121,6 +132,7 @@ ipc_test_configurations = [
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM109",
@@ -129,6 +141,7 @@ ipc_test_configurations = [
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM110",
@@ -137,6 +150,7 @@ ipc_test_configurations = [
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM111",
@@ -145,6 +159,7 @@ ipc_test_configurations = [
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM112",
@@ -153,6 +168,7 @@ ipc_test_configurations = [
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM113",
@@ -161,6 +177,7 @@ ipc_test_configurations = [
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM114",
@@ -169,6 +186,7 @@ ipc_test_configurations = [
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM115",
@@ -177,6 +195,7 @@ ipc_test_configurations = [
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM116",
@@ -185,6 +204,7 @@ ipc_test_configurations = [
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM117",
@@ -193,6 +213,7 @@ ipc_test_configurations = [
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM118",
@@ -201,6 +222,7 @@ ipc_test_configurations = [
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM119",
@@ -209,6 +231,7 @@ ipc_test_configurations = [
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM120",
@@ -217,6 +240,7 @@ ipc_test_configurations = [
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM121",
@@ -225,6 +249,7 @@ ipc_test_configurations = [
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM122",
@@ -233,6 +258,7 @@ ipc_test_configurations = [
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM123",
@@ -241,6 +267,7 @@ ipc_test_configurations = [
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
     },
 ]
 
@@ -252,7 +279,8 @@ basic_test_configurations = [
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
-    }, 
+        "run_nanobench": False,
+    },
     {
         "test_name": "GPIBM001",
         "run_type": run_type_noreboot,
@@ -260,6 +288,7 @@ basic_test_configurations = [
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM003",
@@ -268,7 +297,8 @@ basic_test_configurations = [
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
-    }, 
+        "run_nanobench": False,
+    },
     {
         "test_name": "GPIBM003",
         "run_type": run_type_noreboot,
@@ -276,6 +306,7 @@ basic_test_configurations = [
         "system_type": system_type_sel4test,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM002",
@@ -293,6 +324,7 @@ basic_test_configurations = [
         "system_type": system_type_osm,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM004",
@@ -301,7 +333,8 @@ basic_test_configurations = [
         "system_type": system_type_osm,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
-    }, 
+        "run_nanobench": False,
+    },
     {
         "test_name": "GPIBM004",
         "run_type": run_type_noreboot,
@@ -309,6 +342,7 @@ basic_test_configurations = [
         "system_type": system_type_osm,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
     },
 ]
 
@@ -320,6 +354,16 @@ toy_cleanup_test_configurations = [
         "system_type": system_type_osm,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
+    },
+    {
+        "test_name": "GPIBM006",
+        "run_type": run_type_noreboot,
+        "bench_names": cleanup_toy_block_server_nano_names + cleanup_toy_block_server_names,
+        "system_type": system_type_osm,
+        "pd_deletion_depth": 0,
+        "rs_deletion_depth": 0,
+        "run_nanobench": True,
     },
     {
         "test_name": "GPIBM006",
@@ -328,6 +372,7 @@ toy_cleanup_test_configurations = [
         "system_type": system_type_osm,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 1,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM006",
@@ -336,6 +381,7 @@ toy_cleanup_test_configurations = [
         "system_type": system_type_osm,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 2,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM006",
@@ -344,6 +390,7 @@ toy_cleanup_test_configurations = [
         "system_type": system_type_osm,
         "pd_deletion_depth": 1,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM006",
@@ -352,6 +399,7 @@ toy_cleanup_test_configurations = [
         "system_type": system_type_osm,
         "pd_deletion_depth": 1,
         "rs_deletion_depth": 2,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM006",
@@ -360,6 +408,7 @@ toy_cleanup_test_configurations = [
         "system_type": system_type_osm,
         "pd_deletion_depth": 2,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM006",
@@ -368,6 +417,7 @@ toy_cleanup_test_configurations = [
         "system_type": system_type_osm,
         "pd_deletion_depth": 3,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM007",
@@ -376,6 +426,7 @@ toy_cleanup_test_configurations = [
         "system_type": system_type_osm,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM007",
@@ -384,6 +435,7 @@ toy_cleanup_test_configurations = [
         "system_type": system_type_osm,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 1,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM007",
@@ -392,6 +444,7 @@ toy_cleanup_test_configurations = [
         "system_type": system_type_osm,
         "pd_deletion_depth": 1,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM007",
@@ -400,6 +453,7 @@ toy_cleanup_test_configurations = [
         "system_type": system_type_osm,
         "pd_deletion_depth": 2,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM008",
@@ -408,6 +462,7 @@ toy_cleanup_test_configurations = [
         "system_type": system_type_osm,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
     },
 ]
 
@@ -419,6 +474,7 @@ cleanup_test_configurations = [
         "system_type": system_type_osm,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM009",
@@ -427,6 +483,7 @@ cleanup_test_configurations = [
         "system_type": system_type_osm,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 1,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM009",
@@ -435,6 +492,7 @@ cleanup_test_configurations = [
         "system_type": system_type_osm,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 2,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM009",
@@ -443,6 +501,7 @@ cleanup_test_configurations = [
         "system_type": system_type_osm,
         "pd_deletion_depth": 1,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM009",
@@ -451,6 +510,7 @@ cleanup_test_configurations = [
         "system_type": system_type_osm,
         "pd_deletion_depth": 1,
         "rs_deletion_depth": 2,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM009",
@@ -459,6 +519,7 @@ cleanup_test_configurations = [
         "system_type": system_type_osm,
         "pd_deletion_depth": 2,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM009",
@@ -467,6 +528,7 @@ cleanup_test_configurations = [
         "system_type": system_type_osm,
         "pd_deletion_depth": 3,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM010",
@@ -475,6 +537,7 @@ cleanup_test_configurations = [
         "system_type": system_type_osm,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM010",
@@ -483,6 +546,7 @@ cleanup_test_configurations = [
         "system_type": system_type_osm,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 1,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM010",
@@ -491,6 +555,7 @@ cleanup_test_configurations = [
         "system_type": system_type_osm,
         "pd_deletion_depth": 1,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM010",
@@ -499,6 +564,7 @@ cleanup_test_configurations = [
         "system_type": system_type_osm,
         "pd_deletion_depth": 2,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
     },
     {
         "test_name": "GPIBM011",
@@ -507,10 +573,11 @@ cleanup_test_configurations = [
         "system_type": system_type_osm,
         "pd_deletion_depth": 0,
         "rs_deletion_depth": 0,
+        "run_nanobench": False,
     },
 ]
 
-selected_tests = cleanup_test_configurations
+selected_tests = toy_cleanup_test_configurations[1:2]
 
 # Configuration for tftpboot
 lindt_ip = "10.42.0.1"
@@ -526,8 +593,12 @@ serial_device_name = usb1 # Serial converter
 # Output lines
 uboot_input = b'=> '
 uboot_starting = b'## Starting application at 0x20000000 ...\r\n'
+test_finished_re = r'Test GPI.* passed'
 tests_finished = b'All is well in the universe\r\n'
 test_result = "RESULT>"
+record_nano_start = ">STARTNANO"
+record_nano_stop = ">STOPNANO"
+nano_test_result = "NANORESULT>"
 fail_assertion = "Assertion failed:"
 fail_test = "        Error: result == SUCCESS"
 fail_test_2 = "        Failure: result == SUCCESS"
@@ -563,6 +634,7 @@ def image_name_from_config(config):
         f'-{config["run_type"]}'
         f'-{config["pd_deletion_depth"]}'
         f'-{config["rs_deletion_depth"]}'
+        f'{"-nano" if config["run_nanobench"] else ""}'
     )
     
 def build_images(build_folder, configurations):
@@ -582,6 +654,7 @@ def build_images(build_folder, configurations):
              "-DPLATFORM=odroidc4", 
              f'-DLibSel4TestPrinterRegex={config["test_name"]}',
              f'-DGPIServerEnabled={"ON" if config["system_type"] == system_type_osm else "OFF"}',
+             f'-DGPINanobenchEnabled={"ON" if config["run_nanobench"] else "OFF"}',
              f'-DGPIBenchmarkIterBits={n_iter_bits if config["run_type"] == run_type_noreboot else 0}',
              f'-DGPIPDDeletionDepth={config["pd_deletion_depth"]}',
              f'-DGPIRSDeletionDepth={config["rs_deletion_depth"]}')
@@ -590,6 +663,7 @@ def build_images(build_folder, configurations):
              "-DPLATFORM=odroidc4", 
              f'-DLibSel4TestPrinterRegex={config["test_name"]}',
              f'-DGPIServerEnabled={"ON" if config["system_type"] == system_type_osm else "OFF"}',
+             f'-DGPINanobenchEnabled={"ON" if config["run_nanobench"] else "OFF"}',
              f'-DGPIBenchmarkIterBits={n_iter_bits if config["run_type"] == run_type_noreboot else 0}',
              f'-DGPIPDDeletionDepth={config["pd_deletion_depth"]}',
              f'-DGPIRSDeletionDepth={config["rs_deletion_depth"]}'])
@@ -663,7 +737,7 @@ def boot(serial_device, config):
     
     log("Running sel4...")
 
-def read_result(serial_device, n_columns, results):
+def read_single_test(serial_device, n_columns):
     """
     Reads the serial output from the sel4 image
     
@@ -673,15 +747,16 @@ def read_result(serial_device, n_columns, results):
     :raises TestFailure: if the output indicates any test failed
     :raises TestTimeout: if there is a timeout while reading from serial
     
-    Saves benchmark results to an array of dimension (n_results, n_columns)
+    Saves benchmark results to an array of dimension (1, n_columns)
     - n_columns is given
-    - n_results is the number of results read from terminal divided by n_columns
     """
-    line = ""
-    row_idx = len(results)     # current result row
+    
+    result = []
+    line_str = ""              
     column_idx = 0             # current result column
-
-    while (line != tests_finished):
+    recording_nano = False
+    
+    while not re.match(test_finished_re, line_str):
         line = serial_device.readline()
 
         if print_sel4test:
@@ -692,26 +767,59 @@ def read_result(serial_device, n_columns, results):
         if len(line) == 0:
             raise TestTimeout("Timeout while reading from serial")
         
-        elif line_str.startswith(test_result):
-            # Start a new row if needed
-            if column_idx == 0:
-                results.append([])
-
+        elif line_str.startswith(record_nano_start):
+            recording_nano = True
+        
+        elif line_str.startswith(record_nano_stop):
+            recording_nano = False
+            
+        elif column_idx < n_columns and line_str.startswith(test_result):
             # Append the result
-            results[row_idx].append(int(line_str[len(test_result):]))
+            result.append(int(line_str[len(test_result):]))
 
             # Increment the column
             column_idx += 1
+        
+        elif recording_nano and column_idx < n_columns and line_str.startswith(nano_test_result):
+            # Append the result
+            result.append(int(line_str[len(nano_test_result):]))
 
-            # Check if the row is finished
-            if column_idx == n_columns:
-                row_idx += 1
-                column_idx = 0
+            # Increment the column
+            column_idx += 1
         
         elif any([line_str.startswith(fail_msg) for fail_msg in fail_messages]):
             # Test failed for some reason
             raise TestFailure(f"Test failed with message: {line_str}")
-            
+    
+    return result
+
+def read_result(serial_device, n_columns, n_results, results):
+    """
+    Reads the serial output from the sel4 image
+    
+    :param serial.Serial serial_device: The initialized serial device to read test output from
+    :param int n_columns: The expected number of columns in one row of test results
+    :param int n_results: The expected number of test results to read
+    :param list[list[int]] results: Array to write results to
+    :raises TestFailure: if the output indicates any test failed
+    :raises TestTimeout: if there is a timeout while reading from serial
+    
+    Saves benchmark results to an array of dimension (n_results, n_columns)
+    - n_columns is given
+    - n_results is the number of results read from terminal divided by n_columns
+    """
+
+    for _ in range(n_results):
+        # Read one row
+        results.append(read_single_test(serial_device, n_columns))
+    
+    # Wait for tests to finish
+    line = ""
+    while(line != tests_finished):
+        line = serial_device.readline()
+
+        if print_sel4test:
+            print(line.decode(), end='')
 
 if __name__ == "__main__":
     # Build the images
@@ -734,6 +842,7 @@ if __name__ == "__main__":
         i = 0
         n_boot_retries = 0
         n_reboots = 1 if test_config["run_type"] == run_type_noreboot else pow(2,n_iter_bits)
+        n_results_per_boot = 1 if test_config["run_type"] == run_type_reboot else pow(2,n_iter_bits)
         while i < n_reboots:
             try:
                 log(f"--> Begin Iteration {i}")
@@ -744,7 +853,7 @@ if __name__ == "__main__":
                 # Boot
                 power_on(uart_device)
                 boot(serial_device, test_config)
-                read_result(serial_device, len(test_config["bench_names"]), results)
+                read_result(serial_device, len(test_config["bench_names"]), n_results_per_boot, results)
 
                 # Shutdown
                 power_off(uart_device)
@@ -778,6 +887,10 @@ if __name__ == "__main__":
                 break
             except TestTimeout:
                 print(f'Test timeout for cycle {i}, abort')
+                break
+            except Exception as e:
+                print(f'Unknown error for cycle {i}, abort')
+                print(e)
                 break
             
         # Read the old CSV
