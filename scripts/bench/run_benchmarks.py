@@ -663,7 +663,7 @@ def build_images(build_folder, configurations):
              f'-DGPIPDDeletionDepth={config["pd_deletion_depth"]}',
              f'-DGPIRSDeletionDepth={config["rs_deletion_depth"]}')
         
-        run(["../init-build.sh", 
+        result = run(["../init-build.sh", 
              "-DPLATFORM=odroidc4", 
              f'-DLibSel4TestPrinterRegex={config["test_name"]}',
              f'-DGPIServerEnabled={"ON" if config["system_type"] == system_type_osm else "OFF"}',
@@ -672,8 +672,21 @@ def build_images(build_folder, configurations):
              f'-DGPIPDDeletionDepth={config["pd_deletion_depth"]}',
              f'-DGPIRSDeletionDepth={config["rs_deletion_depth"]}'])
         
+        if result.returncode != 0:
+            print("Error message:", result.stderr)
+            print("init-build.sh failed with return code:", result.returncode)
+            exit(1)
+        else:
+            print("Command succeeded!")
+        
         # Build the image
-        run(["ninja"])
+        result = run(["ninja"])
+        if result.returncode != 0:
+            print("Error message:", result.stderr)
+            print("ninja failed with return code:", result.returncode)
+            exit(1)
+        else:
+            print("Command succeeded!")
         
         # Copy the image
         image_name = image_name_from_config(config)
