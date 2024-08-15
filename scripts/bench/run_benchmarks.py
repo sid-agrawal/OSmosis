@@ -346,6 +346,10 @@ basic_test_configurations = [
     },
 ]
 
+# The tests used in this config are:
+#   - GPIBM006 "osm toy server cleanup, crash block server",
+#   - GPIBM007 "osm toy server cleanup, crash file server",
+#   - GPIBM008 "osm toy server cleanup, crash db server",
 toy_cleanup_test_configurations = [
     {
         "test_name": "GPIBM006",
