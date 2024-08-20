@@ -50,6 +50,13 @@ git submodule foreach git checkout cellulos
 git status # This should show no chanages, as all the commits should be on the cellulos branch
 ```
 
+## Get details of ESR
+Often something dies horribly and you only have the ESR register's hex value as hints.
+Going through the 7K page ARM manual is surely fun, but just in case you are in a rush, 
+this URL can also be helpful.
+
+https://esr.arm64.dev/
+
 ## Build & Run
 ### Qemu
 ```bash
