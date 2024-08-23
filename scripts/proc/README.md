@@ -11,3 +11,26 @@ This is a sample script to extract model state from linux `/proc` (WIP)
 ## Run
 1. Activate the virtualenv: `source ./venv/bin/activate`.
 2. Run `sudo -E env PATH=./venv/bin python proc_model.py`.
+
+---
+
+## Investigation into procfs tools
+We investigated some potential tools to use for getting information out of procfs, and the details are recorded here.
+    
+Python tools
+- General: 
+    - [proc library](https://pypi.org/project/proc/): Seems to be broken, for example it isn't getting the virtual address of virtual memory regions from `/proc/pid/maps`.
+    - [procfs library](https://pypi.org/project/procfs/): I could not get this to run.
+    - [psutil library](https://pypi.org/project/psutil/): Doesn't provide enough information for us.
+    - [procpy library](https://code.google.com/archive/p/procpy/): Also not enough information.
+    - [jc library](https://kellyjonbrazil.github.io/jc/docs/parsers/proc.html): Plain parser for all proc files, converts the file to a dict.
+        - This one is useful, and we use it for `/maps` and `/smaps`. It did not have the ability to parse `/pagemap`.
+    - [PyProc project](https://github.com/cnamejj/PyProc): Also intended to be a general parser.
+        - It is for python 2, I used the [2to3](https://docs.python.org/3/library/2to3.html) package to convert it.
+        - It is not set up to use easily as a module, and I did not think it was providing anything new, so I did not investigate further.
+- Specific: 
+    - [hazelnut library](https://github.com/barnumbirr/hazelnut) for `meminfo`: Just aggregated stats, not that useful to us.
+     
+Non-python tools:
+- C++: https://github.com/dtrugman/pfs
+- Go: https://pkg.go.dev/github.com/prometheus/procfs#section-readme
