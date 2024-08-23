@@ -7,5 +7,7 @@ compile_commands.json
 doxygen/
 .vscode/settings.json
 **/venv/
+**/__pycache__/
 scripts/model_state/config.txt
 scripts/model_state/*.csv
+scripts/proc/*.csv

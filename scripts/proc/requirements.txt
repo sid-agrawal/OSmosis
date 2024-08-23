@@ -1,2 +1,2 @@
-psutil==6.0.0
-proc
+jc==1.25.3
+networkx==3.3

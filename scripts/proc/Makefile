@@ -1,14 +1,17 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -O2
-TARGETS = hello1 hello2
+TARGETS = hello hello_malloc pagemap
 
 all: $(TARGETS)
 
-hello1: hello1.c
-	$(CC) $(CFLAGS) -o hello1 hello1.c
+hello: hello.c
+	$(CC) $(CFLAGS) -o hello hello.c
 
-hello2: hello2.c
-	$(CC) $(CFLAGS) -o hello2 hello2.c
+hello_malloc: hello_malloc.c
+	$(CC) $(CFLAGS) -o hello_malloc hello_malloc.c
+
+pagemap: pagemap.c
+	$(CC) $(CFLAGS) -o pagemap pagemap.c
 
 clean:
 	rm -f $(TARGETS)
