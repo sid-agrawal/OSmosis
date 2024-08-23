@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 
-#define MALLOC_SIZE 1024
+#define MALLOC_SIZE 4096 * 3
+
 int main() {
    // Allocate and access some memory
    void *mem = malloc(MALLOC_SIZE);
@@ -13,6 +13,7 @@ int main() {
       counter = counter % 0x10000000;
       for (volatile int *i = mem; (void *) i < mem + MALLOC_SIZE; i++) {
          *i |= counter;
+         counter++;
       }
    }
 

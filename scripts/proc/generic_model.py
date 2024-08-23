@@ -22,15 +22,16 @@ class ResourceType(Enum):
     MO = 2 # Same as PMR, a region of contiguous virtual memory
 
 class VmrType(Enum):
-    HEAP = 1
+    UNKNOWN = 0
+    NONE = 1
     STACK = 2
     PROGRAM = 3
     LIB = 4
     VDSO = 5
     VVAR = 6
     VSYSCALL = 7
-    UNKNOWN = 8
-    NONE = 9
+    HEAP = 8
+    SHM = 9
     
 class EasyDict():
     """
