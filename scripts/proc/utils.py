@@ -45,6 +45,7 @@ class IntervalDict():
         """
         Add a value to the dictionary for an interval key
         This will fail if it overlaps an existing interval in the dict
+        Assumes closed start points and open end points
         
         :param start: start of the interval key
         :param end: end of the interval key
@@ -109,11 +110,14 @@ class IntervalDict():
                  or, if the range does not contain any interval, an empty list
         """
         
-        left_idx = bisect.bisect_left(self.endpoint_list, start)
-        right_idx = bisect.bisect_left(self.endpoint_list, end)
+        left_idx = bisect.bisect_left(self.endpoint_list, start + 1)
+        right_idx = bisect.bisect_left(self.endpoint_list, end - 1)
         
         results = []
-        for i in range(left_idx, right_idx + 1):
+        for i in range(left_idx - 1, right_idx):
+            if i < 0 or i >= self.list_len:
+                continue
+            
             val = self.dict.get(self.endpoint_list[i])
         
             if val:
@@ -124,20 +128,23 @@ class IntervalDict():
     def split_interval(self, split_at: int) -> any:
         """
         Splits an interval by the given split_at point
-        The right split will get a copy of the original value
+        The right split will get a shallow copy of the original value
         
         :param split_at: point at which to split the interval
-        :return: deep copy of the original interval's value, which is now the right split's value
+        :return: the copied value
         """
+        
+        print(f"Splitting at {split_at:16x}")
         
         idx = bisect.bisect_right(self.endpoint_list, split_at)
         val = self.dict.get(self.endpoint_list[idx - 1])
         
-        assert val is not None, "Can't split a nonexistant interval"
+        assert val is not None, f"Can't split a nonexistent interval [{self.endpoint_list[idx - 1]:16x}, {self.endpoint_list[idx]:16x}]"
         assert self.endpoint_list[idx - 1] != split_at and self.endpoint_list[idx] != split_at, "Can't split an interval at the endpoint"
         
         bisect.insort(self.endpoint_list, split_at)
-        val_copy = copy.deepcopy(val)
+        self.list_len += 1
+        val_copy = copy.copy(val)
         self.dict[split_at] = val_copy
         
         return val_copy

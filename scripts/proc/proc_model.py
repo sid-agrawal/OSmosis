@@ -64,6 +64,27 @@ def pathname_to_vmr_type(pathname: str):
     else:
         print(f"Warning: unknown pathname '{pathname}' for VMR")
         return VmrType.UNKNOWN
+    
+def perms_to_model_perms(perms: list[str]):
+    """ 
+    Convert a list of permissions to the generic model's Permissions object
+    """
+    perm_set = set()
+    for perm in perms:
+        if perm == "read":
+            perm_set.add(Permission.R)
+        elif perm == "write":
+            perm_set.add(Permission.W)
+        elif perm == "execute":
+            perm_set.add(Permission.X)
+        elif perm == "private":
+            perm_set.add(Permission.P)
+        elif perm == "shared":
+            perm_set.add(Permission.S)
+        else:
+            print(f"Warning, unknown permission '{perm}'")
+    
+    return Permissions(perm_set)
 
 def size_to_pages(size: int) -> int:
         """
@@ -87,7 +108,8 @@ class SubVMR:
 @dataclass
 class VMR:
     """Tracks a VMR in an address space."""
-    pathname: str   # What this VMR is for - a file, or a marker like '[heap]'
+    pathname: str    # What this VMR is for - a file, or a marker like '[heap]'
+    perms: list[str] # List of permissions for the VMR as given by /proc/pid/maps
     sub_vmrs: IntervalDict = field(default_factory=lambda: IntervalDict()) # Dict of contiguous mappings within this VMR
     # Address range is tracked by the IntervalDict
     model_id: list[int] = field(default_factory=list) # The ID(s) of this node in the model state, once added
@@ -118,13 +140,19 @@ class PMR:
     device: Device # The Device this PMR is from
     # Address range is tracked by the IntervalDict
     model_id: list[int] = field(default_factory=list) # The ID(s) of this node in the model state, once added
+    
+    # Define copy for when PMRs get split
+    def __copy__(self):
+        result = PMR(self.device)
+        
+        return result
 
 # Different ways to display VA / PA nodes in the graph
 class MappingType(Enum):
     PER_PAGE = 1        # Every node is exactly one page
     CO_CONTIGUOUS = 2   # Show co-contiguous mapped regions as one VA / PA node
     CONTIGUOUS = 3      # Show contiguous regions as one node
-                   
+
 class ProcFsData():
     """
     Intermediate repository for the relevant data from /proc for multiple processes
@@ -176,7 +204,7 @@ class ProcFsData():
         # Add the devices
         for (start, end), device_info in self.devices.items():
             device_info.model_id = self.model.add_resource_space_node(ResourceType.MO)
-            
+                    
         # Add the PMRs
         for (start, end), pmr_info in self.pmrs.items():
             n_pages = size_to_pages(end - start)
@@ -186,16 +214,16 @@ class ProcFsData():
                 # PMR regions have already been split to be co-contiguous
                 pmr_node_id = self.model.add_mo_node(pmr_info.device.model_id, start, n_pages)
                 pmr_info.model_id.append(pmr_node_id)
-                self.model.add_hold_edge(kernel_id, ResourceType.MO, pmr_info.device.model_id, pmr_node_id)
+                self.model.add_hold_edge(perms_all, kernel_id, ResourceType.MO, pmr_info.device.model_id, pmr_node_id)
             elif pmr_mapping_type is MappingType.CONTIGUOUS:
                 assert 0, "Contiguous mapping type for PMR is not currently supported"
             elif pmr_mapping_type is MappingType.PER_PAGE:
                 # Every page is a node
                 for i in range(n_pages):
                     pmr_info.model_id.append(self.model.add_mo_node(pmr_info.device.model_id, start + page_size * i, 1))
-        
+                
         # Add the processes
-        for pid, process_info in self.procs.items():
+        for process_info in self.procs.values():
             # Add the PD
             pd_id = self.model.add_pd_node(process_info.name)
             
@@ -210,14 +238,15 @@ class ProcFsData():
             # Add the VMRs
             for (start, end), vmr_info in process_info.ads.vmrs.items():
                 n_pages = size_to_pages(end - start)
+                perms = perms_to_model_perms(vmr_info.perms)
                 
                 vmr_node_id = 0
                 
                 # Contiguous VMR level
                 if vmr_mapping_type is MappingType.CONTIGUOUS:
                     vmr_node_id = self.model.add_vmr_node(ads_id, pathname_to_vmr_type(vmr_info.pathname), n_pages)
-                    self.model.add_hold_edge(kernel_id, ResourceType.VMR, ads_id, vmr_node_id)
-                    self.model.add_hold_edge(pd_id, ResourceType.VMR, ads_id, vmr_node_id)
+                    self.model.add_hold_edge(perms_all, kernel_id, ResourceType.VMR, ads_id, vmr_node_id)
+                    self.model.add_hold_edge(perms, pd_id, ResourceType.VMR, ads_id, vmr_node_id)
                     vmr_info.model_id.append(vmr_node_id)
                 
                 for (sub_start, sub_end), sub_vmr_info in vmr_info.sub_vmrs.items():
@@ -226,8 +255,8 @@ class ProcFsData():
                     # Co-contiguous VMR level
                     if vmr_mapping_type is MappingType.CO_CONTIGUOUS:
                         vmr_node_id = self.model.add_vmr_node(ads_id, pathname_to_vmr_type(vmr_info.pathname), sub_n_pages)
-                        self.model.add_hold_edge(kernel_id, ResourceType.VMR, ads_id, vmr_node_id)
-                        self.model.add_hold_edge(pd_id, ResourceType.VMR, ads_id, vmr_node_id)
+                        self.model.add_hold_edge(perms_all, kernel_id, ResourceType.VMR, ads_id, vmr_node_id)
+                        self.model.add_hold_edge(perms, pd_id, ResourceType.VMR, ads_id, vmr_node_id)
                         vmr_info.model_id.append(vmr_node_id)
                         
                     if vmr_mapping_type is MappingType.PER_PAGE or pmr_mapping_type is MappingType.PER_PAGE:
@@ -237,8 +266,8 @@ class ProcFsData():
                             
                             if vmr_mapping_type is MappingType.PER_PAGE:
                                 vmr_node_id = self.model.add_vmr_node(ads_id, pathname_to_vmr_type(vmr_info.pathname), 1)
-                                self.model.add_hold_edge(kernel_id, ResourceType.VMR, ads_id, vmr_node_id)
-                                self.model.add_hold_edge(pd_id, ResourceType.VMR, ads_id, vmr_node_id)
+                                self.model.add_hold_edge(perms_all, kernel_id, ResourceType.VMR, ads_id, vmr_node_id)
+                                self.model.add_hold_edge(perms, pd_id, ResourceType.VMR, ads_id, vmr_node_id)
                                 vmr_info.model_id.append(vmr_node_id)
                         
                             if sub_vmr_info.mapped:
@@ -377,11 +406,11 @@ def extract_memory_data(data: ProcFsData, process: subprocess.Popen):
     next_pagemap = next(pagemap_iter, None)
     
     for map_entry in maps:
-        vmr_info = VMR(map_entry.pathname)  
+        vmr_info = VMR(map_entry.pathname, map_entry.perms)  
         vmr_start_addr = int(map_entry.start, 16)
         vmr_end_addr = int(map_entry.end, 16)
         
-        log(f"Checking VMR {vmr_start_addr:16x}-{vmr_end_addr:16x}")
+        log(f"Checking VMR {vmr_start_addr:16x}-{vmr_end_addr:16x}, {vmr_info.pathname}")
         
         # Could get permissions here
         
@@ -419,13 +448,14 @@ def extract_memory_data(data: ProcFsData, process: subprocess.Popen):
                 pmr_start_addr = left_end
                 
             # Split if end overlaps with an existing pmr
-            (right_start, right_end), right_pmr_info = data.pmrs.get(pmr_end_addr)
-            
-            if right_pmr_info is not None:
-                if right_start != pmr_end_addr and right_end != pmr_end_addr:
-                    data.pmrs.split_interval(pmr_start_addr)
-                    
-                pmr_end_addr = right_start
+            if pmr_start_addr < pmr_end_addr:
+                (right_start, right_end), right_pmr_info = data.pmrs.get(pmr_end_addr - 1)
+                
+                if right_pmr_info is not None:
+                    if right_start != pmr_end_addr and right_end != pmr_end_addr:
+                        data.pmrs.split_interval(pmr_start_addr)
+                        
+                    pmr_end_addr = right_start
                 
             # Insert the device, if not already tracked
             _, device_info = data.devices.get(pagemap.device_addr)
