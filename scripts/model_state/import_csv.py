@@ -8,7 +8,9 @@ import configparser
 
 parser = argparse.ArgumentParser("import_csv")
 parser.add_argument("-f", "--file", help="a LOCAL CSV file to upload")
-parser.add_argument("--uidx", help="index of a URL in public_urls to upload", type=int)
+parser.add_argument("-i", "--uidx", help="index of a URL in public_urls to upload", type=int)
+parser.add_argument("-c", "--color", help="modifies node types for colored output in neo4j (does not work for metrics)", 
+                    action='store_true', default=False)
 args = parser.parse_args()
 
 config = configparser.ConfigParser()   
@@ -19,8 +21,12 @@ AUTH = (config.get("neo4j", "user"), config.get("neo4j", "pass"))
 
 # Public CSV file for upload
 public_urls = [
-"https://drive.google.com/uc?id=1A361wLYEt5RKB8BHg6zD8XCWRVifQjui&export=download", #0
-"https://drive.google.com/file/d/1A361wLYEt5RKB8BHg6zD8XCWRVifQjui/view?usp=drive_link"
+"https://drive.google.com/uc?id=1jfZn5dlESzoPav2b2Gxm7BYHNTgJ_Fpm&export=download", #0 proc basic, lindt
+"https://drive.google.com/uc?id=1SN8vHF8hDlkH-4QVLxFMUTcnnSW91qLq&export=download", #1 proc malloc, lindt
+"https://drive.google.com/uc?id=1-TfOq-eGQQeFnA1hNVSeze-SD7dBG6kh&export=download", #2 proc mmap, lindt
+"",
+"",
+"https://drive.google.com/uc?id=1h-F2jcFYY2680G_jMvOLyUw_MhsqdYtF&export=download", #5 proc mmap, ubuntu WSL
 ]
 
 def upload_csv(file_url):
@@ -43,10 +49,10 @@ def upload_csv(file_url):
                 LOAD CSV WITH HEADERS FROM '%s' AS row
                 WITH row
                 WHERE row.NODE_TYPE IS NOT NULL
-                CALL apoc.merge.node([row.NODE_TYPE], {ID: row.NODE_ID, DATA: row.DATA, EXTRA: coalesce(row.EXTRA, "0")}, {}, {})
+                CALL apoc.merge.node([%s], {NODE_TYPE: row.NODE_TYPE, ID: row.NODE_ID, DATA: row.DATA, EXTRA: coalesce(row.EXTRA, "0")}, {}, {})
                 YIELD node
                 RETURN null;
-                """ % file_url
+                """ % (file_url, 'row.NODE_TYPE + "_" + COALESCE(row.DATA, "")' if args.color else 'row.NODE_TYPE')
         
         driver.execute_query(query)
         
@@ -59,7 +65,7 @@ def upload_csv(file_url):
                 WHERE row.EDGE_TYPE IS NOT NULL
                 MATCH (n1 {ID: row.EDGE_FROM})
                 MATCH (n2 {ID: row.EDGE_TO})
-                CALL apoc.merge.relationship(n1, row.EDGE_TYPE, {TYPE: row.DATA}, {}, n2, {})
+                CALL apoc.merge.relationship(n1, row.EDGE_TYPE, {DATA: row.DATA}, {}, n2, {})
                 YIELD rel
                 RETURN null;
                 """ % file_url
