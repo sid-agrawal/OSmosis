@@ -9,12 +9,18 @@ import traceback
 from utils import EasyDict, IntervalDict
 from read_pagemap import get_va_pa_mappings, PageMapObj
 from generic_model import *
+import sys
+
+sys.path.append("pfs/lib")
+from pypfs import procfs
 
 ### CONFIGURATION ###
 print_logs = False
 
 program_names: EasyDict = EasyDict(
     basic = "hello",
+    static1 = "hello_static_1",
+    static2 = "hello_static_2",
     malloc = "hello_malloc",
     mmap = "hello_mmap")
 
@@ -25,9 +31,11 @@ run_configs = [
     [program_names.malloc, program_names.malloc],
     # 2: Hello with shared mem via mmap
     [program_names.mmap, program_names.mmap],
+    # 3: Hello linked statically
+    [program_names.static1, program_names.static2],
 ]
 
-to_run = run_configs[2]
+to_run = run_configs[3]
 
 def log(msg):
     if print_logs:
@@ -276,12 +284,12 @@ class ProcFsData():
                                     page_paddr = sub_pmr_start + page_size * i
                                     
                                     # Fetch the pmr every time, since the PMR may have been split
-                                    (pmr_start, pmr_end), pmr_info = self.model.pmrs.get(page_paddr)
+                                    (pmr_start, pmr_end), pmr_info = self.pmrs.get(page_paddr)
                                     mapped_devices.add(pmr_info.device.model_id)
                                 
                                     # Maps to one page
                                     pmr_page_idx = size_to_pages(page_paddr - pmr_start)
-                                    pmr_node_id = pmr_info.model_id[pmr_page_idx + i]
+                                    pmr_node_id = pmr_info.model_id[pmr_page_idx]
                                     
                                     # Find the model state ID for the relevant page in the PMR
                                     self.model.add_map_edge(ResourceType.VMR, ResourceType.MO, ads_id, pmr_info.device.model_id, vmr_node_id, pmr_node_id)
@@ -345,7 +353,7 @@ def parse_file(process: subprocess.Popen, filetype: str, should_print: bool = Fa
         print(json.dumps(results, indent=4))
         print("-" * 40)
     
-    return [EasyDict(**result) for result in results]
+    return [result if type(result) == str else EasyDict(**result) for result in results]
 
 def read_maps_file(process: subprocess.Popen, should_print: bool = False) -> list[EasyDict]:
     """
@@ -366,7 +374,18 @@ def read_smaps_file(process: subprocess.Popen, should_print: bool = False) -> li
     :return: a list of dicts representing the parsed file
     """
     return parse_file(process, 'smaps', should_print)
+
+
+def read_mountinfo_file(process: subprocess.Popen, should_print: bool = False) -> list[EasyDict]:
+    """
+    Parse a /proc/pid/mountinfo file
     
+    :param process: a process returned from run_process
+    :param should_print: if true, prints the raw and parsed file
+    :return: a list of dicts representing the parsed file
+    """
+    return parse_file(process, 'fdinfo', should_print)
+
 def read_pagemap_file(process: subprocess.Popen, should_print: bool = False) -> list[PageMapObj]:
     """
     Parse a /proc/pid/pagemaps file
@@ -499,7 +518,8 @@ if __name__ == "__main__":
     
     try:
         for proc in procs:
-            extract_process_data(data, proc)
+            read_mountinfo_file(proc, True)
+            #extract_process_data(data, proc)
     except Exception as e:
         print("Error printing stats for hello")
         print(repr(e))
