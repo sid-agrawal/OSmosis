@@ -26,7 +26,8 @@ public_urls = [
 "https://drive.google.com/uc?id=1-TfOq-eGQQeFnA1hNVSeze-SD7dBG6kh&export=download", #2 proc mmap, lindt
 "",
 "",
-"https://drive.google.com/uc?id=1h-F2jcFYY2680G_jMvOLyUw_MhsqdYtF&export=download", #5 proc mmap, ubuntu WSL
+"https://drive.google.com/uc?id=1h-F2jcFYY2680G_jMvOLyUw_MhsqdYtF&export=download", #5 proc mmap, ubuntu 
+"https://drive.google.com/uc?id=10UlRTsdnxyLU64gNpMWzdYhvmnUC--wR&export=download", #6, 
 ]
 
 def upload_csv(file_url):
@@ -48,7 +49,18 @@ def upload_csv(file_url):
         query = """
                 LOAD CSV WITH HEADERS FROM '%s' AS row
                 WITH row
-                WHERE row.NODE_TYPE IS NOT NULL
+                WHERE row.NODE_TYPE = "PD"
+                CALL apoc.merge.node([row.NODE_TYPE], {NODE_TYPE: row.NODE_TYPE, ID: row.NODE_ID, DATA: row.DATA, EXTRA: coalesce(row.EXTRA, "0")}, {}, {})
+                YIELD node
+                RETURN null;
+                """ % (file_url)
+        
+        driver.execute_query(query)
+        
+        query = """
+                LOAD CSV WITH HEADERS FROM '%s' AS row
+                WITH row
+                WHERE row.NODE_TYPE = "RESOURCE" OR row.NODE_TYPE = "RESOURCE_SPACE"
                 CALL apoc.merge.node([%s], {NODE_TYPE: row.NODE_TYPE, ID: row.NODE_ID, DATA: row.DATA, EXTRA: coalesce(row.EXTRA, "0")}, {}, {})
                 YIELD node
                 RETURN null;
