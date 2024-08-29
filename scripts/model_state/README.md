@@ -11,15 +11,17 @@ These scripts perform processing on a raw model state, import it into neo4j for 
 3. Install requirements: `pip install -r requirements.txt`.
     - Or manually install packages: `pandas==2.2.2, neo4j==5.23.0, networkx==3.3`.
 
-### Neo4j
+### Using a Neo4j Aura (Cloud) Instance
 1. Create a free account for [neo4j Aura](https://neo4j.com/cloud/platform/aura-graph-database/).
 2. When your account is created, it should automatically create an instance. Download the connection details.
-3. Fill out the `config.txt` in this directory from the connection details:
-```
-url = <paste NEO4J_URI>
-user = <paste NEO4J_USERNAME>
-pass = <paste NEO4J_PASSWORD>
-```
+3. Run `python neo4j_config_set.py --url <connection_url> --user <user> --password <password>` and replace the argument values with your connection details. This will create a `config.txt` file with your connection info that can be read by the `import_csv.py` script.
+    - You can also do this manually by creating a `config.txt` file in this directory with the following structure:
+    ```
+    [neo4j]
+    url = <paste NEO4J_URI>
+    user = <paste NEO4J_USERNAME>
+    pass = <paste NEO4J_PASSWORD>
+    ```
 
 ## Extracting Model State
 1. During a test, print the model state to console using the `pd_client_dump` API call. 
@@ -30,7 +32,32 @@ pass = <paste NEO4J_PASSWORD>
 Processing elevates the model state from implementation-level to model-level. For instance, in implementation one PD may switch between two address spaces, but in the model state this should appear as two separate PDs. The processing currently splits PDs with access to more than one ADS or CPU.
 1. Run `python csv_processing.py`. This will process all files in the current directory of the form `raw_<name>.csv` to `<name>.csv`.
 
-## Visualizing Model State
+## Neo4j Local on Docker: Visualizing Model State
+If you don't want to use a Neo4j Aura instance, the `neo4j_docker.sh` script will spin up a docker container that runs a local Neo4j instance. **NOTE**: These instructions have only been tested on Linux.
+
+### Starting the container
+1. Run: `./neo4j_docker.sh start <csv_file>`, providing the CSV file you'd like to import. **NOTE**: This will replace any previouly imported CSV files in the local instance.
+
+2. Navigate to http://localhost:7474 to access the local Neo4j console. The username and password to the console will be output when the script completes. **NOTE**: This will overwrite any existing `config.txt` files in the directory that the script is run from.
+ 
+### Additional options
+#### Neo4j data directory
+The script will, by default, create a `neo4j` directory in your home directory, to store the local instance's data. You can change where this should be created by supplying the path as the third argument to the script: `./neo4j_docker.sh start <csv_file> <neo4j_dir>`
+
+#### Neo4j docker container name
+The script re-uses the same docker container across invocations. The default name for this container is `neo4j-osm`. You can change its name by providing a fourth argument to the script: `./neo4j_docker.sh start <csv_file> <neo4j_dir> <neo4j_container_name>`
+
+### Stopping the Container
+Run `./neo4j_docker.sh stop`. If you've used a custom Neo4j directory or docker container name, you must provide it as arguments: `./neo4j_docker.sh stop <neo4j_dir> <neo4j_container_name>`
+
+### Cleaning Up the Container and All Local Data
+Run `./neo4j_docker.sh clean`. This will delete the container and the Neo4j directory associated with it, you may be prompted for `sudo` permissions.
+
+If you've used a custom Neo4j directory or docker container name, you must provide it as arguments: `./neo4j_docker.sh clean <neo4j_dir> <neo4j_container_name>`
+
+
+## Neo4j Aura (Cloud): Visualizing Model State
+These are instructions for uploading a model-state CSV to a Neo4j Aura (cloud) instance.
 1. Upload CSVs: Neo4j aura requires files to be hosted at a publicly-accessible url (GitHub, Google Drive, etc.)
     - If you upload to Google Drive: You will have to upload files to a folder with link-sharing enabled, or individually enable link-sharing on each CSV. Copy the link, then modify it to a direct-download link:
         1. The link should look like this: `https://drive.google.com/file/d/<file_id>/view?usp=drive_link`.
