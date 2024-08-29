@@ -38,3 +38,6 @@
 	path = projects/sel4-gpi
 	url = git@github.com:sid-agrawal/sel4-gpi.git
 	branch = cellulos
+[submodule "scripts/proc/pfs"]
+	path = scripts/proc/pfs
+	url = git@github.com:sid-agrawal/pfs.git

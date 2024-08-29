@@ -12,7 +12,7 @@ from generic_model import *
 import sys
 
 sys.path.append("pfs/lib")
-from pypfs import procfs
+from pypfs import procfs, mem_perm
 
 ### CONFIGURATION ###
 print_logs = False
@@ -42,6 +42,8 @@ def log(msg):
         print(msg)
 
 ### MODEL HELPER FUNCTIONS ###
+
+pfs_obj = procfs() # Interface to the PFS library
 
 def pathname_to_vmr_type(pathname: str):
     """
@@ -73,24 +75,22 @@ def pathname_to_vmr_type(pathname: str):
         print(f"Warning: unknown pathname '{pathname}' for VMR")
         return VmrType.UNKNOWN
     
-def perms_to_model_perms(perms: list[str]):
+def perms_to_model_perms(perm: mem_perm):
     """ 
-    Convert a list of permissions to the generic model's Permissions object
+    Convert a set of permissions from PFS to the generic model's Permissions object
     """
     perm_set = set()
-    for perm in perms:
-        if perm == "read":
-            perm_set.add(Permission.R)
-        elif perm == "write":
-            perm_set.add(Permission.W)
-        elif perm == "execute":
-            perm_set.add(Permission.X)
-        elif perm == "private":
-            perm_set.add(Permission.P)
-        elif perm == "shared":
-            perm_set.add(Permission.S)
-        else:
-            print(f"Warning, unknown permission '{perm}'")
+    
+    if perm.can_read:
+        perm_set.add(Permission.R)
+    if perm.can_write:
+        perm_set.add(Permission.W)
+    if perm.can_execute:
+        perm_set.add(Permission.X)
+    if perm.is_private:
+        perm_set.add(Permission.P)
+    if perm.is_shared:
+        perm_set.add(Permission.S)
     
     return Permissions(perm_set)
 
@@ -117,7 +117,7 @@ class SubVMR:
 class VMR:
     """Tracks a VMR in an address space."""
     pathname: str    # What this VMR is for - a file, or a marker like '[heap]'
-    perms: list[str] # List of permissions for the VMR as given by /proc/pid/maps
+    perms: mem_perm # Store of permissions for the VMR as given by pfs
     sub_vmrs: IntervalDict = field(default_factory=lambda: IntervalDict()) # Dict of contiguous mappings within this VMR
     # Address range is tracked by the IntervalDict
     model_id: list[int] = field(default_factory=list) # The ID(s) of this node in the model state, once added
@@ -166,10 +166,6 @@ class ProcFsData():
     Intermediate repository for the relevant data from /proc for multiple processes
     This object can be converted to the generic ModelGraph
     """
-        
-    # n_pages = (end_addr - start_addr) / page_size
-    # assert(n_pages % 1 == 0)
-    # vmr_info.pages = math.ceil(n_pages)
     
     def __init__(self):
         self.procs = {} # dict from PID to Process
@@ -361,30 +357,21 @@ def read_maps_file(process: subprocess.Popen, should_print: bool = False) -> lis
     
     :param process: a process returned from run_process
     :param should_print: if true, prints the raw and parsed file
-    :return: a list of dicts representing the parsed file
+    :return: a list of objects representing the parsed file
+             the structure is defined in the pfs pybind module
     """
-    return parse_file(process, 'maps', should_print)
     
-def read_smaps_file(process: subprocess.Popen, should_print: bool = False) -> list[EasyDict]:
-    """
-    Parse a /proc/pid/smaps file
+    task = pfs_obj.get_task(process.pid)
+    maps = task.get_maps()
     
-    :param process: a process returned from run_process
-    :param should_print: if true, prints the raw and parsed file
-    :return: a list of dicts representing the parsed file
-    """
-    return parse_file(process, 'smaps', should_print)
-
-
-def read_mountinfo_file(process: subprocess.Popen, should_print: bool = False) -> list[EasyDict]:
-    """
-    Parse a /proc/pid/mountinfo file
-    
-    :param process: a process returned from run_process
-    :param should_print: if true, prints the raw and parsed file
-    :return: a list of dicts representing the parsed file
-    """
-    return parse_file(process, 'fdinfo', should_print)
+    if should_print:
+        print("MAPS FILE")
+        for map in maps:
+            print(f"[{map.start_address}, {map.end_address}]")
+            print(f"- Device: {map.device}")
+            print(f"- Pathname: {map.pathname}")
+            
+    return maps
 
 def read_pagemap_file(process: subprocess.Popen, should_print: bool = False) -> list[PageMapObj]:
     """
@@ -419,15 +406,14 @@ def extract_memory_data(data: ProcFsData, process: subprocess.Popen):
     
     print(f"Extract memory data for process {process.pid}")
     maps = read_maps_file(process, False)
-    #smaps = read_smaps_file(hello)
     pagemaps = read_pagemap_file(process)
     pagemap_iter = iter(pagemaps)
     next_pagemap = next(pagemap_iter, None)
     
     for map_entry in maps:
-        vmr_info = VMR(map_entry.pathname, map_entry.perms)  
-        vmr_start_addr = int(map_entry.start, 16)
-        vmr_end_addr = int(map_entry.end, 16)
+        vmr_info = VMR(map_entry.pathname, map_entry.perm)  
+        vmr_start_addr = map_entry.start_address
+        vmr_end_addr = map_entry.end_address
         
         log(f"Checking VMR {vmr_start_addr:16x}-{vmr_end_addr:16x}, {vmr_info.pathname}")
         
@@ -518,8 +504,9 @@ if __name__ == "__main__":
     
     try:
         for proc in procs:
-            read_mountinfo_file(proc, True)
-            #extract_process_data(data, proc)
+            # maps = read_maps_file(proc, True)
+            # read_mountinfo_file(proc, True)
+            extract_process_data(data, proc)
     except Exception as e:
         print("Error printing stats for hello")
         print(repr(e))
