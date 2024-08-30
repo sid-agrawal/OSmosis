@@ -445,6 +445,36 @@ def read_status_file(pid: int, should_print: bool = False) -> pypfs.task_status:
             
     return status
 
+def read_mountinfo_file(pid: int, should_print: bool = False) -> list[pypfs.mount]:
+    """
+    Parse a /proc/pid/status file
+    
+    :param pid: the pid of the process to read mountinfo for
+    :param should_print: if true, prints the raw data
+    :return: the list of mount objects
+    """
+    
+    task = pfs_obj.get_task(pid)
+    mounts = task.get_mountinfo()
+    
+    # See https://man7.org/linux/man-pages/man5/proc_pid_mountinfo.5.html
+    # root: root: the pathname of the directory in the filesystem which forms the root of this mount.
+    # mount point: the pathname of the mount point relative to the process's root directory.
+    # mount source: filesystem-specific information or "none".
+    # the device number seems to vary widely. I don't know what it means.
+    
+    if should_print:
+        print("MOUNTS")
+        for mount in mounts:
+            print(f"Mount {mount.id}")
+            print(f"- Parent: {mount.parent_id}")
+            print(f"- Device: {mount.device}")
+            print(f"- Root: {mount.root}")
+            print(f"- Source: {mount.source}")
+            print(f"- Point: {mount.point}")
+            
+    return mounts
+
 def extract_namespaces(data: ProcFsData, pid: int, should_print: bool = False):
     """
     Find the namespaces this process belongs to
@@ -456,9 +486,12 @@ def extract_namespaces(data: ProcFsData, pid: int, should_print: bool = False):
     
     task = pfs_obj.get_task(pid)
     ns_data = task.get_ns()
-
+    
+    # This only gets us the namespace type and handle
+    # To find what the parent NS is, you can use ioctl, as shown in get_ns_info.c
+    # I'm not sure if there is any other way to do this
+    
     namespaces = []
-        
     for (path, handle) in ns_data.items():
         namespace_type = str_to_namespace_type[path]
         
@@ -605,7 +638,7 @@ def extract_process_data(data: ProcFsData, pid: int, name: str, should_print = F
     process = Process(name)
     data.procs[pid] = process
     
-    extract_namespaces(data, pid, should_print)
+    extract_namespaces(data, pid, should_print) # namespaces do not get incorporated into the generic model state yet
     extract_from_status(data, pid, should_print)
     extract_memory_data(data, pid, should_print)
     
@@ -625,7 +658,8 @@ if __name__ == "__main__":
     
     try:
         for (name, _), pid in zip(to_run, pids):
-            extract_process_data(data, pid, name, True)
+            # extract_process_data(data, pid, name, True)
+            # read_mountinfo_file(pid, True)  # mountinfo is not part of the model state, but we can view it
     except Exception as e:
         print("Error printing stats for hello")
         print(repr(e))
