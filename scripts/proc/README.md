@@ -9,12 +9,16 @@ This is a sample script to extract model state from linux `/proc`
     - Or manually install packages: `pybind11`, `networkx`.
 4. Build the `pfs` module: `pfs` is a c++ library, so we use a `pybind` wrapper to generate a Python module from it.
     - Enter the `pfs` directory: `cd pfs`.
-    - Build: `cmake . & make`.
+    - Build: `cmake .` then `make`.
     - This should generate a python module: `/pfs/lib/pypfs.[...].so`.
 
 ## Run
-1. Activate the virtualenv: `source ./venv/bin/activate`.
-2. Run `sudo -E env PATH=./venv/bin python proc_model.py`.
+1. In `proc_model.py`, choose the configuration of programs to run.
+    - You can choose an existing configuration by setting `to_run = run_configs[<idx>]` with the index of the chosen configuration.
+    - To add a new configuration and/or programs, ensure that the programs are built by the makefile, and add them to the `program_names` and `run_configs` variables.
+2. Activate the virtualenv: `source ./venv/bin/activate`.
+3. Run `sudo -E env PATH=./venv/bin python proc_model.py`.
+4. The resulting model state is saved to the `proc_model.csv` file, which can be imported into neo4j for visualization following the steps in `/scripts/model_state`.
 
 ---
 

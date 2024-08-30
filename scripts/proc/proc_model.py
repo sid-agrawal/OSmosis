@@ -1,6 +1,6 @@
+import os
+import signal
 import subprocess
-import json
-import jc
 from enum import Enum
 import time
 import math
@@ -12,27 +12,39 @@ from generic_model import *
 import sys
 
 sys.path.append("pfs/lib")
-from pypfs import procfs, mem_perm
+import pypfs
 
 ### CONFIGURATION ###
 print_logs = False
 
+class ProcessStartType(Enum):
+    """
+    Different ways of starting a process for the configuration
+    These types need to be supported by run_process
+    """
+    
+    NORMAL = 1     # start the process in the default way
+    NEW_PID_NS = 2 # start the process in a new PID namespace
+    
 program_names: EasyDict = EasyDict(
     basic = "hello",
     static1 = "hello_static_1",
     static2 = "hello_static_2",
     malloc = "hello_malloc",
-    mmap = "hello_mmap")
+    mmap = "hello_mmap",
+    print_pid = "hello_print_pid")
 
 run_configs = [
     # 0: Basic hello
-    [program_names.basic, program_names.basic],
+    [(program_names.basic, ProcessStartType.NORMAL), (program_names.basic, ProcessStartType.NORMAL)],
     # 1: Hello with malloc
-    [program_names.malloc, program_names.malloc],
+    [(program_names.malloc, ProcessStartType.NORMAL), (program_names.malloc, ProcessStartType.NORMAL)],
     # 2: Hello with shared mem via mmap
-    [program_names.mmap, program_names.mmap],
+    [(program_names.mmap, ProcessStartType.NORMAL), (program_names.mmap, ProcessStartType.NORMAL)],
     # 3: Hello linked statically
-    [program_names.static1, program_names.static2],
+    [(program_names.static1, ProcessStartType.NORMAL), (program_names.static2, ProcessStartType.NORMAL)],
+    # 4: Hello in different PID namespaces
+    [(program_names.print_pid, ProcessStartType.NEW_PID_NS), (program_names.print_pid, ProcessStartType.NEW_PID_NS)],
 ]
 
 to_run = run_configs[3]
@@ -41,9 +53,14 @@ def log(msg):
     if print_logs:
         print(msg)
 
+### CONSTANTS ###
+parent_pid_message = "Child PID in parent ns: "
+child_pid_message = "Child PID in child ns: "
+temp_output_file = "temp.txt" # used to get output from some c programs
+
 ### MODEL HELPER FUNCTIONS ###
 
-pfs_obj = procfs() # Interface to the PFS library
+pfs_obj = pypfs.procfs() # Interface to the PFS library
 
 def pathname_to_vmr_type(pathname: str):
     """
@@ -69,13 +86,13 @@ def pathname_to_vmr_type(pathname: str):
         return VmrType.PROGRAM # I don't think code and data are separated
     elif pathname.startswith("/dev/shm"):
         return VmrType.SHM
-    elif pathname.startswith("/usr/lib/"):
+    elif pathname.startswith("/usr/lib/") or pathname.endswith(".a") or pathname.endswith(".so"):
         return VmrType.LIB
     else:
         print(f"Warning: unknown pathname '{pathname}' for VMR")
         return VmrType.UNKNOWN
     
-def perms_to_model_perms(perm: mem_perm):
+def perms_to_model_perms(perm: pypfs.mem_perm):
     """ 
     Convert a set of permissions from PFS to the generic model's Permissions object
     """
@@ -117,7 +134,7 @@ class SubVMR:
 class VMR:
     """Tracks a VMR in an address space."""
     pathname: str    # What this VMR is for - a file, or a marker like '[heap]'
-    perms: mem_perm # Store of permissions for the VMR as given by pfs
+    perms: pypfs.mem_perm # Store of permissions for the VMR as given by pfs
     sub_vmrs: IntervalDict = field(default_factory=lambda: IntervalDict()) # Dict of contiguous mappings within this VMR
     # Address range is tracked by the IntervalDict
     model_id: list[int] = field(default_factory=list) # The ID(s) of this node in the model state, once added
@@ -128,12 +145,45 @@ class ProcAddressSpace:
     vmrs: IntervalDict = field(default_factory=lambda: IntervalDict()) # list of VMR in the address space
     model_id: int = 0 # The ID of this node in the model state, once added
 
+class NamespaceType(Enum):
+    UTS = 1
+    USER = 2
+    PID = 3
+    NET = 4
+    MNT = 5
+    IPC = 6
+    CGROUP = 7
+    TIME = 8
+    NONE = 9 # we choose to ignore some namespace types: pid_for_children and time_for_children
+
+# Use to convert a namespace type as string to NamespaceType
+str_to_namespace_type = {
+    "uts": NamespaceType.UTS,
+    "user": NamespaceType.USER,
+    "pid_for_children": NamespaceType.NONE,
+    "pid": NamespaceType.PID,
+    "net": NamespaceType.NET,
+    "time_for_children": NamespaceType.NONE,
+    "mnt": NamespaceType.MNT,
+    "ipc": NamespaceType.IPC,
+    "cgroup": NamespaceType.CGROUP,
+    "time": NamespaceType.TIME,
+}
+    
+@dataclass
+class Namespace:
+    type: NamespaceType
+    handle: int
+    
 @dataclass
 class Process:
     """Tracks a process"""
     name: str # Name of the process
     ads: ProcAddressSpace = field(default_factory=lambda: ProcAddressSpace()) # The process' address space
+    namespaces: list[Namespace] = field(default_factory=lambda: list())
     model_id: int = 0 # The ID of this node in the model state, once added
+    pid_in_ns: int = 0 # PID of the process according to its own PID namespace
+    # The PID (in global PID namespace) will be the key of the dict this is in
     
 @dataclass 
 class Device:
@@ -168,6 +218,7 @@ class ProcFsData():
     """
     
     def __init__(self):
+        self.namespaces = {} # dict from namespace handle to Namespace
         self.procs = {} # dict from PID to Process
         self.pmrs = IntervalDict() # list of PMR
         self.devices = IntervalDict() # list of physical memory devices, ProcDev
@@ -301,67 +352,70 @@ class ProcFsData():
         return self.model
 
 ### RUNNING PROCESSES & EXTRACTING DATA ###
-
-def run_process(name) -> subprocess.Popen:
+    
+def run_process(name: str, start_type: ProcessStartType = False) -> tuple[int,int]:
     """
     Start a process from this directory (which should be the OSmosis/scripts/proc directory)
     Output will go to stdout
-    
-    :return: The process object
+
+    :param name: The name of the program to run
+    :param start_type: How to start the process
+    :return: Tuple of the PID of the process in the global namespace, and in its own namespace
     """
     print(f'Starting process "{name}"')
     
-    process = subprocess.Popen(
-        f'./{name}',
-        text=True)
+    pid = None   
+     
+    if start_type == ProcessStartType.NEW_PID_NS:
+        
+        # We need to use another program to start the process for us
+        process = subprocess.Popen(
+            ["sudo", "./create_proc_in_ns", name, temp_output_file],
+            stderr=subprocess.PIPE)
+        
+        # The process will output the pid
+        output_file_read = open(temp_output_file, "r")
+        while True:
+            # if something goes wrong, this might hang
+            line = output_file_read.readline().strip()
+            
+            if line:
+                log(line)
+
+            if line.startswith(parent_pid_message):
+                pid = int(line[len(parent_pid_message):])
+                log(f"PID in parent process: {pid}")
+                break
+            
+            # This is not needed because we can get the child PID from /proc/pid/status
+            #elif line.startswith(child_pid_message):
+            #    pid_in_child = int(line[len(child_pid_message):])
+            #    log(f"PID in child process: {pid_in_child}")
+            
+            elif not line:
+                time.sleep(2)
+    else:
+        process = subprocess.Popen(
+            f'./{name}',
+            text=True)
+
+        pid = process.pid
     
     time.sleep(2) # Give the process time to get set up
     
-    return process
+    return pid
 
-def parse_file(process: subprocess.Popen, filetype: str, should_print: bool = False) -> list[EasyDict]:
-    """
-    Parse a file that is supported by the jc package
-    
-    :param process: a process returned from run_process
-    :param filetype: the name of the file under `/proc/pid/` to parse
-    :param should_print: if true, prints the raw and parsed file
-    :return: a list of dicts representing the parsed file
-    """
-    
-    filename = f'/proc/{process.pid}/{filetype}'
-    data = ""
-    
-    print(f'Opening file "{filename}"')
-    with open(filename, 'r') as file:
-        data = file.read()
-    
-    print(f'Opened file "{filename}"')
-        
-    results = jc.parse(f'proc_pid_{filetype}',data)
-    
-    if should_print:
-        print(f'FILE: {filetype}')
-        print(f'Plain Data')
-        print("-" * 40)
-        print(data)
-        print("-" * 40)
-        print(json.dumps(results, indent=4))
-        print("-" * 40)
-    
-    return [result if type(result) == str else EasyDict(**result) for result in results]
-
-def read_maps_file(process: subprocess.Popen, should_print: bool = False) -> list[EasyDict]:
+def read_maps_file(pid: int, should_print: bool = False) -> list[pypfs.task]:
     """
     Parse a /proc/pid/maps file
     
-    :param process: a process returned from run_process
+    :param pid: the pid of the process to read maps for
     :param should_print: if true, prints the raw and parsed file
     :return: a list of objects representing the parsed file
              the structure is defined in the pfs pybind module
     """
     
-    task = pfs_obj.get_task(process.pid)
+    task = pfs_obj.get_task(pid)
     maps = task.get_maps()
     
     if should_print:
@@ -373,7 +427,61 @@ def read_maps_file(process: subprocess.Popen, should_print: bool = False) -> lis
             
     return maps
 
-def read_pagemap_file(process: subprocess.Popen, should_print: bool = False) -> list[PageMapObj]:
+def read_status_file(pid: int, should_print: bool = False) -> pypfs.task_status:
+    """
+    Parse a /proc/pid/status file
+    
+    :param pid: the pid of the process to read status for
+    :param should_print: if true, prints the raw data
+    :return: the task_status object
+    """
+    
+    task = pfs_obj.get_task(pid)
+    status = task.get_status(set())
+    
+    if should_print:
+        print("STATUS FILE")
+        print(f"- PID: {status.ns_pid}")
+            
+    return status
+
+def extract_namespaces(data: ProcFsData, pid: int, should_print: bool = False):
+    """
+    Find the namespaces this process belongs to
+    Add to global data if not already present, and add to the process' list of namespaces
+    
+    :param pid: PID of the process to check for namespaces
+    :param should_print: If true, print all of the namespaces found
+    """
+    
+    task = pfs_obj.get_task(pid)
+    ns_data = task.get_ns()
+
+    namespaces = []
+        
+    for (path, handle) in ns_data.items():
+        namespace_type = str_to_namespace_type[path]
+        
+        if namespace_type == NamespaceType.NONE:
+            # Ignore some namespace types
+            continue
+        
+        if handle in data.namespaces:
+            assert data.namespaces[handle].type == namespace_type, "duplicate handle for different ns"
+            namespaces.append(data.namespaces[handle])
+        else:
+            namespace = Namespace(namespace_type, handle)
+            namespaces.append(namespace)
+            data.namespaces[handle] = namespace            
+            
+    if should_print:
+        print("NAMESPACES")
+        for ns_info in namespaces:
+            print(f"- NS: type {ns_info.type.name}, handle {ns_info.handle}")
+            
+    data.procs[pid].namespaces = namespaces
+    
+def read_pagemap_file(pid: int, should_print: bool = False) -> list[PageMapObj]:
     """
     Parse a /proc/pid/pagemaps file
     
@@ -381,7 +489,7 @@ def read_pagemap_file(process: subprocess.Popen, should_print: bool = False) -> 
     :param should_print: if true, prints the raw and parsed file
     :return: a list of objects representing the VA and VA->PA regions in the process' address space
     """
-    results = get_va_pa_mappings(process.pid)
+    results = get_va_pa_mappings(pid)
     
     if should_print:
         print(f'VA-PA MAPPINGS')
@@ -396,17 +504,17 @@ def read_pagemap_file(process: subprocess.Popen, should_print: bool = False) -> 
     
     return results
     
-def extract_memory_data(data: ProcFsData, process: subprocess.Popen):
+def extract_memory_data(data: ProcFsData, pid: int, should_print = False):
     """
     Get the VMR, PMR, and Device data for a particular process
     
     :param data: the data object
-    :param process: the process to query about
+    :param pid: the process to query about
     """
     
-    print(f"Extract memory data for process {process.pid}")
-    maps = read_maps_file(process, False)
-    pagemaps = read_pagemap_file(process)
+    print(f"Extract memory data for process {pid}")
+    maps = read_maps_file(pid, should_print)
+    pagemaps = read_pagemap_file(pid, should_print)
     pagemap_iter = iter(pagemaps)
     next_pagemap = next(pagemap_iter, None)
     
@@ -474,45 +582,56 @@ def extract_memory_data(data: ProcFsData, process: subprocess.Popen):
                 pmr_info = PMR(device_info)
                 data.pmrs.put(pmr_start_addr, pmr_end_addr, pmr_info)
                         
-        data.procs[process.pid].ads.vmrs.put(vmr_start_addr, vmr_end_addr, vmr_info)
+        data.procs[pid].ads.vmrs.put(vmr_start_addr, vmr_end_addr, vmr_info)
     
     if print_logs:
-        print(data.procs[process.pid].ads.vmrs)
+        print(data.procs[pid].ads.vmrs)
         print(data.pmrs)
         print(data.devices)
 
-def extract_process_data(data, process):
+def extract_from_status(data: ProcFsData, pid: int, should_print = False):
+    status = read_status_file(pid, should_print)
+    assert pid == status.ns_pid[0], "PID from status should have been the same as the given PID"
+    data.procs[pid].pid_in_ns = status.ns_pid[1] if len(status.ns_pid) > 1 else pid
+    
+def extract_process_data(data: ProcFsData, pid: int, name: str, should_print = False):
     """
     Extract data from procfs for a particular process
     
     :param data: the data object
-    :type data: ProcFsData
-    :param process: the process to query about
-    :type process: subprocess.Popen
+    :param pid_in_parent: PID of the process in the global namespace
+    :param pid_in_child: PID of the process in the child namespace
     """
+    process = Process(name)
+    data.procs[pid] = process
     
-    data.procs[process.pid] = Process(process.args[2:]) # Get the process name from the args, removing "./"
-    extract_memory_data(data, process)
+    extract_namespaces(data, pid, should_print)
+    extract_from_status(data, pid, should_print)
+    extract_memory_data(data, pid, should_print)
     
-def terminate_process(process):
-    process.terminate()
-    process.wait()
+    if should_print:
+        print(f"Extracted process {pid}:")
+        print(data.procs[pid])
+    
+def terminate_process(pid: int):
+    """ 
+    Terminate the process with the given pid
+    """
+    os.kill(pid, signal.SIGTERM) #or signal.SIGKILL 
 
 if __name__ == "__main__":
     data = ProcFsData()
-    procs = [run_process(name) for name in to_run]
+    pids = [run_process(name, start_type) for (name, start_type) in to_run]
     
     try:
-        for proc in procs:
-            # maps = read_maps_file(proc, True)
-            # read_mountinfo_file(proc, True)
-            extract_process_data(data, proc)
+        for (name, _), pid in zip(to_run, pids):
+            extract_process_data(data, pid, name, True)
     except Exception as e:
         print("Error printing stats for hello")
         print(repr(e))
         traceback.print_exc()
     
-    for proc in procs:
-            terminate_process(proc)
+    for pid in pids:
+        terminate_process(pid)
     
     data.to_generic_model(MappingType.CONTIGUOUS, MappingType.CO_CONTIGUOUS).to_csv()
