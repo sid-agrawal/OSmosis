@@ -65,7 +65,7 @@ These are instructions for uploading a model-state CSV to a Neo4j Aura (cloud) i
         3. Replace `/view?usp=drive_link` with `&export=download`.
     - Note if using Google Drive: If you upload a file with the same name as a previous file and select 'Replace existing file', the download link should remain the same. Occasionally, if the file being replaced is several days old, the link will need to be updated.
 2. Paste the public links as strings into the `public_urls` array in `import_csv.py`.
-3. Import CSV to Neo4j: Run `python import_csv.py <idx>`, replacing `<idx>` with the index into the `public_urls` array of the CSV you want to import.
+3. Import CSV to Neo4j: Run `python import_csv.py -i <idx>`, replacing `<idx>` with the index into the `public_urls` array of the CSV you want to import.
 4. In Neo4j, open your instance, and enter queries in the Query panel to visualize the graph.
 
 ### Sample Queries

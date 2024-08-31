@@ -47,7 +47,7 @@ run_configs = [
     [(program_names.print_pid, ProcessStartType.NEW_PID_NS), (program_names.print_pid, ProcessStartType.NEW_PID_NS)],
 ]
 
-to_run = run_configs[3]
+to_run = run_configs[4]
 
 def log(msg):
     if print_logs:
@@ -658,7 +658,7 @@ if __name__ == "__main__":
     
     try:
         for (name, _), pid in zip(to_run, pids):
-            # extract_process_data(data, pid, name, True)
+            extract_process_data(data, pid, name, True)
             # read_mountinfo_file(pid, True)  # mountinfo is not part of the model state, but we can view it
     except Exception as e:
         print("Error printing stats for hello")

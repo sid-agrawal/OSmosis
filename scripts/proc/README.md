@@ -17,7 +17,8 @@ This is a sample script to extract model state from linux `/proc`
     - You can choose an existing configuration by setting `to_run = run_configs[<idx>]` with the index of the chosen configuration.
     - To add a new configuration and/or programs, ensure that the programs are built by the makefile, and add them to the `program_names` and `run_configs` variables.
 2. Activate the virtualenv: `source ./venv/bin/activate`.
-3. Run `sudo -E env PATH=./venv/bin python proc_model.py`.
+3. Run `sudo -E env PATH="./venv/bin:$PATH" python proc_model.py`.
+    - We need to include the regular `$PATH` (or `/usr/bin/`) for access to `sudo` for the namespace example.
 4. The resulting model state is saved to the `proc_model.csv` file, which can be imported into neo4j for visualization following the steps in `/scripts/model_state`.
 
 ---
