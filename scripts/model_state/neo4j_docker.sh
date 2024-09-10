@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 NEO4J_DIR=$HOME/neo4j
 NEO4J_CONTAINER_NAME=neo4j-osm
@@ -108,4 +109,7 @@ clean)
   setNeo4jPaths "${@:2}"
   cleanNeo4j
   ;;
+*)
+    echo $USAGE_TEXT
+    ;;
 esac
