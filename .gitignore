@@ -11,3 +11,4 @@ doxygen/
 scripts/model_state/config.txt
 scripts/model_state/*.csv
 scripts/proc/*.csv
+basic.csv

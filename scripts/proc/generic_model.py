@@ -16,11 +16,12 @@ class EdgeType(Enum):
     MAP = 2
     SUBSET = 3
     REQUEST = 4
+    CREATEDBY = 5
     
 class ResourceType(Enum):
     VMR = 1
-    COLOREDVMR = 1
-    MO = 2 # Same as PMR, a region of contiguous virtual memory
+    CVMR = 2
+    MO = 3 # Same as PMR, a region of contiguous virtual memory
 
 class VmrType(Enum):
     UNKNOWN = 0
@@ -163,6 +164,9 @@ class ModelGraph:
             self.pd_counter += 1
             pd_id = self.pd_counter
             
+        if self.node_with_attribute_exists("data", name):
+            raise "Inserting Duplicate Node"
+        
         string_id = self.__pd_string_id(pd_id)
         self.g.add_node(string_id, type=NodeType.PD.name, data=name, extra="")
         
@@ -219,10 +223,27 @@ class ModelGraph:
             target_string_id = self.__resource_string_id(res_type, space_id, res_id)
         
         self.__add_edge(EdgeType.HOLD, pd_string_id, target_string_id, str(perms))
-        
-    def add_map_edge(self, res_type_1: int, res_type_2: int, space_id_1: int, space_id_2: int, res_id_1: int | None = None, res_id_2: int | None = None):
+    
+    def add_createdby_edge(self, pd_id: int, res_type: ResourceType, space_id: int):
         """
-        Add a map edge from a PD to a resource to a resource or a resource space to a resource space
+        Add a created-by edge from a Resource Space to a PD
+        
+        :param pd_id: The PD's unique ID
+        :param res_type: The resource space's type
+        :param space_id: The resource space's unique ID
+        """
+        # from
+        rs_string_id = self.__space_string_id(res_type, space_id)
+
+        # to
+        pd_string_id = self.__pd_string_id(pd_id)
+        
+        self.__add_edge(EdgeType.CREATEDBY, rs_string_id, pd_string_id)
+        
+    def add_map_edge(self, res_type_1: int, res_type_2: int, space_id_1: int, space_id_2: int, 
+                     res_id_1: int | None = None, res_id_2: int | None = None):
+        """
+        Add a map edge from a resource to a resource, or a resource space to a resource space
         
         :param res_type_1: The source resource space's type
         :param res_type_2: The destinatino resource space's type
@@ -280,3 +301,10 @@ class ModelGraph:
             
             for node_from, node_to, data in self.g.edges(data=True):
                 writer.writerow([None, None, data.get("data"), data.get("type"), node_from, node_to, data.get("extra")]) 
+            
+
+    def node_with_attribute_exists(self, attribute, value):
+        for node, attr in self.g.nodes(data=True):
+            if attr.get(attribute) == value:
+                return True
+        return False

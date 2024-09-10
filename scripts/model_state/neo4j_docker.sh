@@ -47,11 +47,11 @@ startNeo4j() {
 
   # build the image from the dockerfile
   echo "Building docker image"
-  docker build . -t $NEO4J_IMAGE_NAME
+  docker build . -t $NEO4J_IMAGE_NAME -q
 
   if docker ps -a --format '{{.Names}}' | grep -Eq $NEO4J_CONTAINER_NAME; then
     echo "Container exists, restarting..."
-    docker restart $NEO4J_CONTAINER_NAME
+    docker restart $NEO4J_CONTAINER_NAME 
     sleep 15 # wait for neo4j to initialize
   else
     echo "Running container..."
