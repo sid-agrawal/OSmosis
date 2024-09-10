@@ -19,6 +19,7 @@ class EdgeType(Enum):
     
 class ResourceType(Enum):
     VMR = 1
+    COLOREDVMR = 1
     MO = 2 # Same as PMR, a region of contiguous virtual memory
 
 class VmrType(Enum):
