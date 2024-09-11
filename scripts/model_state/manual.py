@@ -46,7 +46,7 @@ if __name__ == "__main__":
     model.add_hold_edge(Permission.R, pdd_id, ResourceType.CVMR, crs_id, cres_id)
 
     model.add_map_edge(ResourceType.CVMR, ResourceType.VMR, crs_id, rs_id,
-                       cres_id, res_id)
+                       cres_id, res_id, pd_id)
 
 
 
