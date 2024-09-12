@@ -20,7 +20,7 @@ class EdgeType(Enum):
     
 class ResourceType(Enum):
     VMR = 1
-    CVMR = 2
+    CVA = 2
     MO = 3 # Same as PMR, a region of contiguous virtual memory
 
 class VmrType(Enum):
@@ -172,7 +172,7 @@ class ModelGraph:
         
         return pd_id
         
-    def add_resource_space_node(self, res_type: ResourceType, space_id: int = None) -> int:
+    def add_resource_space_node(self, res_type: ResourceType, space_id: int = None, extra: str = None) -> int:
         """
         Add a resource node to a model state graph, including the subset edge to the resource space
         
@@ -189,11 +189,14 @@ class ModelGraph:
         self.resource_counters[space_id] = 0
             
         string_id = self.__space_string_id(res_type, space_id)
-        self.g.add_node(string_id, type=NodeType.RESOURCE_SPACE.name, data=res_type.name, extra="")
+        self.g.add_node(string_id, type=NodeType.RESOURCE_SPACE.name, data=res_type.name, extra=extra)
         
         return space_id
     
-    def __add_edge(self, edge_type: EdgeType, string_id_from: str, string_id_to: str, data: str | None = "NONE"):
+    def __add_edge(self, edge_type: EdgeType, 
+                    string_id_from: str, 
+                    string_id_to: str, 
+                    data: str | None = "NONE"):
         """
         Internal function to add an edge to the model state
         
@@ -205,7 +208,8 @@ class ModelGraph:
         """
         self.g.add_edge(string_id_from, string_id_to, type=edge_type.name, data=data)
         
-    def add_hold_edge(self, perms: Permission, pd_id: int, res_type: ResourceType, space_id: int, res_id: int | None = None):
+    def add_hold_edge(self, perms: Permission, pd_id: int, res_type: ResourceType, space_id: int, 
+                      res_id: int | None = None, maintaining_pd_ids: list[int] | None = None):
         """
         Add a hold edge from a PD to a resource or resource space
         
@@ -214,6 +218,8 @@ class ModelGraph:
         :param space_id: The resource space's unique ID
         :param res_id: The resource's unique ID
                 Optional: if None, the hold edge is for a resource space
+        :param maintaining_pd_id: The id of the PD that maintaining this mapping
+                Optional: if None, that info is just missing.
         """
         pd_string_id = self.__pd_string_id(pd_id)
         target_string_id = ""
@@ -222,7 +228,14 @@ class ModelGraph:
         else:
             target_string_id = self.__resource_string_id(res_type, space_id, res_id)
         
-        self.__add_edge(EdgeType.HOLD, pd_string_id, target_string_id, str(perms))
+        maintaining_pd_string_ids = []
+        for id in maintaining_pd_ids:
+            maintaining_pd_string_ids.append(self.__pd_string_id(id))
+
+        extra = { "perms": str(perms),
+                  "pds": [maintaining_pd_string_ids] }
+
+        self.__add_edge(EdgeType.HOLD, pd_string_id, target_string_id, extra)
     
     def add_createdby_edge(self, pd_id: int, res_type: ResourceType, space_id: int):
         """
@@ -241,7 +254,9 @@ class ModelGraph:
         self.__add_edge(EdgeType.CREATEDBY, rs_string_id, pd_string_id)
         
     def add_map_edge(self, res_type_1: int, res_type_2: int, space_id_1: int, space_id_2: int, 
-                     res_id_1: int | None = None, res_id_2: int | None = None):
+                     res_id_1: int | None = None, 
+                     res_id_2: int | None = None, 
+                     maintaining_pd_ids: list[int] | None = None):
         """
         Add a map edge from a resource to a resource, or a resource space to a resource space
         
@@ -253,6 +268,8 @@ class ModelGraph:
                 Optional: if None, the map edge is for a resource space
         :param res_id_1: The destination resource's unique ID
                 Optional: if None, the map edge is for a resource space
+        :param maintaining_pd_id: The id of the PD that maintaining this mapping
+                Optional: if None, that info is just missing.
         """
         source_string_id = ""
         dest_string_id = ""
@@ -264,7 +281,13 @@ class ModelGraph:
             source_string_id = self.__resource_string_id(res_type_1, space_id_1, res_id_1)
             dest_string_id = self.__resource_string_id(res_type_2, space_id_2, res_id_2)
         
-        self.__add_edge(EdgeType.MAP, source_string_id, dest_string_id)
+        maintaining_pd_string_ids = []
+        for id in maintaining_pd_ids:
+            maintaining_pd_string_ids.append(self.__pd_string_id(id))
+        
+        extra = { "pds": [maintaining_pd_string_ids] }
+
+        self.__add_edge(EdgeType.MAP, source_string_id, dest_string_id, extra)
     
     def add_request_edge(self, source_pd_id: int, dest_pd_id: int, res_type: ResourceType, space_id: int):
         """

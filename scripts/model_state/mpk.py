@@ -3,7 +3,8 @@
 from generic_model import *
 import argparse
 
-parser = argparse.ArgumentParser("manual")
+# ./mpk.py -f mpk.csv &&  cp  mpk.csv ~/neo4j/import/mpk.csv && python import_csv.py --file mpk.csv   
+parser = argparse.ArgumentParser("mpk")
 parser.add_argument("-f", "--file", help="a LOCAL file for CSV output", required=True)
 args = parser.parse_args()
 
@@ -12,11 +13,11 @@ if __name__ == "__main__":
     model = ModelGraph()
 
     # Make Kernel PD 
-    kernel_id = model.add_pd_node("Kernel")
+    kernel_id = model.add_pd_node("Kernel", 0x0)
 
     # Make Proc1
         # PD
-    pd_id = model.add_pd_node("Proc1")
+    pd_id = model.add_pd_node("P1")
     req_id = model.add_request_edge(pd_id, kernel_id, 
                                     ResourceType.VMR, kernel_id)
                             
@@ -26,27 +27,33 @@ if __name__ == "__main__":
 
         # Add a VMR
     res_id = model.add_resource_node(ResourceType.VMR, rs_id)
-    model.add_hold_edge(Permission.R, pd_id, ResourceType.VMR, rs_id, res_id)
+    model.add_hold_edge(Permission.R, pd_id, ResourceType.VMR, rs_id, res_id, [kernel_id])
 
     # res_id = model.add_resource_node(ResourceType.VMR, rs_id)
     # model.add_hold_edge(Permission.R, pd_id, ResourceType.VMR, rs_id, res_id)
 
     # Make Proc1-MPK_1
         # PD
-    pdd_id = model.add_pd_node("Proc1_D1")
+    pdd_id = model.add_pd_node("MPK1_P1")
     # req_id = model.add_request_edge(pdd_id, kernel_id, 
     #                                 ResourceType.VMR, kernel_id)
                             
         # Colored VAS Resource Space
-    crs_id = model.add_resource_space_node(ResourceType.CVMR)
-    model.add_createdby_edge(pd_id, ResourceType.CVMR, crs_id)
+    crs_id = model.add_resource_space_node(ResourceType.CVA, "Key1")
+    model.add_createdby_edge(pd_id, ResourceType.CVA, crs_id)
+    
+    crs_id2 = model.add_resource_space_node(ResourceType.CVA, "Key2")
+    model.add_createdby_edge(pd_id, ResourceType.CVA, crs_id2)
 
-        # Add a VMR
-    cres_id = model.add_resource_node(ResourceType.CVMR, crs_id)
-    model.add_hold_edge(Permission.R, pdd_id, ResourceType.CVMR, crs_id, cres_id)
+        # Add a CVA Resources
+    cres_id = model.add_resource_node(ResourceType.CVA, crs_id, "Key1")
+    model.add_hold_edge(Permission.R, pdd_id, ResourceType.CVA, crs_id, cres_id, [pd_id])
+    
+    cres_id2 = model.add_resource_node(ResourceType.CVA, crs_id2, "Key2")
+    model.add_hold_edge(Permission.R, pdd_id, ResourceType.CVA, crs_id2, cres_id2, [pd_id])
 
-    model.add_map_edge(ResourceType.CVMR, ResourceType.VMR, crs_id, rs_id,
-                       cres_id, res_id, pd_id)
+    model.add_map_edge(ResourceType.CVA, ResourceType.VMR, crs_id, rs_id,
+                       cres_id, res_id, [kernel_id])
 
 
 
