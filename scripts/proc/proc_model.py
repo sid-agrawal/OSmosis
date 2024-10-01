@@ -47,7 +47,7 @@ run_configs = [
     [(program_names.print_pid, ProcessStartType.NEW_PID_NS), (program_names.print_pid, ProcessStartType.NEW_PID_NS)],
 ]
 
-to_run = run_configs[4]
+to_run = run_configs[0]
 
 def log(msg):
     if print_logs:
