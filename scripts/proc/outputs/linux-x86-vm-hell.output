@@ -1,0 +1,453 @@
+# python proc_model.py --csv config.csv
+random: python: uninitialized urandom read (24 bytes read)
+Starting processes from this script
+Starting process "hello"
+Hello?
+Starting process "hello"
+Hello?
+STATUS FILE
+- PID: [112]
+
+
+
+Extract memory data for process 112
+MAPS FILE
+MAPS: [    556ee46a0000,     556ee46a1000] : 4.0KiB
+MAPS: - Device: 65024
+MAPS: - Pathname: /root/proc/hello
+MAPS: [    556ee46a1000,     556ee46a2000] : 4.0KiB
+MAPS: - Device: 65024
+MAPS: - Pathname: /root/proc/hello
+MAPS: [    556ee46a2000,     556ee46a3000] : 4.0KiB
+MAPS: - Device: 65024
+MAPS: - Pathname: /root/proc/hello
+MAPS: [    556ee46a3000,     556ee46a4000] : 4.0KiB
+MAPS: - Device: 65024
+MAPS: - Pathname: /root/proc/hello
+MAPS: [    556ee46a4000,     556ee46a5000] : 4.0KiB
+MAPS: - Device: 65024
+MAPS: - Pathname: /root/proc/hello
+MAPS: [    556ee46a5000,     556ee46c6000] : 132.0KiB
+MAPS: - Device: 0
+MAPS: - Pathname: [heap]
+MAPS: [    7f2509aa6000,     7f2509aa8000] : 8.0KiB
+MAPS: - Device: 0
+MAPS: - Pathname: 
+MAPS: [    7f2509aa8000,     7f2509ad0000] : 160.0KiB
+MAPS: - Device: 65024
+MAPS: - Pathname: /lib/libc.so.6
+MAPS: [    7f2509ad0000,     7f2509bf3000] : 1.1MiB
+MAPS: - Device: 65024
+MAPS: - Pathname: /lib/libc.so.6
+MAPS: [    7f2509bf3000,     7f2509c46000] : 332.0KiB
+MAPS: - Device: 65024
+MAPS: - Pathname: /lib/libc.so.6
+MAPS: [    7f2509c46000,     7f2509c4a000] : 16.0KiB
+MAPS: - Device: 65024
+MAPS: - Pathname: /lib/libc.so.6
+MAPS: [    7f2509c4a000,     7f2509c4c000] : 8.0KiB
+MAPS: - Device: 65024
+MAPS: - Pathname: /lib/libc.so.6
+MAPS: [    7f2509c4c000,     7f2509c5b000] : 60.0KiB
+MAPS: - Device: 0
+MAPS: - Pathname: 
+MAPS: [    7f2509c5b000,     7f2509c5d000] : 8.0KiB
+MAPS: - Device: 65024
+MAPS: - Pathname: /lib/ld-linux-x86-64.so.2
+MAPS: [    7f2509c5d000,     7f2509c7c000] : 124.0KiB
+MAPS: - Device: 65024
+MAPS: - Pathname: /lib/ld-linux-x86-64.so.2
+MAPS: [    7f2509c7c000,     7f2509c87000] : 44.0KiB
+MAPS: - Device: 65024
+MAPS: - Pathname: /lib/ld-linux-x86-64.so.2
+MAPS: [    7f2509c88000,     7f2509c8a000] : 8.0KiB
+MAPS: - Device: 65024
+MAPS: - Pathname: /lib/ld-linux-x86-64.so.2
+MAPS: [    7f2509c8a000,     7f2509c8c000] : 8.0KiB
+MAPS: - Device: 65024
+MAPS: - Pathname: /lib/ld-linux-x86-64.so.2
+MAPS: [    7ffc93d58000,     7ffc93d79000] : 132.0KiB
+MAPS: - Device: 0
+MAPS: - Pathname: [stack]
+MAPS: [    7ffc93de4000,     7ffc93de8000] : 16.0KiB
+MAPS: - Device: 0
+MAPS: - Pathname: [vvar]
+MAPS: [    7ffc93de8000,     7ffc93dea000] : 8.0KiB
+MAPS: - Device: 0
+MAPS: - Pathname: [vdso]
+MAPS: [ffffffffff600000, ffffffffff601000] : 4.0KiB
+MAPS: - Device: 0
+MAPS: - Pathname: [vsyscall]
+
+
+
+** /proc/112/pagemap: failed to read 8 bytes at 0x7fffffffffb000
+Warning: Missing PTE for vaddr range [ffffffffff600000,ffffffffff601000]
+VA-PA MAPPINGS
+----------------------------------------
+VMR     556ee46a0000-    556ee46a1000 : 4.0KiB         399c000-         399d000
+VMR     556ee46a1000-    556ee46a2000 : 4.0KiB         399d000-         399e000
+VMR     556ee46a2000-    556ee46a3000 : 4.0KiB         399e000-         399f000
+VMR     556ee46a3000-    556ee46a4000 : 4.0KiB         39a8000-         39a9000
+VMR     556ee46a4000-    556ee46a5000 : 4.0KiB         39a1000-         39a2000
+VMR     556ee46a5000-    556ee46a7000 : 8.0KiB         39b8000-         39ba000
+VMR     556ee46a7000-    556ee46c6000 : 124.0KiB
+VMR     7f2509aa6000-    7f2509aa7000 : 4.0KiB         39ae000-         39af000
+VMR     7f2509aa7000-    7f2509aa8000 : 4.0KiB
+VMR     7f2509aa8000-    7f2509aa9000 : 4.0KiB         5af7000-         5af8000
+VMR     7f2509aa9000-    7f2509aab000 : 8.0KiB         5be8000-         5bea000
+VMR     7f2509aab000-    7f2509aad000 : 8.0KiB         5e12000-         5e14000
+VMR     7f2509aad000-    7f2509aaf000 : 8.0KiB         7a2a000-         7a2c000
+VMR     7f2509aaf000-    7f2509ab3000 : 16.0KiB         5604000-         5608000
+VMR     7f2509ab3000-    7f2509ab4000 : 4.0KiB         5e14000-         5e15000
+VMR     7f2509ab4000-    7f2509ab6000 : 8.0KiB         563e000-         5640000
+VMR     7f2509ab6000-    7f2509ab7000 : 4.0KiB         5be7000-         5be8000
+VMR     7f2509ab7000-    7f2509abf000 : 32.0KiB         5af8000-         5b00000
+VMR     7f2509abf000-    7f2509ac7000 : 32.0KiB         5e18000-         5e20000
+VMR     7f2509ac7000-    7f2509acf000 : 32.0KiB         57d0000-         57d8000
+VMR     7f2509acf000-    7f2509ad0000 : 4.0KiB         57c0000-         57c1000
+VMR     7f2509ad0000-    7f2509ad6000 : 24.0KiB         57c1000-         57c7000
+VMR     7f2509ad6000-    7f2509ad7000 : 4.0KiB
+VMR     7f2509ad7000-    7f2509ad9000 : 8.0KiB         7a3e000-         7a40000
+VMR     7f2509ad9000-    7f2509af0000 : 92.0KiB         5620000-         5637000
+VMR     7f2509af0000-    7f2509b00000 : 64.0KiB
+VMR     7f2509b00000-    7f2509b02000 : 8.0KiB         5b90000-         5b92000
+VMR     7f2509b02000-    7f2509b11000 : 60.0KiB         7a71000-         7a80000
+VMR     7f2509b11000-    7f2509b13000 : 8.0KiB         5b80000-         5b82000
+VMR     7f2509b13000-    7f2509b2b000 : 96.0KiB         7f81000-         7f99000
+VMR     7f2509b2b000-    7f2509b40000 : 84.0KiB         5e20000-         5e35000
+VMR     7f2509b40000-    7f2509b50000 : 64.0KiB
+VMR     7f2509b50000-    7f2509b59000 : 36.0KiB         7a55000-         7a5e000
+VMR     7f2509b59000-    7f2509b5a000 : 4.0KiB
+VMR     7f2509b5a000-    7f2509b61000 : 28.0KiB         7a5f000-         7a66000
+VMR     7f2509b61000-    7f2509b62000 : 4.0KiB         56f0000-         56f1000
+VMR     7f2509b62000-    7f2509b63000 : 4.0KiB         5b0e000-         5b0f000
+VMR     7f2509b63000-    7f2509b66000 : 12.0KiB         567d000-         5680000
+VMR     7f2509b66000-    7f2509b75000 : 60.0KiB         5e40000-         5e4f000
+VMR     7f2509b75000-    7f2509b7a000 : 20.0KiB         7f9b000-         7fa0000
+VMR     7f2509b7a000-    7f2509b80000 : 24.0KiB         5bc0000-         5bc6000
+VMR     7f2509b80000-    7f2509ba0000 : 128.0KiB
+VMR     7f2509ba0000-    7f2509bb0000 : 64.0KiB         565c000-         566c000
+VMR     7f2509bb0000-    7f2509bf3000 : 268.0KiB
+VMR     7f2509bf3000-    7f2509c00000 : 52.0KiB
+VMR     7f2509c00000-    7f2509c04000 : 16.0KiB         5bdc000-         5be0000
+VMR     7f2509c04000-    7f2509c10000 : 48.0KiB         5640000-         564c000
+VMR     7f2509c10000-    7f2509c46000 : 216.0KiB
+VMR     7f2509c46000-    7f2509c49000 : 12.0KiB         39af000-         39b2000
+VMR     7f2509c49000-    7f2509c4a000 : 4.0KiB         39ac000-         39ad000
+VMR     7f2509c4a000-    7f2509c4b000 : 4.0KiB         39b2000-         39b3000
+VMR     7f2509c4b000-    7f2509c4c000 : 4.0KiB         39ab000-         39ac000
+VMR     7f2509c4c000-    7f2509c4d000 : 4.0KiB         39b7000-         39b8000
+VMR     7f2509c4d000-    7f2509c50000 : 12.0KiB
+VMR     7f2509c50000-    7f2509c51000 : 4.0KiB         39b6000-         39b7000
+VMR     7f2509c51000-    7f2509c52000 : 4.0KiB         39b3000-         39b4000
+VMR     7f2509c52000-    7f2509c53000 : 4.0KiB         39b5000-         39b6000
+VMR     7f2509c53000-    7f2509c58000 : 20.0KiB
+VMR     7f2509c58000-    7f2509c59000 : 4.0KiB         39b4000-         39b5000
+VMR     7f2509c59000-    7f2509c5a000 : 4.0KiB         39aa000-         39ab000
+VMR     7f2509c5a000-    7f2509c5b000 : 4.0KiB         39ad000-         39ae000
+VMR     7f2509c5b000-    7f2509c5c000 : 4.0KiB         59ef000-         59f0000
+VMR     7f2509c5c000-    7f2509c5d000 : 4.0KiB         59ee000-         59ef000
+VMR     7f2509c5d000-    7f2509c5e000 : 4.0KiB         59ed000-         59ee000
+VMR     7f2509c5e000-    7f2509c5f000 : 4.0KiB         59ec000-         59ed000
+VMR     7f2509c5f000-    7f2509c60000 : 4.0KiB         59eb000-         59ec000
+VMR     7f2509c60000-    7f2509c61000 : 4.0KiB         59ea000-         59eb000
+VMR     7f2509c61000-    7f2509c62000 : 4.0KiB         59e9000-         59ea000
+VMR     7f2509c62000-    7f2509c63000 : 4.0KiB         59e8000-         59e9000
+VMR     7f2509c63000-    7f2509c64000 : 4.0KiB         59e7000-         59e8000
+VMR     7f2509c64000-    7f2509c65000 : 4.0KiB         59e6000-         59e7000
+VMR     7f2509c65000-    7f2509c66000 : 4.0KiB         59e5000-         59e6000
+VMR     7f2509c66000-    7f2509c67000 : 4.0KiB         59e4000-         59e5000
+VMR     7f2509c67000-    7f2509c68000 : 4.0KiB         57fb000-         57fc000
+VMR     7f2509c68000-    7f2509c69000 : 4.0KiB         57fa000-         57fb000
+VMR     7f2509c69000-    7f2509c6a000 : 4.0KiB         57f9000-         57fa000
+VMR     7f2509c6a000-    7f2509c6b000 : 4.0KiB         57f8000-         57f9000
+VMR     7f2509c6b000-    7f2509c6c000 : 4.0KiB         57f7000-         57f8000
+VMR     7f2509c6c000-    7f2509c6d000 : 4.0KiB         57f6000-         57f7000
+VMR     7f2509c6d000-    7f2509c6e000 : 4.0KiB         57f5000-         57f6000
+VMR     7f2509c6e000-    7f2509c6f000 : 4.0KiB         57f4000-         57f5000
+VMR     7f2509c6f000-    7f2509c70000 : 4.0KiB         57f3000-         57f4000
+VMR     7f2509c70000-    7f2509c71000 : 4.0KiB         57f2000-         57f3000
+VMR     7f2509c71000-    7f2509c72000 : 4.0KiB         57f1000-         57f2000
+VMR     7f2509c72000-    7f2509c73000 : 4.0KiB         57f0000-         57f1000
+VMR     7f2509c73000-    7f2509c74000 : 4.0KiB         57ef000-         57f0000
+VMR     7f2509c74000-    7f2509c75000 : 4.0KiB         57ee000-         57ef000
+VMR     7f2509c75000-    7f2509c76000 : 4.0KiB         57ed000-         57ee000
+VMR     7f2509c76000-    7f2509c77000 : 4.0KiB         57ec000-         57ed000
+VMR     7f2509c77000-    7f2509c78000 : 4.0KiB         57eb000-         57ec000
+VMR     7f2509c78000-    7f2509c79000 : 4.0KiB         57ea000-         57eb000
+VMR     7f2509c79000-    7f2509c7a000 : 4.0KiB         57e9000-         57ea000
+VMR     7f2509c7a000-    7f2509c7b000 : 4.0KiB         59cf000-         59d0000
+VMR     7f2509c7b000-    7f2509c7c000 : 4.0KiB         59ce000-         59cf000
+VMR     7f2509c7c000-    7f2509c7d000 : 4.0KiB         59cd000-         59ce000
+VMR     7f2509c7d000-    7f2509c7e000 : 4.0KiB         59cc000-         59cd000
+VMR     7f2509c7e000-    7f2509c7f000 : 4.0KiB         59cb000-         59cc000
+VMR     7f2509c7f000-    7f2509c80000 : 4.0KiB         59ca000-         59cb000
+VMR     7f2509c80000-    7f2509c81000 : 4.0KiB         59c9000-         59ca000
+VMR     7f2509c81000-    7f2509c82000 : 4.0KiB         59c8000-         59c9000
+VMR     7f2509c82000-    7f2509c83000 : 4.0KiB         59c7000-         59c8000
+VMR     7f2509c83000-    7f2509c84000 : 4.0KiB         59c6000-         59c7000
+VMR     7f2509c84000-    7f2509c85000 : 4.0KiB         59c5000-         59c6000
+VMR     7f2509c85000-    7f2509c86000 : 4.0KiB         59c4000-         59c5000
+VMR     7f2509c86000-    7f2509c87000 : 4.0KiB         59c3000-         59c4000
+VMR     7f2509c88000-    7f2509c89000 : 4.0KiB         39a7000-         39a8000
+VMR     7f2509c89000-    7f2509c8a000 : 4.0KiB         39a6000-         39a7000
+VMR     7f2509c8a000-    7f2509c8b000 : 4.0KiB         39a5000-         39a6000
+VMR     7f2509c8b000-    7f2509c8c000 : 4.0KiB         39a2000-         39a3000
+VMR     7ffc93d58000-    7ffc93d75000 : 116.0KiB
+VMR     7ffc93d75000-    7ffc93d76000 : 4.0KiB         39a9000-         39aa000
+VMR     7ffc93d76000-    7ffc93d77000 : 4.0KiB         39a4000-         39a5000
+VMR     7ffc93d77000-    7ffc93d78000 : 4.0KiB         39a3000-         39a4000
+VMR     7ffc93d78000-    7ffc93d79000 : 4.0KiB         399b000-         399c000
+VMR     7ffc93de4000-    7ffc93de8000 : 16.0KiB
+VMR     7ffc93de8000-    7ffc93de9000 : 4.0KiB         596f000-         5970000
+VMR     7ffc93de9000-    7ffc93dea000 : 4.0KiB
+VMR ffffffffff600000-ffffffffff600000 : 0.0B
+----------------------------------------
+Extracted process 112:
+Process(name='hello',
+        ads=ProcAddressSpace(vmrs=<utils.IntervalDict object at 0x7f0a0bb22da0>,
+                             model_id=0),
+        namespaces=[],
+        model_id=0,
+        pid_in_ns=112)
+STATUS FILE
+- PID: [113]
+
+
+
+Extract memory data for process 113
+MAPS FILE
+MAPS: [    563070c19000,     563070c1a000] : 4.0KiB
+MAPS: - Device: 65024
+MAPS: - Pathname: /root/proc/hello
+MAPS: [    563070c1a000,     563070c1b000] : 4.0KiB
+MAPS: - Device: 65024
+MAPS: - Pathname: /root/proc/hello
+MAPS: [    563070c1b000,     563070c1c000] : 4.0KiB
+MAPS: - Device: 65024
+MAPS: - Pathname: /root/proc/hello
+MAPS: [    563070c1c000,     563070c1d000] : 4.0KiB
+MAPS: - Device: 65024
+MAPS: - Pathname: /root/proc/hello
+MAPS: [    563070c1d000,     563070c1e000] : 4.0KiB
+MAPS: - Device: 65024
+MAPS: - Pathname: /root/proc/hello
+MAPS: [    563070c1e000,     563070c3f000] : 132.0KiB
+MAPS: - Device: 0
+MAPS: - Pathname: [heap]
+MAPS: [    7f6ea9ed8000,     7f6ea9eda000] : 8.0KiB
+MAPS: - Device: 0
+MAPS: - Pathname: 
+MAPS: [    7f6ea9eda000,     7f6ea9f02000] : 160.0KiB
+MAPS: - Device: 65024
+MAPS: - Pathname: /lib/libc.so.6
+MAPS: [    7f6ea9f02000,     7f6eaa025000] : 1.1MiB
+MAPS: - Device: 65024
+MAPS: - Pathname: /lib/libc.so.6
+MAPS: [    7f6eaa025000,     7f6eaa078000] : 332.0KiB
+MAPS: - Device: 65024
+MAPS: - Pathname: /lib/libc.so.6
+MAPS: [    7f6eaa078000,     7f6eaa07c000] : 16.0KiB
+MAPS: - Device: 65024
+MAPS: - Pathname: /lib/libc.so.6
+MAPS: [    7f6eaa07c000,     7f6eaa07e000] : 8.0KiB
+MAPS: - Device: 65024
+MAPS: - Pathname: /lib/libc.so.6
+MAPS: [    7f6eaa07e000,     7f6eaa08d000] : 60.0KiB
+MAPS: - Device: 0
+MAPS: - Pathname: 
+MAPS: [    7f6eaa08d000,     7f6eaa08f000] : 8.0KiB
+MAPS: - Device: 65024
+MAPS: - Pathname: /lib/ld-linux-x86-64.so.2
+MAPS: [    7f6eaa08f000,     7f6eaa0ae000] : 124.0KiB
+MAPS: - Device: 65024
+MAPS: - Pathname: /lib/ld-linux-x86-64.so.2
+MAPS: [    7f6eaa0ae000,     7f6eaa0b9000] : 44.0KiB
+MAPS: - Device: 65024
+MAPS: - Pathname: /lib/ld-linux-x86-64.so.2
+MAPS: [    7f6eaa0ba000,     7f6eaa0bc000] : 8.0KiB
+MAPS: - Device: 65024
+MAPS: - Pathname: /lib/ld-linux-x86-64.so.2
+MAPS: [    7f6eaa0bc000,     7f6eaa0be000] : 8.0KiB
+MAPS: - Device: 65024
+MAPS: - Pathname: /lib/ld-linux-x86-64.so.2
+MAPS: [    7ffc26510000,     7ffc26531000] : 132.0KiB
+MAPS: - Device: 0
+MAPS: - Pathname: [stack]
+MAPS: [    7ffc26565000,     7ffc26569000] : 16.0KiB
+MAPS: - Device: 0
+MAPS: - Pathname: [vvar]
+MAPS: [    7ffc26569000,     7ffc2656b000] : 8.0KiB
+MAPS: - Device: 0
+MAPS: - Pathname: [vdso]
+MAPS: [ffffffffff600000, ffffffffff601000] : 4.0KiB
+MAPS: - Device: 0
+MAPS: - Pathname: [vsyscall]
+
+
+
+** /proc/113/pagemap: failed to read 8 bytes at 0x7fffffffffb000
+Warning: Missing PTE for vaddr range [ffffffffff600000,ffffffffff601000]
+VA-PA MAPPINGS
+----------------------------------------
+VMR     563070c19000-    563070c1a000 : 4.0KiB         399c000-         399d000
+VMR     563070c1a000-    563070c1b000 : 4.0KiB         399d000-         399e000
+VMR     563070c1b000-    563070c1c000 : 4.0KiB         399e000-         399f000
+VMR     563070c1c000-    563070c1d000 : 4.0KiB         39c1000-         39c2000
+VMR     563070c1d000-    563070c1e000 : 4.0KiB         39bb000-         39bc000
+VMR     563070c1e000-    563070c20000 : 8.0KiB         39d2000-         39d4000
+VMR     563070c20000-    563070c3f000 : 124.0KiB
+VMR     7f6ea9ed8000-    7f6ea9ed9000 : 4.0KiB         39c8000-         39c9000
+VMR     7f6ea9ed9000-    7f6ea9eda000 : 4.0KiB
+VMR     7f6ea9eda000-    7f6ea9edb000 : 4.0KiB         5af7000-         5af8000
+VMR     7f6ea9edb000-    7f6ea9edd000 : 8.0KiB         5be8000-         5bea000
+VMR     7f6ea9edd000-    7f6ea9edf000 : 8.0KiB         5e12000-         5e14000
+VMR     7f6ea9edf000-    7f6ea9ee1000 : 8.0KiB         7a2a000-         7a2c000
+VMR     7f6ea9ee1000-    7f6ea9ee5000 : 16.0KiB         5604000-         5608000
+VMR     7f6ea9ee5000-    7f6ea9ee6000 : 4.0KiB         5e14000-         5e15000
+VMR     7f6ea9ee6000-    7f6ea9ee8000 : 8.0KiB         563e000-         5640000
+VMR     7f6ea9ee8000-    7f6ea9ee9000 : 4.0KiB         5be7000-         5be8000
+VMR     7f6ea9ee9000-    7f6ea9ef1000 : 32.0KiB         5af8000-         5b00000
+VMR     7f6ea9ef1000-    7f6ea9ef9000 : 32.0KiB         5e18000-         5e20000
+VMR     7f6ea9ef9000-    7f6ea9f01000 : 32.0KiB         57d0000-         57d8000
+VMR     7f6ea9f01000-    7f6ea9f02000 : 4.0KiB         57c0000-         57c1000
+VMR     7f6ea9f02000-    7f6ea9f08000 : 24.0KiB         57c1000-         57c7000
+VMR     7f6ea9f08000-    7f6ea9f09000 : 4.0KiB
+VMR     7f6ea9f09000-    7f6ea9f0b000 : 8.0KiB         7a3e000-         7a40000
+VMR     7f6ea9f0b000-    7f6ea9f20000 : 84.0KiB         5620000-         5635000
+VMR     7f6ea9f20000-    7f6ea9f30000 : 64.0KiB
+VMR     7f6ea9f30000-    7f6ea9f34000 : 16.0KiB         5b8e000-         5b92000
+VMR     7f6ea9f34000-    7f6ea9f43000 : 60.0KiB         7a71000-         7a80000
+VMR     7f6ea9f43000-    7f6ea9f45000 : 8.0KiB         5b80000-         5b82000
+VMR     7f6ea9f45000-    7f6ea9f5d000 : 96.0KiB         7f81000-         7f99000
+VMR     7f6ea9f5d000-    7f6ea9f70000 : 76.0KiB         5e20000-         5e33000
+VMR     7f6ea9f70000-    7f6ea9f80000 : 64.0KiB
+VMR     7f6ea9f80000-    7f6ea9f8b000 : 44.0KiB         7a53000-         7a5e000
+VMR     7f6ea9f8b000-    7f6ea9f8c000 : 4.0KiB
+VMR     7f6ea9f8c000-    7f6ea9f90000 : 16.0KiB         7a5f000-         7a63000
+VMR     7f6ea9f90000-    7f6ea9fa0000 : 64.0KiB
+VMR     7f6ea9fa0000-    7f6ea9fa7000 : 28.0KiB         5e48000-         5e4f000
+VMR     7f6ea9fa7000-    7f6ea9fac000 : 20.0KiB         7f9b000-         7fa0000
+VMR     7f6ea9fac000-    7f6ea9fb0000 : 16.0KiB         5bc0000-         5bc4000
+VMR     7f6ea9fb0000-    7f6ea9fe0000 : 192.0KiB
+VMR     7f6ea9fe0000-    7f6ea9fe9000 : 36.0KiB         566a000-         5673000
+VMR     7f6ea9fe9000-    7f6ea9fea000 : 4.0KiB
+VMR     7f6ea9fea000-    7f6ea9ff0000 : 24.0KiB         5674000-         567a000
+VMR     7f6ea9ff0000-    7f6eaa025000 : 212.0KiB
+VMR     7f6eaa025000-    7f6eaa030000 : 44.0KiB
+VMR     7f6eaa030000-    7f6eaa031000 : 4.0KiB         57a4000-         57a5000
+VMR     7f6eaa031000-    7f6eaa036000 : 20.0KiB         5bdb000-         5be0000
+VMR     7f6eaa036000-    7f6eaa040000 : 40.0KiB         5640000-         564a000
+VMR     7f6eaa040000-    7f6eaa078000 : 224.0KiB
+VMR     7f6eaa078000-    7f6eaa07b000 : 12.0KiB         39c9000-         39cc000
+VMR     7f6eaa07b000-    7f6eaa07c000 : 4.0KiB         39c6000-         39c7000
+VMR     7f6eaa07c000-    7f6eaa07d000 : 4.0KiB         39cc000-         39cd000
+VMR     7f6eaa07d000-    7f6eaa07e000 : 4.0KiB         39c5000-         39c6000
+VMR     7f6eaa07e000-    7f6eaa07f000 : 4.0KiB         39d1000-         39d2000
+VMR     7f6eaa07f000-    7f6eaa082000 : 12.0KiB
+VMR     7f6eaa082000-    7f6eaa083000 : 4.0KiB         39d0000-         39d1000
+VMR     7f6eaa083000-    7f6eaa084000 : 4.0KiB         39cd000-         39ce000
+VMR     7f6eaa084000-    7f6eaa085000 : 4.0KiB         39cf000-         39d0000
+VMR     7f6eaa085000-    7f6eaa08a000 : 20.0KiB
+VMR     7f6eaa08a000-    7f6eaa08b000 : 4.0KiB         39ce000-         39cf000
+VMR     7f6eaa08b000-    7f6eaa08c000 : 4.0KiB         39c3000-         39c4000
+VMR     7f6eaa08c000-    7f6eaa08d000 : 4.0KiB         39c7000-         39c8000
+VMR     7f6eaa08d000-    7f6eaa08e000 : 4.0KiB         59ef000-         59f0000
+VMR     7f6eaa08e000-    7f6eaa08f000 : 4.0KiB         59ee000-         59ef000
+VMR     7f6eaa08f000-    7f6eaa090000 : 4.0KiB         59ed000-         59ee000
+VMR     7f6eaa090000-    7f6eaa091000 : 4.0KiB         59ec000-         59ed000
+VMR     7f6eaa091000-    7f6eaa092000 : 4.0KiB         59eb000-         59ec000
+VMR     7f6eaa092000-    7f6eaa093000 : 4.0KiB         59ea000-         59eb000
+VMR     7f6eaa093000-    7f6eaa094000 : 4.0KiB         59e9000-         59ea000
+VMR     7f6eaa094000-    7f6eaa095000 : 4.0KiB         59e8000-         59e9000
+VMR     7f6eaa095000-    7f6eaa096000 : 4.0KiB         59e7000-         59e8000
+VMR     7f6eaa096000-    7f6eaa097000 : 4.0KiB         59e6000-         59e7000
+VMR     7f6eaa097000-    7f6eaa098000 : 4.0KiB         59e5000-         59e6000
+VMR     7f6eaa098000-    7f6eaa099000 : 4.0KiB         59e4000-         59e5000
+VMR     7f6eaa099000-    7f6eaa09a000 : 4.0KiB         57fb000-         57fc000
+VMR     7f6eaa09a000-    7f6eaa09b000 : 4.0KiB         57fa000-         57fb000
+VMR     7f6eaa09b000-    7f6eaa09c000 : 4.0KiB         57f9000-         57fa000
+VMR     7f6eaa09c000-    7f6eaa09d000 : 4.0KiB         57f8000-         57f9000
+VMR     7f6eaa09d000-    7f6eaa09e000 : 4.0KiB         57f7000-         57f8000
+VMR     7f6eaa09e000-    7f6eaa09f000 : 4.0KiB         57f6000-         57f7000
+VMR     7f6eaa09f000-    7f6eaa0a0000 : 4.0KiB         57f5000-         57f6000
+VMR     7f6eaa0a0000-    7f6eaa0a1000 : 4.0KiB         57f4000-         57f5000
+VMR     7f6eaa0a1000-    7f6eaa0a2000 : 4.0KiB         57f3000-         57f4000
+VMR     7f6eaa0a2000-    7f6eaa0a3000 : 4.0KiB         57f2000-         57f3000
+VMR     7f6eaa0a3000-    7f6eaa0a4000 : 4.0KiB         57f1000-         57f2000
+VMR     7f6eaa0a4000-    7f6eaa0a5000 : 4.0KiB         57f0000-         57f1000
+VMR     7f6eaa0a5000-    7f6eaa0a6000 : 4.0KiB         57ef000-         57f0000
+VMR     7f6eaa0a6000-    7f6eaa0a7000 : 4.0KiB         57ee000-         57ef000
+VMR     7f6eaa0a7000-    7f6eaa0a8000 : 4.0KiB         57ed000-         57ee000
+VMR     7f6eaa0a8000-    7f6eaa0a9000 : 4.0KiB         57ec000-         57ed000
+VMR     7f6eaa0a9000-    7f6eaa0aa000 : 4.0KiB         57eb000-         57ec000
+VMR     7f6eaa0aa000-    7f6eaa0ab000 : 4.0KiB         57ea000-         57eb000
+VMR     7f6eaa0ab000-    7f6eaa0ac000 : 4.0KiB         57e9000-         57ea000
+VMR     7f6eaa0ac000-    7f6eaa0ad000 : 4.0KiB         59cf000-         59d0000
+VMR     7f6eaa0ad000-    7f6eaa0ae000 : 4.0KiB         59ce000-         59cf000
+VMR     7f6eaa0ae000-    7f6eaa0af000 : 4.0KiB         59cd000-         59ce000
+VMR     7f6eaa0af000-    7f6eaa0b0000 : 4.0KiB         59cc000-         59cd000
+VMR     7f6eaa0b0000-    7f6eaa0b1000 : 4.0KiB         59cb000-         59cc000
+VMR     7f6eaa0b1000-    7f6eaa0b2000 : 4.0KiB         59ca000-         59cb000
+VMR     7f6eaa0b2000-    7f6eaa0b3000 : 4.0KiB         59c9000-         59ca000
+VMR     7f6eaa0b3000-    7f6eaa0b4000 : 4.0KiB         59c8000-         59c9000
+VMR     7f6eaa0b4000-    7f6eaa0b5000 : 4.0KiB         59c7000-         59c8000
+VMR     7f6eaa0b5000-    7f6eaa0b6000 : 4.0KiB         59c6000-         59c7000
+VMR     7f6eaa0b6000-    7f6eaa0b7000 : 4.0KiB         59c5000-         59c6000
+VMR     7f6eaa0b7000-    7f6eaa0b8000 : 4.0KiB         59c4000-         59c5000
+VMR     7f6eaa0b8000-    7f6eaa0b9000 : 4.0KiB         59c3000-         59c4000
+VMR     7f6eaa0ba000-    7f6eaa0bb000 : 4.0KiB         39c0000-         39c1000
+VMR     7f6eaa0bb000-    7f6eaa0bc000 : 4.0KiB         39bf000-         39c0000
+VMR     7f6eaa0bc000-    7f6eaa0bd000 : 4.0KiB         39be000-         39bf000
+VMR     7f6eaa0bd000-    7f6eaa0be000 : 4.0KiB         39bc000-         39bd000
+VMR     7ffc26510000-    7ffc2652d000 : 116.0KiB
+VMR     7ffc2652d000-    7ffc2652e000 : 4.0KiB         39c4000-         39c5000
+VMR     7ffc2652e000-    7ffc2652f000 : 4.0KiB         39c2000-         39c3000
+VMR     7ffc2652f000-    7ffc26530000 : 4.0KiB         39bd000-         39be000
+VMR     7ffc26530000-    7ffc26531000 : 4.0KiB         39ba000-         39bb000
+VMR     7ffc26565000-    7ffc26569000 : 16.0KiB
+VMR     7ffc26569000-    7ffc2656a000 : 4.0KiB         596f000-         5970000
+VMR     7ffc2656a000-    7ffc2656b000 : 4.0KiB
+VMR ffffffffff600000-ffffffffff600000 : 0.0B
+----------------------------------------
+Splitting at          5e48000
+Splitting at          566a000
+Extracted process 113:
+Process(name='hello',
+        ads=ProcAddressSpace(vmrs=<utils.IntervalDict object at 0x7f0a0bb510f0>,
+                             model_id=0),
+        namespaces=[],
+        model_id=0,
+        pid_in_ns=113)
+Warning: unknown pathname '/root/proc/hello' for VMR
+Warning: unknown pathname '/root/proc/hello' for VMR
+Warning: unknown pathname '/root/proc/hello' for VMR
+Warning: unknown pathname '/root/proc/hello' for VMR
+Warning: unknown pathname '/root/proc/hello' for VMR
+Warning: unknown pathname '/lib/libc.so.6' for VMR
+Warning: unknown pathname '/lib/libc.so.6' for VMR
+Warning: unknown pathname '/lib/libc.so.6' for VMR
+Warning: unknown pathname '/lib/libc.so.6' for VMR
+Warning: unknown pathname '/lib/libc.so.6' for VMR
+Warning: unknown pathname '/lib/ld-linux-x86-64.so.2' for VMR
+Warning: unknown pathname '/lib/ld-linux-x86-64.so.2' for VMR
+Warning: unknown pathname '/lib/ld-linux-x86-64.so.2' for VMR
+Warning: unknown pathname '/lib/ld-linux-x86-64.so.2' for VMR
+Warning: unknown pathname '/lib/ld-linux-x86-64.so.2' for VMR
+Warning: unknown pathname '/root/proc/hello' for VMR
+Warning: unknown pathname '/root/proc/hello' for VMR
+Warning: unknown pathname '/root/proc/hello' for VMR
+Warning: unknown pathname '/root/proc/hello' for VMR
+Warning: unknown pathname '/root/proc/hello' for VMR
+Warning: unknown pathname '/lib/libc.so.6' for VMR
+Warning: unknown pathname '/lib/libc.so.6' for VMR
+Warning: unknown pathname '/lib/libc.so.6' for VMR
+Warning: unknown pathname '/lib/libc.so.6' for VMR
+Warning: unknown pathname '/lib/libc.so.6' for VMR
+Warning: unknown pathname '/lib/ld-linux-x86-64.so.2' for VMR
+Warning: unknown pathname '/lib/ld-linux-x86-64.so.2' for VMR
+Warning: unknown pathname '/lib/ld-linux-x86-64.so.2' for VMR
+Warning: unknown pathname '/lib/ld-linux-x86-64.so.2' for VMR
+Warning: unknown pathname '/lib/ld-linux-x86-64.so.2' for VMR
+# 
