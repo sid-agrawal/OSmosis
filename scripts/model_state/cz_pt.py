@@ -1,6 +1,6 @@
 #!./ve_model_state/bin/python3
 
-from generic_model import *
+from generic_model_v2 import *
 import argparse
 
 # ./cz_pt.py -f cz_pt.csv &&  cp  cz_pt.csv ~/neo4j/import/cz_pt.csv && python import_csv.py --file cz_pt.csv   

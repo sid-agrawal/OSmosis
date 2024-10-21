@@ -1,3 +1,4 @@
+
 import os
 import signal
 import subprocess
@@ -6,13 +7,29 @@ import time
 import math
 from dataclasses import dataclass, field
 import traceback
-from utils import EasyDict, IntervalDict
+from utils import EasyDict, IntervalDict, sizeof_fmt
 from read_pagemap import get_va_pa_mappings, PageMapObj
 from generic_model import *
 import sys
+import pprint
+import argparse
 
 sys.path.append("pfs/lib")
 import pypfs
+
+# Argument Processing
+# Define the argument parser
+parser = argparse.ArgumentParser(description="OSmosis Model state")
+parser.add_argument('--pid', type=int, help='PID of the process to extract data for')
+parser.add_argument('--csv', type=str, required=True, help='CSV to output the model state in')
+
+# Parse the arguments
+args = parser.parse_args()
+
+# Use the pid argument in your script
+pid = args.pid
+
+
 
 ### CONFIGURATION ###
 print_logs = False
@@ -421,9 +438,10 @@ def read_maps_file(pid: int, should_print: bool = False) -> list[pypfs.task]:
     if should_print:
         print("MAPS FILE")
         for map in maps:
-            print(f"[{map.start_address}, {map.end_address}]")
-            print(f"- Device: {map.device}")
-            print(f"- Pathname: {map.pathname}")
+            print(f"MAPS: [{map.start_address:16x}, {map.end_address:16x}] : {sizeof_fmt(map.end_address - map.start_address)}")
+            print(f"MAPS: - Device: {map.device}")
+            print(f"MAPS: - Pathname: {map.pathname}")
+        print ("\n\n")
             
     return maps
 
@@ -442,6 +460,7 @@ def read_status_file(pid: int, should_print: bool = False) -> pypfs.task_status:
     if should_print:
         print("STATUS FILE")
         print(f"- PID: {status.ns_pid}")
+        print ("\n\n")
             
     return status
 
@@ -511,6 +530,7 @@ def extract_namespaces(data: ProcFsData, pid: int, should_print: bool = False):
         print("NAMESPACES")
         for ns_info in namespaces:
             print(f"- NS: type {ns_info.type.name}, handle {ns_info.handle}")
+        print ("\n\n")
             
     data.procs[pid].namespaces = namespaces
     
@@ -528,9 +548,9 @@ def read_pagemap_file(pid: int, should_print: bool = False) -> list[PageMapObj]:
         print(f'VA-PA MAPPINGS')
         print("-" * 40)
         for pagemap in results:
-            print(f"VMR {pagemap.vaddr:16x}-{pagemap.vaddr + pagemap.size:16x}", end="")
+            print(f"VMR {pagemap.vaddr:16x}-{(pagemap.vaddr + pagemap.size):16x} : {sizeof_fmt(pagemap.size)}", end="")
             if pagemap.mapped:
-                print(f'{pagemap.paddr:16x}-{pagemap.paddr + pagemap.size:16x}')
+                print(f'{pagemap.paddr:16x}-{(pagemap.paddr + pagemap.size):16x}')
             else:
                 print()
         print("-" * 40)
@@ -621,6 +641,7 @@ def extract_memory_data(data: ProcFsData, pid: int, should_print = False):
         print(data.procs[pid].ads.vmrs)
         print(data.pmrs)
         print(data.devices)
+        print ("\n\n")
 
 def extract_from_status(data: ProcFsData, pid: int, should_print = False):
     status = read_status_file(pid, should_print)
@@ -638,13 +659,13 @@ def extract_process_data(data: ProcFsData, pid: int, name: str, should_print = F
     process = Process(name)
     data.procs[pid] = process
     
-    extract_namespaces(data, pid, should_print) # namespaces do not get incorporated into the generic model state yet
+    # extract_namespaces(data, pid, should_print) # namespaces do not get incorporated into the generic model state yet
     extract_from_status(data, pid, should_print)
     extract_memory_data(data, pid, should_print)
     
     if should_print:
         print(f"Extracted process {pid}:")
-        print(data.procs[pid])
+        pprint.pp(data.procs[pid])
     
 def terminate_process(pid: int):
     """ 
@@ -654,8 +675,14 @@ def terminate_process(pid: int):
 
 if __name__ == "__main__":
     data = ProcFsData()
-    pids = [run_process(name, start_type) for (name, start_type) in to_run]
-    
+
+    if args.pid is not None:
+        print(f"PID provided: {args.pid}")
+        pids = [args.pid]
+    else:
+        print("Starting processes from this script")
+        pids =  [run_process(name, start_type) for (name, start_type) in to_run]
+
     try:
         for (name, _), pid in zip(to_run, pids):
             extract_process_data(data, pid, name, True)
@@ -664,8 +691,11 @@ if __name__ == "__main__":
         print("Error printing stats for hello")
         print(repr(e))
         traceback.print_exc()
+        exit (1)
     
-    for pid in pids:
-        terminate_process(pid)
+    # If the pid not user provided.
+    if args.pid is None:
+        for pid in pids:
+            terminate_process(pid)
     
-    data.to_generic_model(MappingType.CONTIGUOUS, MappingType.CO_CONTIGUOUS).to_csv()
+    data.to_generic_model(MappingType.CONTIGUOUS, MappingType.CO_CONTIGUOUS).to_csv(args.csv)       
