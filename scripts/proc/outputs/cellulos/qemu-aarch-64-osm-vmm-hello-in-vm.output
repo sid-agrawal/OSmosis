@@ -1,0 +1,240 @@
+# python proc_model.py 
+Starting process "hello"
+Hello?
+
+
+
+Starting process "hello"
+Hello?
+
+
+NAMESPACES
+- NS: type UTS, handle 4026531838
+- NS: type USER, handle 4026531837
+- NS: type TIME, handle 4026531834
+- NS: type PID, handle 4026531836
+- NS: type NET, handle 4026531840
+- NS: type MNT, handle 4026531841
+- NS: type IPC, handle 4026531839
+- NS: type CGROUP, handle 4026531835
+STATUS FILE
+- PID: [137]
+Extract memory data for process 137
+MAPS FILE
+[187651007123456, 187651007127552]
+- Device: 2
+- Pathname: /root/proc/hello
+[187651007127552, 187651007131648]
+- Device: 2
+- Pathname: /root/proc/hello
+[187651007131648, 187651007135744]
+- Device: 2
+- Pathname: /root/proc/hello
+[187651277471744, 187651277606912]
+- Device: 0
+- Pathname: [heap]
+[281472819261440, 281472820625408]
+- Device: 2
+- Pathname: /lib/libc.so.6
+[281472820625408, 281472820641792]
+- Device: 2
+- Pathname: /lib/libc.so.6
+[281472820641792, 281472820649984]
+- Device: 2
+- Pathname: /lib/libc.so.6
+[281472820649984, 281472820707328]
+- Device: 0
+- Pathname: 
+[281472820707328, 281472820715520]
+- Device: 0
+- Pathname: [vvar]
+[281472820715520, 281472820719616]
+- Device: 0
+- Pathname: [vdso]
+[281472820719616, 281472820871168]
+- Device: 2
+- Pathname: /lib/ld-linux-aarch64.so.1
+[281472820871168, 281472820879360]
+- Device: 2
+- Pathname: /lib/ld-linux-aarch64.so.1
+[281472820879360, 281472820887552]
+- Device: 2
+- Pathname: /lib/ld-linux-aarch64.so.1
+[281474274586624, 281474274721792]
+- Device: 0
+- Pathname: [stack]
+VA-PA MAPPINGS
+----------------------------------------
+VMR     aaaae79f1000-    aaaae79f2000        4d18b000-        4d18c000
+VMR     aaaae79f2000-    aaaae79f3000        50433000-        50434000
+VMR     aaaae79f3000-    aaaae79f4000        5042d000-        5042e000
+VMR     aaaaf7bc4000-    aaaaf7bc6000        50441000-        50443000
+VMR     aaaaf7bc6000-    aaaaf7be5000
+VMR     ffff7f67f000-    ffff7f6c0000        4d084000-        4d0c5000
+VMR     ffff7f6c0000-    ffff7f6d0000
+VMR     ffff7f6d0000-    ffff7f6fb000        4d0d5000-        4d100000
+VMR     ffff7f6fb000-    ffff7f720000        42300000-        42325000
+VMR     ffff7f720000-    ffff7f730000
+VMR     ffff7f730000-    ffff7f750000        42335000-        42355000
+VMR     ffff7f750000-    ffff7f770000
+VMR     ffff7f770000-    ffff7f780000        42375000-        42385000
+VMR     ffff7f780000-    ffff7f790000
+VMR     ffff7f790000-    ffff7f7a0000        42395000-        423a5000
+VMR     ffff7f7a0000-    ffff7f7cc000
+VMR     ffff7f7cc000-    ffff7f7cf000        50439000-        5043c000
+VMR     ffff7f7cf000-    ffff7f7d0000        50437000-        50438000
+VMR     ffff7f7d0000-    ffff7f7d1000        5043c000-        5043d000
+VMR     ffff7f7d1000-    ffff7f7d2000        50436000-        50437000
+VMR     ffff7f7d2000-    ffff7f7d3000        50440000-        50441000
+VMR     ffff7f7d3000-    ffff7f7d6000
+VMR     ffff7f7d6000-    ffff7f7d7000        5043f000-        50440000
+VMR     ffff7f7d7000-    ffff7f7d8000        5043e000-        5043f000
+VMR     ffff7f7d8000-    ffff7f7dd000
+VMR     ffff7f7dd000-    ffff7f7de000        5043d000-        5043e000
+VMR     ffff7f7de000-    ffff7f7df000        50434000-        50435000
+VMR     ffff7f7df000-    ffff7f7e0000        50438000-        50439000
+VMR     ffff7f7e0000-    ffff7f7e2000
+VMR     ffff7f7e2000-    ffff7f7e3000        40f8a000-        40f8b000
+VMR     ffff7f7e3000-    ffff7f808000        4d04a000-        4d06f000
+VMR     ffff7f808000-    ffff7f809000        50432000-        50433000
+VMR     ffff7f809000-    ffff7f80a000        50431000-        50432000
+VMR     ffff7f80a000-    ffff7f80b000        50430000-        50431000
+VMR     ffff7f80b000-    ffff7f80c000        5042e000-        5042f000
+VMR     ffffd6267000-    ffffd6285000
+VMR     ffffd6285000-    ffffd6286000        50435000-        50436000
+VMR     ffffd6286000-    ffffd6287000        5042f000-        50430000
+VMR     ffffd6287000-    ffffd6288000        5042b000-        5042c000
+----------------------------------------
+Extracted process 137:
+Process(name='hello', ads=ProcAddressSpace(vmrs=<utils.IntervalDict object at 0xffffa8582a70>, model_id=0), namespaces=[Namespace(type=<NamespaceType.UTS: 1>, handle=4026531838), Namespace(type=<NamespaceType.USER: 2>, handle=4026531837), Namespace(type=<NamespaceType.TIME: 8>, handle=4026531834), Namespace(type=<NamespaceType.PID: 3>, handle=4026531836), Namespace(type=<NamespaceType.NET: 4>, handle=4026531840), Namespace(type=<NamespaceType.MNT: 5>, handle=4026531841), Namespace(type=<NamespaceType.IPC: 6>, handle=4026531839), Namespace(type=<NamespaceType.CGROUP: 7>, handle=4026531835)], model_id=0, pid_in_ns=137)
+NAMESPACES
+- NS: type UTS, handle 4026531838
+- NS: type USER, handle 4026531837
+- NS: type TIME, handle 4026531834
+- NS: type PID, handle 4026531836
+- NS: type NET, handle 4026531840
+- NS: type MNT, handle 4026531841
+- NS: type IPC, handle 4026531839
+- NS: type CGROUP, handle 4026531835
+STATUS FILE
+- PID: [138]
+Extract memory data for process 138
+MAPS FILE
+[187650006134784, 187650006138880]
+- Device: 2
+- Pathname: /root/proc/hello
+[187650006138880, 187650006142976]
+- Device: 2
+- Pathname: /root/proc/hello
+[187650006142976, 187650006147072]
+- Device: 2
+- Pathname: /root/proc/hello
+[187650874658816, 187650874793984]
+- Device: 0
+- Pathname: [heap]
+[281473299521536, 281473300885504]
+- Device: 2
+- Pathname: /lib/libc.so.6
+[281473300885504, 281473300901888]
+- Device: 2
+- Pathname: /lib/libc.so.6
+[281473300901888, 281473300910080]
+- Device: 2
+- Pathname: /lib/libc.so.6
+[281473300910080, 281473300967424]
+- Device: 0
+- Pathname: 
+[281473300967424, 281473300975616]
+- Device: 0
+- Pathname: [vvar]
+[281473300975616, 281473300979712]
+- Device: 0
+- Pathname: [vdso]
+[281473300979712, 281473301131264]
+- Device: 2
+- Pathname: /lib/ld-linux-aarch64.so.1
+[281473301131264, 281473301139456]
+- Device: 2
+- Pathname: /lib/ld-linux-aarch64.so.1
+[281473301139456, 281473301147648]
+- Device: 2
+- Pathname: /lib/ld-linux-aarch64.so.1
+[281474227699712, 281474227834880]
+- Device: 0
+- Pathname: [stack]
+VA-PA MAPPINGS
+----------------------------------------
+VMR     aaaaabf53000-    aaaaabf54000        4d18b000-        4d18c000
+VMR     aaaaabf54000-    aaaaabf55000        5044a000-        5044b000
+VMR     aaaaabf55000-    aaaaabf56000        50444000-        50445000
+VMR     aaaadfb9d000-    aaaadfb9f000        50458000-        5045a000
+VMR     aaaadfb9f000-    aaaadfbbe000
+VMR     ffff9c082000-    ffff9c0c0000        4d084000-        4d0c2000
+VMR     ffff9c0c0000-    ffff9c0d0000
+VMR     ffff9c0d0000-    ffff9c0fe000        4d0d2000-        4d100000
+VMR     ffff9c0fe000-    ffff9c120000        42300000-        42322000
+VMR     ffff9c120000-    ffff9c130000
+VMR     ffff9c130000-    ffff9c150000        42332000-        42352000
+VMR     ffff9c150000-    ffff9c170000
+VMR     ffff9c170000-    ffff9c1a0000        42372000-        423a2000
+VMR     ffff9c1a0000-    ffff9c1cf000
+VMR     ffff9c1cf000-    ffff9c1d2000        50450000-        50453000
+VMR     ffff9c1d2000-    ffff9c1d3000        5044e000-        5044f000
+VMR     ffff9c1d3000-    ffff9c1d4000        50453000-        50454000
+VMR     ffff9c1d4000-    ffff9c1d5000        5044d000-        5044e000
+VMR     ffff9c1d5000-    ffff9c1d6000        50457000-        50458000
+VMR     ffff9c1d6000-    ffff9c1d9000
+VMR     ffff9c1d9000-    ffff9c1da000        50456000-        50457000
+VMR     ffff9c1da000-    ffff9c1db000        50455000-        50456000
+VMR     ffff9c1db000-    ffff9c1e0000
+VMR     ffff9c1e0000-    ffff9c1e1000        50454000-        50455000
+VMR     ffff9c1e1000-    ffff9c1e2000        5044b000-        5044c000
+VMR     ffff9c1e2000-    ffff9c1e3000        5044f000-        50450000
+VMR     ffff9c1e3000-    ffff9c1e5000
+VMR     ffff9c1e5000-    ffff9c1e6000        40f8a000-        40f8b000
+VMR     ffff9c1e6000-    ffff9c20b000        4d04a000-        4d06f000
+VMR     ffff9c20b000-    ffff9c20c000        50448000-        50449000
+VMR     ffff9c20c000-    ffff9c20d000        50447000-        50448000
+VMR     ffff9c20d000-    ffff9c20e000        50446000-        50447000
+VMR     ffff9c20e000-    ffff9c20f000        50445000-        50446000
+VMR     ffffd35b0000-    ffffd35ce000
+VMR     ffffd35ce000-    ffffd35cf000        5044c000-        5044d000
+VMR     ffffd35cf000-    ffffd35d0000        50449000-        5044a000
+VMR     ffffd35d0000-    ffffd35d1000        50443000-        50444000
+----------------------------------------
+Splitting at         42332000
+Error printing stats for hello
+AssertionError("Can't split a nonexistent interval [        42325000,         42335000]")
+Traceback (most recent call last):
+  File "/root/proc/proc_model.py", line 661, in <module>
+    extract_process_data(data, pid, name, True)
+  File "/root/proc/proc_model.py", line 643, in extract_process_data
+    extract_memory_data(data, pid, should_print)
+  File "/root/proc/proc_model.py", line 602, in extract_memory_data
+    data.pmrs.split_interval(pmr_start_addr)
+  File "/root/proc/utils.py", line 142, in split_interval
+    assert val is not None, f"Can't split a nonexistent interval [{self.endpoint_list[idx - 1]:16x}, {self.endpoint_list[idx]:16x}]"
+AssertionError: Can't split a nonexistent interval [        42325000,         42335000]
+Warning: unknown pathname '/root/proc/hello' for VMR
+Warning: unknown pathname '/root/proc/hello' for VMR
+Warning: unknown pathname '/root/proc/hello' for VMR
+Warning: unknown pathname '/lib/libc.so.6' for VMR
+Warning: unknown pathname '/lib/libc.so.6' for VMR
+Warning: unknown pathname '/lib/libc.so.6' for VMR
+Warning: unknown pathname '/lib/ld-linux-aarch64.so.1' for VMR
+Warning: unknown pathname '/lib/ld-linux-aarch64.so.1' for VMR
+Warning: unknown pathname '/lib/ld-linux-aarch64.so.1' for VMR
+Traceback (most recent call last):
+  File "/root/proc/proc_model.py", line 671, in <module>
+    data.to_generic_model(MappingType.CONTIGUOUS, MappingType.CO_CONTIGUOUS).to_csv()
+  File "/root/proc/proc_model.py", line 283, in to_generic_model
+    pd_id = self.model.add_pd_node(process_info.name)
+  File "/root/proc/generic_model.py", line 168, in add_pd_node
+    raise "Inserting Duplicate Node"
+TypeError: exceptions must derive from BaseException
+# 
+# 
+# 
+# 
+# 
+# 
