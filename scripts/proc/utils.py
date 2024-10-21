@@ -1,5 +1,6 @@
 import bisect
 import copy
+import traceback
 
 ### UTILITY CLASSES ###
 
@@ -37,7 +38,7 @@ class IntervalDict():
     """
     
     def __init__(self):
-        self.endpoint_list = []
+        self.markers = [] # This is both start and endpoints
         self.dict = {}
         self.list_len = 0
     
@@ -52,27 +53,26 @@ class IntervalDict():
         :param value: value to add to the dict for the specified interval
         """
         
-        insert_idx = bisect.bisect_right(self.endpoint_list, start)
+        insert_idx = bisect.bisect_right(self.markers, start)
         
-        if self.list_len > insert_idx and self.endpoint_list[insert_idx] < end:
+        if self.list_len > insert_idx and self.markers[insert_idx] < end:
             # Interval overlaps another
-            print(f'Overlap [{start:16x},{end:16x}]')
-            print(self)
-            raise ValueError("Overlap interval")
-        elif insert_idx > 0 and self.endpoint_list[insert_idx - 1] in self.dict:
-            # This start point is already defined
-            print(f'Overlap [{start:16x},{end:16x}]')
-            print(self)
+            print(f'----Overlap_A : II = {insert_idx}    [{start:16x},{end:16x}]')
+            traceback.print_exc()
+            #raise ValueError("Overlap interval")
+        elif insert_idx > 0 and self.markers[insert_idx - 1] in self.dict:
+            # The previous marker is a start point so you are clearly in the middle.
+            print(f'Overlap_B : II = {insert_idx}    [{start:16x},{end:16x}]')
             raise ValueError("Overlap interval")
         
         # Insert the end point, if needed
-        if self.list_len <= insert_idx or self.endpoint_list[insert_idx] != end:
-            self.endpoint_list.insert(insert_idx, end)
+        if self.list_len <= insert_idx or self.markers[insert_idx] != end:
+            self.markers.insert(insert_idx, end)
             self.list_len += 1
         
         # Insert the start point, if needed
-        if insert_idx == 0 or self.endpoint_list[insert_idx - 1] != start:
-            self.endpoint_list.insert(insert_idx, start)
+        if insert_idx == 0 or self.markers[insert_idx - 1] != start:
+            self.markers.insert(insert_idx, start)
             self.list_len += 1
             
         # Insert the value to the dict
@@ -87,16 +87,16 @@ class IntervalDict():
                  or, if the key is not in any interval, ((None, None), None)
         """
         
-        idx = bisect.bisect_right(self.endpoint_list, key)
+        idx = bisect.bisect_right(self.markers, key)
         
         if idx == 0 or idx >= self.list_len:
             # Index not within any interval
             return (None, None), None
         
-        val = self.dict.get(self.endpoint_list[idx - 1])
+        val = self.dict.get(self.markers[idx - 1])
         
         if val:
-            return (self.endpoint_list[idx - 1], self.endpoint_list[idx]), val
+            return (self.markers[idx - 1], self.markers[idx]), val
         else:
             return (None, None), None
         
@@ -110,18 +110,18 @@ class IntervalDict():
                  or, if the range does not contain any interval, an empty list
         """
         
-        left_idx = bisect.bisect_left(self.endpoint_list, start + 1)
-        right_idx = bisect.bisect_left(self.endpoint_list, end - 1)
+        left_idx = bisect.bisect_left(self.markers, start + 1)
+        right_idx = bisect.bisect_left(self.markers, end - 1)
         
         results = []
         for i in range(left_idx - 1, right_idx):
             if i < 0 or i >= self.list_len:
                 continue
             
-            val = self.dict.get(self.endpoint_list[i])
+            val = self.dict.get(self.markers[i])
         
             if val:
-                results.append(((self.endpoint_list[i], self.endpoint_list[i + 1]), val))
+                results.append(((self.markers[i], self.markers[i + 1]), val))
 
         return results
     
@@ -136,13 +136,13 @@ class IntervalDict():
         
         print(f"Splitting at {split_at:16x}")
         
-        idx = bisect.bisect_right(self.endpoint_list, split_at)
-        val = self.dict.get(self.endpoint_list[idx - 1])
+        idx = bisect.bisect_right(self.markers, split_at)
+        val = self.dict.get(self.markers[idx - 1])
         
-        assert val is not None, f"Can't split a nonexistent interval [{self.endpoint_list[idx - 1]:16x}, {self.endpoint_list[idx]:16x}]"
-        assert self.endpoint_list[idx - 1] != split_at and self.endpoint_list[idx] != split_at, "Can't split an interval at the endpoint"
+        assert val is not None, f"Can't split a nonexistent interval [{self.markers[idx - 1]:16x}, {self.markers[idx]:16x}]"
+        assert self.markers[idx - 1] != split_at and self.markers[idx] != split_at, "Can't split an interval at the endpoint"
         
-        bisect.insort(self.endpoint_list, split_at)
+        bisect.insort(self.markers, split_at)
         self.list_len += 1
         val_copy = copy.copy(val)
         self.dict[split_at] = val_copy
@@ -156,19 +156,27 @@ class IntervalDict():
         items = []
         
         for i in range(self.list_len - 1):
-            value = self.dict.get(self.endpoint_list[i])
+            value = self.dict.get(self.markers[i])
             
             if value:
-                items.append(((self.endpoint_list[i],self.endpoint_list[i+1]), value))
+                items.append(((self.markers[i],self.markers[i+1]), value))
     
         return items
     
     def __str__(self):
         lines = []
         for i in range(self.list_len - 1):
-            value = self.dict.get(self.endpoint_list[i])
+            value = self.dict.get(self.markers[i])
             
             if value:
-                lines.append(f'-[{self.endpoint_list[i]:16x},{self.endpoint_list[i+1]:16x}]: {value}')
+                #lines.append(f'-[{self.endpoint_list[i]:16x},{self.endpoint_list[i+1]:16x}]: {value}')
+                lines.append(f'-[{self.markers[i]},{self.markers[i+1]}]: {value}')
 
         return '\n'.join(lines)
+
+def sizeof_fmt(num, suffix="B"):
+    for unit in ("", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"):
+        if abs(num) < 1024.0:
+            return f"{num:3.1f}{unit}{suffix}"
+        num /= 1024.0
+    return f"{num:.1f}Yi{suffix}"
