@@ -9,25 +9,15 @@ from dataclasses import dataclass, field
 import traceback
 from utils import EasyDict, IntervalDict, sizeof_fmt
 from read_pagemap import get_va_pa_mappings, PageMapObj
-from generic_model import *
+import generic_model as gm
 import sys
 import pprint
 import argparse
 
+# PFS Setup
 sys.path.append("pfs/lib")
 import pypfs
-
-# Argument Processing
-# Define the argument parser
-parser = argparse.ArgumentParser(description="OSmosis Model state")
-parser.add_argument('--pid', type=int, help='PID of the process to extract data for')
-parser.add_argument('--csv', type=str, required=True, help='CSV to output the model state in')
-
-# Parse the arguments
-args = parser.parse_args()
-
-# Use the pid argument in your script
-pid = args.pid
+pfs_obj = pypfs.procfs() # Interface to the PFS library
 
 
 
@@ -52,19 +42,21 @@ program_names: EasyDict = EasyDict(
     print_pid = "hello_print_pid")
 
 run_configs = [
-    # 0: Basic hello
+    # 0: Basic hello twice
     [(program_names.basic, ProcessStartType.NORMAL), (program_names.basic, ProcessStartType.NORMAL)],
-    # 1: Hello with malloc
+    # 1: Hello with malloc twice
     [(program_names.malloc, ProcessStartType.NORMAL), (program_names.malloc, ProcessStartType.NORMAL)],
-    # 2: Hello with shared mem via mmap
+    # 2: Hello with shared mem via mmap twice
     [(program_names.mmap, ProcessStartType.NORMAL), (program_names.mmap, ProcessStartType.NORMAL)],
-    # 3: Hello linked statically
+    # 3: Hello linked statically twice
     [(program_names.static1, ProcessStartType.NORMAL), (program_names.static2, ProcessStartType.NORMAL)],
-    # 4: Hello in different PID namespaces
+    # 4: Hello in different PID namespaces twice
     [(program_names.print_pid, ProcessStartType.NEW_PID_NS), (program_names.print_pid, ProcessStartType.NEW_PID_NS)],
+    # 5: Basic hello once
+    [(program_names.basic, ProcessStartType.NORMAL)],
 ]
 
-to_run = run_configs[0]
+to_run = run_configs[5]
 
 def log(msg):
     if print_logs:
@@ -77,7 +69,6 @@ temp_output_file = "temp.txt" # used to get output from some c programs
 
 ### MODEL HELPER FUNCTIONS ###
 
-pfs_obj = pypfs.procfs() # Interface to the PFS library
 
 def pathname_to_vmr_type(pathname: str):
     """
@@ -88,26 +79,32 @@ def pathname_to_vmr_type(pathname: str):
     global program_names
     
     if pathname is None or len(pathname) == 0:
-        return VmrType.NONE
+        return gm.VmrType.NONE
     if pathname == "[heap]":
-        return VmrType.HEAP
+        return gm.VmrType.HEAP
     elif pathname == "[stack]":
-        return VmrType.STACK
+        return gm.VmrType.STACK
     elif pathname == "[vvar]": # what is this?
-        return VmrType.VVAR
+        return gm.VmrType.VVAR
     elif pathname == "[vdso]": # what is this?
-        return VmrType.VDSO
+        return gm.VmrType.VDSO
     elif pathname == "[vsyscall]": # what is this?
-        return VmrType.VSYSCALL
-    elif any([(f"OSmosis/scripts/proc/{program_name}" in pathname) for program_name in program_names.__dict__.values()]):
-        return VmrType.PROGRAM # I don't think code and data are separated
+        return gm.VmrType.VSYSCALL
+    elif any([(f"OSmosis/scripts/proc/{program_name}" in pathname) for program_name in program_names.__dict__.values()]) \
+        or pathname.startswith("/root/proc") \
+            or pathname.startswith("/usr/bin"):
+        return gm.VmrType.PROGRAM # I don't think code and data are separated
     elif pathname.startswith("/dev/shm"):
-        return VmrType.SHM
-    elif pathname.startswith("/usr/lib/") or pathname.endswith(".a") or pathname.endswith(".so"):
-        return VmrType.LIB
+        return gm.VmrType.SHM
+    elif pathname.startswith("/usr/lib/") \
+         or pathname.endswith(".a") \
+            or pathname.endswith(".so") \
+                or pathname.startswith("/usr/libexec") \
+                    or pathname.startswith("/lib/"):
+        return gm.VmrType.LIB
     else:
         print(f"Warning: unknown pathname '{pathname}' for VMR")
-        return VmrType.UNKNOWN
+        return gm.VmrType.UNKNOWN
     
 def perms_to_model_perms(perm: pypfs.mem_perm):
     """ 
@@ -116,17 +113,17 @@ def perms_to_model_perms(perm: pypfs.mem_perm):
     perm_set = set()
     
     if perm.can_read:
-        perm_set.add(Permission.R)
+        perm_set.add(gm.Permission.R)
     if perm.can_write:
-        perm_set.add(Permission.W)
+        perm_set.add(gm.Permission.W)
     if perm.can_execute:
-        perm_set.add(Permission.X)
+        perm_set.add(gm.Permission.X)
     if perm.is_private:
-        perm_set.add(Permission.P)
+        perm_set.add(gm.Permission.P)
     if perm.is_shared:
-        perm_set.add(Permission.S)
+        perm_set.add(gm.Permission.S)
     
-    return Permissions(perm_set)
+    return gm.Permissions(perm_set)
 
 def size_to_pages(size: int) -> int:
         """
@@ -135,7 +132,7 @@ def size_to_pages(size: int) -> int:
         :return: the number of pages
         """
         
-        n_pages = size / page_size
+        n_pages = size / gm.page_size
         assert(n_pages % 1 == 0)
         return math.ceil(n_pages)
 
@@ -253,13 +250,13 @@ class ProcFsData():
         """
         
         # Iterate through all PMR regions (may have been split)
-        pmrs = data.pmrs.get_interval(pmr_range_start, pmr_range_end)
+        pmrs = self.pmrs.get_interval(pmr_range_start, pmr_range_end)
         
         for (pmr_start, pmr_end), pmr_info  in pmrs:
             mapped_devices.add(pmr_info.device.model_id)
-            self.model.add_map_edge(ResourceType.VMR, ResourceType.MO, ads_id, pmr_info.device.model_id, vmr_node_id, pmr_info.model_id[0])
+            self.model.add_map_edge(gm.ResourceType.VMR, gm.ResourceType.MO, ads_id, pmr_info.device.model_id, vmr_node_id, pmr_info.model_id[0])
         
-    def to_generic_model(self, vmr_mapping_type: MappingType, pmr_mapping_type: MappingType) -> ModelGraph:
+    def to_generic_model(self, vmr_mapping_type: MappingType, pmr_mapping_type: MappingType) -> gm.ModelGraph:
         """
         Convert the ProcFsData to a generic model state
         
@@ -268,14 +265,14 @@ class ProcFsData():
         :return: The generic model state generated from this data
         """
         
-        self.model = ModelGraph()
+        self.model = gm.ModelGraph()
         
         # Add the kernel
         kernel_id = self.model.add_pd_node("Kernel")
         
         # Add the devices
         for (start, end), device_info in self.devices.items():
-            device_info.model_id = self.model.add_resource_space_node(ResourceType.MO)
+            device_info.model_id = self.model.add_resource_space_node(gm.ResourceType.MO)
                     
         # Add the PMRs
         for (start, end), pmr_info in self.pmrs.items():
@@ -286,13 +283,13 @@ class ProcFsData():
                 # PMR regions have already been split to be co-contiguous
                 pmr_node_id = self.model.add_mo_node(pmr_info.device.model_id, start, n_pages)
                 pmr_info.model_id.append(pmr_node_id)
-                self.model.add_hold_edge(perms_all, kernel_id, ResourceType.MO, pmr_info.device.model_id, pmr_node_id)
+                self.model.add_hold_edge(gm.perms_all, kernel_id, gm.ResourceType.MO, pmr_info.device.model_id, pmr_node_id)
             elif pmr_mapping_type is MappingType.CONTIGUOUS:
                 assert 0, "Contiguous mapping type for PMR is not currently supported"
             elif pmr_mapping_type is MappingType.PER_PAGE:
                 # Every page is a node
                 for i in range(n_pages):
-                    pmr_info.model_id.append(self.model.add_mo_node(pmr_info.device.model_id, start + page_size * i, 1))
+                    pmr_info.model_id.append(self.model.add_mo_node(pmr_info.device.model_id, start + gm.page_size * i, 1))
                 
         # Add the processes
         for process_info in self.procs.values():
@@ -300,12 +297,12 @@ class ProcFsData():
             pd_id = self.model.add_pd_node(process_info.name)
             
             # Add the address space
-            process_info.ads.model_id = self.model.add_resource_space_node(ResourceType.VMR)
+            process_info.ads.model_id = self.model.add_resource_space_node(gm.ResourceType.VMR)
             ads_id = process_info.ads.model_id
             mapped_devices = set()
             
             # PD can request from its address space
-            self.model.add_request_edge(pd_id, kernel_id, ResourceType.VMR, ads_id)
+            self.model.add_request_edge(pd_id, kernel_id, gm.ResourceType.VMR, ads_id)
             
             # Add the VMRs
             for (start, end), vmr_info in process_info.ads.vmrs.items():
@@ -317,8 +314,8 @@ class ProcFsData():
                 # Contiguous VMR level
                 if vmr_mapping_type is MappingType.CONTIGUOUS:
                     vmr_node_id = self.model.add_vmr_node(ads_id, pathname_to_vmr_type(vmr_info.pathname), n_pages)
-                    self.model.add_hold_edge(perms_all, kernel_id, ResourceType.VMR, ads_id, vmr_node_id)
-                    self.model.add_hold_edge(perms, pd_id, ResourceType.VMR, ads_id, vmr_node_id)
+                    self.model.add_hold_edge(gm.perms_all, kernel_id, gm.ResourceType.VMR, ads_id, vmr_node_id)
+                    self.model.add_hold_edge(perms, pd_id, gm.ResourceType.VMR, ads_id, vmr_node_id)
                     vmr_info.model_id.append(vmr_node_id)
                 
                 for (sub_start, sub_end), sub_vmr_info in vmr_info.sub_vmrs.items():
@@ -327,25 +324,25 @@ class ProcFsData():
                     # Co-contiguous VMR level
                     if vmr_mapping_type is MappingType.CO_CONTIGUOUS:
                         vmr_node_id = self.model.add_vmr_node(ads_id, pathname_to_vmr_type(vmr_info.pathname), sub_n_pages)
-                        self.model.add_hold_edge(perms_all, kernel_id, ResourceType.VMR, ads_id, vmr_node_id)
-                        self.model.add_hold_edge(perms, pd_id, ResourceType.VMR, ads_id, vmr_node_id)
+                        self.model.add_hold_edge(gm.perms_all, kernel_id, gm.ResourceType.VMR, ads_id, vmr_node_id)
+                        self.model.add_hold_edge(perms, pd_id, gm.ResourceType.VMR, ads_id, vmr_node_id)
                         vmr_info.model_id.append(vmr_node_id)
                         
                     if vmr_mapping_type is MappingType.PER_PAGE or pmr_mapping_type is MappingType.PER_PAGE:
                         # Need to iterate through all the pages
                         for i in range(sub_n_pages):
-                            page_vaddr = sub_start + page_size * i
+                            page_vaddr = sub_start + gm.page_size * i
                             
                             if vmr_mapping_type is MappingType.PER_PAGE:
                                 vmr_node_id = self.model.add_vmr_node(ads_id, pathname_to_vmr_type(vmr_info.pathname), 1)
-                                self.model.add_hold_edge(perms_all, kernel_id, ResourceType.VMR, ads_id, vmr_node_id)
-                                self.model.add_hold_edge(perms, pd_id, ResourceType.VMR, ads_id, vmr_node_id)
+                                self.model.add_hold_edge(gm.perms_all, kernel_id, gm.ResourceType.VMR, ads_id, vmr_node_id)
+                                self.model.add_hold_edge(perms, pd_id, gm.ResourceType.VMR, ads_id, vmr_node_id)
                                 vmr_info.model_id.append(vmr_node_id)
                         
                             if sub_vmr_info.mapped:
                                 if pmr_mapping_type is MappingType.PER_PAGE:
                                     sub_pmr_start = sub_vmr_info.pmr[0]
-                                    page_paddr = sub_pmr_start + page_size * i
+                                    page_paddr = sub_pmr_start + gm.page_size * i
                                     
                                     # Fetch the pmr every time, since the PMR may have been split
                                     (pmr_start, pmr_end), pmr_info = self.pmrs.get(page_paddr)
@@ -356,7 +353,7 @@ class ProcFsData():
                                     pmr_node_id = pmr_info.model_id[pmr_page_idx]
                                     
                                     # Find the model state ID for the relevant page in the PMR
-                                    self.model.add_map_edge(ResourceType.VMR, ResourceType.MO, ads_id, pmr_info.device.model_id, vmr_node_id, pmr_node_id)
+                                    self.model.add_map_edge(gm.ResourceType.VMR, gm.ResourceType.MO, ads_id, pmr_info.device.model_id, vmr_node_id, pmr_node_id)
                                 else:
                                     self.__map_vmr_to_pmrs(mapped_devices, ads_id, vmr_node_id, *sub_vmr_info.pmr)
                     elif sub_vmr_info.mapped:
@@ -364,7 +361,7 @@ class ProcFsData():
                 
             # Add map edge from address space to the devices
             for device_id in mapped_devices:
-                self.model.add_map_edge(ResourceType.VMR, ResourceType.MO, ads_id, device_id)
+                self.model.add_map_edge(gm.ResourceType.VMR, gm.ResourceType.MO, ads_id, device_id)
     
         return self.model
 
@@ -674,7 +671,18 @@ def terminate_process(pid: int):
     os.kill(pid, signal.SIGTERM) #or signal.SIGKILL 
 
 if __name__ == "__main__":
-    data = ProcFsData()
+    # Define the argument parser
+    parser = argparse.ArgumentParser(description="OSmosis Model state from multiple subsystems")
+    parser.add_argument('--pid', type=int, help='PID of the process to extract data for')
+    parser.add_argument('--csv', type=str, required=True, help='CSV to output the model state in')
+
+    # Parse the arguments
+    args = parser.parse_args()
+
+    # Use the pid argument in your script
+    pid = args.pid
+
+    data_main = ProcFsData()
 
     if args.pid is not None:
         print(f"PID provided: {args.pid}")
@@ -682,10 +690,12 @@ if __name__ == "__main__":
     else:
         print("Starting processes from this script")
         pids =  [run_process(name, start_type) for (name, start_type) in to_run]
+    
+    assert (len(pids) == 1)
 
     try:
         for (name, _), pid in zip(to_run, pids):
-            extract_process_data(data, pid, name, True)
+            extract_process_data(data_main, pid, name, True)
             # read_mountinfo_file(pid, True)  # mountinfo is not part of the model state, but we can view it
     except Exception as e:
         print("Error printing stats for hello")
@@ -698,4 +708,4 @@ if __name__ == "__main__":
         for pid in pids:
             terminate_process(pid)
     
-    data.to_generic_model(MappingType.CONTIGUOUS, MappingType.CO_CONTIGUOUS).to_csv(args.csv)       
+    data_main.to_generic_model(MappingType.CONTIGUOUS, MappingType.CO_CONTIGUOUS).to_csv(args.csv)       

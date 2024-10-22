@@ -59,7 +59,7 @@ class IntervalDict():
             # Interval overlaps another
             print(f'----Overlap_A : II = {insert_idx}    [{start:16x},{end:16x}]')
             traceback.print_exc()
-            #raise ValueError("Overlap interval")
+            raise ValueError("Overlap interval")
         elif insert_idx > 0 and self.markers[insert_idx - 1] in self.dict:
             # The previous marker is a start point so you are clearly in the middle.
             print(f'Overlap_B : II = {insert_idx}    [{start:16x},{end:16x}]')
