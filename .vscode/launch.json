@@ -5,19 +5,27 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Python Debugger: Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal"
+        },
+        {
             "name": "run-proc-model-with-sudo",
-            "type": "python",
+            "type": "debugpy",
             "cwd": "${workspaceFolder}/scripts/proc",
             "request": "launch",
             "program": "${workspaceFolder}/scripts/proc/proc_model.py",
             "console": "integratedTerminal",
             "sudo": true,
             "args": [
-                "--pid", "1532328",
-                "--csv", "debug.csv"
+                "--pid",
+                "229594",
+                "--csv",
+                "debug.csv"
             ]
-
         },
-    //"console": "externalTerminal",
+        //"console": "externalTerminal",
     ]
 }

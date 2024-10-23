@@ -418,7 +418,7 @@ def get_va_pa_mappings(pid, should_print = False):
     results = []
         
     # Show the VA and (I)PA of the current process address space
-    def proc_maps(fn="/proc/self/maps"):
+    def proc_maps(fn):
         f = open(fn)
         for ln in f:
             k = ln.split()

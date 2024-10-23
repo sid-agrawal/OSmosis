@@ -54,17 +54,20 @@ class IntervalDict():
         """
         
         insert_idx = bisect.bisect_right(self.markers, start)
+
+        # The previous marker is a start point so you are clearly in the middle.
+        if insert_idx > 0 and self.markers[insert_idx - 1] in self.dict:
+            print(f'----Overlap_B : = Idx: {insert_idx} Marker_At_Index {self.markers[insert_idx]:16x}    [{start:16x},{end:16x}]')
+            raise ValueError("Overlap Start interval")
         
+        # Prev is not a start. So just check if your end will trample over the next interval
         if self.list_len > insert_idx and self.markers[insert_idx] < end:
-            # Interval overlaps another
-            print(f'----Overlap_A : II = {insert_idx}    [{start:16x},{end:16x}]')
-            traceback.print_exc()
-            raise ValueError("Overlap interval")
-        elif insert_idx > 0 and self.markers[insert_idx - 1] in self.dict:
-            # The previous marker is a start point so you are clearly in the middle.
-            print(f'Overlap_B : II = {insert_idx}    [{start:16x},{end:16x}]')
-            raise ValueError("Overlap interval")
-        
+            print(f'----Overlap_A : = Idx: {insert_idx} Marker_At_Index '
+                  f'{self.markers[insert_idx]:16x}    '
+                  f'{self.markers[insert_idx+1]:16x}    '
+                  f'[{start:16x},{end:16x}]')
+            raise ValueError("Overlap End interval")
+
         # Insert the end point, if needed
         if self.list_len <= insert_idx or self.markers[insert_idx] != end:
             self.markers.insert(insert_idx, end)
@@ -111,7 +114,7 @@ class IntervalDict():
         """
         
         left_idx = bisect.bisect_left(self.markers, start + 1)
-        right_idx = bisect.bisect_left(self.markers, end - 1)
+        right_idx = bisect.bisect_right(self.markers, end - 1)
         
         results = []
         for i in range(left_idx - 1, right_idx):
@@ -134,7 +137,6 @@ class IntervalDict():
         :return: the copied value
         """
         
-        print(f"Splitting at {split_at:16x}")
         
         idx = bisect.bisect_right(self.markers, split_at)
         val = self.dict.get(self.markers[idx - 1])

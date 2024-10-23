@@ -32,6 +32,8 @@ class VmrType(Enum):
     VSYSCALL = 7
     HEAP = 8
     SHM = 9
+    DEV = 10
+    KVM = 11
 
 class Permission(Enum):
     R = 0 # read

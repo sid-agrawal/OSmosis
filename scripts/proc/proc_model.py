@@ -1,5 +1,6 @@
 
 import os
+import psutil
 import signal
 import subprocess
 from enum import Enum
@@ -91,16 +92,23 @@ def pathname_to_vmr_type(pathname: str):
     elif pathname == "[vsyscall]": # what is this?
         return gm.VmrType.VSYSCALL
     elif any([(f"OSmosis/scripts/proc/{program_name}" in pathname) for program_name in program_names.__dict__.values()]) \
-        or pathname.startswith("/root/proc") \
-            or pathname.startswith("/usr/bin"):
+        or "/host/bin" in pathname \
+            or pathname.startswith("/root/proc") \
+                or pathname.startswith("/usr/bin"):
         return gm.VmrType.PROGRAM # I don't think code and data are separated
     elif pathname.startswith("/dev/shm"):
         return gm.VmrType.SHM
+    elif pathname.startswith("/dev/"):
+        return gm.VmrType.DEV
+    elif ":kvm-vcpu" in pathname:
+        return gm.VmrType.KVM
     elif pathname.startswith("/usr/lib/") \
          or pathname.endswith(".a") \
             or pathname.endswith(".so") \
                 or pathname.startswith("/usr/libexec") \
-                    or pathname.startswith("/lib/"):
+                    or pathname.startswith("/lib/") \
+                        or "/lib/" in pathname \
+                            or ".so." in pathname:
         return gm.VmrType.LIB
     else:
         print(f"Warning: unknown pathname '{pathname}' for VMR")
@@ -435,9 +443,9 @@ def read_maps_file(pid: int, should_print: bool = False) -> list[pypfs.task]:
     if should_print:
         print("MAPS FILE")
         for map in maps:
-            print(f"MAPS: [{map.start_address:16x}, {map.end_address:16x}] : {sizeof_fmt(map.end_address - map.start_address)}")
-            print(f"MAPS: - Device: {map.device}")
-            print(f"MAPS: - Pathname: {map.pathname}")
+            print(f"MAPS: [{map.start_address:16x}, {map.end_address:16x}] : {sizeof_fmt(map.end_address - map.start_address):10}", end = "")
+            print(f": Device: {map.device:10}", end = "")
+            print(f": Pathname: {map.pathname:<30}")
         print ("\n\n")
             
     return maps
@@ -531,6 +539,61 @@ def extract_namespaces(data: ProcFsData, pid: int, should_print: bool = False):
             
     data.procs[pid].namespaces = namespaces
     
+def understanding_pagemap(results):
+    assert_increasing_vaddrs(results)
+    overlapping_mappings(results)
+
+def overlapping_mappings(results):
+
+        for idx1 in range(len(results)):
+            pm1 = results[idx1]
+
+            if pm1.paddr is None:
+                continue
+
+            start_va = pm1.vaddr
+            end_va = pm1.vaddr + pm1.size
+
+            start_pa = pm1.paddr
+            end_pa = pm1.paddr + pm1.size
+
+            for idx2 in range(len(results)):
+                pm2 = results[idx2]
+
+                if pm2.paddr is None:
+                    continue
+
+                if idx1 == idx2:
+                    continue
+
+                ## Does idx'1 PMR overlab with any other PMR
+
+                assert (pm2.paddr is not None)
+                # Check for start
+                if pm2.paddr < start_pa and \
+                    start_pa < (pm2.paddr + pm2.size):
+                    print("===Overlapping Detected at START")
+                    print(f'New Range: {pm1.paddr:16x}- {pm1.paddr+pm1.size:16x} ')
+                    print(f'Old Range: {pm2.paddr:16x}- {pm2.paddr+pm2.size:16x} ')
+
+
+                # Check for end
+                if pm2.paddr < end_pa and end_pa < (pm2.paddr + pm2.size):
+                    print("===Overlapping Detected at END")
+                    print(f'New Range: {pm1.paddr:16x}- {pm1.paddr+pm1.size:16x} ')
+                    print(f'Old Range: {pm2.paddr:16x}- {pm2.paddr+pm2.size:16x} ')
+
+
+
+def assert_increasing_vaddrs(results):
+        prev_va : int = 0
+        curr_va : int = 0
+
+        for pagemap in results:
+            curr_va = pagemap.vaddr
+            assert (curr_va > prev_va)
+            prev_va = curr_va
+
 def read_pagemap_file(pid: int, should_print: bool = False) -> list[PageMapObj]:
     """
     Parse a /proc/pid/pagemaps file
@@ -540,14 +603,16 @@ def read_pagemap_file(pid: int, should_print: bool = False) -> list[PageMapObj]:
     :return: a list of objects representing the VA and VA->PA regions in the process' address space
     """
     results = get_va_pa_mappings(pid)
+
+    # understanding_pagemap(results)
     
     if should_print:
-        print(f'VA-PA MAPPINGS')
-        print("-" * 40)
+        print(f'{"VMR":<16} {"    VA_START":<16} {"     VA_END":<16} : {"SZ":<16}{" PA_START":<16}{"PA_END":<16}')
+        print("-" * 80)
         for pagemap in results:
-            print(f"VMR {pagemap.vaddr:16x}-{(pagemap.vaddr + pagemap.size):16x} : {sizeof_fmt(pagemap.size)}", end="")
+            print(f'{"VMR":<16} {pagemap.vaddr:16x} {(pagemap.vaddr + pagemap.size):>16x} : {sizeof_fmt(pagemap.size):10}', end="")
             if pagemap.mapped:
-                print(f'{pagemap.paddr:16x}-{(pagemap.paddr + pagemap.size):16x}')
+                print(f'{pagemap.paddr:16x} {(pagemap.paddr + pagemap.size):16x}')
             else:
                 print()
         print("-" * 40)
@@ -563,7 +628,9 @@ def extract_memory_data(data: ProcFsData, pid: int, should_print = False):
     """
     
     print(f"Extract memory data for process {pid}")
-    maps = read_maps_file(pid, should_print)
+
+    # Array where each element is a line in the /proc/[PID]/maps file
+    maps = read_maps_file(pid, should_print) 
     pagemaps = read_pagemap_file(pid, should_print)
     pagemap_iter = iter(pagemaps)
     next_pagemap = next(pagemap_iter, None)
@@ -594,43 +661,20 @@ def extract_memory_data(data: ProcFsData, pid: int, should_print = False):
                 vmr_info.sub_vmrs.put(pagemap.vaddr, pagemap.vaddr + pagemap.size, SubVMR(mapped=False))
                 continue
             
-            log(f"Checking PMR {pagemap.paddr:16x}-{pagemap.paddr + pagemap.size:16x}")
-            
-            # Track the PMR
-            pmr_start_addr = pagemap.paddr
-            pmr_end_addr = pagemap.paddr + pagemap.size
-            vmr_info.sub_vmrs.put(pagemap.vaddr, pagemap.vaddr + pagemap.size, SubVMR(mapped=True, pmr = (pmr_start_addr, pmr_end_addr)))
-            
-            # Split if start overlaps with an existing pmr 
-            (left_start, left_end), left_pmr_info = data.pmrs.get(pmr_start_addr)
-            
-            if left_pmr_info is not None:
-                if left_start != pmr_start_addr:
-                    data.pmrs.split_interval(pmr_start_addr)
-                    
-                pmr_start_addr = left_end
-                
-            # Split if end overlaps with an existing pmr
-            if pmr_start_addr < pmr_end_addr:
-                (right_start, right_end), right_pmr_info = data.pmrs.get(pmr_end_addr - 1)
-                
-                if right_pmr_info is not None:
-                    if right_start != pmr_end_addr and right_end != pmr_end_addr:
-                        data.pmrs.split_interval(pmr_start_addr)
-                        
-                    pmr_end_addr = right_start
-                
             # Insert the device, if not already tracked
             _, device_info = data.devices.get(pagemap.device_addr)
             
             if device_info is None:
                 device_info = Device(size=pagemap.device_size)
                 data.devices.put(pagemap.device_addr, pagemap.device_addr + pagemap.device_size, device_info)
-                
-            # Add a new entry for any remaining interval of the pmr
-            if pmr_start_addr < pmr_end_addr:
-                pmr_info = PMR(device_info)
-                data.pmrs.put(pmr_start_addr, pmr_end_addr, pmr_info)
+
+            pmr_start_addr = pagemap.paddr
+            pmr_end_addr = pagemap.paddr + pagemap.size
+            vmr_info.sub_vmrs.put(pagemap.vaddr, pagemap.vaddr + pagemap.size, 
+                               SubVMR(mapped=True, pmr = (pmr_start_addr, pmr_end_addr)))
+
+            log(f"Checking PMR {pagemap.paddr:16x}-{pagemap.paddr + pagemap.size:16x}")
+            add_new_pmr(data, pmr_start_addr, pmr_end_addr, device_info)
                         
         data.procs[pid].ads.vmrs.put(vmr_start_addr, vmr_end_addr, vmr_info)
     
@@ -639,6 +683,75 @@ def extract_memory_data(data: ProcFsData, pid: int, should_print = False):
         print(data.pmrs)
         print(data.devices)
         print ("\n\n")
+
+def add_new_pmr(data: ProcFsData, pmr_start_addr: int, pmr_end_addr: int, device_info: Device):
+    # Track the PMR
+    
+    # Types of Split
+    # Overlap with start
+    #           <------Existing---Region----->   |
+    #                             |              |
+    #  a>   <-----New---Region--->               |   
+    #  b>   <-----New---Region------------------>                  
+
+    # Overlap with End
+    #        |   <------Existing---Region----->
+    #        |                      |
+    #  a>    |                     <-----New---Region--->                  
+    #  b>    |<---------New---Region--------------------->                  
+    
+    # Lies outside
+    #                              <------Existing---Region----->
+    #  a>                                                             <-----New---Region--->                  
+    #  b> <-----New---Region--->                  
+    
+    # Lies Within
+    #                              <-------------Existing---Region----->
+    #  a>                                  <-----New---Region--->                  
+
+
+    # Split if this PMR extends over an entire older PMR
+    existing_pmrs = data.pmrs.get_interval(pmr_start_addr, pmr_end_addr)
+    # We handle only one overlap for now.
+
+    assert (len(existing_pmrs) == 1) or (len(existing_pmrs) == 0)
+    for exist in existing_pmrs:
+        (start, end) , info = exist
+        if (pmr_start_addr < start) and (end < pmr_end_addr):
+            # Break up here{
+            pmr_info = PMR(device_info)
+            data.pmrs.put(pmr_start_addr, start , pmr_info)
+            data.pmrs.put(end, pmr_end_addr , pmr_info)
+
+    pmr_start_addr = pmr_end_addr
+        
+    
+    (left_start, left_end), left_pmr_info = data.pmrs.get(pmr_start_addr)
+    if left_pmr_info is not None:
+        log(f"Found Start overlap")
+        if left_start != pmr_start_addr:
+            data.pmrs.split_interval(pmr_start_addr)
+            
+        pmr_start_addr = left_end
+        
+    # Split if end overlaps with an existing pmr
+    if pmr_start_addr < pmr_end_addr:
+        (right_start, right_end), right_pmr_info = data.pmrs.get(pmr_end_addr - 1)
+        
+        if right_pmr_info is not None:
+            log(f"Found Start overlap")
+            if not (right_start == pmr_end_addr or right_end == pmr_end_addr):
+                data.pmrs.split_interval(pmr_start_addr)
+                
+            # pmr_end_addr = right_start
+            pmr_start_addr = right_end
+        
+        
+    # Add a new entry for any remaining interval of the pmr
+    if pmr_start_addr < pmr_end_addr:
+        pmr_info = PMR(device_info)
+        data.pmrs.put(pmr_start_addr, pmr_end_addr, pmr_info)
+
 
 def extract_from_status(data: ProcFsData, pid: int, should_print = False):
     status = read_status_file(pid, should_print)
@@ -661,8 +774,7 @@ def extract_process_data(data: ProcFsData, pid: int, name: str, should_print = F
     extract_memory_data(data, pid, should_print)
     
     if should_print:
-        print(f"Extracted process {pid}:")
-        pprint.pp(data.procs[pid])
+        print(f"Extracted process {pid}: {data.procs[pid].name}")
     
 def terminate_process(pid: int):
     """ 
@@ -694,11 +806,14 @@ if __name__ == "__main__":
     assert (len(pids) == 1)
 
     try:
-        for (name, _), pid in zip(to_run, pids):
-            extract_process_data(data_main, pid, name, True)
-            # read_mountinfo_file(pid, True)  # mountinfo is not part of the model state, but we can view it
+        if args.pid:
+                p = psutil.Process(pid)
+                extract_process_data(data_main, pid, p.name(), True)
+        else:
+            for (name, _), pid in zip(to_run, pids):
+                extract_process_data(data_main, pid, name, True)
+                # read_mountinfo_file(pid, True)  # mountinfo is not part of the model state, but we can view it
     except Exception as e:
-        print("Error printing stats for hello")
         print(repr(e))
         traceback.print_exc()
         exit (1)
