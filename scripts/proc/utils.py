@@ -176,6 +176,91 @@ class IntervalDict():
 
         return '\n'.join(lines)
 
+
+def insert_with_split(d: IntervalDict, start ,end, info: any):
+    """
+    Add new entry {(start, end), info} and if it overlaps with other entry(ies), 
+    split them accordingly.
+    """
+    
+    overlaps = d.get_interval(start, end)
+    for o in overlaps:
+        (existing_start, existing_end) , info = o
+
+
+        # Is there more of this new interval remaining.
+        while start < end:
+            if start < existing_start:
+                d.put(start, existing_start , info)
+            elif existing_start < start:
+                d.split_interval(start)
+            # else when equal, do nothing.
+
+            # How much to increase start depends on 
+            # how whether the new interval's end comes sooner
+            # or the exiting interval's end comes sooner. 
+            if existing_end <= end:
+                start = existing_end
+            else:
+                d.split_interval(end)
+                start = end
+            
+            # Done with this existing interval
+            if start >= existing_end:
+                break
+    
+    # Left over interval
+    if start < end:
+        d.put(start, end , info)
+
+#     ```
+#      Lies outside 
+#      Get_intervals should return zero here. 
+#      No Split needed
+#                                     <------Existing---Region----->
+#                                                                       <-----New---Region--->                  
+#        <-----New---Region--->                  
+    
+    
+#      A new entry can overlap with
+#      Types of Split needed when overlaps
+#      Overlap with start
+#                <------Existing---Region----->    |  <-----next existing start--->
+#                                   |         |    |    |
+#       1.a>   <-----New---Region--->         |    |    |   Less Than end    : 1 insert and 1 split
+#       1.b>   <-----New---Region------------>     |    |   Equal to End     : 1 insert and 0 split
+#       1.c>   <-----New---Region------------------>    |   Greater than end : 2 inserts and 0 splits
+#       1.d>   <-----New---Region---------------------->    Greater than end : 2 inserts and 0 splits
+
+#      Overlap with End
+#               |   <------Existing---Region----->
+#               |   |                  |
+#       2.a>    |   |                  <-----New---Region--->    Less than end    : 1 insert and 1 split
+#       2.b>    |   |<-----------------------New---Region--->    Equal to end     : 1 inser and 0 split
+#       2.c>    |<---------New---Region--------------------->    Greater than end : 2 insert and 0 split
+    
+#      Old Lies within new:
+#       3.a>                                  <-----Existing---Region--->      # 1.c or 2.c 
+#      .                                  <---------------New---Region------->
+
+    
+#      New lies Within Old
+#                                   <-------------Existing---Region----->
+#       4.a>                                  <-----New---Region--->      # 1.a and 2.a combined             
+
+
+#      Double Over Lap
+#                <------Existing---Region----->    |
+#                                   |         |    |
+#       5.a>   <-----New---Region--->         |    |    Less Than end    : 1 insert and 1 split
+#       5.b>   <-----New---Region------------>     |    Equal to End     : 1 insert and 0 split
+#       5.c>   <-----New---Region------------------>    Greater than end : 2 inserts and 0 splits
+
+#      Split if this PMR extends over an entire older PMR
+# ```
+
+
+
 def sizeof_fmt(num, suffix="B"):
     for unit in ("", "Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi"):
         if abs(num) < 1024.0:

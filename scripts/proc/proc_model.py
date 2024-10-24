@@ -8,11 +8,11 @@ import time
 import math
 from dataclasses import dataclass, field
 import traceback
-from utils import EasyDict, IntervalDict, sizeof_fmt
+from utils import EasyDict, IntervalDict, sizeof_fmt, insert_with_split
 from read_pagemap import get_va_pa_mappings, PageMapObj
 import generic_model as gm
 import sys
-import pprint
+import pprint  as pp
 import argparse
 
 # PFS Setup
@@ -674,7 +674,7 @@ def extract_memory_data(data: ProcFsData, pid: int, should_print = False):
                                SubVMR(mapped=True, pmr = (pmr_start_addr, pmr_end_addr)))
 
             log(f"Checking PMR {pagemap.paddr:16x}-{pagemap.paddr + pagemap.size:16x}")
-            add_new_pmr(data, pmr_start_addr, pmr_end_addr, device_info)
+            insert_with_split(data.pmrs, pmr_start_addr, pmr_end_addr, PMR(device_info))
                         
         data.procs[pid].ads.vmrs.put(vmr_start_addr, vmr_end_addr, vmr_info)
     
@@ -684,108 +684,9 @@ def extract_memory_data(data: ProcFsData, pid: int, should_print = False):
         print(data.devices)
         print ("\n\n")
 
-def add_new_pmr(data: ProcFsData, new_start: int, new_end: int, device_info: Device):
-    # Track the PMR
-    
-    # Lies outside 
-    # Get_intervals should return zero here. 
-    # No Split needed
-    #                                <------Existing---Region----->
-    #                                                                  <-----New---Region--->                  
-    #   <-----New---Region--->                  
-    
-    # Types of Split needed when overlaps
-    # Overlap with start
-    #           <------Existing---Region----->    |
-    #                              |         |    |
-    #  1.a>   <-----New---Region--->         |    |    Less Than end    : 1 insert and 1 split
-    #  1.b>   <-----New---Region------------>     |    Equal to End     : 1 insert and 0 split
-    #  1.c>   <-----New---Region------------------>    Greater than end : 2 inserts and 0 splits
-
-    # Overlap with End
-    #          |   <------Existing---Region----->
-    #          |   |                  |
-    #  2.a>    |   |                  <-----New---Region--->    Less than end    : 1 insert and 1 split
-    #  2.b>    |   |<-----------------------New---Region--->    Equal to end     : 1 inser and 0 split
-    #  2.c>    |<---------New---Region--------------------->    Greater than end : 2 insert and 0 split
-    
-    # Old Lies within new:
-    #  3.a>                                  <-----Existing---Region--->      # 1.c or 2.c 
-    # .                                  <---------------New---Region------->
-
-    
-    # New lies Within Old
-    #                              <-------------Existing---Region----->
-    #  4.a>                                  <-----New---Region--->      # 1.a and 2.a combined             
 
 
-    # Split if this PMR extends over an entire older PMR
-    pmr_info = Device(device_info)
-    existing_pmrs = data.pmrs.get_interval(new_start, new_end)
-    
-    for exist in existing_pmrs:
-        (existing_start, existing_end) , info = exist
 
-        if (new_start < existing_start):
-            if (new_end < existing_end):
-                print ("handle 1.a")
-                data.pmrs.put(new_start, existing_start, pmr_info)
-                data.pmrs.split_interval(new_end)
-                continue
-            elif new_end == existing_end:
-                print ("handle 1.b")
-                data.pmrs.put(new_start, existing_start, pmr_info)
-                continue
-            else: # (new_end > existing_end):
-                print ("handle 1.c or 2.c")
-                data.pmrs.put(new_start, existing_start, pmr_info)
-                data.pmrs.put(existing_end, new_end, pmr_info)
-                continue
-
-        if (existing_end < new_end):
-            if (existing_start < new_start):
-                print ("handle 2.a")
-                data.pmrs.put(existing_end, new_end, pmr_info)
-                data.pmrs.split_interval(new_start)
-                continue
-            elif (new_start == existing_start): 
-                print ("handle 2.b")
-                data.pmrs.put(existing_end, new_end, pmr_info)
-                continue
-            else: # (new_start < existing_start): 
-                print ("handle 1.c or 2.c")
-                assert (False, "We should never reach here at the 1.c/2.c should already be handled")
-                data.pmrs.put(new_start, existing_start, pmr_info)
-                data.pmrs.put(existing_end, new_end, pmr_info)
-
-
-        
-    
-    # (left_start, left_end), left_pmr_info = data.pmrs.get(new_start)
-    # if left_pmr_info is not None:
-    #     log(f"Found Start overlap")
-    #     if left_start != pmr_start_addr:
-    #         data.pmrs.split_interval(pmr_start_addr)
-            
-    #     pmr_start_addr = left_end
-        
-    # # Split if end overlaps with an existing pmr
-    # if pmr_start_addr < pmr_end_addr:
-    #     (right_start, right_end), right_pmr_info = data.pmrs.get(pmr_end_addr - 1)
-        
-    #     if right_pmr_info is not None:
-    #         log(f"Found Start overlap")
-    #         if not (right_start == pmr_end_addr or right_end == pmr_end_addr):
-    #             data.pmrs.split_interval(pmr_start_addr)
-                
-    #         # pmr_end_addr = right_start
-    #         pmr_start_addr = right_end
-        
-        
-    # # Add a new entry for any remaining interval of the pmr
-    # if pmr_start_addr < pmr_end_addr:
-    #     pmr_info = PMR(device_info)
-    #     data.pmrs.put(pmr_start_addr, pmr_end_addr, pmr_info)
 
 
 def extract_from_status(data: ProcFsData, pid: int, should_print = False):
