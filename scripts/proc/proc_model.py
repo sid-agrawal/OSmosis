@@ -1,4 +1,3 @@
-
 import os
 import psutil
 import signal
@@ -21,7 +20,6 @@ import pypfs
 pfs_obj = pypfs.procfs() # Interface to the PFS library
 
 
-
 ### CONFIGURATION ###
 print_logs = False
 
@@ -33,7 +31,7 @@ class ProcessStartType(Enum):
     
     NORMAL = 1     # start the process in the default way
     NEW_PID_NS = 2 # start the process in a new PID namespace
-    
+
 program_names: EasyDict = EasyDict(
     basic = "hello",
     static1 = "hello_static_1",
@@ -113,7 +111,7 @@ def pathname_to_vmr_type(pathname: str):
     else:
         print(f"Warning: unknown pathname '{pathname}' for VMR")
         return gm.VmrType.UNKNOWN
-    
+
 def perms_to_model_perms(perm: pypfs.mem_perm):
     """ 
     Convert a set of permissions from PFS to the generic model's Permissions object
@@ -151,7 +149,7 @@ class SubVMR:
     """Tracks a single contiguous mapping of a VMR to a contiguous PMR, or an unmapped VMR"""
     mapped: bool = False # Whether or not this VMR is mapped to a PMR
     pmr: tuple[int,int] = None # The PMR range that this VMR maps to
-    
+
 @dataclass
 class VMR:
     """Tracks a VMR in an address space."""
@@ -160,7 +158,7 @@ class VMR:
     sub_vmrs: IntervalDict = field(default_factory=lambda: IntervalDict()) # Dict of contiguous mappings within this VMR
     # Address range is tracked by the IntervalDict
     model_id: list[int] = field(default_factory=list) # The ID(s) of this node in the model state, once added
-    
+
 @dataclass
 class ProcAddressSpace:
     """Tracks a process' address space."""
@@ -191,12 +189,12 @@ str_to_namespace_type = {
     "cgroup": NamespaceType.CGROUP,
     "time": NamespaceType.TIME,
 }
-    
+
 @dataclass
 class Namespace:
     type: NamespaceType
     handle: int
-    
+
 @dataclass
 class Process:
     """Tracks a process"""
@@ -206,7 +204,7 @@ class Process:
     model_id: int = 0 # The ID of this node in the model state, once added
     pid_in_ns: int = 0 # PID of the process according to its own PID namespace
     # The PID (in global PID namespace) will be the key of the dict this is in
-    
+
 @dataclass 
 class Device:
     """Tracks a physical memory device in the system"""
@@ -238,13 +236,13 @@ class ProcFsData():
     Intermediate repository for the relevant data from /proc for multiple processes
     This object can be converted to the generic ModelGraph
     """
-    
+
     def __init__(self):
         self.namespaces = {} # dict from namespace handle to Namespace
         self.procs = {} # dict from PID to Process
         self.pmrs = IntervalDict() # list of PMR
         self.devices = IntervalDict() # list of physical memory devices, ProcDev
-    
+
     def __map_vmr_to_pmrs(self, mapped_devices: set, ads_id: int, vmr_node_id: int, pmr_range_start: int, pmr_range_end: int):
         """
         Helper function during conversion to generic model
@@ -256,14 +254,14 @@ class ProcFsData():
         :param pmr_range_start: start of the PMR range to map to
         :param pmr_range_end: end of the PMR range to map to
         """
-        
+
         # Iterate through all PMR regions (may have been split)
         pmrs = self.pmrs.get_interval(pmr_range_start, pmr_range_end)
-        
+
         for (pmr_start, pmr_end), pmr_info  in pmrs:
             mapped_devices.add(pmr_info.device.model_id)
             self.model.add_map_edge(gm.ResourceType.VMR, gm.ResourceType.MO, ads_id, pmr_info.device.model_id, vmr_node_id, pmr_info.model_id[0])
-        
+
     def to_generic_model(self, vmr_mapping_type: MappingType, pmr_mapping_type: MappingType) -> gm.ModelGraph:
         """
         Convert the ProcFsData to a generic model state
@@ -272,20 +270,20 @@ class ProcFsData():
         :param pmr_mapping_type: Option controls how to generate PMR nodes from the PMR regions
         :return: The generic model state generated from this data
         """
-        
+
         self.model = gm.ModelGraph()
-        
+
         # Add the kernel
         kernel_id = self.model.add_pd_node("Kernel")
-        
+
         # Add the devices
         for (start, end), device_info in self.devices.items():
             device_info.model_id = self.model.add_resource_space_node(gm.ResourceType.MO)
-                    
+
         # Add the PMRs
         for (start, end), pmr_info in self.pmrs.items():
             n_pages = size_to_pages(end - start)
-            
+
             if pmr_mapping_type is MappingType.CO_CONTIGUOUS:
                 # The region is a node
                 # PMR regions have already been split to be co-contiguous
@@ -298,83 +296,85 @@ class ProcFsData():
                 # Every page is a node
                 for i in range(n_pages):
                     pmr_info.model_id.append(self.model.add_mo_node(pmr_info.device.model_id, start + gm.page_size * i, 1))
-                
+
         # Add the processes
         for process_info in self.procs.values():
             # Add the PD
             pd_id = self.model.add_pd_node(process_info.name)
-            
+
             # Add the address space
             process_info.ads.model_id = self.model.add_resource_space_node(gm.ResourceType.VMR)
             ads_id = process_info.ads.model_id
             mapped_devices = set()
-            
+
             # PD can request from its address space
             self.model.add_request_edge(pd_id, kernel_id, gm.ResourceType.VMR, ads_id)
-            
+
             # Add the VMRs
             for (start, end), vmr_info in process_info.ads.vmrs.items():
                 n_pages = size_to_pages(end - start)
                 perms = perms_to_model_perms(vmr_info.perms)
-                
+
                 vmr_node_id = 0
-                
+
                 # Contiguous VMR level
                 if vmr_mapping_type is MappingType.CONTIGUOUS:
                     vmr_node_id = self.model.add_vmr_node(ads_id, pathname_to_vmr_type(vmr_info.pathname), n_pages)
                     self.model.add_hold_edge(gm.perms_all, kernel_id, gm.ResourceType.VMR, ads_id, vmr_node_id)
                     self.model.add_hold_edge(perms, pd_id, gm.ResourceType.VMR, ads_id, vmr_node_id)
                     vmr_info.model_id.append(vmr_node_id)
-                
+
                 for (sub_start, sub_end), sub_vmr_info in vmr_info.sub_vmrs.items():
                     sub_n_pages = size_to_pages(sub_end - sub_start)
-                    
+
                     # Co-contiguous VMR level
                     if vmr_mapping_type is MappingType.CO_CONTIGUOUS:
                         vmr_node_id = self.model.add_vmr_node(ads_id, pathname_to_vmr_type(vmr_info.pathname), sub_n_pages)
                         self.model.add_hold_edge(gm.perms_all, kernel_id, gm.ResourceType.VMR, ads_id, vmr_node_id)
                         self.model.add_hold_edge(perms, pd_id, gm.ResourceType.VMR, ads_id, vmr_node_id)
                         vmr_info.model_id.append(vmr_node_id)
-                        
+
                     if vmr_mapping_type is MappingType.PER_PAGE or pmr_mapping_type is MappingType.PER_PAGE:
                         # Need to iterate through all the pages
                         for i in range(sub_n_pages):
                             page_vaddr = sub_start + gm.page_size * i
-                            
+
                             if vmr_mapping_type is MappingType.PER_PAGE:
                                 vmr_node_id = self.model.add_vmr_node(ads_id, pathname_to_vmr_type(vmr_info.pathname), 1)
                                 self.model.add_hold_edge(gm.perms_all, kernel_id, gm.ResourceType.VMR, ads_id, vmr_node_id)
                                 self.model.add_hold_edge(perms, pd_id, gm.ResourceType.VMR, ads_id, vmr_node_id)
                                 vmr_info.model_id.append(vmr_node_id)
-                        
+
                             if sub_vmr_info.mapped:
                                 if pmr_mapping_type is MappingType.PER_PAGE:
                                     sub_pmr_start = sub_vmr_info.pmr[0]
                                     page_paddr = sub_pmr_start + gm.page_size * i
-                                    
+
                                     # Fetch the pmr every time, since the PMR may have been split
                                     (pmr_start, pmr_end), pmr_info = self.pmrs.get(page_paddr)
                                     mapped_devices.add(pmr_info.device.model_id)
-                                
+
                                     # Maps to one page
                                     pmr_page_idx = size_to_pages(page_paddr - pmr_start)
                                     pmr_node_id = pmr_info.model_id[pmr_page_idx]
-                                    
+
                                     # Find the model state ID for the relevant page in the PMR
                                     self.model.add_map_edge(gm.ResourceType.VMR, gm.ResourceType.MO, ads_id, pmr_info.device.model_id, vmr_node_id, pmr_node_id)
                                 else:
                                     self.__map_vmr_to_pmrs(mapped_devices, ads_id, vmr_node_id, *sub_vmr_info.pmr)
                     elif sub_vmr_info.mapped:
                         self.__map_vmr_to_pmrs(mapped_devices, ads_id, vmr_node_id, *sub_vmr_info.pmr)
-                
+
             # Add map edge from address space to the devices
             for device_id in mapped_devices:
-                self.model.add_map_edge(gm.ResourceType.VMR, gm.ResourceType.MO, ads_id, device_id)
-    
+                self.model.add_map_edge(
+                    gm.ResourceType.VMR, gm.ResourceType.MO, ads_id, device_id
+                )
+
         return self.model
 
 ### RUNNING PROCESSES & EXTRACTING DATA ###
-    
+
 def run_process(name: str, start_type: ProcessStartType = False) -> tuple[int,int]:
     """
     Start a process from this directory (which should be the OSmosis/scripts/proc directory)
@@ -538,7 +538,7 @@ def extract_namespaces(data: ProcFsData, pid: int, should_print: bool = False):
         print ("\n\n")
             
     data.procs[pid].namespaces = namespaces
-    
+
 def understanding_pagemap(results):
     assert_increasing_vaddrs(results)
     overlapping_mappings(results)
@@ -584,7 +584,6 @@ def overlapping_mappings(results):
                     print(f'Old Range: {pm2.paddr:16x}- {pm2.paddr+pm2.size:16x} ')
 
 
-
 def assert_increasing_vaddrs(results):
         prev_va : int = 0
         curr_va : int = 0
@@ -618,7 +617,7 @@ def read_pagemap_file(pid: int, should_print: bool = False) -> list[PageMapObj]:
         print("-" * 40)
     
     return results
-    
+
 def extract_memory_data(data: ProcFsData, pid: int, should_print = False):
     """
     Get the VMR, PMR, and Device data for a particular process
@@ -685,15 +684,11 @@ def extract_memory_data(data: ProcFsData, pid: int, should_print = False):
         print ("\n\n")
 
 
-
-
-
-
 def extract_from_status(data: ProcFsData, pid: int, should_print = False):
     status = read_status_file(pid, should_print)
     assert pid == status.ns_pid[0], "PID from status should have been the same as the given PID"
     data.procs[pid].pid_in_ns = status.ns_pid[1] if len(status.ns_pid) > 1 else pid
-    
+
 def extract_process_data(data: ProcFsData, pid: int, name: str, should_print = False):
     """
     Extract data from procfs for a particular process
@@ -711,7 +706,7 @@ def extract_process_data(data: ProcFsData, pid: int, name: str, should_print = F
     
     if should_print:
         print(f"Extracted process {pid}: {data.procs[pid].name}")
-    
+
 def terminate_process(pid: int):
     """ 
     Terminate the process with the given pid

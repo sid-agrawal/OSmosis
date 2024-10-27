@@ -155,7 +155,6 @@ class ModelGraph:
             "page_size": 1 << page_size_bits 
         }
         
-        print (f"XYZ {extra}")
         return self.add_resource_node(ResourceType.MO, space_id, None, json.dumps(extra))
         
     def add_pd_node(self, name: str, pd_id: int | None = None) -> int:
