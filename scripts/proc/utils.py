@@ -267,3 +267,17 @@ def sizeof_fmt(num, suffix="B"):
             return f"{num:3.1f}{unit}{suffix}"
         num /= 1024.0
     return f"{num:.1f}Yi{suffix}"
+
+# 00001000-0009fbff : System RAM
+# 00100000-07fdcfff : System RAM
+
+# >>> utils.sizeof_fmt(y)
+# '635.0KiB'
+# >>> y = -0x00100000 + 0x07fdcfff
+# >>> utils.sizeof_fmt(y)
+# '126.9MiB'
+
+# gpa2hpa 0x1000
+# gpa2hpa 0x2000
+# gpa2hpa 0x3000
+# gpa2hpa 0x4000

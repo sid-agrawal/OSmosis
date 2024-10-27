@@ -1,4 +1,3 @@
-#!/usr/bin/python
 """
 Modified from the original script:
 - Author: ARM Ltd.
@@ -21,6 +20,7 @@ to program into MMU-less devices.
 """
 
 import os, sys, struct
+import utils
 
 
 """
@@ -324,7 +324,7 @@ class SystemRAMRange:
         return self.start <= pa and pa < (self.start + self.size)
 
     def __str__(self):
-        return "#%d PA:0x%x (%uMb)" % (self.index, self.start, self.size/(1024*1024))
+        return "#%d PA:0x%x (%s)" % (self.index, self.start, utils.sizeof_fmt(self.size))
 
 
 def system_RAM_ranges():

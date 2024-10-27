@@ -1,6 +1,7 @@
 from enum import Enum
 import networkx as nx
 import csv
+import json
 
 ## Constants
 page_size = 4096 # Assume all 4k pages for now
@@ -147,8 +148,15 @@ class ModelGraph:
         """
         
         # This is formatted to match the CellulOS output
-        extra = f'{phys_addr:16x}_{n_pages}_{page_size_bits}'
-        return self.add_resource_node(ResourceType.MO, space_id, None, extra)
+        # extra = f'{phys_addr:16x}_{n_pages}_{page_size_bits}'
+        extra = {
+            "pa": phys_addr,
+            "num_pages": n_pages,
+            "page_size": 1 << page_size_bits 
+        }
+        
+        print (f"XYZ {extra}")
+        return self.add_resource_node(ResourceType.MO, space_id, None, json.dumps(extra))
         
     def add_pd_node(self, name: str, pd_id: int | None = None) -> int:
         """
