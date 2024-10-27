@@ -4,12 +4,22 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
         {
-            "name": "Python Debugger: Current File",
+            "name": "DebugPy: Current File",
             "type": "debugpy",
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal"
+        },
+        {
+            "name": "sudo DebugPy: Current File",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "cwd": "${workspaceFolder}/scripts/proc",
+            "console": "integratedTerminal",
+            "sudo": true
         },
         {
             "name": "run-proc-model-with-sudo",
@@ -26,6 +36,5 @@
                 "debug.csv"
             ]
         },
-        //"console": "externalTerminal",
     ]
 }
