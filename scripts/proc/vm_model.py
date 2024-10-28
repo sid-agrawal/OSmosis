@@ -97,17 +97,17 @@ def get_vm_state(get_host: bool, guest_file: str, g2h_file: str, host_file: str)
     phandle.sendline("cat ./hello.csv")
     phandle.expect("#")
     hello_csv = phandle.before.decode()
-    with open(guest_file, "w") as text_file:
+    with open(guest_file, "w") as out_file:
         for ln in hello_csv.splitlines():
             if "," in ln:
-                print(ln, file=text_file)
+                print(ln, file=out_file)
 
     telnet_handle = pexpect.spawn(telnet_cmd)
     telnet_handle.expect("(qemu)")
 
     mapping_graph = gm.ModelGraph
     # Just look at the MOs
-    with open(guest_file, mode='rw', newline='') as file:
+    with open(guest_file, mode='r', newline='') as file:
         csv_reader = csv.reader(file)
         for row in csv_reader:
             # Split the row by commas
@@ -130,14 +130,14 @@ def get_vm_state(get_host: bool, guest_file: str, g2h_file: str, host_file: str)
 
 
                 ## Create two MAP edges
-                mapping_graph.add_map_edge(
-                    gm.ResourceType.MO,  # type1
-                    gm.ResourceType.MO,  # typ2
-                    0x00,  # rs 1
-                    0x00,  # rs 2
-                    0x00,  # rs 1
-                    0x0,
-                )  # rs 2
+                # mapping_graph.add_map_edge(
+                #     gm.ResourceType.MO,  # type1
+                #     gm.ResourceType.MO,  # typ2
+                #     0x00,  # rs 1
+                #     0x00,  # rs 2
+                #     0x00,  # rs 1
+                #     0x0,
+                # )  # rs 2
 
         # Questions to answer
         #    -- What are the resource space IDs
@@ -269,7 +269,7 @@ def main():
     parser.add_argument(
         "--g2h",
         type=str,
-        required=True,
+        required=False,
         help="Output file with guest to host memory mappings",
     )
     parser.add_argument(
