@@ -85,10 +85,10 @@ class EasyDict():
         return self.__dict__.__str__()
         
 class ModelGraph:
-    def __init__(self):
+    def __init__(self, id_offset=0):
         self.g = nx.MultiDiGraph()
-        self.pd_counter = 0
-        self.space_counter = 0
+        self.pd_counter = id_offset
+        self.space_counter = id_offset
         self.resource_counters = {}
         
     def __resource_string_id(self, res_type: ResourceType, space_id: int, res_id: int):
@@ -123,19 +123,26 @@ class ModelGraph:
         
         return res_id
     
-    def add_vmr_node(self, space_id: int, vmr_type: VmrType, n_pages: int) -> int:
+    def add_vmr_node(self, space_id: int, vmr_type: VmrType, n_pages: int, vaddr: int) -> int:
         """
         Add a VMR node to a model state graph, including the subset edge to the address space
         
         :param space_id: ID of the address space to add the VMR to
         :param vmr_type: The type of VMR reservation (CODE, STACK, etc.)
         :param n_pages: Number of 4k pages in the VMR
+        :param vadd: virtual address
         :return: the resource ID
         """
         
         # This is formatted to match the CellulOS output
-        extra = f'{vmr_type.name}_{n_pages}_{page_size_bits}'
-        return self.add_resource_node(ResourceType.VMR, space_id, None, extra)
+        # extra = f'{vmr_type.name}_{n_pages}_{page_size_bits}'
+        extra = {
+            "va": hex(vaddr),
+            "vmr_type": vmr_type.name,
+            "num_pages": n_pages,
+            "page_size": 1 << page_size_bits 
+        }
+        return self.add_resource_node(ResourceType.VMR, space_id, None, json.dumps(extra))
     
     def add_mo_node(self, space_id: int, phys_addr: int, n_pages: int) -> int:
         """
@@ -150,7 +157,7 @@ class ModelGraph:
         # This is formatted to match the CellulOS output
         # extra = f'{phys_addr:16x}_{n_pages}_{page_size_bits}'
         extra = {
-            "pa": phys_addr,
+            "pa": hex(phys_addr),
             "num_pages": n_pages,
             "page_size": 1 << page_size_bits 
         }
@@ -250,6 +257,15 @@ class ModelGraph:
         else:
             source_string_id = self.__resource_string_id(res_type_1, space_id_1, res_id_1)
             dest_string_id = self.__resource_string_id(res_type_2, space_id_2, res_id_2)
+        
+        self.__add_edge(EdgeType.MAP, source_string_id, dest_string_id)
+    
+    def add_map_edge_raw(self, source_string_id: str, dest_string_id: str):
+        """
+        Add a map edge from a node to another node
+        Assumes that source_string_id & des_string_id is correctly formatted.
+
+        """
         
         self.__add_edge(EdgeType.MAP, source_string_id, dest_string_id)
     
