@@ -7,7 +7,7 @@ import time
 import math
 from dataclasses import dataclass, field
 import traceback
-from utils import EasyDict, IntervalDict, sizeof_fmt, insert_with_split
+from utils import EasyDict, IntervalDict, sizeof_fmt, insert_with_split, is_root
 from read_pagemap import get_va_pa_mappings, PageMapObj
 import generic_model as gm
 import sys
@@ -337,7 +337,7 @@ class ProcFsData:
             )
 
     def to_generic_model(
-        self, vmr_mapping_type: MappingType, pmr_mapping_type: MappingType
+        self, vmr_mapping_type: MappingType, pmr_mapping_type: MappingType, id_offset: int=0 
     ) -> gm.ModelGraph:
         """
         Convert the ProcFsData to a generic model state
@@ -347,7 +347,7 @@ class ProcFsData:
         :return: The generic model state generated from this data
         """
 
-        self.model = gm.ModelGraph()
+        self.model = gm.ModelGraph(id_offset)
 
         # Add the kernel
         kernel_id = self.model.add_pd_node("Kernel")
@@ -412,7 +412,7 @@ class ProcFsData:
                 # Contiguous VMR level
                 if vmr_mapping_type is MappingType.CONTIGUOUS:
                     vmr_node_id = self.model.add_vmr_node(
-                        ads_id, pathname_to_vmr_type(vmr_info.pathname), n_pages
+                        ads_id, pathname_to_vmr_type(vmr_info.pathname), n_pages, start
                     )
                     self.model.add_hold_edge(
                         gm.perms_all,
@@ -432,7 +432,7 @@ class ProcFsData:
                     # Co-contiguous VMR level
                     if vmr_mapping_type is MappingType.CO_CONTIGUOUS:
                         vmr_node_id = self.model.add_vmr_node(
-                            ads_id, pathname_to_vmr_type(vmr_info.pathname), sub_n_pages
+                            ads_id, pathname_to_vmr_type(vmr_info.pathname), sub_n_pages, sub_start
                         )
                         self.model.add_hold_edge(
                             gm.perms_all,
@@ -456,7 +456,7 @@ class ProcFsData:
 
                             if vmr_mapping_type is MappingType.PER_PAGE:
                                 vmr_node_id = self.model.add_vmr_node(
-                                    ads_id, pathname_to_vmr_type(vmr_info.pathname), 1
+                                    ads_id, pathname_to_vmr_type(vmr_info.pathname), 1, page_vaddr
                                 )
                                 self.model.add_hold_edge(
                                     gm.perms_all,
@@ -894,6 +894,8 @@ def terminate_process(pid: int):
 
 
 if __name__ == "__main__":
+
+    assert is_root()
     # Define the argument parser
     parser = argparse.ArgumentParser(
         description="OSmosis Model state from multiple subsystems"
@@ -903,6 +905,9 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--csv", type=str, required=True, help="CSV to output the model state in"
+    )
+    parser.add_argument(
+        "--id-offset", type=int, help="ID node IDs; typically used for running this in the guest", default=0
     )
 
     # Parse the arguments
@@ -941,5 +946,6 @@ if __name__ == "__main__":
             terminate_process(pid)
 
     data_main.to_generic_model(
-        MappingType.CONTIGUOUS, MappingType.CO_CONTIGUOUS
+        #MappingType.CONTIGUOUS, MappingType.CO_CONTIGUOUS, args.id_offset
+        MappingType.PER_PAGE, MappingType.PER_PAGE, args.id_offset
     ).to_csv(args.csv)
