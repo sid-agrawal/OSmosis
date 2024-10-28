@@ -30,10 +30,10 @@
             "console": "integratedTerminal",
             "sudo": true,
             "args": [
-                "--pid",
-                "282157",
                 "--csv",
-                "debug.csv"
+                "debug.csv",
+                "--id-offset",
+                "1000",
             ]
         },
     ]
