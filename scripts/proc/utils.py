@@ -1,6 +1,8 @@
 import bisect
 import copy
 import traceback
+import os
+import filecmp
 
 ### UTILITY CLASSES ###
 
@@ -281,3 +283,36 @@ def sizeof_fmt(num, suffix="B"):
 # gpa2hpa 0x2000
 # gpa2hpa 0x3000
 # gpa2hpa 0x4000
+
+def compare_directories(dir1, dir2, file_extension, exceptions) -> bool:
+    # Get list of files in both directories with the specified extension
+    files_dir1 = {f for f in os.listdir(dir1) if f.endswith(file_extension)}
+    files_dir2 = {f for f in os.listdir(dir2) if f.endswith(file_extension)}
+
+    # Check for files that are only in one of the directories
+    only_in_dir1 = files_dir1 - files_dir2
+    only_in_dir2 = files_dir2 - files_dir1
+
+    if only_in_dir1:
+        print(f"Files only in {dir1}: {only_in_dir1}")
+        return False
+    if only_in_dir2:
+        print(f"Files only in {dir2}: {only_in_dir2}")
+        return False
+
+    # Compare common files
+    common_files = files_dir1 & files_dir2
+    for file_name in common_files:
+        if file_name in exceptions:
+            continue
+        file1 = os.path.join(dir1, file_name)
+        file2 = os.path.join(dir2, file_name)
+        if not filecmp.cmp(file1, file2, shallow=False):
+            print(f"Files {file1} and {file2} are different")
+            return False
+    
+    return True
+
+
+def is_root():
+    return os.geteuid() == 0
