@@ -9,13 +9,11 @@ import argparse
 import traceback
 from enum import Enum
 from proc_model import extract_process_data, ProcFsData, MappingType
-from proc_utils import convert_iomem_to_RAMranges
-from utils import sizeof_fmt
+from proc_utils import getPIDByName
+from utils import sizeof_fmt, compare_directories, is_root
 import generic_model as gm
-
-username = os.getlogin()
-qemu_cmd = "sudo /home/" + username + "/buildroot/qemu/buildroot-x86/start-qemu-kvm.sh"
-
+import pprint as pp
+from qemu_expect import get_qemu_phandle
 
 host = "localhost"
 port = 45454
@@ -32,7 +30,7 @@ def get_guest_host_translation(
 ) -> int:
     """
         Query Qemu using the monitor and given a guest-PA,
-        get the host-VA, host-PA.
+        get the host-VA, host-PA based on the cmd arg.
 
         cmd: Qemu Monitor Command 
         addr: guest PA
@@ -53,205 +51,145 @@ def get_guest_host_translation(
     output = pexpect_handle.before.decode()
 
     def parse(output: str):
+        """
+        parse the o/p of the gpa2hva/gpa2hpa commands
+        """
         for ln in output.splitlines():
             if f"address for 0x{addr:x}" in ln:
                 ln = ln.split(" ")
                 return int(ln[-1], 16)
             elif "No memory is mapped at" in ln:
-                raise ValueError(f"No memory found at 0x{addr}, output : {ln}")
+                raise ValueError(f"No memory found at 0x{addr:x}, output : {ln}")
 
     return parse(output)
 
-    # Get RAM Ranges of Guest
-    # For each page in gPA get its hPA and hVA
-    # ??
-
 
 def get_vm_state(get_host: bool, guest_file: str, g2h_file: str, host_file: str):
+    """
+        Start Qemu based linux guest and get the :
+        - model state of the hello process inside the guest
+        - model state of the qemu process on the host
+        - mappings between gpa --> hpa, and gpa --> hva
+    """
 
-    # spawn a child process.
-    phandle = pexpect.spawn(qemu_cmd)
-    print("CHILD PID: ", phandle.pid)
-    
-    # search for the Name pattern.
-    phandle.expect("buildroot login:")
-    phandle.sendline("root")
-    phandle.expect("#")
+    # Start Qemu
+    qemu_cmd = (
+        "/home/" + os.getlogin() + "/buildroot/qemu/buildroot-x86/start-qemu-kvm.sh"
+    )
+    qemu_phandle = get_qemu_phandle(qemu_cmd)
+    qemu_phandle.sendline("python proc_model.py --csv ./hello.csv --id-offset 100000")
+    qemu_phandle.expect("#")
+    qemu_phandle.sendline("cat ./hello.csv")
+    qemu_phandle.expect("#")
+    hello_csv = qemu_phandle.before.decode()
 
-    # send the username with sendline
-    phandle.sendline("cd /root/proc")
-    phandle.expect("#")
-
-    # gpa2hva, gpa2hpa = get_guest_host_mappings(
-    #     phandle=phandle, g2h_file=g2h_file
-    # )
-
-    # gpa2hva = dict(gpa2hva)
-    # gpa2hpa = dict(gpa2hpa)
-    gpa2hva = {}
-    gpa2hpa = {}
-
-    phandle.sendline("python proc_model.py --csv ./hello.csv")
-    phandle.expect("#")
-
-    phandle.sendline("cat ./hello.csv")
-    phandle.expect("#")
-    hello_csv = phandle.before.decode()
+    # Dump the model state of the guest (i.e. just hello process) 
+    # guest_file
     with open(guest_file, "w") as out_file:
         for ln in hello_csv.splitlines():
             if "," in ln:
                 print(ln, file=out_file)
 
-    telnet_handle = pexpect.spawn(telnet_cmd)
-    telnet_handle.expect("(qemu)")
-
-    mapping_graph = gm.ModelGraph
-    # Just look at the MOs
+    # Since the node-ids are by MO-ID, create a mapping from 
+    # gPA to MO-ID
+    # The format of the CSV is:
+    #  [0]         [1]                                    [-1]
+    # NODE_TYPE,NODE_ID,DATA,EDGE_TYPE,EDGE_FROM,EDGE_TO,EXTRA
+    #
+    gPA_to_MO = {}
     with open(guest_file, mode='r', newline='') as file:
         csv_reader = csv.reader(file)
         for row in csv_reader:
             # Split the row by commas
             split_row = row
-            if split_row[0] == "RESOURCE" and \
-                split_row[1].startswith("MO_"):
+            row_type = split_row[0]
+            row_id = split_row[1]
+            extra_dict_str = split_row[-1]
+
+            # Only look at the rows where a MOD node is created
+            if row_type == "RESOURCE" and \
+                row_id.startswith("MO_"):
                 # Parse the last part as a JSON dictionary
-                json_part = json.loads(split_row[-1])
+                extra_dict = json.loads(extra_dict_str)
+
                 # Print the results
-                gpa = json_part["pa"]
-                hpa = get_guest_host_translation(
-                    QemuMonitorCommand.GPA2HPA, gpa, telnet_handle
-                )
-                hva = get_guest_host_translation(
-                    QemuMonitorCommand.GPA2HVA, gpa, telnet_handle
-                )
-                print(f"gPA: 0x{gpa:<16x}")
-                print(f"   hVA: 0x{hva:<16x}")
-                print(f"   hPA: 0x{hpa:<16x}")
+                gpa_hex_str = extra_dict["pa"]
+                gpa = int(gpa_hex_str, 16)
+                # print (f"---- {gpa_hex_str}:str  {gpa:x}:int")
 
+                # Populate reverse map
+                if gpa in gPA_to_MO:
+                    raise KeyError(f"Key {gpa} already exists in gPA_to_MO")
+                gPA_to_MO[gpa] = row_id
 
-                ## Create two MAP edges
-                # mapping_graph.add_map_edge(
-                #     gm.ResourceType.MO,  # type1
-                #     gm.ResourceType.MO,  # typ2
-                #     0x00,  # rs 1
-                #     0x00,  # rs 2
-                #     0x00,  # rs 1
-                #     0x0,
-                # )  # rs 2
+    # for x, y in gPA_to_MO.items(): print(f"gPA --> MO == 0x{x:<16x} --> {y}")
 
-        # Questions to answer
-        #    -- What are the resource space IDs
-        #    -- What are the resource IDs
-        #    -- What are the types in guest Vs. host
+    # Get HOST Qemu State
+    qemu_pids = getPIDByName("qemu-system-x86_64")
+    assert len(qemu_pids) == 1
+    get_host_state(qemu_pids[0], host_file=host_file)
+    hPA_to_MO = {}
+    hVA_to_VMR = {}
 
+    with open(host_file, mode='r', newline='') as file:
+        csv_reader = csv.reader(file)
+        for row in csv_reader:
+            # Split the row by commas
+            split_row = row
+            row_type = split_row[0]
+            row_id = split_row[1]
+            extra_dict_str = split_row[-1]
+
+            if row_type == "RESOURCE":
+                extra_dict = json.loads(extra_dict_str)
+
+                if (row_id.startswith("MO_")):
+                    hpa_hex_str = extra_dict["pa"]
+                    hpa = int(hpa_hex_str, 16)
+                    if hpa in hPA_to_MO:
+                        raise KeyError(f"Key {hpa} already exists in hPA_to_MO")
+                    hPA_to_MO[hpa] = row_id
+
+                elif row_id.startswith("VMR_"):
+                    hva_hex_str = extra_dict["va"]
+                    hva = int(hva_hex_str, 16)
+                    if hva in hVA_to_VMR:
+                        raise KeyError(f"Key {hva} already exists in hVA_to_VMR")
+                    hVA_to_VMR[hva] = row_id
+    # for x, y in hPA_to_MO.items() : print(f"hPA -->  MO == 0x{x:<16x} --> {y}")
+    # for x, y in hVA_to_VMR.items(): print(f"hVA --> VMR == 0x{x:<16x} --> {y}")
+
+    print (f"hPA_to_MO has {len(hPA_to_MO)} entries")
+    print (f"hVA_to_VMR has {len(hVA_to_VMR)} entries")
+    # This is the model state of the new map edges
+    mapping_graph = gm.ModelGraph(id_offset=10000*10000)
+    telnet_handle = pexpect.spawn(telnet_cmd)
+    telnet_handle.expect("(qemu)")
+
+    start_time = time.time()
+    for gpa, g_mo_id in gPA_to_MO.items():
+        hpa = get_guest_host_translation(QemuMonitorCommand.GPA2HPA, gpa, telnet_handle)
+        hva = get_guest_host_translation(QemuMonitorCommand.GPA2HVA, gpa, telnet_handle)
+        host_vmr_id = hVA_to_VMR.get(hva)
+        host_mo_id = hPA_to_MO.get(hpa)
+
+        # print(f"Adding Edges for 0x{gpa:<16x} || ", end = "")
+        # print(f"\tHPA 0x{hpa:<16x} --> {host_mo_id} |||| ", end = "")
+        # print(f"\tHVA 0x{hva:<16x} --> {host_vmr_id}")
+        mapping_graph.add_map_edge_raw(g_mo_id, host_mo_id)
+        mapping_graph.add_map_edge_raw(g_mo_id, host_vmr_id)
     
-    
-    if get_host:
-        get_host_state(phandle.pid, host_file=host_file)
+    end_time = time.time()
+    print(f"Monitor Queries took:  {end_time - start_time} seconds")
 
-    # Connect, for each gPA,
-    # Add map:
-    #        gPA --> hPA
-    #        gPA --> hVA
 
-    # Make a combined CSV
-    # 1. Make sure we indentify every gPA in the hello.csv
-    # Connect, for each gPA,
-    # Add map:
-    #        gPA --> hPA
-    #        gPA --> hVA
-    # 2. get Host qemu state,
-    #         make sure the hVA and gPA node exists
-    #         Upload its csv
+    mapping_graph.to_csv(g2h_file)
+    print (f"Generated {len(gPA_to_MO)*2} new mapping edges")
 
     # print the interactions with the child
     # process.
-    # child.interact()
+    # qemu_phandle.interact()
 
-
-def get_guest_host_mappings(
-    phandle: pexpect.spawn, g2h_file: str
-) -> tuple[list[tuple[int, int]], list[tuple[int, int]]]:
-
-    # Get host to guest to host mappings
-    phandle.sendline("cat /proc/iomem")
-    phandle.expect("#")
-    iomem_output = phandle.before.decode()
-
-    gpa2hpa = []
-    gpa2hva = []
-    page_size = os.sysconf("SC_PAGE_SIZE")
-    assert page_size != 0, "cannot determine system page size"
-    print(f"SC_PAGE_SIZE: {sizeof_fmt(page_size)} ")
-
-    pexpect_handle = pexpect.spawn(telnet_cmd)
-    pexpect_handle.expect("(qemu)")
-    iommem_ranges = convert_iomem_to_RAMranges(iomem_output)
-
-    start_time = time.time()
-    ###########
-    limit = 2000
-    count = 0
-    ###########
-
-    for idx in range(len(iommem_ranges)):
-        x = iommem_ranges[idx]
-        print(
-            f"START = IOMem Range [{idx}] {x.start:<16x} "
-            f"{x.start + x.size:<16x} {x.size/page_size} Pages "
-        )
-        offset = 0
-
-        while offset < x.size:
-            gpa = x.start + offset
-            hpa = get_guest_host_translation(
-                QemuMonitorCommand.GPA2HPA, gpa, pexpect_handle
-            )
-            hva = get_guest_host_translation(
-                QemuMonitorCommand.GPA2HVA, gpa, pexpect_handle
-            )
-
-            gpa2hpa.append((gpa, hpa))
-            gpa2hva.append((gpa, hva))
-
-            # with open("Output.txt", "a") as text_file:
-            #     print(f"gPA : 0x{gpa:<16x} ---> hVA: 0x{hva:<16x}"
-            #           f" hPA: 0x{hpa:<16x} ", file=text_file)
-
-            page_offset = offset / page_size
-            num_pages = int(x.size / page_size)
-
-            if page_offset % 512 == 0:
-                print(
-                    f"\t{time.time() - start_time:4.2f} seconds:  "
-                    f"{page_offset/num_pages * 100:.2f}%"
-                )
-
-            # Update offset
-            offset += page_size
-
-            if (count >= limit):
-                break 
-            else:
-                count += 1
-
-        print(
-            f"END   = IOMem Range [{idx}] {x.start:<16x} {x.start + x.size:<16x} "
-            f"{x.size/page_size} Pages "
-        )
-
-    with open(g2h_file, "w") as text_file:
-        assert len(gpa2hpa) == len(gpa2hva)
-        for idx in range(len(gpa2hpa)):
-            print(
-                f"gPA : 0x{gpa2hpa[idx][0]:<16x} --->"
-                f" hVA: 0x{gpa2hva[idx][1]:<16x}"
-                f" hPA: 0x{gpa2hpa[idx][1]:<16x} ",
-                file=text_file,
-            )
-    print(f"{len(gpa2hva)} entries written to {g2h_file}")
-
-    return gpa2hva, gpa2hpa
 
 
 def main():
@@ -263,19 +201,19 @@ def main():
     parser.add_argument(
         "--guest",
         type=str,
-        required=True,
+        default="./outputs/qemu-86/guest.csv",
         help="Output file with guest's OSmosis model state",
     )
     parser.add_argument(
         "--g2h",
         type=str,
-        required=False,
+        default="./outputs/qemu-86/g2h.csv",
         help="Output file with guest to host memory mappings",
     )
     parser.add_argument(
         "--host",
         type=str,
-        required=True,
+        default="./outputs/qemu-86/host.csv",
         help="Output file with host's OSmosis model state",
     )
     args = parser.parse_args()
@@ -286,17 +224,8 @@ def main():
 
 
 def get_host_state(vm_pid: int, host_file: str):
-    # # Create a copy of the current environment variables
-    # custom_env = os.environ.copy()
-    # # Modify the PATH environment variable
 
-    # # Define the command to be executed
-    # command = [ "python", "proc_model.py", "--pid", str(vm_pid), "--csv", "tmp.output"]
-
-    # # Execute the command
-    # process = subprocess.Popen(command, env=custom_env)
-    # # Wait for the process to complete
-    # process.wait()
+    print (f"Get /proc state for PID: {vm_pid}")
 
     data = ProcFsData()
     try:
@@ -307,10 +236,25 @@ def get_host_state(vm_pid: int, host_file: str):
         traceback.print_exc()
         exit(1)
 
-    data.to_generic_model(MappingType.CONTIGUOUS, MappingType.CO_CONTIGUOUS).to_csv(
+    data.to_generic_model(
+        #MappingType.CONTIGUOUS, MappingType.CO_CONTIGUOUS
+        MappingType.PER_PAGE, MappingType.PER_PAGE
+        ).to_csv(
         host_file
     )
 
 
+def is_buildroot_updated():
+    """
+    When getting state from inside the vm guest, we need to ensure that the python files
+    inside buildroot are up to date.
+    """
+    dir1 = os.path.expanduser('~/OSmosis/scripts/proc')
+    dir2 = os.path.expanduser('~/buildroot/qemu/buildroot-x86/output/target/root/proc')
+
+    assert compare_directories(dir1, dir2, file_extension=".py", exceptions=["vm_model.py"])
+
 if __name__ == "__main__":
+    assert is_root()
+    is_buildroot_updated()
     main()

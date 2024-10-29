@@ -14,3 +14,4 @@ scripts/proc/*.csv
 basic.csv
 scripts/proc/tmp.output
 scripts/model_state/tmp.output
+scripts/proc/out.debug

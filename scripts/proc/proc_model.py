@@ -13,6 +13,7 @@ import generic_model as gm
 import sys
 import pprint as pp
 import argparse
+import pickle
 
 # PFS Setup
 sys.path.append("pfs/lib")
@@ -336,8 +337,28 @@ class ProcFsData:
                 pmr_info.model_id[0],
             )
 
+    def to_pickle_file(self, filename: str):
+        """
+        Present a pickled ASCII data to a file
+        """
+
+        # Serialize the data structure to an ASCII string
+        pickle_dict = {
+            "namespaces": self.namespaces,
+            "procs": self.procs,
+            "pmrs": self.pmrs,
+            "devices": self.devices,
+        }
+        ascii_string = pickle.dumps(pickle_dict).decode("ascii")
+
+        with open(filename, 'w') as file:
+            file.write(ascii_string)
+
     def to_generic_model(
-        self, vmr_mapping_type: MappingType, pmr_mapping_type: MappingType, id_offset: int=0 
+        self,
+        vmr_mapping_type: MappingType,
+        pmr_mapping_type: MappingType,
+        id_offset: int = 0,
     ) -> gm.ModelGraph:
         """
         Convert the ProcFsData to a generic model state
@@ -907,6 +928,9 @@ if __name__ == "__main__":
         "--csv", type=str, required=True, help="CSV to output the model state in"
     )
     parser.add_argument(
+        "--pickle", type=str, required=True, help="file to put the ascii pickle data in"
+    )
+    parser.add_argument(
         "--id-offset", type=int, help="ID node IDs; typically used for running this in the guest", default=0
     )
 
@@ -944,6 +968,10 @@ if __name__ == "__main__":
     if args.pid is None:
         for pid in pids:
             terminate_process(pid)
+
+    # print("before pickle")
+    # data_main.to_pickle_file(args.pickle)
+    # print("after pickle")
 
     data_main.to_generic_model(
         #MappingType.CONTIGUOUS, MappingType.CO_CONTIGUOUS, args.id_offset

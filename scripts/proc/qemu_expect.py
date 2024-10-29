@@ -7,7 +7,6 @@ from utils import is_root
 def get_qemu_phandle(qemu_cmd: str) -> pexpect.spawn:
 
     phandle = pexpect.spawn("sudo " + qemu_cmd)
-    print("CHILD PID: ", phandle.pid)
 
     # search for the Name pattern.
     phandle.expect("buildroot login:")

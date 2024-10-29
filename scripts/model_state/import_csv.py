@@ -7,6 +7,7 @@ import argparse
 import configparser
 import os
 import shutil
+import generic_model as gm
 
 config = configparser.ConfigParser()   
 config.read("config.txt")
@@ -62,19 +63,20 @@ def upload_csv(file_url:str, append_data: bool):
         print(f"Added {summary[0][0]['num_rows_added']} of either Resource or Resource Space nodes")
         
         # Load edges
-        query = """
+        for edge_type in [gm.EdgeType.HOLD, gm.EdgeType.MAP, gm.EdgeType.SUBSET, gm.EdgeType.REQUEST]:
+            query = """
                 LOAD CSV WITH HEADERS FROM '%s' AS row
                 WITH row
-                WHERE row.EDGE_TYPE IS NOT NULL
+                WHERE row.EDGE_TYPE = '%s'
                 MATCH (n1 {ID: row.EDGE_FROM})
                 MATCH (n2 {ID: row.EDGE_TO})
                 CALL apoc.create.relationship(n1, row.EDGE_TYPE, {DATA: row.DATA}, n2)
                 YIELD rel
                 RETURN count(rel) as num_rows_added;
-                """ % file_url
+                """ % (file_url, edge_type.name)
         
-        summary = driver.execute_query(query)
-        print(f"Added {summary[0][0]['num_rows_added']} Edges")
+            summary = driver.execute_query(query)
+            print(f"Added {summary[0][0]['num_rows_added']} {edge_type.name} Edges")
 
         print("Complete")
 
