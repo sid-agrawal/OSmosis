@@ -139,8 +139,8 @@ class ModelGraph:
         extra = {
             "va": hex(vaddr),
             "vmr_type": vmr_type.name,
-            "num_pages": n_pages,
-            "page_size": 1 << page_size_bits 
+            "num_pages": str(n_pages),
+            "page_size": str(1 << page_size_bits) 
         }
         return self.add_resource_node(ResourceType.VMR, space_id, None, json.dumps(extra))
     
@@ -158,8 +158,8 @@ class ModelGraph:
         # extra = f'{phys_addr:16x}_{n_pages}_{page_size_bits}'
         extra = {
             "pa": hex(phys_addr),
-            "num_pages": n_pages,
-            "page_size": 1 << page_size_bits 
+            "num_pages": str(n_pages),
+            "page_size": str(1 << page_size_bits) 
         }
         
         return self.add_resource_node(ResourceType.MO, space_id, None, json.dumps(extra))
