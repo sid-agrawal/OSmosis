@@ -928,7 +928,7 @@ if __name__ == "__main__":
         "--csv", type=str, required=True, help="CSV to output the model state in"
     )
     parser.add_argument(
-        "--pickle", type=str, required=True, help="file to put the ascii pickle data in"
+        "--pickle", type=str, help="file to put the ascii pickle data in"
     )
     parser.add_argument(
         "--id-offset", type=int, help="ID node IDs; typically used for running this in the guest", default=0
@@ -954,10 +954,10 @@ if __name__ == "__main__":
     try:
         if args.pid:
             p = psutil.Process(pid)
-            extract_process_data(data_main, pid, p.name(), True)
+            extract_process_data(data_main, pid, p.name(), False)
         else:
             for (name, _), pid in zip(to_run, pids):
-                extract_process_data(data_main, pid, name, True)
+                extract_process_data(data_main, pid, name, False)
                 # read_mountinfo_file(pid, True)  # mountinfo is not part of the model state, but we can view it
     except Exception as e:
         print(repr(e))

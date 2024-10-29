@@ -13,7 +13,8 @@ from proc_utils import getPIDByName
 from utils import sizeof_fmt, compare_directories, is_root
 import generic_model as gm
 import pprint as pp
-from qemu_expect import get_qemu_phandle
+from expect_utils import get_qemu_phandle, get_cellulos_phandle
+import filecmp
 
 host = "localhost"
 port = 45454
@@ -64,7 +65,7 @@ def get_guest_host_translation(
     return parse(output)
 
 
-def get_vm_state(get_host: bool, guest_file: str, g2h_file: str, host_file: str):
+def get_qemu_vm_state(get_host: bool, guest_file: str, g2h_file: str, host_file: str):
     """
         Start Qemu based linux guest and get the :
         - model state of the hello process inside the guest
@@ -77,6 +78,12 @@ def get_vm_state(get_host: bool, guest_file: str, g2h_file: str, host_file: str)
         "/home/" + os.getlogin() + "/buildroot/qemu/buildroot-x86/start-qemu-kvm.sh"
     )
     qemu_phandle = get_qemu_phandle(qemu_cmd)
+    host_state = qemu_phandle.before.decode()
+    with open(host_file, "w") as out_file:
+        for ln in host_state.splitlines():
+            if "," in ln:
+                print(ln, file=out_file)
+
     qemu_phandle.sendline("python proc_model.py --csv ./hello.csv --id-offset 100000")
     qemu_phandle.expect("#")
     qemu_phandle.sendline("cat ./hello.csv")
@@ -192,6 +199,91 @@ def get_vm_state(get_host: bool, guest_file: str, g2h_file: str, host_file: str)
 
 
 
+
+def get_host_state(vm_pid: int, host_file: str):
+
+    print (f"Get /proc state for PID: {vm_pid}")
+
+    data = ProcFsData()
+    try:
+        extract_process_data(data, vm_pid, "qemu", should_print=False)
+    except Exception as e:
+        print("Error printing stats for QEMU")
+        print(repr(e))
+        traceback.print_exc()
+        exit(1)
+
+    data.to_generic_model(
+        #MappingType.CONTIGUOUS, MappingType.CO_CONTIGUOUS
+        MappingType.PER_PAGE, MappingType.PER_PAGE
+        ).to_csv(
+        host_file
+    )
+
+
+def is_cellulos_aarch64_buildroot_osm_dir_updated() -> bool:
+    """
+    When getting state from inside the vm guest, we need to ensure that the python files
+    inside buildroot are up to date.
+    """
+    dir1 = os.path.expanduser('~/OSmosis/scripts/proc')
+    dir2 = os.path.expanduser('~/buildroot/cellulos/qemu/buildroot-arm-cellulos-with-everything/output/target/root/proc')
+
+    assert compare_directories(dir1, dir2, file_extension=".py", exceptions=["vm_model.py"])
+    
+    osm_rootfs = os.path.expanduser("~/OSmosis/projects/sel4-gpi/apps/vmm/board/qemu_arm_virt/rootfs.cpio.gz")
+    built_rootfs = os.path.expanduser('~/buildroot/cellulos/qemu/buildroot-arm-cellulos-with-everything/output/images/rootfs.cpio.gz')
+    return filecmp.cmp(osm_rootfs, built_rootfs)
+
+def is_qemu_x86_buildroot_updated() -> bool:
+    """
+    When getting state from inside the vm guest, we need to ensure that the python files
+    inside buildroot are up to date.
+    """
+    dir1 = os.path.expanduser('~/OSmosis/scripts/proc')
+    dir2 = os.path.expanduser('~/buildroot/qemu/buildroot-x86/output/target/root/proc')
+
+    return compare_directories(dir1, dir2, file_extension=".py", exceptions=["vm_model.py"])
+
+
+def get_cellulos_vm_state(get_host: bool, guest_file: str, g2h_file: str, host_file: str):
+    """
+        Start Cellulos-VMM based linux guest and get the :
+        - model state of the VM as seen from the host
+        - model state of the hello process inside the guest
+        - mappings between gpa --> hpa, and gpa --> hva
+    """
+    assert is_cellulos_aarch64_buildroot_osm_dir_updated()
+
+    original_dir = os.getcwd()
+    try: 
+        os.chdir("/home/" + os.getlogin() + "/OSmosis/qemu-build/")
+        # (XXX) Check that the right test has been compiled
+        # Run the VMM004 test
+        sim_cmd = ("./simulate")
+        sim_phandle, host_csv = get_cellulos_phandle(sim_cmd)
+
+        # Run the process, inside the guest.
+        sim_phandle.sendline("python proc_model.py --csv ./hello.csv --id-offset 100000")
+        sim_phandle.expect("#")
+        sim_phandle.sendline("cat ./hello.csv")
+        sim_phandle.expect("#")
+        hello_csv = sim_phandle.before.decode()
+
+    finally:
+        os.chdir(original_dir)
+
+    # Dump the model state of the VM-PD 
+    with open(host_file, "w") as out_file:
+        for ln in host_csv:
+            print(ln, file=out_file)
+
+    # Dump the model state of the guest (i.e. just hello process) 
+    with open(guest_file, "w") as out_file:
+        for ln in hello_csv.splitlines():
+            if "," in ln:
+                print(ln, file=out_file)
+
 def main():
     parser = argparse.ArgumentParser(
         description="Extract the model state from the Qemu guest and merge it with the model state"
@@ -216,45 +308,28 @@ def main():
         default="./outputs/qemu-86/host.csv",
         help="Output file with host's OSmosis model state",
     )
+    parser.add_argument(
+        "--vmm",
+        type=str,
+        choices=["qemu", "cellulos"],
+        required=True,
+        help="Qemu or CellulOS(on Qemu) as the VMM "
+    )
     args = parser.parse_args()
 
-    get_vm_state(
-        get_host=True, guest_file=args.guest, g2h_file=args.g2h, host_file=args.host
-    )
-
-
-def get_host_state(vm_pid: int, host_file: str):
-
-    print (f"Get /proc state for PID: {vm_pid}")
-
-    data = ProcFsData()
-    try:
-        extract_process_data(data, vm_pid, "qemu", should_print=False)
-    except Exception as e:
-        print("Error printing stats for QEMU")
-        print(repr(e))
-        traceback.print_exc()
-        exit(1)
-
-    data.to_generic_model(
-        #MappingType.CONTIGUOUS, MappingType.CO_CONTIGUOUS
-        MappingType.PER_PAGE, MappingType.PER_PAGE
-        ).to_csv(
-        host_file
-    )
-
-
-def is_buildroot_updated():
-    """
-    When getting state from inside the vm guest, we need to ensure that the python files
-    inside buildroot are up to date.
-    """
-    dir1 = os.path.expanduser('~/OSmosis/scripts/proc')
-    dir2 = os.path.expanduser('~/buildroot/qemu/buildroot-x86/output/target/root/proc')
-
-    assert compare_directories(dir1, dir2, file_extension=".py", exceptions=["vm_model.py"])
+    if args.vmm == "qemu":
+        assert is_root()
+        is_qemu_x86_buildroot_updated()
+        get_qemu_vm_state(
+            get_host=True, guest_file=args.guest, g2h_file=args.g2h, host_file=args.host
+        )
+    elif  args.vmm == "cellulos":
+        get_cellulos_vm_state(
+            get_host=True, guest_file=args.guest, g2h_file=args.g2h, host_file=args.host
+        )
+    
+    else: 
+        raise ValueError("Invalid VMM")
 
 if __name__ == "__main__":
-    assert is_root()
-    is_buildroot_updated()
     main()
