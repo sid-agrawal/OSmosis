@@ -7,7 +7,9 @@ import argparse
 import configparser
 import os
 import shutil
+import time
 import generic_model as gm
+import pprint as pp
 
 config = configparser.ConfigParser()   
 config.read("config.txt")
@@ -16,24 +18,25 @@ URI = config.get("neo4j", "url")
 AUTH = (config.get("neo4j", "user"), config.get("neo4j", "pass"))
 
 def upload_csv(file_url:str, append_data: bool):
-    with GraphDatabase.driver(URI, auth=AUTH) as driver:
-        driver.verify_connectivity()
+    driver = GraphDatabase.driver(URI, auth=AUTH)
+    driver.verify_connectivity()
 
+    with driver.session(database="neo4j") as session:
         if not append_data:
                 # Delete nodes
                 query = """
                         MATCH (n)-[r]-() DELETE r
                         """
                 
-                summary = driver.execute_query(query).summary
-                print(f"Deleted {summary.counters.relationships_deleted} edges")
+                summary = session.run(query)
+                print(f"Deleted {summary.consume().counters.relationships_deleted} edges")
         
                 query = """
                         MATCH (n) DELETE n;
                         """
         
-                summary = driver.execute_query(query).summary
-                print(f"Deleted {summary.counters.nodes_deleted} nodes")
+                summary = session.run(query)
+                print(f"Deleted {summary.consume().counters.nodes_deleted} nodes")
         
         # Load nodes
         query = """
@@ -46,8 +49,9 @@ def upload_csv(file_url:str, append_data: bool):
                 RETURN count(node) as num_rows_added;
                 """ % (file_url)
         
-        summary = driver.execute_query(query)
-        print(f"Added {summary[0][0]['num_rows_added']} PDs")
+        result = session.run(query)
+        print(f"Added {result.single().value()} PDs")
+        # import pdb; pdb.set_trace()
         
         query = """
                 LOAD CSV WITH HEADERS FROM '%s' AS row
@@ -59,11 +63,11 @@ def upload_csv(file_url:str, append_data: bool):
                 RETURN count(node) as num_rows_added;
                 """ % (file_url, 'row.NODE_TYPE + "_" + COALESCE(row.DATA, "")' if args.color else 'row.NODE_TYPE')
         
-        summary = driver.execute_query(query)
-        print(f"Added {summary[0][0]['num_rows_added']} of either Resource or Resource Space nodes")
+        result = session.run(query)
+        print(f"Added {result.single().value()} of either Resource or Resource Space nodes")
         
         # Load edges
-        for edge_type in [gm.EdgeType.HOLD, gm.EdgeType.MAP, gm.EdgeType.SUBSET, gm.EdgeType.REQUEST]:
+        for edge_type in [gm.EdgeType.REQUEST, gm.EdgeType.MAP, gm.EdgeType.SUBSET, gm.EdgeType.HOLD]:
             query = """
                 LOAD CSV WITH HEADERS FROM '%s' AS row
                 WITH row
@@ -75,8 +79,10 @@ def upload_csv(file_url:str, append_data: bool):
                 RETURN count(rel) as num_rows_added;
                 """ % (file_url, edge_type.name)
         
-            summary = driver.execute_query(query)
-            print(f"Added {summary[0][0]['num_rows_added']} {edge_type.name} Edges")
+            start_time = time.time()
+            result = session.run(query)
+            print(f"Added {result.single().value()} {edge_type.name} Edges. Duration : {time.time()- start_time} seconds")
+            # print(f"Added {summary[0][0]['num_rows_added']} {edge_type.name} Edges")
 
         print("Complete")
 

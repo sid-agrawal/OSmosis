@@ -138,6 +138,7 @@ def get_qemu_vm_state(get_host: bool, guest_file: str, g2h_file: str, host_file:
     hPA_to_MO = {}
     hVA_to_VMR = {}
 
+    # Make the rev maps
     with open(host_file, mode='r', newline='') as file:
         csv_reader = csv.reader(file)
         for row in csv_reader:
@@ -283,6 +284,9 @@ def get_cellulos_vm_state(get_host: bool, guest_file: str, g2h_file: str, host_f
         for ln in hello_csv.splitlines():
             if "," in ln:
                 print(ln, file=out_file)
+
+    # Make the rev maps
+    # TODODODOD
 
 def main():
     parser = argparse.ArgumentParser(
