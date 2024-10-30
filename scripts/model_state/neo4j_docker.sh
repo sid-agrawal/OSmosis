@@ -28,10 +28,6 @@ setNeo4jPaths() {
 }
 
 startNeo4j() {
-  if [ -z "$1" ]; then
-    echo "Please specify a CSV file for importing"
-    exit 1
-  fi
 
   # make mounted directories
   if [ -d $NEO4J_DIR ]; then
@@ -40,8 +36,6 @@ startNeo4j() {
     echo "Making neo4j data directory at $NEO4J_DIR"
     mkdir $NEO4J_DIR $NEO4J_DIR/data $NEO4J_DIR/import $NEO4J_DIR/plugins
   fi
-
-  cp $1 $NEO4J_DIR/import/
 
   python neo4j_config_set.py --url neo4j://localhost:7687 --user neo4j --password password
 
@@ -69,13 +63,7 @@ startNeo4j() {
     sleep 20 # wait for neo4j to initialize
   fi
 
-  if python import_csv.py --file $1; then
-    echo "Imported CSV."
-  else
-    echo ""
-    echo "CSV import failed, please manually run 'python import_csv.py --file <local_file>'"
-  fi
-
+  echo "Not importing anything"
   echo "Open http://localhost:7474 in browser for the neo4j console. User: neo4j, Password: password."
 }
 
@@ -103,7 +91,7 @@ fi
 case "$1" in
 start)
   setNeo4jPaths "${@:3}"
-  startNeo4j "${@:2:1}"
+  startNeo4j 
   ;;
 stop)
   setNeo4jPaths "${@:2}"
