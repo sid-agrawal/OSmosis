@@ -1,1 +1,0 @@
-../proc/generic_model.py

@@ -1,1 +1,5 @@
-../model_state/config.txt
+[neo4j]
+url = neo4j://localhost:7687
+user = neo4j
+pass = password
+
