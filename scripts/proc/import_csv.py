@@ -1,4 +1,4 @@
-#!/bin/python
+#!/bin/python3
 
 from neo4j import GraphDatabase
 import argparse
@@ -89,8 +89,8 @@ def upload_csv_import(db_name: str, filenames:list[str]):
     for item in os.listdir(neo4j_data_dir):
         item_path = os.path.join(neo4j_data_dir, item)
         if os.path.isdir(item_path):
-            if item != "system":
-                # shutil.rmtree(item_path)
+            if item not in  ["system", db_name]:
+                shutil.rmtree(item_path)
                 print(f"Deleted directory: {item_path}")
 
     # Change the default db name

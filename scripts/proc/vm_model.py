@@ -15,6 +15,8 @@ import generic_model as gm
 import pprint as pp
 from expect_utils import get_qemu_phandle, get_cellulos_phandle
 import filecmp
+import datetime
+import shutil
 
 host = "localhost"
 port = 45454
@@ -231,11 +233,19 @@ def is_cellulos_aarch64_buildroot_osm_dir_updated() -> bool:
     dir1 = os.path.expanduser('~/OSmosis/scripts/proc')
     dir2 = os.path.expanduser('~/buildroot/cellulos/qemu/buildroot-arm-cellulos-with-everything/output/target/root/proc')
 
-    assert compare_directories(dir1, dir2, file_extension=".py", exceptions=["vm_model.py"])
+    assert compare_directories(dir1, dir2, file_extension=".py", 
+                               exceptions=["vm_model.py", "import_csv.py"])
     
     osm_rootfs = os.path.expanduser("~/OSmosis/projects/sel4-gpi/apps/vmm/board/qemu_arm_virt/rootfs.cpio.gz")
     built_rootfs = os.path.expanduser('~/buildroot/cellulos/qemu/buildroot-arm-cellulos-with-everything/output/images/rootfs.cpio.gz')
-    return filecmp.cmp(osm_rootfs, built_rootfs)
+    if not filecmp.cmp(osm_rootfs, built_rootfs):
+        print (f"CPI files {osm_rootfs} and {built_rootfs} are not the same")
+        print (f"Copy from builtroot to cellulos dir")
+        return False
+    
+    return True
+
+        
 
 def is_qemu_x86_buildroot_updated() -> bool:
     """
@@ -245,7 +255,9 @@ def is_qemu_x86_buildroot_updated() -> bool:
     dir1 = os.path.expanduser('~/OSmosis/scripts/proc')
     dir2 = os.path.expanduser('~/buildroot/qemu/buildroot-x86/output/target/root/proc')
 
-    return compare_directories(dir1, dir2, file_extension=".py", exceptions=["vm_model.py"])
+    return compare_directories(dir1, dir2, file_extension=".py", 
+                               exceptions=["vm_model.py", "import_csv.py"])
+
 
 
 def get_cellulos_vm_state(get_host: bool, guest_file: str, g2h_file: str, host_file: str):
@@ -286,8 +298,97 @@ def get_cellulos_vm_state(get_host: bool, guest_file: str, g2h_file: str, host_f
             if "," in ln:
                 print(ln, file=out_file)
 
-    # Make the rev maps
-    # TODODODOD
+    # Make the rev mappings for guest
+    gPA_to_MO = {}
+    with open(guest_file, mode='r', newline='') as file:
+        csv_reader = csv.reader(file)
+        for row in csv_reader:
+            # Split the row by commas
+            split_row = row
+            row_type = split_row[0]
+            row_id = split_row[1]
+            extra_dict_str = split_row[-1]
+
+            # Only look at the rows where a MOD node is created
+            if row_type == "RESOURCE" and \
+                row_id.startswith("MO_"):
+                # Parse the last part as a JSON dictionary
+                extra_dict = json.loads(extra_dict_str)
+
+                # Print the results
+                gpa_hex_str = extra_dict["pa"]
+                gpa = int(gpa_hex_str, 16)
+                # print (f"---- {gpa_hex_str}:str  {gpa:x}:int")
+
+                # Populate reverse map
+                if gpa in gPA_to_MO:
+                    raise KeyError(f"Key {gpa} already exists in gPA_to_MO")
+                gPA_to_MO[gpa] = row_id
+    for x, y in gPA_to_MO.items(): print(f"gPA --> MO == 0x{x:<16x} --> {y}")
+
+    # Make the rev maps for the host file
+    hPA_to_MO = {}
+    hVA_to_VMR = {}
+    with open(host_file, mode='r', newline='') as file:
+        csv_reader = csv.reader(file)
+        for row in csv_reader:
+            # Split the row by commas
+            split_row = row
+            row_type = split_row[0]
+            row_id = split_row[1]
+            extra_dict_str = split_row[-1]
+
+            if extra_dict_str == "":
+                continue
+
+            if row_type == "RESOURCE":
+                extra_dict = json.loads(extra_dict_str)
+
+                if (row_id.startswith("MO_")):
+                    if extra_dict["num_pages"] == "0":
+                        continue
+                    
+                    hpa_hex_str = extra_dict["pa"]
+                    hpa = int(hpa_hex_str, 16)
+                    if hpa in hPA_to_MO:
+                        raise KeyError(f"Key {hpa:x} already exists in hPA_to_MO")
+                    hPA_to_MO[hpa] = row_id
+
+                # Super Hacky
+                elif row_id.startswith("VMR_9"):
+                    if extra_dict["num_pages"] == "0":
+                        continue
+                    
+                    hva_hex_str = extra_dict["va"]
+                    hva = int(hva_hex_str, 16)
+                    if hva in hVA_to_VMR:
+                        raise KeyError(f"Key {hva:x} already exists in hVA_to_VMR")
+                    hVA_to_VMR[hva] = row_id
+    
+    for x, y in hPA_to_MO.items() : print(f"hPA -->  MO == 0x{x:<16x} --> {y}")
+    for x, y in hVA_to_VMR.items(): print(f"hVA --> VMR == 0x{x:<16x} --> {y}")
+
+    
+    def get_cellulos_gpa_to_hpa(gpa: int) -> int :
+        return 0x8040000
+
+    def get_cellulos_gpa_to_hva(gpa: int) -> int :
+        return 0x40000000
+
+    mapping_graph = gm.ModelGraph(id_offset=10000*10000)
+    for gpa, g_mo_id in gPA_to_MO.items():
+        hpa = get_cellulos_gpa_to_hpa(gpa)
+        hva = get_cellulos_gpa_to_hva(gpa)
+        host_vmr_id = hVA_to_VMR.get(hva)
+        host_mo_id = hPA_to_MO.get(hpa)
+
+        # print(f"Adding Edges for 0x{gpa:<16x} || ", end = "")
+        # print(f"\tHPA 0x{hpa:<16x} --> {host_mo_id} |||| ", end = "")
+        # print(f"\tHVA 0x{hva:<16x} --> {host_vmr_id}")
+        mapping_graph.add_map_edge_raw(g_mo_id, host_mo_id)
+        mapping_graph.add_map_edge_raw(g_mo_id, host_vmr_id)
+    
+    mapping_graph.to_csv(g2h_file, only_edge=True)
 
 def main():
     parser = argparse.ArgumentParser(
@@ -295,24 +396,24 @@ def main():
         "for the Qemu process from the host"
     )
 
-    parser.add_argument(
-        "--guest",
-        type=str,
-        default="./outputs/qemu-86/guest.csv",
-        help="Output file with guest's OSmosis model state",
-    )
-    parser.add_argument(
-        "--g2h",
-        type=str,
-        default="./outputs/qemu-86/g2h.csv",
-        help="Output file with guest to host memory mappings",
-    )
-    parser.add_argument(
-        "--host",
-        type=str,
-        default="./outputs/qemu-86/host.csv",
-        help="Output file with host's OSmosis model state",
-    )
+    # parser.add_argument(
+    #     "--guest",
+    #     type=str,
+    #     default="./outputs/qemu-86/guest.csv",
+    #     help="Output file with guest's OSmosis model state",
+    # )
+    # parser.add_argument(
+    #     "--g2h",
+    #     type=str,
+    #     default="./outputs/qemu-86/g2h.csv",
+    #     help="Output file with guest to host memory mappings",
+    # )
+    # parser.add_argument(
+    #     "--host",
+    #     type=str,
+    #     default="./outputs/qemu-86/host.csv",
+    #     help="Output file with host's OSmosis model state",
+    # )
     parser.add_argument(
         "--vmm",
         type=str,
@@ -320,17 +421,41 @@ def main():
         required=True,
         help="Qemu or CellulOS(on Qemu) as the VMM "
     )
+    parser.add_argument(
+        "--clean",
+        action='store_true',
+        default=False,
+        help="Clean old data of that vmm time"
+    )
     args = parser.parse_args()
+
+    target_dir = f"./outputs/{args.vmm}/"
+    if args.clean:
+        print(f"Deleteing old data in {target_dir}", end ="")
+        for item in os.listdir(target_dir):
+            item_path = os.path.join(target_dir, item)
+            if os.path.isdir(item_path):
+                shutil.rmtree(item_path)
+                print (item_path, end="")
+        print("")
+
+
+    new_dir = os.path.join(target_dir,
+                           datetime.datetime.now().strftime("%Y_%m_%d_%H%M%S"))
+    os.makedirs(new_dir)
+    host_file = f"{new_dir}/host.csv"
+    guest_file = f"{new_dir}/guest.csv"
+    g2h_file = f"{new_dir}/g2h_file.csv"
 
     if args.vmm == "qemu":
         assert is_root()
         is_qemu_x86_buildroot_updated()
         get_qemu_vm_state(
-            get_host=True, guest_file=args.guest, g2h_file=args.g2h, host_file=args.host
+            get_host=True, guest_file=guest_file, g2h_file=g2h_file, host_file=host_file
         )
     elif  args.vmm == "cellulos":
         get_cellulos_vm_state(
-            get_host=True, guest_file=args.guest, g2h_file=args.g2h, host_file=args.host
+            get_host=True, guest_file=guest_file, g2h_file=g2h_file, host_file=host_file
         )
     else: 
         raise ValueError("Invalid VMM")
