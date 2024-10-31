@@ -14,7 +14,7 @@ from neo4j_shard_csv import split
 
 # Import a CSV file to Neo4j
 # Usage: pass the command line argument for the public url index to upload
-# eg: python import_csv.py --file local-file --copy --append
+# eg: python import_csv.py --file local-file --copy
 
 config = configparser.ConfigParser()   
 config.read("config.txt")
@@ -22,26 +22,47 @@ config.read("config.txt")
 URI = config.get("neo4j", "url")
 AUTH = (config.get("neo4j", "user"), config.get("neo4j", "pass"))
 
-def upload_csv_import(db_name: str, filename:str):
+def upload_csv_import(db_name: str, filenames:list[str]):
 
-    dirname = os.path.dirname(filename)
+    pd_files = {}
+    res_files = {}
+    rs_files = {}
+    edge_files = {}
 
-    pd_file = os.path.join(dirname, "pd.csv")
-    res_file = os.path.join(dirname, "res.csv")
-    rs_file = os.path.join(dirname, "rs.csv")
-    edge_file = os.path.join(dirname, "edge.csv")
+    for f in filenames:
+        basename = os.path.basename(f)
+
+        dirname = f + "_dir"
+        os.makedirs(dirname, exist_ok=True)
+
+        pd_files[f] = os.path.join(dirname, f"{basename}"+"_pd.csv")
+        res_files[f] = os.path.join(dirname, f"{basename}"+"_res.csv")
+        rs_files[f] = os.path.join(dirname, f"{basename}"+"_rs.csv")
+        edge_files[f] = os.path.join(dirname, f"{basename}"+"_edge.csv")
 
     # Create new formatted CSV Files.
-    ####./neo4j_shard_csv.py --input outputs/qemu-86/host.csv --pd pd.csv --res res.csv --rs rs.csv --edge edge.csv && cp *.csv ~/neo4j/import
-    split(filename, pd_file, res_file, rs_file, edge_file)
+        print (f"Splitting {f} in {pd_files[f]}, {res_files[f]}, {rs_files[f]}, {edge_files[f]}")
+        split(f, pd_files[f], res_files[f], rs_files[f], edge_files[f])
 
-    # Copy it to the neo4j import dir.
-    for f in [pd_file, res_file, rs_file, edge_file]:
-        basename = os.path.basename(f)
-        copy_file(f, os.path.expanduser(f"~/neo4j/import/{basename}"))
+
+        # Copy it to the neo4j import dir.
+        for new_f in [pd_files[f], res_files[f], rs_files[f], edge_files[f]]:
+            basename = os.path.basename(new_f)
+            copy_file(new_f, os.path.expanduser(f"~/neo4j/import/{basename}"))
 
     # docker exec  neo4j-osm sh -c 'cd /import ;neo4j-admin database import full osm2 --overwrite-destination --nodes=pd.csv --nodes=res.csv --nodes=rs.csv --relationships=edge.csv --verbose'
-    exec_cmd = f"cd /import ;neo4j-admin database import full {db_name} --overwrite-destination --nodes=pd.csv --nodes=res.csv --nodes=rs.csv --relationships=edge.csv --verbose"
+    #exec_cmd = f"cd /import ;neo4j-admin database import full {db_name} --overwrite-destination --nodes=pd.csv --nodes=res.csv --nodes=rs.csv --relationships=edge.csv --verbose"
+    exec_cmd = f"cd /import ;neo4j-admin database import full {db_name} --overwrite-destination --verbose"
+    for key, value in pd_files.items():
+        exec_cmd += f" --nodes={os.path.basename(value)} "
+    for key, value in res_files.items():
+        exec_cmd += f" --nodes={os.path.basename(value)} "
+    for key, value in rs_files.items():
+        exec_cmd += f" --nodes={os.path.basename(value)} "
+    for key, value in edge_files.items():
+        exec_cmd += f" --relationships={os.path.basename(value)} "
+
+    print(f"RUNNING DOCKER COMMAND: {exec_cmd}")
     command = [
         'docker',
         'exec',
@@ -77,6 +98,7 @@ def upload_csv_import(db_name: str, filename:str):
     exec_cmd = f"echo dbms.default_database={db_name} > /var/lib/neo4j/conf/neo4j.conf"
     command = ['docker', 'exec', 'neo4j-osm', 'sh', '-c', exec_cmd]
 
+    print(f"RUNNING DOCKER COMMAND: {exec_cmd}")
     try:
         result = subprocess.run(
             command,
@@ -89,6 +111,7 @@ def upload_csv_import(db_name: str, filename:str):
     except subprocess.CalledProcessError as e:
         raise RuntimeError(f"Error occurred: {e.stderr}")
 
+    print(f"RUNNING DOCKER COMMAND: restart container")
     # Restart the container
     command = [ "docker", "restart", "neo4j-osm"]
     try:
@@ -103,8 +126,35 @@ def upload_csv_import(db_name: str, filename:str):
     except subprocess.CalledProcessError as e:
         raise RuntimeError(f"Error occurred: {e.stderr}")
 
+def wipe_all_data(db_name: str):
+    driver = GraphDatabase.driver(URI, auth=AUTH)
+    driver.verify_connectivity()
+
+    print("Starting wipe and this can take a while if you have 100Ks of edges")
+    with driver.session(database=db_name) as session:
+        # Delete nodes
+        query = """
+               MATCH (n)-[r]-() DELETE r
+               """
+        start_time = time.time()
+        summary = session.run(query)
+        print(f"Deleted {summary.consume().counters.relationships_deleted} edges in {time.time()-start_time:.2f} seconds")
+        
+        # Delete Edges
+        query = """
+               MATCH (n) DELETE n;
+               """
+        
+        start_time = time.time()
+        summary = session.run(query)
+        print(f"Deleted {summary.consume().counters.nodes_deleted} nodes in {time.time()-start_time:.2f} seconds")
+        
 # Look at the old import and new import and ensure that the fields end up in the tight place
-def upload_csv_query(db_name: str, filename:str, append_data: bool):
+def upload_csv_query(db_name: str, filename:str, color:bool):
+
+    print(f"Uploading: {filename}")
+
+    copy_file(filename, os.path.expanduser(f"~/neo4j/import/{os.path.basename(filename)}"))
 
     if filename is not None and len(filename) > 0  and os.path.isfile(filename) :
         input_file = os.path.basename(filename)
@@ -116,29 +166,12 @@ def upload_csv_query(db_name: str, filename:str, append_data: bool):
         print(
                 "Please provide either a local CSV file"
                 )
-        parser.parse_args(['-h'])
+        # parser.parse_args(['-h'])
         raise SystemExit()
 
     driver = GraphDatabase.driver(URI, auth=AUTH)
     driver.verify_connectivity()
-
     with driver.session(database=db_name) as session:
-        if not append_data:
-                # Delete nodes
-                query = """
-                        MATCH (n)-[r]-() DELETE r
-                        """
-                
-                summary = session.run(query)
-                print(f"Deleted {summary.consume().counters.relationships_deleted} edges")
-        
-                query = """
-                        MATCH (n) DELETE n;
-                        """
-        
-                summary = session.run(query)
-                print(f"Deleted {summary.consume().counters.nodes_deleted} nodes")
-        
         # Load nodes
         query = """
                 LOAD CSV WITH HEADERS FROM '%s' AS row
@@ -152,7 +185,6 @@ def upload_csv_query(db_name: str, filename:str, append_data: bool):
         
         result = session.run(query)
         print(f"Added {result.single().value()} PDs")
-        # import pdb; pdb.set_trace()
         
         query = """
                 LOAD CSV WITH HEADERS FROM '%s' AS row
@@ -162,27 +194,25 @@ def upload_csv_query(db_name: str, filename:str, append_data: bool):
                    DATA: row.DATA, EXTRA: coalesce(row.EXTRA, "0")})
                 YIELD node
                 RETURN count(node) as num_rows_added;
-                """ % (file_url, 'row.NODE_TYPE + "_" + COALESCE(row.DATA, "")' if args.color else 'row.NODE_TYPE')
+                """ % (file_url, 'row.NODE_TYPE + "_" + COALESCE(row.DATA, "")' if color else 'row.NODE_TYPE')
         
         result = session.run(query)
         print(f"Added {result.single().value()} of either Resource or Resource Space nodes")
         
         # Load edges
-        for edge_type in [gm.EdgeType.REQUEST, gm.EdgeType.MAP, gm.EdgeType.SUBSET, gm.EdgeType.HOLD]:
-            query = """
-                LOAD CSV WITH HEADERS FROM '%s' AS row
-                WITH row
-                WHERE row.EDGE_TYPE = '%s'
-                MATCH (n1 {ID: row.EDGE_FROM})
-                MATCH (n2 {ID: row.EDGE_TO})
-                CALL apoc.create.relationship(n1, row.EDGE_TYPE, {DATA: row.DATA}, n2)
-                YIELD rel
-                RETURN count(rel) as num_rows_added;
-                """ % (file_url, edge_type.name)
+        query = """
+            LOAD CSV WITH HEADERS FROM '%s' AS row
+            WITH row
+            MATCH (n1 {ID: row.EDGE_FROM})
+            MATCH (n2 {ID: row.EDGE_TO})
+            CALL apoc.create.relationship(n1, row.EDGE_TYPE, {DATA: row.DATA}, n2)
+            YIELD rel
+            RETURN count(rel) as num_rows_added;
+            """ % (file_url)
         
-            start_time = time.time()
-            result = session.run(query)
-            print(f"Added {result.single().value()} {edge_type.name} Edges. Duration : {time.time()- start_time} seconds")
+        start_time = time.time()
+        result = session.run(query)
+        print(f"Added {result.single().value()} Edges. Duration : {time.time()- start_time:.2f} seconds")
             # print(f"Added {summary[0][0]['num_rows_added']} {edge_type.name} Edges")
 
         print("Complete")
@@ -198,17 +228,18 @@ def copy_file(src: str, dst: str):
         shutil.copy(src, dst)
         print(f"File copied from {src} to {dst}")
     except FileNotFoundError:
-        print(f"Source file {src} not found.")
+        raise FileNotFoundError(f"Source file {src} not found.")
     except PermissionError:
-        print(f"Permission denied while copying to {dst}.")
+        raise PermissionError(f"Permission denied while copying to {dst}.")
     except Exception as e:
-        print(f"An error occurred: {e}")
+        raise Exception(f"An error occurred: {e}")
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser("import_csv")
     parser.add_argument(
-        "-f", "--file", required=True, help="filename with the data"
+        "-f", "--files", required=True, help="space separates filenames with the data",
+        nargs = '+'
     )
     parser.add_argument(
         "-d",
@@ -217,9 +248,9 @@ if __name__ == "__main__":
         default="neo4j",
     )
     parser.add_argument(
-        "-a",
-        "--append",
-        help="do not delete the existing data",
+        "-w",
+        "--wipe",
+        help="delete the existing data",
         action="store_true",
         default=False,
     )
@@ -230,10 +261,22 @@ if __name__ == "__main__":
         action="store_true",
         default=False,
     )
+    parser.add_argument(
+        "-q",
+        "--query",
+        help="Run queries instead of using neo4j-admin",
+        action="store_true",
+        default=False,
+    )
     args = parser.parse_args()
 
-    if args.append:
-        copy_file(args.file, os.path.expanduser(f"~/neo4j/import/{args.file}"))
-        upload_csv_query(args.db, args.filename, args.append)
+    if args.query:
+        # Conditrionally Wipe
+        if args.wipe:
+            wipe_all_data(args.db)
+
+        # Always append
+        for f in args.files:
+            upload_csv_query(args.db, f, args.color)
     else:
-        upload_csv_import(args.db, args.file)
+        upload_csv_import(args.db, args.files)

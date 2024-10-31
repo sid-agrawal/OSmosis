@@ -28,10 +28,10 @@ def split(input, pd, res, rs, edge):
     edge_csv = csv.writer(edge_file) 
 
     # Added heads
-    print(f"PD_ID:ID,DATA,NODE_TYPE,EXTRA", file=pd_file)
-    print(f"RESOURCE_ID:ID,DATA,NODE_TYPE,EXTRA", file=res_file)
-    print(f"RESOURCE_SPACE_ID:ID,DATA,NODE_TYPE,EXTRA", file=rs_file)
-    print(f":START_ID, :END_ID,:TYPE", file=edge_file)
+    print(f"ID:ID,NODE_TYPE,DATA,EXTRA,:LABEL", file=pd_file)
+    print(f"ID:ID,NODE_TYPE,DATA,EXTRA,:LABEL", file=res_file)
+    print(f"ID:ID,NODE_TYPE,DATA,EXTRA,:LABEL", file=rs_file)
+    print(f":START_ID,DATA,:END_ID,:TYPE", file=edge_file)
 
     for row in input_csv:
 
@@ -53,14 +53,14 @@ def split(input, pd, res, rs, edge):
             extra = ""
 
         if row_type == "PD":
-            pd_csv.writerow([row_id, row_type, row_data, extra])
+            pd_csv.writerow([row_id, row_type, row_data, extra, row_type])
         elif row_type == "RESOURCE":
-            res_csv.writerow([row_id,row_type,  row_data, extra])
+            res_csv.writerow([row_id,row_type,  row_data, extra, row_type])
         elif row_type == "RESOURCE_SPACE":
-            rs_csv.writerow([row_id,row_type,  row_data, extra])
+            rs_csv.writerow([row_id,row_type,  row_data, extra, row_type])
         else:
             assert edge_type in ["MAP", "HOLD", "SUBSET", "REQUEST"]
-            edge_csv.writerow([edge_from, edge_to, edge_type])
+            edge_csv.writerow([edge_from, row_data, edge_to, edge_type])
 
 def main():
     parser = argparse.ArgumentParser(

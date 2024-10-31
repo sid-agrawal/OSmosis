@@ -191,8 +191,9 @@ def get_qemu_vm_state(get_host: bool, guest_file: str, g2h_file: str, host_file:
     print(f"Monitor Queries took:  {end_time - start_time} seconds")
 
 
-    mapping_graph.to_csv(g2h_file)
+    mapping_graph.to_csv(g2h_file, only_edge=True)
     print (f"Generated {len(gPA_to_MO)*2} new mapping edges")
+    
 
     # print the interactions with the child
     # process.
@@ -331,7 +332,6 @@ def main():
         get_cellulos_vm_state(
             get_host=True, guest_file=args.guest, g2h_file=args.g2h, host_file=args.host
         )
-    
     else: 
         raise ValueError("Invalid VMM")
 

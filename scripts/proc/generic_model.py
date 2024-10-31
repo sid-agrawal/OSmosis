@@ -286,7 +286,7 @@ class ModelGraph:
         # Should be showing space ID too, need to update the CellulOS model output
         self.__add_edge(EdgeType.REQUEST, source_string_id, dest_string_id, res_type.name)
         
-    def to_csv(self, filename: str = "proc_model.csv"):
+    def to_csv(self, filename: str = "proc_model.csv", only_edge:bool = False ):
         """
         Write the model state to a CSV
         
@@ -299,8 +299,9 @@ class ModelGraph:
             
             writer.writerow(headers)
             
-            for node, data in self.g.nodes(data=True):
-                writer.writerow([data.get("type"), node, data.get("data"), None, None, None, data.get("extra")])
+            if not only_edge:
+                for node, data in self.g.nodes(data=True):
+                    writer.writerow([data.get("type"), node, data.get("data"), None, None, None, data.get("extra")])
             
             for node_from, node_to, data in self.g.edges(data=True):
                 writer.writerow([None, None, data.get("data"), data.get("type"), node_from, node_to, data.get("extra")]) 
