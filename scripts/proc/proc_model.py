@@ -974,6 +974,6 @@ if __name__ == "__main__":
     # print("after pickle")
 
     data_main.to_generic_model(
-        #MappingType.CONTIGUOUS, MappingType.CO_CONTIGUOUS, args.id_offset
-        MappingType.PER_PAGE, MappingType.PER_PAGE, args.id_offset
+       MappingType.CONTIGUOUS, MappingType.CO_CONTIGUOUS, args.id_offset
+       # MappingType.PER_PAGE, MappingType.PER_PAGE, args.id_offset
     ).to_csv(args.csv)

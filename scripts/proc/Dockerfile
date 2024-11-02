@@ -1,5 +1,5 @@
 # use neo4j:community for latest version, 5.22.0 is known working version
-FROM neo4j:5.22.0
+FROM neo4j:5.22.0-enterprise
 
 # marks these directories as mounted from host
 VOLUME [ "/data/", "/import/", "/plugins/" ]

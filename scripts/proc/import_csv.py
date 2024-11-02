@@ -85,31 +85,48 @@ def upload_csv_import(db_name: str, filenames:list[str]):
         raise RuntimeError(f"Error occurred: {e.stderr}")
 
     # Delete all neo4j-db except system
-    neo4j_data_dir = os.path.expanduser("~/neo4j/data/databases")
-    for item in os.listdir(neo4j_data_dir):
-        item_path = os.path.join(neo4j_data_dir, item)
-        if os.path.isdir(item_path):
-            if item not in  ["system", db_name]:
-                shutil.rmtree(item_path)
-                print(f"Deleted directory: {item_path}")
+    # neo4j_data_dir = os.path.expanduser("~/neo4j/data/databases")
+    # for item in os.listdir(neo4j_data_dir):
+    #     item_path = os.path.join(neo4j_data_dir, item)
+    #     if os.path.isdir(item_path):
+    #         if item not in  ["system", db_name]:
+    #             shutil.rmtree(item_path)
+    #             print(f"Deleted directory: {item_path}")
 
     # Change the default db name
     #  docker exec neo4j-osm sh -c 'echo "dbms.default_database=osm3" > /var/lib/neo4j/conf/neo4j.conf'
-    exec_cmd = f"echo dbms.default_database={db_name} > /var/lib/neo4j/conf/neo4j.conf"
-    command = ['docker', 'exec', 'neo4j-osm', 'sh', '-c', exec_cmd]
+    # exec_cmd = f"echo dbms.default_database={db_name} > /var/lib/neo4j/conf/neo4j.conf"
+    # command = ['docker', 'exec', 'neo4j-osm', 'sh', '-c', exec_cmd]
 
-    print(f"RUNNING DOCKER COMMAND: {exec_cmd}")
-    try:
-        result = subprocess.run(
-            command,
-            check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-        print("Updated config file in the config")
-    except subprocess.CalledProcessError as e:
-        raise RuntimeError(f"Error occurred: {e.stderr}")
+    # print(f"RUNNING DOCKER COMMAND: {exec_cmd}")
+    # try:
+    #     result = subprocess.run(
+    #         command,
+    #         check=True,
+    #         stdout=subprocess.PIPE,
+    #         stderr=subprocess.PIPE,
+    #         text=True,
+    #     )
+    #     print("Updated config file in the config")
+    # except subprocess.CalledProcessError as e:
+    #     raise RuntimeError(f"Error occurred: {e.stderr}")
+
+#    exec_cmd = f"echo dbms.bloom.license_file=/home/siagraw/bloom-key > /var/lib/neo4j/conf/neo4j.conf"
+#    command = ['docker', 'exec', 'neo4j-osm', 'sh', '-c', exec_cmd]
+#
+#    print(f"RUNNING DOCKER COMMAND: {exec_cmd}")
+#    try:
+#        result = subprocess.run(
+#            command,
+#            check=True,
+#            stdout=subprocess.PIPE,
+#            stderr=subprocess.PIPE,
+#            text=True,
+#        )
+#        print("Updated config file in the config")
+#    except subprocess.CalledProcessError as e:
+#        raise RuntimeError(f"Error occurred: {e.stderr}")
+#
 
     print(f"RUNNING DOCKER COMMAND: restart container")
     # Restart the container

@@ -56,8 +56,9 @@ startNeo4j() {
       -d \
       -p 7474:7474 -p 7687:7687 \
       -v $NEO4J_DIR/data:/data -v $NEO4J_DIR/plugins:/plugins -v $NEO4J_DIR/import:/import \
-      --env NEO4J_PLUGINS='["apoc", "graph-data-science", "bloom"]' \
-       --env NEO4J_dbms_memory_pagecache_size=4G \
+      --env NEO4J_PLUGINS='["apoc"]' \
+      --env NEO4J_ACCEPT_LICENSE_AGREEMENT=yes \
+      --env NEO4J_dbms_memory_pagecache_size=4G \
       --name $NEO4J_CONTAINER_NAME \
       $NEO4J_IMAGE_NAME
     sleep 20 # wait for neo4j to initialize
