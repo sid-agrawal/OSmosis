@@ -11,10 +11,7 @@ import generic_model as gm
 import pprint as pp
 import subprocess
 from neo4j_shard_csv import split
-
-# Import a CSV file to Neo4j
-# Usage: pass the command line argument for the public url index to upload
-# eg: python import_csv.py --file local-file --copy
+from utils import docker_cmd
 
 config = configparser.ConfigParser()   
 config.read("config.txt")
@@ -50,9 +47,14 @@ def upload_csv_import(db_name: str, filenames:list[str]):
             basename = os.path.basename(new_f)
             copy_file(new_f, os.path.expanduser(f"~/neo4j/import/{basename}"))
 
-    # docker exec  neo4j-osm sh -c 'cd /import ;neo4j-admin database import full osm2 --overwrite-destination --nodes=pd.csv --nodes=res.csv --nodes=rs.csv --relationships=edge.csv --verbose'
-    #exec_cmd = f"cd /import ;neo4j-admin database import full {db_name} --overwrite-destination --nodes=pd.csv --nodes=res.csv --nodes=rs.csv --relationships=edge.csv --verbose"
-    exec_cmd = f"cd /import ;neo4j-admin database import full {db_name} --overwrite-destination --verbose"
+
+    
+    # Stop the neo4j database (not the server)
+    exec_cmd = 'cypher-shell -u neo4j -p password -d system "stop database neo4j"'
+    docker_cmd("exec", "neo4j-osm", exec_cmd, debug=True)
+
+    # Import Data
+    exec_cmd = f"cd /import ;neo4j-admin database import full --overwrite-destination {db_name} --verbose" 
     for key, value in pd_files.items():
         exec_cmd += f" --nodes={os.path.basename(value)} "
     for key, value in res_files.items():
@@ -62,29 +64,14 @@ def upload_csv_import(db_name: str, filenames:list[str]):
     for key, value in edge_files.items():
         exec_cmd += f" --relationships={os.path.basename(value)} "
 
-    print(f"RUNNING DOCKER COMMAND: {exec_cmd}")
-    command = [
-        'docker',
-        'exec',
-        'neo4j-osm',
-        'sh',
-        '-c',
-        exec_cmd
-    ]
+    docker_cmd("exec", "neo4j-osm", exec_cmd, debug=False)
+    
+    # Start the neo4j database (not the server)
+    exec_cmd = 'cypher-shell -u neo4j -p password -d system "start database neo4j"'
+    docker_cmd("exec", "neo4j-osm", exec_cmd, debug=False)
 
-    try:
-        result = subprocess.run(
-            command,
-            check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-        print("Command output:", result.stdout)
-    except subprocess.CalledProcessError as e:
-        raise RuntimeError(f"Error occurred: {e.stderr}")
 
-    # Delete all neo4j-db except system
+    # # Delete all neo4j-db except system
     # neo4j_data_dir = os.path.expanduser("~/neo4j/data/databases")
     # for item in os.listdir(neo4j_data_dir):
     #     item_path = os.path.join(neo4j_data_dir, item)
@@ -93,55 +80,13 @@ def upload_csv_import(db_name: str, filenames:list[str]):
     #             shutil.rmtree(item_path)
     #             print(f"Deleted directory: {item_path}")
 
-    # Change the default db name
-    #  docker exec neo4j-osm sh -c 'echo "dbms.default_database=osm3" > /var/lib/neo4j/conf/neo4j.conf'
+    # # # Change the default db name
+    # print(f"Changing the Default DB Name to {db_name}")
     # exec_cmd = f"echo dbms.default_database={db_name} > /var/lib/neo4j/conf/neo4j.conf"
-    # command = ['docker', 'exec', 'neo4j-osm', 'sh', '-c', exec_cmd]
+    # docker_cmd("exec", "neo4j-osm", exec_cmd)
 
-    # print(f"RUNNING DOCKER COMMAND: {exec_cmd}")
-    # try:
-    #     result = subprocess.run(
-    #         command,
-    #         check=True,
-    #         stdout=subprocess.PIPE,
-    #         stderr=subprocess.PIPE,
-    #         text=True,
-    #     )
-    #     print("Updated config file in the config")
-    # except subprocess.CalledProcessError as e:
-    #     raise RuntimeError(f"Error occurred: {e.stderr}")
+    docker_cmd("restart", "neo4j-osm")
 
-#    exec_cmd = f"echo dbms.bloom.license_file=/home/siagraw/bloom-key > /var/lib/neo4j/conf/neo4j.conf"
-#    command = ['docker', 'exec', 'neo4j-osm', 'sh', '-c', exec_cmd]
-#
-#    print(f"RUNNING DOCKER COMMAND: {exec_cmd}")
-#    try:
-#        result = subprocess.run(
-#            command,
-#            check=True,
-#            stdout=subprocess.PIPE,
-#            stderr=subprocess.PIPE,
-#            text=True,
-#        )
-#        print("Updated config file in the config")
-#    except subprocess.CalledProcessError as e:
-#        raise RuntimeError(f"Error occurred: {e.stderr}")
-#
-
-    print(f"RUNNING DOCKER COMMAND: restart container")
-    # Restart the container
-    command = [ "docker", "restart", "neo4j-osm"]
-    try:
-        result = subprocess.run(
-            command,
-            check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-        print("Restarted the container")
-    except subprocess.CalledProcessError as e:
-        raise RuntimeError(f"Error occurred: {e.stderr}")
 
 def wipe_all_data(db_name: str):
     driver = GraphDatabase.driver(URI, auth=AUTH)
@@ -234,7 +179,7 @@ def upload_csv_query(db_name: str, filename:str, color:bool):
 
         print("Complete")
 
-def copy_file(src: str, dst: str):
+def copy_file(src: str, dst: str, debug:bool=False):
     """
     Copy a file from src to dst.
 
@@ -243,7 +188,8 @@ def copy_file(src: str, dst: str):
     """
     try:
         shutil.copy(src, dst)
-        print(f"File copied from {src} to {dst}")
+        if debug:
+            print(f"File copied from {src} to {dst}")
     except FileNotFoundError:
         raise FileNotFoundError(f"Source file {src} not found.")
     except PermissionError:
@@ -257,12 +203,6 @@ if __name__ == "__main__":
     parser.add_argument(
         "-f", "--files", required=True, help="space separates filenames with the data",
         nargs = '+'
-    )
-    parser.add_argument(
-        "-d",
-        "--db",
-        help="DB to upload the data too",
-        default="neo4j",
     )
     parser.add_argument(
         "-w",
@@ -286,14 +226,16 @@ if __name__ == "__main__":
         default=False,
     )
     args = parser.parse_args()
+    db_name = "neo4j"
+    
+    # Conditrionally Wipe
+    if args.wipe:
+        wipe_all_data(db_name)
 
     if args.query:
-        # Conditrionally Wipe
-        if args.wipe:
-            wipe_all_data(args.db)
 
         # Always append
         for f in args.files:
-            upload_csv_query(args.db, f, args.color)
+            upload_csv_query(db_name, f, args.color)
     else:
-        upload_csv_import(args.db, args.files)
+        upload_csv_import(db_name, args.files)

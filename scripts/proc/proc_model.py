@@ -75,7 +75,7 @@ run_configs = [
     [(program_names.basic, ProcessStartType.NORMAL)],
 ]
 
-to_run = run_configs[5]
+to_run = run_configs[2]
 
 
 def log(msg):
@@ -937,24 +937,22 @@ if __name__ == "__main__":
     # Parse the arguments
     args = parser.parse_args()
 
-    # Use the pid argument in your script
-    pid = args.pid
+    # PIDs when this script starts them
+    pids = []
 
     data_main = ProcFsData()
 
     if args.pid is not None:
         print(f"PID provided: {args.pid}")
-        pids = [args.pid]
     else:
         print("Starting processes from this script")
         pids = [run_process(name, start_type) for (name, start_type) in to_run]
 
-    assert len(pids) == 1
 
     try:
         if args.pid:
-            p = psutil.Process(pid)
-            extract_process_data(data_main, pid, p.name(), False)
+            p = psutil.Process(args.pid)
+            extract_process_data(data_main, args.pid, p.name(), False)
         else:
             for (name, _), pid in zip(to_run, pids):
                 extract_process_data(data_main, pid, name, False)
@@ -964,10 +962,8 @@ if __name__ == "__main__":
         traceback.print_exc()
         exit(1)
 
-    # If the pid not user provided.
-    if args.pid is None:
-        for pid in pids:
-            terminate_process(pid)
+    for pid in pids:
+        terminate_process(pid)
 
     # print("before pickle")
     # data_main.to_pickle_file(args.pickle)

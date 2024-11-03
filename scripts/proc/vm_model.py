@@ -324,7 +324,7 @@ def get_cellulos_vm_state(get_host: bool, guest_file: str, g2h_file: str, host_f
                 if gpa in gPA_to_MO:
                     raise KeyError(f"Key {gpa} already exists in gPA_to_MO")
                 gPA_to_MO[gpa] = row_id
-    for x, y in gPA_to_MO.items(): print(f"gPA --> MO == 0x{x:<16x} --> {y}")
+    # for x, y in gPA_to_MO.items(): print(f"gPA --> MO == 0x{x:<16x} --> {y}")
 
     # Make the rev maps for the host file
     hPA_to_MO = {}
@@ -417,7 +417,7 @@ def main():
     parser.add_argument(
         "--vmm",
         type=str,
-        choices=["qemu", "cellulos"],
+        choices=["qemu-x86", "cellulos"],
         required=True,
         help="Qemu or CellulOS(on Qemu) as the VMM "
     )
@@ -447,7 +447,7 @@ def main():
     guest_file = f"{new_dir}/guest.csv"
     g2h_file = f"{new_dir}/g2h_file.csv"
 
-    if args.vmm == "qemu":
+    if args.vmm == "qemu-x86":
         assert is_root()
         is_qemu_x86_buildroot_updated()
         get_qemu_vm_state(

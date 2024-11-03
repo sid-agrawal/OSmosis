@@ -3,6 +3,7 @@ import copy
 import traceback
 import os
 import filecmp
+import subprocess
 
 ### UTILITY CLASSES ###
 
@@ -316,3 +317,36 @@ def compare_directories(dir1, dir2, file_extension, exceptions) -> bool:
 
 def is_root():
     return os.geteuid() == 0
+
+def docker_cmd(cmd: str, container: str, exec_cmd: str="", debug: bool=False):
+    match cmd:
+        case "exec":
+            assert exec_cmd != ""
+            command = [
+                'docker',
+                'exec',
+                container,
+                'sh',
+                '-c',
+                exec_cmd
+            ]
+
+        case "restart":
+            command = [ "docker", "restart", container]
+        case  _: 
+            raise ValueError("Invalid Qemu Monitor Command")
+
+    print (f"RUNNING: {command}")
+    try:
+        result = subprocess.run(
+            command,
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        if debug:
+            print("Command output:", result.stdout)
+        print("SUCCESS")
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"Error occurred: {e.stderr}")
