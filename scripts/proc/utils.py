@@ -350,3 +350,13 @@ def docker_cmd(cmd: str, container: str, exec_cmd: str="", debug: bool=False):
         print("SUCCESS")
     except subprocess.CalledProcessError as e:
         raise RuntimeError(f"Error occurred: {e.stderr}")
+
+def run(cmds: list[str], debug:bool = False):
+    print (f"RUNNING: {cmds}")
+    try:
+        result = subprocess.run(cmds)
+        if debug:
+            print("Command output:", result.stdout)
+        print("SUCCESS")
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(f"Error occurred: {e.stderr}")

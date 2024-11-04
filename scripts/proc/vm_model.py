@@ -10,7 +10,7 @@ import traceback
 from enum import Enum
 from proc_model import extract_process_data, ProcFsData, MappingType
 from proc_utils import getPIDByName
-from utils import sizeof_fmt, compare_directories, is_root
+from utils import sizeof_fmt, compare_directories, is_root, run
 import generic_model as gm
 import pprint as pp
 from expect_utils import get_qemu_phandle, get_cellulos_phandle
@@ -86,7 +86,7 @@ def get_qemu_vm_state(get_host: bool, guest_file: str, g2h_file: str, host_file:
             if "," in ln:
                 print(ln, file=out_file)
 
-    qemu_phandle.sendline("python proc_model.py --csv ./hello.csv --id-offset 100000")
+    qemu_phandle.sendline("python proc_model.py --os linux --csv ./hello.csv --id-offset 100000")
     qemu_phandle.expect("#")
     qemu_phandle.sendline("cat ./hello.csv")
     qemu_phandle.expect("#")
@@ -202,8 +202,6 @@ def get_qemu_vm_state(get_host: bool, guest_file: str, g2h_file: str, host_file:
     # qemu_phandle.interact()
 
 
-
-
 def get_host_state(vm_pid: int, host_file: str):
 
     print (f"Get /proc state for PID: {vm_pid}")
@@ -245,7 +243,6 @@ def is_cellulos_aarch64_buildroot_osm_dir_updated() -> bool:
     
     return True
 
-        
 
 def is_qemu_x86_buildroot_updated() -> bool:
     """
@@ -259,7 +256,6 @@ def is_qemu_x86_buildroot_updated() -> bool:
                                exceptions=["vm_model.py", "import_csv.py"])
 
 
-
 def get_cellulos_vm_state(get_host: bool, guest_file: str, g2h_file: str, host_file: str):
     """
         Start Cellulos-VMM based linux guest and get the :
@@ -267,18 +263,20 @@ def get_cellulos_vm_state(get_host: bool, guest_file: str, g2h_file: str, host_f
         - model state of the hello process inside the guest
         - mappings between gpa --> hpa, and gpa --> hva
     """
-    assert is_cellulos_aarch64_buildroot_osm_dir_updated()
 
     original_dir = os.getcwd()
     try: 
         os.chdir("/home/" + os.getlogin() + "/OSmosis/qemu-build/")
-        # (XXX) Check that the right test has been compiled
+        # Build the OSM VM Test
+        run(["cmake", ".", "-DLibSel4TestPrinterRegex=GPIVM004"])
+        run(["ninja"])
+
         # Run the VMM004 test
         sim_cmd = ("./simulate")
         sim_phandle, host_csv = get_cellulos_phandle(sim_cmd)
 
         # Run the process, inside the guest.
-        sim_phandle.sendline("python proc_model.py --csv ./hello.csv --id-offset 100000")
+        sim_phandle.sendline("python proc_model.py --os linux --csv ./hello.csv --id-offset 100000")
         sim_phandle.expect("#")
         sim_phandle.sendline("cat ./hello.csv")
         sim_phandle.expect("#")
@@ -287,12 +285,12 @@ def get_cellulos_vm_state(get_host: bool, guest_file: str, g2h_file: str, host_f
     finally:
         os.chdir(original_dir)
 
-    # Dump the model state of the VM-PD 
+    # Dump the model state of the VM-PD
     with open(host_file, "w") as out_file:
         for ln in host_csv:
             print(ln, file=out_file)
 
-    # Dump the model state of the guest (i.e. just hello process) 
+    # Dump the model state of the guest (i.e. just hello process)
     with open(guest_file, "w") as out_file:
         for ln in hello_csv.splitlines():
             if "," in ln:
@@ -347,7 +345,7 @@ def get_cellulos_vm_state(get_host: bool, guest_file: str, g2h_file: str, host_f
                 if (row_id.startswith("MO_")):
                     if extra_dict["num_pages"] == "0":
                         continue
-                    
+
                     hpa_hex_str = extra_dict["pa"]
                     hpa = int(hpa_hex_str, 16)
                     if hpa in hPA_to_MO:
@@ -358,17 +356,16 @@ def get_cellulos_vm_state(get_host: bool, guest_file: str, g2h_file: str, host_f
                 elif row_id.startswith("VMR_9"):
                     if extra_dict["num_pages"] == "0":
                         continue
-                    
+
                     hva_hex_str = extra_dict["va"]
                     hva = int(hva_hex_str, 16)
                     if hva in hVA_to_VMR:
                         raise KeyError(f"Key {hva:x} already exists in hVA_to_VMR")
                     hVA_to_VMR[hva] = row_id
-    
-    for x, y in hPA_to_MO.items() : print(f"hPA -->  MO == 0x{x:<16x} --> {y}")
-    for x, y in hVA_to_VMR.items(): print(f"hVA --> VMR == 0x{x:<16x} --> {y}")
 
-    
+    # for x, y in hPA_to_MO.items() : print(f"hPA -->  MO == 0x{x:<16x} --> {y}")
+    # for x, y in hVA_to_VMR.items(): print(f"hVA --> VMR == 0x{x:<16x} --> {y}")
+
     def get_cellulos_gpa_to_hpa(gpa: int) -> int :
         return 0x8040000
 
@@ -387,7 +384,7 @@ def get_cellulos_vm_state(get_host: bool, guest_file: str, g2h_file: str, host_f
         # print(f"\tHVA 0x{hva:<16x} --> {host_vmr_id}")
         mapping_graph.add_map_edge_raw(g_mo_id, host_mo_id)
         mapping_graph.add_map_edge_raw(g_mo_id, host_vmr_id)
-    
+
     mapping_graph.to_csv(g2h_file, only_edge=True)
 
 def main():
@@ -449,11 +446,12 @@ def main():
 
     if args.vmm == "qemu-x86":
         assert is_root()
-        is_qemu_x86_buildroot_updated()
+        assert is_qemu_x86_buildroot_updated()
         get_qemu_vm_state(
             get_host=True, guest_file=guest_file, g2h_file=g2h_file, host_file=host_file
         )
     elif  args.vmm == "cellulos":
+        assert is_cellulos_aarch64_buildroot_osm_dir_updated()
         get_cellulos_vm_state(
             get_host=True, guest_file=guest_file, g2h_file=g2h_file, host_file=host_file
         )
