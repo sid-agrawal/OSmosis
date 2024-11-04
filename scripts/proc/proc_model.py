@@ -7,7 +7,7 @@ import time
 import math
 from dataclasses import dataclass, field
 import traceback
-from utils import EasyDict, IntervalDict, sizeof_fmt, insert_with_split, is_root
+from utils import EasyDict, IntervalDict, sizeof_fmt, insert_with_split, is_root, run
 from read_pagemap import get_va_pa_mappings, PageMapObj
 import generic_model as gm
 import sys
@@ -923,7 +923,10 @@ def do_cellulos_model(args):
     original_dir = os.getcwd()
     try: 
         os.chdir("/home/" + os.getlogin() + "/OSmosis/qemu-build/")
-        # (XXX) Check that the right test has been compiled
+        # Build the right test has been compiled
+        run(["cmake", ".", f"-DLibSel4TestPrinterRegex={args.testname}", "-DGPIExtractModel=ON"])
+        run(["ninja"])
+
         
         print(f"Running CMD: {simulate_cmd} in {os.getcwd()}")
         phandle = pexpect.spawn(simulate_cmd)
@@ -1011,6 +1014,11 @@ if __name__ == "__main__":
         required=True,
         help="Linux or CellulOS(on Qemu) as the OS"
     )
+    parser.add_argument(
+        "--testname",
+        type=str,
+        help="CellulOS test to run"
+    )
 
     # Parse the arguments
     args = parser.parse_args()
@@ -1019,6 +1027,7 @@ if __name__ == "__main__":
         case "linux":
             do_proc_model(args)
         case "cellulos":
+            
             do_cellulos_model(args)
         case _:
             raise ValueError("Invalid platform")

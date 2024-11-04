@@ -1,5 +1,6 @@
 .sel4_cache
 qemu-build
+qemu-build-nosudo
 build
 build*
 odroid-build

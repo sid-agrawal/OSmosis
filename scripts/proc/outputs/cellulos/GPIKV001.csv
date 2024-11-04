@@ -14,9 +14,7 @@ RESOURCE,VMR_7_9,VMR,,,,"{""va"": ""0x2f494000"", ""vmr_type"": ""GENERIC"", ""n
 RESOURCE,MO_4_f,MO,,,,"{""pa"": ""0x75348000"", ""num_pages"": ""1"", ""page_size"": ""4096""}"
 RESOURCE,VMR_7_c,VMR,,,,"{""va"": ""0x2f49e000"", ""vmr_type"": ""GENERIC"", ""num_pages"": ""1"", ""page_size"": ""4096""}"
 RESOURCE,MO_4_17,MO,,,,"{""pa"": ""0x7590f000"", ""num_pages"": ""1"", ""page_size"": ""4096""}"
-RESOURCE,VMR_7_f,VMR,,,,"{""va"": ""0x2f4a8000"", ""vmr_type"": ""GENERIC"", ""num_pages"": ""1"", ""page_size"": ""4096""}"
-RESOURCE,MO_4_1e,MO,,,,"{""pa"": ""0x75ba5000"", ""num_pages"": ""1"", ""page_size"": ""4096""}"
-PD,PD_1,GPIKV002,,,,
+PD,PD_1,GPIKV001,,,,
 RESOURCE_SPACE,ADS_SPACE_8,ADS,,,,
 RESOURCE,VMR_8_1,VMR,,,,"{""va"": ""0x400000"", ""vmr_type"": ""ELF_CODE"", ""num_pages"": ""562"", ""page_size"": ""4096""}"
 RESOURCE,MO_4_4,MO,,,,"{""pa"": ""0x6f739000"", ""num_pages"": ""562"", ""page_size"": ""4096""}"
@@ -1093,44 +1091,22 @@ RESOURCE,VMR_b_7,VMR,,,,"{""va"": ""0x10013000"", ""vmr_type"": ""SHARED_FRAMES"
 RESOURCE_SPACE,FILE_SPACE_c,FILE,,,,
 RESOURCE,FILE_c_2,FILE,,,,
 RESOURCE,FILE_c_3,FILE,,,,
-PD,PD_4,kvstore_server,,,,
+PD,PD_4,hello_kvstore,,,,
 RESOURCE,VCPU_5_4,VCPU,,,,
 RESOURCE_SPACE,ADS_SPACE_d,ADS,,,,
 RESOURCE,VMR_d_1,VMR,,,,"{""va"": ""0x10000000"", ""vmr_type"": ""OSM_DATA"", ""num_pages"": ""1"", ""page_size"": ""4096""}"
-RESOURCE,VMR_d_2,VMR,,,,"{""va"": ""0x400000"", ""vmr_type"": ""ELF_CODE"", ""num_pages"": ""474"", ""page_size"": ""4096""}"
-RESOURCE,MO_4_18,MO,,,,"{""pa"": ""0x7591b000"", ""num_pages"": ""474"", ""page_size"": ""4096""}"
-RESOURCE,VMR_d_3,VMR,,,,"{""va"": ""0x5da000"", ""vmr_type"": ""ELF_DATA"", ""num_pages"": ""12"", ""page_size"": ""4096""}"
-RESOURCE,MO_4_19,MO,,,,"{""pa"": ""0x75b15000"", ""num_pages"": ""12"", ""page_size"": ""4096""}"
+RESOURCE,VMR_d_2,VMR,,,,"{""va"": ""0x400000"", ""vmr_type"": ""ELF_CODE"", ""num_pages"": ""479"", ""page_size"": ""4096""}"
+RESOURCE,MO_4_18,MO,,,,"{""pa"": ""0x7591b000"", ""num_pages"": ""479"", ""page_size"": ""4096""}"
+RESOURCE,VMR_d_3,VMR,,,,"{""va"": ""0x5df000"", ""vmr_type"": ""ELF_DATA"", ""num_pages"": ""13"", ""page_size"": ""4096""}"
+RESOURCE,MO_4_19,MO,,,,"{""pa"": ""0x75b1b000"", ""num_pages"": ""13"", ""page_size"": ""4096""}"
 RESOURCE,VMR_d_4,VMR,,,,"{""va"": ""0x5000000000"", ""vmr_type"": ""HEAP"", ""num_pages"": ""100"", ""page_size"": ""4096""}"
-RESOURCE,MO_4_1a,MO,,,,"{""pa"": ""0x75b22000"", ""num_pages"": ""100"", ""page_size"": ""4096""}"
+RESOURCE,MO_4_1a,MO,,,,"{""pa"": ""0x75b28000"", ""num_pages"": ""100"", ""page_size"": ""4096""}"
 RESOURCE,VMR_d_5,VMR,,,,"{""va"": ""0x10001000"", ""vmr_type"": ""STACK"", ""num_pages"": ""17"", ""page_size"": ""4096""}"
-RESOURCE,MO_4_1b,MO,,,,"{""pa"": ""0x75b92000"", ""num_pages"": ""16"", ""page_size"": ""4096""}"
+RESOURCE,MO_4_1b,MO,,,,"{""pa"": ""0x75b98000"", ""num_pages"": ""16"", ""page_size"": ""4096""}"
 RESOURCE,VMR_d_6,VMR,,,,"{""va"": ""0x10012000"", ""vmr_type"": ""IPC_BUF"", ""num_pages"": ""1"", ""page_size"": ""4096""}"
-RESOURCE,MO_4_1c,MO,,,,"{""pa"": ""0x75ba3000"", ""num_pages"": ""1"", ""page_size"": ""4096""}"
+RESOURCE,MO_4_1c,MO,,,,"{""pa"": ""0x75baa000"", ""num_pages"": ""1"", ""page_size"": ""4096""}"
 RESOURCE,VMR_d_7,VMR,,,,"{""va"": ""0x10013000"", ""vmr_type"": ""SHARED_FRAMES"", ""num_pages"": ""1"", ""page_size"": ""4096""}"
-RESOURCE,MO_4_1d,MO,,,,"{""pa"": ""0x75ba4000"", ""num_pages"": ""1"", ""page_size"": ""4096""}"
-RESOURCE_SPACE,KVSTORE_SPACE_e,KVSTORE,,,,
-RESOURCE,KVSTORE_e_1,KVSTORE,,,,
-RESOURCE,KVSTORE_e_2,KVSTORE,,,,
-RESOURCE,KVSTORE_e_3,KVSTORE,,,,
-RESOURCE,KVSTORE_e_4,KVSTORE,,,,
-RESOURCE,KVSTORE_e_5,KVSTORE,,,,
-PD,PD_5,hello_kvstore,,,,
-RESOURCE,VCPU_5_5,VCPU,,,,
-RESOURCE_SPACE,ADS_SPACE_f,ADS,,,,
-RESOURCE,VMR_f_1,VMR,,,,"{""va"": ""0x10000000"", ""vmr_type"": ""OSM_DATA"", ""num_pages"": ""1"", ""page_size"": ""4096""}"
-RESOURCE,VMR_f_2,VMR,,,,"{""va"": ""0x400000"", ""vmr_type"": ""ELF_CODE"", ""num_pages"": ""479"", ""page_size"": ""4096""}"
-RESOURCE,MO_4_1f,MO,,,,"{""pa"": ""0x75bb3000"", ""num_pages"": ""479"", ""page_size"": ""4096""}"
-RESOURCE,VMR_f_3,VMR,,,,"{""va"": ""0x5df000"", ""vmr_type"": ""ELF_DATA"", ""num_pages"": ""13"", ""page_size"": ""4096""}"
-RESOURCE,MO_4_20,MO,,,,"{""pa"": ""0x765b3000"", ""num_pages"": ""13"", ""page_size"": ""4096""}"
-RESOURCE,VMR_f_4,VMR,,,,"{""va"": ""0x5000000000"", ""vmr_type"": ""HEAP"", ""num_pages"": ""100"", ""page_size"": ""4096""}"
-RESOURCE,MO_4_21,MO,,,,"{""pa"": ""0x765c0000"", ""num_pages"": ""100"", ""page_size"": ""4096""}"
-RESOURCE,VMR_f_5,VMR,,,,"{""va"": ""0x10001000"", ""vmr_type"": ""STACK"", ""num_pages"": ""17"", ""page_size"": ""4096""}"
-RESOURCE,MO_4_22,MO,,,,"{""pa"": ""0x76631000"", ""num_pages"": ""16"", ""page_size"": ""4096""}"
-RESOURCE,VMR_f_6,VMR,,,,"{""va"": ""0x10012000"", ""vmr_type"": ""IPC_BUF"", ""num_pages"": ""1"", ""page_size"": ""4096""}"
-RESOURCE,MO_4_23,MO,,,,"{""pa"": ""0x76642000"", ""num_pages"": ""1"", ""page_size"": ""4096""}"
-RESOURCE,VMR_f_7,VMR,,,,"{""va"": ""0x10013000"", ""vmr_type"": ""SHARED_FRAMES"", ""num_pages"": ""1"", ""page_size"": ""4096""}"
-RESOURCE,MO_4_24,MO,,,,"{""pa"": ""0x76643000"", ""num_pages"": ""1"", ""page_size"": ""4096""}"
+RESOURCE,MO_4_1d,MO,,,,"{""pa"": ""0x75bab000"", ""num_pages"": ""1"", ""page_size"": ""4096""}"
 ,,NONE,MAP,ADS_SPACE_7,MO_SPACE_4,
 ,,NONE,HOLD,PD_0,ADS_SPACE_7,
 ,,NONE,SUBSET,VMR_7_1,ADS_SPACE_7,
@@ -1151,9 +1127,6 @@ RESOURCE,MO_4_24,MO,,,,"{""pa"": ""0x76643000"", ""num_pages"": ""1"", ""page_si
 ,,NONE,SUBSET,VMR_7_c,ADS_SPACE_7,
 ,,NONE,HOLD,PD_0,VMR_7_c,
 ,,NONE,MAP,VMR_7_c,MO_4_17,
-,,NONE,SUBSET,VMR_7_f,ADS_SPACE_7,
-,,NONE,HOLD,PD_0,VMR_7_f,
-,,NONE,MAP,VMR_7_f,MO_4_1e,
 ,,NONE,HOLD,PD_0,MO_4_1,
 ,,NONE,SUBSET,MO_4_1,MO_SPACE_4,
 ,,NONE,HOLD,PD_0,MO_4_2,
@@ -3857,7 +3830,6 @@ RESOURCE,MO_4_24,MO,,,,"{""pa"": ""0x76643000"", ""num_pages"": ""1"", ""page_si
 ,,NONE,SUBSET,MO_4_17,MO_SPACE_4,
 ,,VMR,REQUEST,PD_4,PD_0,
 ,,MO,REQUEST,PD_4,PD_0,
-,,EP,REQUEST,PD_4,PD_0,
 ,,RESSPC,REQUEST,PD_4,PD_0,
 ,,FILE,REQUEST,PD_4,PD_3,
 ,,NONE,HOLD,PD_4,VCPU_5_4,
@@ -3887,21 +3859,9 @@ RESOURCE,MO_4_24,MO,,,,"{""pa"": ""0x76643000"", ""num_pages"": ""1"", ""page_si
 ,,NONE,HOLD,PD_4,VMR_d_7,
 ,,NONE,MAP,VMR_d_7,MO_4_1d,
 ,,NONE,HOLD,PD_4,ADS_SPACE_d,
-,,NONE,MAP,KVSTORE_SPACE_e,FILE_SPACE_c,
-,,NONE,HOLD,PD_4,KVSTORE_SPACE_e,
 ,,NONE,HOLD,PD_4,MO_4_1d,
 ,,NONE,SUBSET,MO_4_1d,MO_SPACE_4,
 ,,NONE,HOLD,PD_4,FILE_c_2,
-,,NONE,SUBSET,KVSTORE_e_1,KVSTORE_SPACE_e,
-,,NONE,HOLD,PD_4,KVSTORE_e_1,
-,,NONE,SUBSET,KVSTORE_e_2,KVSTORE_SPACE_e,
-,,NONE,HOLD,PD_4,KVSTORE_e_2,
-,,NONE,SUBSET,KVSTORE_e_3,KVSTORE_SPACE_e,
-,,NONE,HOLD,PD_4,KVSTORE_e_3,
-,,NONE,SUBSET,KVSTORE_e_4,KVSTORE_SPACE_e,
-,,NONE,HOLD,PD_4,KVSTORE_e_4,
-,,NONE,SUBSET,KVSTORE_e_5,KVSTORE_SPACE_e,
-,,NONE,HOLD,PD_4,KVSTORE_e_5,
 ,,NONE,HOLD,PD_1,ADS_SPACE_d,
 ,,NONE,HOLD,PD_1,VCPU_5_4,
 ,,NONE,HOLD,PD_1,MO_4_1a,
@@ -3910,55 +3870,6 @@ RESOURCE,MO_4_24,MO,,,,"{""pa"": ""0x76643000"", ""num_pages"": ""1"", ""page_si
 ,,NONE,SUBSET,MO_4_1b,MO_SPACE_4,
 ,,NONE,HOLD,PD_1,MO_4_1c,
 ,,NONE,SUBSET,MO_4_1c,MO_SPACE_4,
-,,NONE,HOLD,PD_1,MO_4_1e,
-,,NONE,SUBSET,MO_4_1e,MO_SPACE_4,
-,,VMR,REQUEST,PD_5,PD_0,
-,,MO,REQUEST,PD_5,PD_0,
-,,RESSPC,REQUEST,PD_5,PD_0,
-,,FILE,REQUEST,PD_5,PD_3,
-,,KVSTORE,REQUEST,PD_5,PD_4,
-,,NONE,HOLD,PD_5,VCPU_5_5,
-,,NONE,SUBSET,VCPU_5_5,VCPU_SPACE_5,
-,,NONE,MAP,VCPU_5_5,PCPU_1_0,
-,,NONE,MAP,ADS_SPACE_f,MO_SPACE_4,
-,,NONE,HOLD,PD_0,ADS_SPACE_f,
-,,NONE,SUBSET,VMR_f_1,ADS_SPACE_f,
-,,NONE,HOLD,PD_5,VMR_f_1,
-,,NONE,MAP,VMR_f_1,MO_4_1e,
-,,NONE,SUBSET,VMR_f_2,ADS_SPACE_f,
-,,NONE,HOLD,PD_5,VMR_f_2,
-,,NONE,MAP,VMR_f_2,MO_4_1f,
-,,NONE,SUBSET,VMR_f_3,ADS_SPACE_f,
-,,NONE,HOLD,PD_5,VMR_f_3,
-,,NONE,MAP,VMR_f_3,MO_4_20,
-,,NONE,SUBSET,VMR_f_4,ADS_SPACE_f,
-,,NONE,HOLD,PD_5,VMR_f_4,
-,,NONE,MAP,VMR_f_4,MO_4_21,
-,,NONE,SUBSET,VMR_f_5,ADS_SPACE_f,
-,,NONE,HOLD,PD_5,VMR_f_5,
-,,NONE,MAP,VMR_f_5,MO_4_22,
-,,NONE,SUBSET,VMR_f_6,ADS_SPACE_f,
-,,NONE,HOLD,PD_5,VMR_f_6,
-,,NONE,MAP,VMR_f_6,MO_4_23,
-,,NONE,SUBSET,VMR_f_7,ADS_SPACE_f,
-,,NONE,HOLD,PD_5,VMR_f_7,
-,,NONE,MAP,VMR_f_7,MO_4_24,
-,,NONE,HOLD,PD_5,ADS_SPACE_f,
-,,NONE,HOLD,PD_5,MO_4_24,
-,,NONE,SUBSET,MO_4_24,MO_SPACE_4,
-,,NONE,HOLD,PD_5,KVSTORE_e_1,
-,,NONE,HOLD,PD_5,KVSTORE_e_2,
-,,NONE,HOLD,PD_5,KVSTORE_e_3,
-,,NONE,HOLD,PD_5,KVSTORE_e_4,
-,,NONE,HOLD,PD_5,KVSTORE_e_5,
-,,NONE,HOLD,PD_1,ADS_SPACE_f,
-,,NONE,HOLD,PD_1,VCPU_5_5,
-,,NONE,HOLD,PD_1,MO_4_21,
-,,NONE,SUBSET,MO_4_21,MO_SPACE_4,
-,,NONE,HOLD,PD_1,MO_4_22,
-,,NONE,SUBSET,MO_4_22,MO_SPACE_4,
-,,NONE,HOLD,PD_1,MO_4_23,
-,,NONE,SUBSET,MO_4_23,MO_SPACE_4,
 ,,NONE,HOLD,PD_0,MO_4_4,
 ,,NONE,SUBSET,MO_4_4,MO_SPACE_4,
 ,,NONE,HOLD,PD_0,MO_4_5,
@@ -3995,15 +3906,6 @@ RESOURCE,MO_4_24,MO,,,,"{""pa"": ""0x76643000"", ""num_pages"": ""1"", ""page_si
 ,,NONE,HOLD,PD_0,MO_4_1b,
 ,,NONE,HOLD,PD_0,MO_4_1c,
 ,,NONE,HOLD,PD_0,MO_4_1d,
-,,NONE,HOLD,PD_0,MO_4_1e,
-,,NONE,HOLD,PD_0,MO_4_1f,
-,,NONE,SUBSET,MO_4_1f,MO_SPACE_4,
-,,NONE,HOLD,PD_0,MO_4_20,
-,,NONE,SUBSET,MO_4_20,MO_SPACE_4,
-,,NONE,HOLD,PD_0,MO_4_21,
-,,NONE,HOLD,PD_0,MO_4_22,
-,,NONE,HOLD,PD_0,MO_4_23,
-,,NONE,HOLD,PD_0,MO_4_24,
 ,,NONE,MAP,FILE_c_2,BLOCK_a_a,
 ,,NONE,MAP,FILE_c_2,BLOCK_a_b,
 ,,NONE,MAP,FILE_c_2,BLOCK_a_c,
@@ -4019,5 +3921,3 @@ RESOURCE,MO_4_24,MO,,,,"{""pa"": ""0x76643000"", ""num_pages"": ""1"", ""page_si
 ,,NONE,MAP,FILE_c_3,BLOCK_a_d,
 ,,NONE,MAP,FILE_c_3,BLOCK_a_16,
 ,,NONE,MAP,FILE_c_3,BLOCK_a_18,
-,,NONE,HOLD,PD_5,FILE_c_2,
-,,NONE,HOLD,PD_5,FILE_c_3,

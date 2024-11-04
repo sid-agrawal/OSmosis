@@ -268,7 +268,7 @@ def get_cellulos_vm_state(get_host: bool, guest_file: str, g2h_file: str, host_f
     try: 
         os.chdir("/home/" + os.getlogin() + "/OSmosis/qemu-build/")
         # Build the OSM VM Test
-        run(["cmake", ".", "-DLibSel4TestPrinterRegex=GPIVM004"])
+        run(["cmake", ".", "-DLibSel4TestPrinterRegex=GPIVM004", "-DGPIExtractModel=ON"])
         run(["ninja"])
 
         # Run the VMM004 test
