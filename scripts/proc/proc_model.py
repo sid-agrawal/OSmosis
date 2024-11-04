@@ -14,6 +14,8 @@ import sys
 import pprint as pp
 import argparse
 import pickle
+import datetime
+import pexpect
 
 # PFS Setup
 sys.path.append("pfs/lib")
@@ -914,29 +916,36 @@ def terminate_process(pid: int):
     os.kill(pid, signal.SIGTERM)  # or signal.SIGKILL
 
 
-if __name__ == "__main__":
+def do_cellulos_model(args):
 
-    assert is_root()
-    # Define the argument parser
-    parser = argparse.ArgumentParser(
-        description="OSmosis Model state from multiple subsystems"
-    )
-    parser.add_argument(
-        "--pid", type=int, help="PID of the process to extract data for"
-    )
-    parser.add_argument(
-        "--csv", type=str, required=True, help="CSV to output the model state in"
-    )
-    parser.add_argument(
-        "--pickle", type=str, help="file to put the ascii pickle data in"
-    )
-    parser.add_argument(
-        "--id-offset", type=int, help="ID node IDs; typically used for running this in the guest", default=0
-    )
+    simulate_cmd = "./simulate"
+    
+    original_dir = os.getcwd()
+    try: 
+        os.chdir("/home/" + os.getlogin() + "/OSmosis/qemu-build/")
+        # (XXX) Check that the right test has been compiled
+        
+        print(f"Running CMD: {simulate_cmd} in {os.getcwd()}")
+        phandle = pexpect.spawn(simulate_cmd)
+        phandle.expect("BEGIN MODEL STATE:")
+        sim_output = phandle.before.decode()
 
-    # Parse the arguments
-    args = parser.parse_args()
+        test_output = []
+        for ln in sim_output.splitlines():
+            if ln.startswith("NODE_TYPE") or \
+                ln.startswith("PD") or \
+                ln.startswith("RESOURCE") or \
+                    ln.startswith(",,"): # Edges
+                    test_output.append(ln)
+    finally:
+        os.chdir(original_dir)
+    
+    # Dump the model state to the file
+    with open(args.csv, "w") as out_file:
+        for ln in test_output:
+            print(ln, file=out_file)
 
+def do_proc_model(args):
     # PIDs when this script starts them
     pids = []
 
@@ -973,3 +982,43 @@ if __name__ == "__main__":
        MappingType.CONTIGUOUS, MappingType.CO_CONTIGUOUS, args.id_offset
        # MappingType.PER_PAGE, MappingType.PER_PAGE, args.id_offset
     ).to_csv(args.csv)
+
+    print(f"Output CSV is at {args.csv}")
+
+if __name__ == "__main__":
+
+    assert is_root()
+    # Define the argument parser
+    parser = argparse.ArgumentParser(
+        description="OSmosis Model state from multiple subsystems"
+    )
+    parser.add_argument(
+        "--pid", type=int, help="PID of the process to extract data for"
+    )
+    parser.add_argument(
+        "--csv", type=str, required=True, help="CSV to output the model state in"
+    )
+    parser.add_argument(
+        "--pickle", type=str, help="file to put the ascii pickle data in"
+    )
+    parser.add_argument(
+        "--id-offset", type=int, help="ID node IDs; typically used for running this in the guest", default=0
+    )
+    parser.add_argument(
+        "--os",
+        type=str,
+        choices=["linux", "cellulos"],
+        required=True,
+        help="Linux or CellulOS(on Qemu) as the OS"
+    )
+
+    # Parse the arguments
+    args = parser.parse_args()
+
+    match args.os:
+        case "linux":
+            do_proc_model(args)
+        case "cellulos":
+            do_cellulos_model(args)
+        case _:
+            raise ValueError("Invalid platform")
