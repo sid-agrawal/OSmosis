@@ -283,8 +283,10 @@ class ModelGraph:
         source_string_id = self.__pd_string_id(source_pd_id)
         dest_string_id = self.__pd_string_id(dest_pd_id)
         
+        rs_string_id = self.__space_string_id(res_type, space_id)
+
         # Should be showing space ID too, need to update the CellulOS model output
-        self.__add_edge(EdgeType.REQUEST, source_string_id, dest_string_id, res_type.name)
+        self.__add_edge(EdgeType.REQUEST, source_string_id, dest_string_id, rs_string_id)
         
     def to_csv(self, filename: str = "proc_model.csv", only_edge:bool = False ):
         """
