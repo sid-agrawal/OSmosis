@@ -87,6 +87,24 @@ def upload_csv_import(db_name: str, filenames:list[str]):
 
     docker_cmd("restart", "neo4j-osm")
 
+    driver = GraphDatabase.driver(URI, auth=AUTH)
+    timeout = 20
+    print(f"Waiting {timeout} seconds Check if the DB is back up")
+    # Try to verify connectivity in a loop for 10 seconds until it succeeds
+    start_time = time.time()
+    while True:
+        try:
+            driver.verify_connectivity()
+            print("Successfully connected to the database.")
+            driver.close()
+            break
+        except Exception as e:
+            if time.time() - start_time > timeout:
+                print(f"Failed to connect to the database within {timeout} seconds.")
+                raise e
+            # print("\tRetrying connection...")
+            time.sleep(5)
+    
 
 def wipe_all_data(db_name: str):
     driver = GraphDatabase.driver(URI, auth=AUTH)

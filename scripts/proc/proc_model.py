@@ -68,16 +68,21 @@ run_configs = [
         (program_names.static1, ProcessStartType.NORMAL),
         (program_names.static2, ProcessStartType.NORMAL),
     ],
-    # 4: Hello in different PID namespaces twice
+    # 4: Hello linked statically twice
+    [
+        (program_names.static1, ProcessStartType.NORMAL),
+        (program_names.static1, ProcessStartType.NORMAL),
+    ],
+    # 5: Hello in different PID namespaces twice
     [
         (program_names.print_pid, ProcessStartType.NEW_PID_NS),
         (program_names.print_pid, ProcessStartType.NEW_PID_NS),
     ],
-    # 5: Basic hello once
+    # 6: Basic hello once
     [(program_names.basic, ProcessStartType.NORMAL)],
 ]
 
-to_run = run_configs[2]
+to_run = run_configs[4]
 
 
 def log(msg):
@@ -901,6 +906,7 @@ def extract_process_data(data: ProcFsData, pid: int, name: str, should_print=Fal
     process = Process(name)
     data.procs[pid] = process
 
+    print(f"Extracting process {pid}: {data.procs[pid].name}")
     # extract_namespaces(data, pid, should_print) # namespaces do not get incorporated into the generic model state yet
     extract_from_status(data, pid, should_print)
     extract_memory_data(data, pid, should_print)
@@ -966,6 +972,8 @@ def do_proc_model(args):
             p = psutil.Process(args.pid)
             extract_process_data(data_main, args.pid, p.name(), False)
         else:
+            # We add this delay so that the gettimeofday call in hello_static gets a chance to run
+            time.sleep(2)
             for (name, _), pid in zip(to_run, pids):
                 extract_process_data(data_main, pid, name, False)
                 # read_mountinfo_file(pid, True)  # mountinfo is not part of the model state, but we can view it
@@ -1027,7 +1035,6 @@ if __name__ == "__main__":
         case "linux":
             do_proc_model(args)
         case "cellulos":
-            
             do_cellulos_model(args)
         case _:
             raise ValueError("Invalid platform")
