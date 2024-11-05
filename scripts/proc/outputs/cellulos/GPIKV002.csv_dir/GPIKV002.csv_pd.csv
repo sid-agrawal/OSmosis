@@ -1,7 +1,0 @@
-ID:ID,NODE_TYPE,DATA,EXTRA,:LABEL
-PD_0,PD,ROOT_TASK,,PD
-PD_1,PD,GPIKV002,,PD
-PD_2,PD,ramdisk_server,,PD
-PD_3,PD,fs_server,,PD
-PD_4,PD,kvstore_server,,PD
-PD_5,PD,hello_kvstore,,PD

@@ -17,6 +17,7 @@ from expect_utils import get_qemu_phandle, get_cellulos_phandle
 import filecmp
 import datetime
 import shutil
+from import_csv import upload_csv_import
 
 host = "localhost"
 port = 45454
@@ -268,7 +269,15 @@ def get_cellulos_vm_state(get_host: bool, guest_file: str, g2h_file: str, host_f
     try: 
         os.chdir("/home/" + os.getlogin() + "/OSmosis/qemu-build/")
         # Build the OSM VM Test
-        run(["cmake", ".", "-DLibSel4TestPrinterRegex=GPIVM004", "-DGPIExtractModel=ON"])
+        run(
+            [
+                "cmake",
+                ".",
+                "-DLibSel4TestPrinterRegex=GPIVM004",
+                "-DGPIExtractModel=ON",
+                "-DGPIVMMImplementation=osm-vmm",
+            ]
+        )
         run(["ninja"])
 
         # Run the VMM004 test
@@ -424,6 +433,13 @@ def main():
         default=False,
         help="Clean old data of that vmm time"
     )
+    parser.add_argument(
+        "-l",
+        "--load-csv",
+        default=False,
+        action='store_true',
+        help="Import to the neo4j running on the same machine",
+    )
     args = parser.parse_args()
 
     target_dir = f"./outputs/{args.vmm}/"
@@ -457,6 +473,11 @@ def main():
         )
     else: 
         raise ValueError("Invalid VMM")
+
+    if args.load_csv:
+        files = [guest_file, host_file, g2h_file]
+        print(f"Uploading {files} to neo4j")
+        upload_csv_import("neo4j", files)
 
 if __name__ == "__main__":
     main()

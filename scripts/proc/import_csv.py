@@ -1,4 +1,3 @@
-#!/bin/python3
 
 from neo4j import GraphDatabase
 import argparse

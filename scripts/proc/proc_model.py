@@ -16,6 +16,7 @@ import argparse
 import pickle
 import datetime
 import pexpect
+from import_csv import upload_csv_import
 
 # PFS Setup
 sys.path.append("pfs/lib")
@@ -82,7 +83,7 @@ run_configs = [
     [(program_names.basic, ProcessStartType.NORMAL)],
 ]
 
-to_run = run_configs[4]
+to_run = run_configs[3]
 
 
 def log(msg):
@@ -385,6 +386,7 @@ class ProcFsData:
             device_info.model_id = self.model.add_resource_space_node(
                 gm.ResourceType.MO
             )
+            self.model.add_hold_edge(gm.perms_all, kernel_id, gm.ResourceType.MO, device_info.model_id)
 
         # Add the PMRs
         for (start, end), pmr_info in self.pmrs.items():
@@ -424,6 +426,8 @@ class ProcFsData:
             process_info.ads.model_id = self.model.add_resource_space_node(
                 gm.ResourceType.VMR
             )
+            self.model.add_hold_edge(gm.perms_all, kernel_id, gm.ResourceType.VMR, process_info.ads.model_id)
+
             ads_id = process_info.ads.model_id
             mapped_devices = set()
 
@@ -1023,6 +1027,13 @@ if __name__ == "__main__":
         help="Linux or CellulOS(on Qemu) as the OS"
     )
     parser.add_argument(
+        "-l",
+        "--load-csv",
+        default=False,
+        action='store_true',
+        help="Import to the neo4j running on the same machine",
+    )
+    parser.add_argument(
         "--testname",
         type=str,
         help="CellulOS test to run"
@@ -1038,3 +1049,8 @@ if __name__ == "__main__":
             do_cellulos_model(args)
         case _:
             raise ValueError("Invalid platform")
+
+    if args.load_csv:
+        files = [args.csv]
+        print(f"Uploading {files} to neo4j")
+        upload_csv_import("neo4j", files)
