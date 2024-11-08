@@ -359,7 +359,7 @@ class ProcFsData:
         }
         ascii_string = pickle.dumps(pickle_dict).decode("ascii")
 
-        with open(filename, 'w') as file:
+        with open(filename, "w") as file:
             file.write(ascii_string)
 
     def to_generic_model(
@@ -386,7 +386,9 @@ class ProcFsData:
             device_info.model_id = self.model.add_resource_space_node(
                 gm.ResourceType.MO
             )
-            self.model.add_hold_edge(gm.perms_all, kernel_id, gm.ResourceType.MO, device_info.model_id)
+            self.model.add_hold_edge(
+                gm.perms_all, kernel_id, gm.ResourceType.MO, device_info.model_id
+            )
 
         # Add the PMRs
         for (start, end), pmr_info in self.pmrs.items():
@@ -426,7 +428,9 @@ class ProcFsData:
             process_info.ads.model_id = self.model.add_resource_space_node(
                 gm.ResourceType.VMR
             )
-            self.model.add_hold_edge(gm.perms_all, kernel_id, gm.ResourceType.VMR, process_info.ads.model_id)
+            self.model.add_hold_edge(
+                gm.perms_all, kernel_id, gm.ResourceType.VMR, process_info.ads.model_id
+            )
 
             ads_id = process_info.ads.model_id
             mapped_devices = set()
@@ -464,7 +468,10 @@ class ProcFsData:
                     # Co-contiguous VMR level
                     if vmr_mapping_type is MappingType.CO_CONTIGUOUS:
                         vmr_node_id = self.model.add_vmr_node(
-                            ads_id, pathname_to_vmr_type(vmr_info.pathname), sub_n_pages, sub_start
+                            ads_id,
+                            pathname_to_vmr_type(vmr_info.pathname),
+                            sub_n_pages,
+                            sub_start,
                         )
                         self.model.add_hold_edge(
                             gm.perms_all,
@@ -488,7 +495,10 @@ class ProcFsData:
 
                             if vmr_mapping_type is MappingType.PER_PAGE:
                                 vmr_node_id = self.model.add_vmr_node(
-                                    ads_id, pathname_to_vmr_type(vmr_info.pathname), 1, page_vaddr
+                                    ads_id,
+                                    pathname_to_vmr_type(vmr_info.pathname),
+                                    1,
+                                    page_vaddr,
                                 )
                                 self.model.add_hold_edge(
                                     gm.perms_all,
@@ -929,15 +939,21 @@ def terminate_process(pid: int):
 def do_cellulos_model(args):
 
     simulate_cmd = "./simulate"
-    
+
     original_dir = os.getcwd()
-    try: 
+    try:
         os.chdir("/home/" + os.getlogin() + "/OSmosis/qemu-build/")
         # Build the right test has been compiled
-        run(["cmake", ".", f"-DLibSel4TestPrinterRegex={args.testname}", "-DGPIExtractModel=ON"])
+        run(
+            [
+                "cmake",
+                ".",
+                f"-DLibSel4TestPrinterRegex={args.testname}",
+                "-DGPIExtractModel=ON",
+            ]
+        )
         run(["ninja"])
 
-        
         print(f"Running CMD: {simulate_cmd} in {os.getcwd()}")
         phandle = pexpect.spawn(simulate_cmd)
         phandle.expect("BEGIN MODEL STATE:")
@@ -945,18 +961,21 @@ def do_cellulos_model(args):
 
         test_output = []
         for ln in sim_output.splitlines():
-            if ln.startswith("NODE_TYPE") or \
-                ln.startswith("PD") or \
-                ln.startswith("RESOURCE") or \
-                    ln.startswith(",,"): # Edges
-                    test_output.append(ln)
+            if (
+                ln.startswith("NODE_TYPE")
+                or ln.startswith("PD")
+                or ln.startswith("RESOURCE")
+                or ln.startswith(",,")
+            ):  # Edges
+                test_output.append(ln)
     finally:
         os.chdir(original_dir)
-    
+
     # Dump the model state to the file
     with open(args.csv, "w") as out_file:
         for ln in test_output:
             print(ln, file=out_file)
+
 
 def do_proc_model(args):
     # PIDs when this script starts them
@@ -969,7 +988,6 @@ def do_proc_model(args):
     else:
         print("Starting processes from this script")
         pids = [run_process(name, start_type) for (name, start_type) in to_run]
-
 
     try:
         if args.pid:
@@ -994,11 +1012,14 @@ def do_proc_model(args):
     # print("after pickle")
 
     data_main.to_generic_model(
-       MappingType.CONTIGUOUS, MappingType.CO_CONTIGUOUS, args.id_offset
-       # MappingType.PER_PAGE, MappingType.PER_PAGE, args.id_offset
+        MappingType.CONTIGUOUS,
+        MappingType.CO_CONTIGUOUS,
+        args.id_offset,
+        # MappingType.PER_PAGE, MappingType.PER_PAGE, args.id_offset
     ).to_csv(args.csv)
 
     print(f"Output CSV is at {args.csv}")
+
 
 if __name__ == "__main__":
 
@@ -1017,27 +1038,26 @@ if __name__ == "__main__":
         "--pickle", type=str, help="file to put the ascii pickle data in"
     )
     parser.add_argument(
-        "--id-offset", type=int, help="ID node IDs; typically used for running this in the guest", default=0
+        "--id-offset",
+        type=int,
+        help="ID node IDs; typically used for running this in the guest",
+        default=0,
     )
     parser.add_argument(
         "--os",
         type=str,
         choices=["linux", "cellulos"],
         required=True,
-        help="Linux or CellulOS(on Qemu) as the OS"
+        help="Linux or CellulOS(on Qemu) as the OS",
     )
     parser.add_argument(
         "-l",
         "--load-csv",
         default=False,
-        action='store_true',
+        action="store_true",
         help="Import to the neo4j running on the same machine",
     )
-    parser.add_argument(
-        "--testname",
-        type=str,
-        help="CellulOS test to run"
-    )
+    parser.add_argument("--testname", type=str, help="CellulOS test to run")
 
     # Parse the arguments
     args = parser.parse_args()
