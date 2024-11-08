@@ -83,7 +83,7 @@ run_configs = [
     [(program_names.basic, ProcessStartType.NORMAL)],
 ]
 
-to_run = run_configs[3]
+to_run = run_configs[0]
 
 
 def log(msg):
