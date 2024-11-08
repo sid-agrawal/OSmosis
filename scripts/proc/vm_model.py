@@ -75,6 +75,9 @@ def get_qemu_vm_state(get_host: bool, guest_file: str, g2h_file: str, host_file:
         - model state of the qemu process on the host
         - mappings between gpa --> hpa, and gpa --> hva
     """
+    
+    qemu_pids = getPIDByName("qemu-system-x86_64")
+    assert len(qemu_pids) == 0
 
     # Start Qemu
     qemu_cmd = (
@@ -87,7 +90,7 @@ def get_qemu_vm_state(get_host: bool, guest_file: str, g2h_file: str, host_file:
             if "," in ln:
                 print(ln, file=out_file)
 
-    qemu_phandle.sendline("python proc_model.py --os linux --csv ./hello.csv --id-offset 100000")
+    qemu_phandle.sendline("python proc_model.py --os linux --csv ./hello.csv -g")
     qemu_phandle.expect("#")
     qemu_phandle.sendline("cat ./hello.csv")
     qemu_phandle.expect("#")
@@ -95,10 +98,14 @@ def get_qemu_vm_state(get_host: bool, guest_file: str, g2h_file: str, host_file:
 
     # Dump the model state of the guest (i.e. just hello process) 
     # guest_file
+    count = 0
     with open(guest_file, "w") as out_file:
         for ln in hello_csv.splitlines():
             if "," in ln:
+                count += 1
                 print(ln, file=out_file)
+    # Guest should have alteast a few edges and nodes
+    assert (count > 100)
 
     # Since the node-ids are by MO-ID, create a mapping from 
     # gPA to MO-ID
@@ -187,8 +194,8 @@ def get_qemu_vm_state(get_host: bool, guest_file: str, g2h_file: str, host_file:
         # print(f"Adding Edges for 0x{gpa:<16x} || ", end = "")
         # print(f"\tHPA 0x{hpa:<16x} --> {host_mo_id} |||| ", end = "")
         # print(f"\tHVA 0x{hva:<16x} --> {host_vmr_id}")
-        mapping_graph.add_map_edge_raw(g_mo_id, host_mo_id)
-        mapping_graph.add_map_edge_raw(g_mo_id, host_vmr_id)
+        mapping_graph.add_map_edge_raw(g_mo_id, host_mo_id, "QEMU_PD")
+        mapping_graph.add_map_edge_raw(g_mo_id, host_vmr_id, "QEMU_PD")
     
     end_time = time.time()
     print(f"Monitor Queries took:  {end_time - start_time} seconds")
@@ -208,6 +215,7 @@ def get_host_state(vm_pid: int, host_file: str):
     print (f"Get /proc state for PID: {vm_pid}")
 
     data = ProcFsData()
+    data.os_name = "Linux Kernel"
     try:
         extract_process_data(data, vm_pid, "qemu", should_print=False)
     except Exception as e:
@@ -285,7 +293,7 @@ def get_cellulos_vm_state(get_host: bool, guest_file: str, g2h_file: str, host_f
         sim_phandle, host_csv = get_cellulos_phandle(sim_cmd)
 
         # Run the process, inside the guest.
-        sim_phandle.sendline("python proc_model.py --os linux --csv ./hello.csv --id-offset 100000")
+        sim_phandle.sendline("python proc_model.py --os linux --csv ./hello.csv -g")
         sim_phandle.expect("#")
         sim_phandle.sendline("cat ./hello.csv")
         sim_phandle.expect("#")
@@ -391,8 +399,8 @@ def get_cellulos_vm_state(get_host: bool, guest_file: str, g2h_file: str, host_f
         # print(f"Adding Edges for 0x{gpa:<16x} || ", end = "")
         # print(f"\tHPA 0x{hpa:<16x} --> {host_mo_id} |||| ", end = "")
         # print(f"\tHVA 0x{hva:<16x} --> {host_vmr_id}")
-        mapping_graph.add_map_edge_raw(g_mo_id, host_mo_id)
-        mapping_graph.add_map_edge_raw(g_mo_id, host_vmr_id)
+        mapping_graph.add_map_edge_raw(g_mo_id, host_mo_id, "VMM PD")
+        mapping_graph.add_map_edge_raw(g_mo_id, host_vmr_id, "VMM PD")
 
     mapping_graph.to_csv(g2h_file, only_edge=True)
 

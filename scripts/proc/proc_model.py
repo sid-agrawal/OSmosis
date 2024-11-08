@@ -16,7 +16,6 @@ import argparse
 import pickle
 import datetime
 import pexpect
-from import_csv import upload_csv_import
 
 # PFS Setup
 sys.path.append("pfs/lib")
@@ -311,6 +310,7 @@ class ProcFsData:
         self.procs = {}  # dict from PID to Process
         self.pmrs = IntervalDict()  # list of PMR
         self.devices = IntervalDict()  # list of physical memory devices, ProcDev
+        self.os_name = ""
 
     def __map_vmr_to_pmrs(
         self,
@@ -343,6 +343,7 @@ class ProcFsData:
                 pmr_info.device.model_id,
                 vmr_node_id,
                 pmr_info.model_id[0],
+                pd_incharge=self.os_name
             )
 
     def to_pickle_file(self, filename: str):
@@ -366,7 +367,7 @@ class ProcFsData:
         self,
         vmr_mapping_type: MappingType,
         pmr_mapping_type: MappingType,
-        id_offset: int = 0,
+        guest: bool = False,
     ) -> gm.ModelGraph:
         """
         Convert the ProcFsData to a generic model state
@@ -376,10 +377,13 @@ class ProcFsData:
         :return: The generic model state generated from this data
         """
 
-        self.model = gm.ModelGraph(id_offset)
+        if guest:
+            self.model = gm.ModelGraph(10000)
+        else:
+            self.model = gm.ModelGraph()
 
         # Add the kernel
-        kernel_id = self.model.add_pd_node("Kernel")
+        kernel_id = self.model.add_pd_node(self.os_name)
 
         # Add the devices
         for (start, end), device_info in self.devices.items():
@@ -387,7 +391,11 @@ class ProcFsData:
                 gm.ResourceType.MO
             )
             self.model.add_hold_edge(
-                gm.perms_all, kernel_id, gm.ResourceType.MO, device_info.model_id
+                gm.perms_all,
+                kernel_id,
+                gm.ResourceType.MO,
+                device_info.model_id,
+                pd_incharge=self.os_name,
             )
 
         # Add the PMRs
@@ -407,6 +415,7 @@ class ProcFsData:
                     gm.ResourceType.MO,
                     pmr_info.device.model_id,
                     pmr_node_id,
+                    pd_incharge=self.os_name,
                 )
             elif pmr_mapping_type is MappingType.CONTIGUOUS:
                 assert 0, "Contiguous mapping type for PMR is not currently supported"
@@ -429,14 +438,21 @@ class ProcFsData:
                 gm.ResourceType.VMR
             )
             self.model.add_hold_edge(
-                gm.perms_all, kernel_id, gm.ResourceType.VMR, process_info.ads.model_id
+                gm.perms_all,
+                kernel_id,
+                gm.ResourceType.VMR,
+                process_info.ads.model_id,
+                pd_incharge=self.os_name,
             )
 
             ads_id = process_info.ads.model_id
             mapped_devices = set()
 
             # PD can request from its address space
-            self.model.add_request_edge(pd_id, kernel_id, gm.ResourceType.VMR, ads_id)
+            self.model.add_request_edge(
+                pd_id, kernel_id, gm.ResourceType.VMR, ads_id, 
+                pd_incharge=self.os_name
+            )
 
             # Add the VMRs
             for (start, end), vmr_info in process_info.ads.vmrs.items():
@@ -456,9 +472,15 @@ class ProcFsData:
                         gm.ResourceType.VMR,
                         ads_id,
                         vmr_node_id,
+                        pd_incharge=self.os_name,
                     )
                     self.model.add_hold_edge(
-                        perms, pd_id, gm.ResourceType.VMR, ads_id, vmr_node_id
+                        perms,
+                        pd_id,
+                        gm.ResourceType.VMR,
+                        ads_id,
+                        vmr_node_id,
+                        pd_incharge=self.os_name,
                     )
                     vmr_info.model_id.append(vmr_node_id)
 
@@ -479,9 +501,15 @@ class ProcFsData:
                             gm.ResourceType.VMR,
                             ads_id,
                             vmr_node_id,
+                            pd_incharge=self.os_name,
                         )
                         self.model.add_hold_edge(
-                            perms, pd_id, gm.ResourceType.VMR, ads_id, vmr_node_id
+                            perms,
+                            pd_id,
+                            gm.ResourceType.VMR,
+                            ads_id,
+                            vmr_node_id,
+                            pd_incharge=self.os_name,
                         )
                         vmr_info.model_id.append(vmr_node_id)
 
@@ -506,6 +534,7 @@ class ProcFsData:
                                     gm.ResourceType.VMR,
                                     ads_id,
                                     vmr_node_id,
+                                    pd_incharge=self.os_name,
                                 )
                                 self.model.add_hold_edge(
                                     perms,
@@ -539,6 +568,7 @@ class ProcFsData:
                                         pmr_info.device.model_id,
                                         vmr_node_id,
                                         pmr_node_id,
+                                        pd_incharge=self.os_name,
                                     )
                                 else:
                                     self.__map_vmr_to_pmrs(
@@ -555,7 +585,11 @@ class ProcFsData:
             # Add map edge from address space to the devices
             for device_id in mapped_devices:
                 self.model.add_map_edge(
-                    gm.ResourceType.VMR, gm.ResourceType.MO, ads_id, device_id
+                    gm.ResourceType.VMR,
+                    gm.ResourceType.MO,
+                    ads_id,
+                    device_id,
+                    pd_incharge=self.os_name,
                 )
 
         return self.model
@@ -982,6 +1016,11 @@ def do_proc_model(args):
     pids = []
 
     data_main = ProcFsData()
+    if args.guest:
+        data_main.os_name = "Guest Linux"
+    else:
+        data_main.os_name = "Host Linux"
+
 
     if args.pid is not None:
         print(f"PID provided: {args.pid}")
@@ -1014,7 +1053,7 @@ def do_proc_model(args):
     data_main.to_generic_model(
         MappingType.CONTIGUOUS,
         MappingType.CO_CONTIGUOUS,
-        args.id_offset,
+        args.guest,
         # MappingType.PER_PAGE, MappingType.PER_PAGE, args.id_offset
     ).to_csv(args.csv)
 
@@ -1037,11 +1076,18 @@ if __name__ == "__main__":
     parser.add_argument(
         "--pickle", type=str, help="file to put the ascii pickle data in"
     )
+    # parser.add_argument(
+    #     "--id-offset",
+    #     type=int,
+    #     help="ID node IDs; typically used for running this in the guest",
+    #     default=0,
+    # )
     parser.add_argument(
-        "--id-offset",
-        type=int,
-        help="ID node IDs; typically used for running this in the guest",
-        default=0,
+        "-g",
+        "--guest",
+        default=False,
+        action="store_true",
+        help="Change Kernel name in proc to guest something",
     )
     parser.add_argument(
         "--os",
@@ -1071,6 +1117,7 @@ if __name__ == "__main__":
             raise ValueError("Invalid platform")
 
     if args.load_csv:
+        from import_csv import upload_csv_import
         files = [args.csv]
         print(f"Uploading {files} to neo4j")
         upload_csv_import("neo4j", files)

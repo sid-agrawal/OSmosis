@@ -240,6 +240,7 @@ class ModelGraph:
         string_id_from: str,
         string_id_to: str,
         data: str | None = "NONE",
+        extra: str | None = "",
     ):
         """
         Internal function to add an edge to the model state
@@ -250,7 +251,7 @@ class ModelGraph:
         :param data: any data string to add to the edge
         :type data: string or None
         """
-        self.g.add_edge(string_id_from, string_id_to, type=edge_type.name, data=data)
+        self.g.add_edge(string_id_from, string_id_to, type=edge_type.name, data=data, extra=extra)
 
     def add_hold_edge(
         self,
@@ -259,6 +260,7 @@ class ModelGraph:
         res_type: ResourceType,
         space_id: int,
         res_id: int | None = None,
+        pd_incharge: str | None = None,
     ):
         """
         Add a hold edge from a PD to a resource or resource space
@@ -276,7 +278,9 @@ class ModelGraph:
         else:
             target_string_id = self.__resource_string_id(res_type, space_id, res_id)
 
-        self.__add_edge(EdgeType.HOLD, pd_string_id, target_string_id, str(perms))
+        extra = { "pd_incharge" : pd_incharge}
+
+        self.__add_edge(EdgeType.HOLD, pd_string_id, target_string_id, str(perms), json.dumps(extra))
 
     def add_map_edge(
         self,
@@ -286,6 +290,7 @@ class ModelGraph:
         space_id_2: int,
         res_id_1: int | None = None,
         res_id_2: int | None = None,
+        pd_incharge: str | None = None,
     ):
         """
         Add a map edge from a PD to a resource to a resource or a resource space to a resource space
@@ -311,19 +316,29 @@ class ModelGraph:
             )
             dest_string_id = self.__resource_string_id(res_type_2, space_id_2, res_id_2)
 
-        self.__add_edge(EdgeType.MAP, source_string_id, dest_string_id)
+        extra = { "pd_incharge" : pd_incharge}
 
-    def add_map_edge_raw(self, source_string_id: str, dest_string_id: str):
+        self.__add_edge(EdgeType.MAP, source_string_id, dest_string_id, data="", extra=json.dumps(extra))
+
+    def add_map_edge_raw(
+        self, source_string_id: str, dest_string_id: str, pd_incharge: str | None = None
+    ):
         """
         Add a map edge from a node to another node
         Assumes that source_string_id & des_string_id is correctly formatted.
 
         """
 
-        self.__add_edge(EdgeType.MAP, source_string_id, dest_string_id)
+        extra = { "pd_incharge" : pd_incharge}
+        self.__add_edge(EdgeType.MAP, source_string_id, dest_string_id, extra=json.dumps(extra))
 
     def add_request_edge(
-        self, source_pd_id: int, dest_pd_id: int, res_type: ResourceType, space_id: int
+        self, 
+        source_pd_id: int, 
+        dest_pd_id: int, 
+        res_type: ResourceType, 
+        space_id: int,
+        pd_incharge: str | None = None,
     ):
         """
         Add a request edge from a PD to a PD
@@ -340,9 +355,11 @@ class ModelGraph:
 
         rs_string_id = self.__space_string_id(res_type, space_id)
 
+        extra = { "pd_incharge" : pd_incharge}
+
         # Should be showing space ID too, need to update the CellulOS model output
         self.__add_edge(
-            EdgeType.REQUEST, source_string_id, dest_string_id, rs_string_id
+            EdgeType.REQUEST, source_string_id, dest_string_id, rs_string_id, extra= json.dumps(extra)
         )
 
     def to_csv(self, filename: str = "proc_model.csv", only_edge: bool = False):

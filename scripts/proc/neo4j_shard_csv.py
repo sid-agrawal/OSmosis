@@ -31,7 +31,7 @@ def split(input, pd, res, rs, edge):
     print(f"ID:ID,NODE_TYPE,DATA,EXTRA,:LABEL", file=pd_file)
     print(f"ID:ID,NODE_TYPE,DATA,EXTRA,:LABEL", file=res_file)
     print(f"ID:ID,NODE_TYPE,DATA,EXTRA,:LABEL", file=rs_file)
-    print(f":START_ID,DATA,:END_ID,:TYPE", file=edge_file)
+    print(f":START_ID,DATA,EXTRA,:END_ID,:TYPE", file=edge_file)
 
     for row in input_csv:
 
@@ -47,7 +47,10 @@ def split(input, pd, res, rs, edge):
             continue
 
         if extra_row is not None and extra_row != "":
-            extra_dict = json.loads(extra_row)
+            try:
+                extra_dict = json.loads(extra_row)
+            except json.JSONDecodeError:
+                raise ValueError( f"Coulnd not parse : {extra_row}")
             extra = json.dumps(extra_dict)
         else:
             extra = ""
@@ -60,7 +63,7 @@ def split(input, pd, res, rs, edge):
             rs_csv.writerow([row_id,row_type,  row_data, extra, row_type])
         else:
             assert edge_type in ["MAP", "HOLD", "SUBSET", "REQUEST"]
-            edge_csv.writerow([edge_from, row_data, edge_to, edge_type])
+            edge_csv.writerow([edge_from, row_data, extra, edge_to, edge_type])
 
 def main():
     parser = argparse.ArgumentParser(
