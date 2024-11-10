@@ -196,7 +196,9 @@ def get_qemu_vm_state(get_host: bool, guest_file: str, g2h_file: str, host_file:
         # print(f"\tHVA 0x{hva:<16x} --> {host_vmr_id}")
         mapping_graph.add_map_edge_raw(g_mo_id, host_mo_id, "QEMU_PD")
         mapping_graph.add_map_edge_raw(g_mo_id, host_vmr_id, "QEMU_PD")
-    
+    print("\033[91mXXX: Add Resource Space Map Edge\033[0m")
+    print("\033[95mXXX: Add Request Edge from guest to host kernel\033[0m")
+
     end_time = time.time()
     print(f"Monitor Queries took:  {end_time - start_time} seconds")
 
@@ -294,7 +296,7 @@ def get_cellulos_vm_state(get_host: bool, guest_file: str, g2h_file: str, host_f
 
         # Run the process, inside the guest.
         sim_phandle.sendline("python proc_model.py --os linux --csv ./hello.csv -g")
-        sim_phandle.expect("#")
+        sim_phandle.expect("#", timeout=120)
         sim_phandle.sendline("cat ./hello.csv")
         sim_phandle.expect("#")
         hello_csv = sim_phandle.before.decode()
@@ -401,6 +403,8 @@ def get_cellulos_vm_state(get_host: bool, guest_file: str, g2h_file: str, host_f
         # print(f"\tHVA 0x{hva:<16x} --> {host_vmr_id}")
         mapping_graph.add_map_edge_raw(g_mo_id, host_mo_id, "VMM PD")
         mapping_graph.add_map_edge_raw(g_mo_id, host_vmr_id, "VMM PD")
+    print("\033[91mXXX: Add Resource Space Map Edge\033[0m")
+    print("\033[95mXXX: Add Request Edge from guest to host kernel\033[0m")
 
     mapping_graph.to_csv(g2h_file, only_edge=True)
 
