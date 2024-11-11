@@ -6,46 +6,46 @@ MO_4_2,RESOURCE,MO,"{""pa"": ""0x0"", ""num_pages"": ""0"", ""page_size"": ""409
 VMR_7_3,RESOURCE,VMR,"{""va"": ""0x2f425000"", ""vmr_type"": ""GENERIC"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
 MO_4_3,RESOURCE,MO,"{""pa"": ""0x6f72e000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
 VMR_7_6,RESOURCE,VMR,"{""va"": ""0x2f486000"", ""vmr_type"": ""GENERIC"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
-MO_4_8,RESOURCE,MO,"{""pa"": ""0x748eb000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_4_8,RESOURCE,MO,"{""pa"": ""0x748ea000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
 VMR_7_9,RESOURCE,VMR,"{""va"": ""0x2f494000"", ""vmr_type"": ""GENERIC"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
-MO_4_f,RESOURCE,MO,"{""pa"": ""0x75324000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_4_f,RESOURCE,MO,"{""pa"": ""0x75323000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
 VMR_7_c,RESOURCE,VMR,"{""va"": ""0x2f49e000"", ""vmr_type"": ""GENERIC"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
-MO_4_17,RESOURCE,MO,"{""pa"": ""0x758eb000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_4_17,RESOURCE,MO,"{""pa"": ""0x758ea000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
 VMR_7_f,RESOURCE,VMR,"{""va"": ""0x2f4a8000"", ""vmr_type"": ""GENERIC"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
-MO_4_1e,RESOURCE,MO,"{""pa"": ""0x75aaf000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_4_1e,RESOURCE,MO,"{""pa"": ""0x75aae000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
 VMR_7_12,RESOURCE,VMR,"{""va"": ""0x2f4b2000"", ""vmr_type"": ""GENERIC"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
-MO_4_25,RESOURCE,MO,"{""pa"": ""0x76548000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
-VMR_8_1,RESOURCE,VMR,"{""va"": ""0x400000"", ""vmr_type"": ""ELF_CODE"", ""num_pages"": ""558"", ""page_size"": ""4096""}",RESOURCE
-MO_4_4,RESOURCE,MO,"{""pa"": ""0x6f739000"", ""num_pages"": ""558"", ""page_size"": ""4096""}",RESOURCE
-VMR_8_2,RESOURCE,VMR,"{""va"": ""0x62e000"", ""vmr_type"": ""ELF_DATA"", ""num_pages"": ""22503"", ""page_size"": ""4096""}",RESOURCE
-MO_4_5,RESOURCE,MO,"{""pa"": ""0x7ff15000"", ""num_pages"": ""22503"", ""page_size"": ""4096""}",RESOURCE
+MO_4_25,RESOURCE,MO,"{""pa"": ""0x76547000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+VMR_8_1,RESOURCE,VMR,"{""va"": ""0x400000"", ""vmr_type"": ""ELF_CODE"", ""num_pages"": ""557"", ""page_size"": ""4096""}",RESOURCE
+MO_4_4,RESOURCE,MO,"{""pa"": ""0x6f739000"", ""num_pages"": ""557"", ""page_size"": ""4096""}",RESOURCE
+VMR_8_2,RESOURCE,VMR,"{""va"": ""0x62d000"", ""vmr_type"": ""ELF_DATA"", ""num_pages"": ""22503"", ""page_size"": ""4096""}",RESOURCE
+MO_4_5,RESOURCE,MO,"{""pa"": ""0x7ff14000"", ""num_pages"": ""22503"", ""page_size"": ""4096""}",RESOURCE
 VMR_8_3,RESOURCE,VMR,"{""va"": ""0x10000000"", ""vmr_type"": ""SHARED_FRAMES"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
 VMR_8_4,RESOURCE,VMR,"{""va"": ""0x10001000"", ""vmr_type"": ""IPC_BUF"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
-MO_4_6,RESOURCE,MO,"{""pa"": ""0x74999000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_4_6,RESOURCE,MO,"{""pa"": ""0x74998000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
 VMR_8_5,RESOURCE,VMR,"{""va"": ""0x10002000"", ""vmr_type"": ""STACK"", ""num_pages"": ""17"", ""page_size"": ""4096""}",RESOURCE
-MO_4_7,RESOURCE,MO,"{""pa"": ""0x7499a000"", ""num_pages"": ""16"", ""page_size"": ""4096""}",RESOURCE
+MO_4_7,RESOURCE,MO,"{""pa"": ""0x74999000"", ""num_pages"": ""16"", ""page_size"": ""4096""}",RESOURCE
 VMR_8_6,RESOURCE,VMR,"{""va"": ""0x10013000"", ""vmr_type"": ""SHARED_FRAMES"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
-MO_4_16,RESOURCE,MO,"{""pa"": ""0x758e9000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_4_16,RESOURCE,MO,"{""pa"": ""0x758e8000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
 VCPU_5_1,RESOURCE,VCPU,,RESOURCE
 PCPU_1_0,RESOURCE,PCPU,,RESOURCE
 VCPU_5_2,RESOURCE,VCPU,,RESOURCE
 VMR_9_1,RESOURCE,VMR,"{""va"": ""0x10000000"", ""vmr_type"": ""OSM_DATA"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
 VMR_9_2,RESOURCE,VMR,"{""va"": ""0x400000"", ""vmr_type"": ""ELF_CODE"", ""num_pages"": ""201"", ""page_size"": ""4096""}",RESOURCE
-MO_4_9,RESOURCE,MO,"{""pa"": ""0x748f7000"", ""num_pages"": ""201"", ""page_size"": ""4096""}",RESOURCE
+MO_4_9,RESOURCE,MO,"{""pa"": ""0x748f6000"", ""num_pages"": ""201"", ""page_size"": ""4096""}",RESOURCE
 VMR_9_3,RESOURCE,VMR,"{""va"": ""0x4c9000"", ""vmr_type"": ""ELF_DATA"", ""num_pages"": ""8"", ""page_size"": ""4096""}",RESOURCE
-MO_4_a,RESOURCE,MO,"{""pa"": ""0x74a4e000"", ""num_pages"": ""8"", ""page_size"": ""4096""}",RESOURCE
+MO_4_a,RESOURCE,MO,"{""pa"": ""0x74a4d000"", ""num_pages"": ""8"", ""page_size"": ""4096""}",RESOURCE
 VMR_9_4,RESOURCE,VMR,"{""va"": ""0x5000000000"", ""vmr_type"": ""HEAP"", ""num_pages"": ""100"", ""page_size"": ""4096""}",RESOURCE
-MO_4_b,RESOURCE,MO,"{""pa"": ""0x74a57000"", ""num_pages"": ""100"", ""page_size"": ""4096""}",RESOURCE
+MO_4_b,RESOURCE,MO,"{""pa"": ""0x74a56000"", ""num_pages"": ""100"", ""page_size"": ""4096""}",RESOURCE
 VMR_9_5,RESOURCE,VMR,"{""va"": ""0x10001000"", ""vmr_type"": ""STACK"", ""num_pages"": ""17"", ""page_size"": ""4096""}",RESOURCE
-MO_4_c,RESOURCE,MO,"{""pa"": ""0x74ac7000"", ""num_pages"": ""16"", ""page_size"": ""4096""}",RESOURCE
+MO_4_c,RESOURCE,MO,"{""pa"": ""0x74ac6000"", ""num_pages"": ""16"", ""page_size"": ""4096""}",RESOURCE
 VMR_9_6,RESOURCE,VMR,"{""va"": ""0x10012000"", ""vmr_type"": ""IPC_BUF"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
-MO_4_d,RESOURCE,MO,"{""pa"": ""0x74ad8000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_4_d,RESOURCE,MO,"{""pa"": ""0x74ad7000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
 VMR_9_7,RESOURCE,VMR,"{""va"": ""0x10013000"", ""vmr_type"": ""GENERIC"", ""num_pages"": ""1024"", ""page_size"": ""4096""}",RESOURCE
-MO_4_e,RESOURCE,MO,"{""pa"": ""0x74ad9000"", ""num_pages"": ""1024"", ""page_size"": ""4096""}",RESOURCE
+MO_4_e,RESOURCE,MO,"{""pa"": ""0x74ad8000"", ""num_pages"": ""1024"", ""page_size"": ""4096""}",RESOURCE
 VMR_9_8,RESOURCE,VMR,"{""va"": ""0x10413000"", ""vmr_type"": ""GENERIC"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
-MO_4_15,RESOURCE,MO,"{""pa"": ""0x758e8000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_4_15,RESOURCE,MO,"{""pa"": ""0x758e7000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
 VMR_9_9,RESOURCE,VMR,"{""va"": ""0x10414000"", ""vmr_type"": ""GENERIC"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
-MO_4_1d,RESOURCE,MO,"{""pa"": ""0x75aae000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_4_1d,RESOURCE,MO,"{""pa"": ""0x75aad000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
 BLOCK_a_0,RESOURCE,BLOCK,,RESOURCE
 BLOCK_a_1,RESOURCE,BLOCK,,RESOURCE
 BLOCK_a_2,RESOURCE,BLOCK,,RESOURCE
@@ -1073,45 +1073,45 @@ BLOCK_a_3ff,RESOURCE,BLOCK,,RESOURCE
 VCPU_5_3,RESOURCE,VCPU,,RESOURCE
 VMR_b_1,RESOURCE,VMR,"{""va"": ""0x10000000"", ""vmr_type"": ""OSM_DATA"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
 VMR_b_2,RESOURCE,VMR,"{""va"": ""0x400000"", ""vmr_type"": ""ELF_CODE"", ""num_pages"": ""237"", ""page_size"": ""4096""}",RESOURCE
-MO_4_10,RESOURCE,MO,"{""pa"": ""0x75331000"", ""num_pages"": ""237"", ""page_size"": ""4096""}",RESOURCE
+MO_4_10,RESOURCE,MO,"{""pa"": ""0x75330000"", ""num_pages"": ""237"", ""page_size"": ""4096""}",RESOURCE
 VMR_b_3,RESOURCE,VMR,"{""va"": ""0x4ed000"", ""vmr_type"": ""ELF_DATA"", ""num_pages"": ""52"", ""page_size"": ""4096""}",RESOURCE
-MO_4_11,RESOURCE,MO,"{""pa"": ""0x7582f000"", ""num_pages"": ""52"", ""page_size"": ""4096""}",RESOURCE
+MO_4_11,RESOURCE,MO,"{""pa"": ""0x7582e000"", ""num_pages"": ""52"", ""page_size"": ""4096""}",RESOURCE
 VMR_b_4,RESOURCE,VMR,"{""va"": ""0x5000000000"", ""vmr_type"": ""HEAP"", ""num_pages"": ""100"", ""page_size"": ""4096""}",RESOURCE
-MO_4_12,RESOURCE,MO,"{""pa"": ""0x75866000"", ""num_pages"": ""100"", ""page_size"": ""4096""}",RESOURCE
+MO_4_12,RESOURCE,MO,"{""pa"": ""0x75865000"", ""num_pages"": ""100"", ""page_size"": ""4096""}",RESOURCE
 VMR_b_5,RESOURCE,VMR,"{""va"": ""0x10001000"", ""vmr_type"": ""STACK"", ""num_pages"": ""17"", ""page_size"": ""4096""}",RESOURCE
-MO_4_13,RESOURCE,MO,"{""pa"": ""0x758d6000"", ""num_pages"": ""16"", ""page_size"": ""4096""}",RESOURCE
+MO_4_13,RESOURCE,MO,"{""pa"": ""0x758d5000"", ""num_pages"": ""16"", ""page_size"": ""4096""}",RESOURCE
 VMR_b_6,RESOURCE,VMR,"{""va"": ""0x10012000"", ""vmr_type"": ""IPC_BUF"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
-MO_4_14,RESOURCE,MO,"{""pa"": ""0x758e7000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_4_14,RESOURCE,MO,"{""pa"": ""0x758e6000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
 VMR_b_7,RESOURCE,VMR,"{""va"": ""0x10013000"", ""vmr_type"": ""SHARED_FRAMES"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
 FILE_c_2,RESOURCE,FILE,,RESOURCE
 VCPU_5_4,RESOURCE,VCPU,,RESOURCE
 VMR_d_1,RESOURCE,VMR,"{""va"": ""0x10000000"", ""vmr_type"": ""OSM_DATA"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
 VMR_d_2,RESOURCE,VMR,"{""va"": ""0x400000"", ""vmr_type"": ""ELF_CODE"", ""num_pages"": ""237"", ""page_size"": ""4096""}",RESOURCE
-MO_4_18,RESOURCE,MO,"{""pa"": ""0x758f6000"", ""num_pages"": ""237"", ""page_size"": ""4096""}",RESOURCE
+MO_4_18,RESOURCE,MO,"{""pa"": ""0x758f5000"", ""num_pages"": ""237"", ""page_size"": ""4096""}",RESOURCE
 VMR_d_3,RESOURCE,VMR,"{""va"": ""0x4ed000"", ""vmr_type"": ""ELF_DATA"", ""num_pages"": ""52"", ""page_size"": ""4096""}",RESOURCE
-MO_4_19,RESOURCE,MO,"{""pa"": ""0x759f4000"", ""num_pages"": ""52"", ""page_size"": ""4096""}",RESOURCE
+MO_4_19,RESOURCE,MO,"{""pa"": ""0x759f3000"", ""num_pages"": ""52"", ""page_size"": ""4096""}",RESOURCE
 VMR_d_4,RESOURCE,VMR,"{""va"": ""0x5000000000"", ""vmr_type"": ""HEAP"", ""num_pages"": ""100"", ""page_size"": ""4096""}",RESOURCE
-MO_4_1a,RESOURCE,MO,"{""pa"": ""0x75a2c000"", ""num_pages"": ""100"", ""page_size"": ""4096""}",RESOURCE
+MO_4_1a,RESOURCE,MO,"{""pa"": ""0x75a2b000"", ""num_pages"": ""100"", ""page_size"": ""4096""}",RESOURCE
 VMR_d_5,RESOURCE,VMR,"{""va"": ""0x10001000"", ""vmr_type"": ""STACK"", ""num_pages"": ""17"", ""page_size"": ""4096""}",RESOURCE
-MO_4_1b,RESOURCE,MO,"{""pa"": ""0x75a9c000"", ""num_pages"": ""16"", ""page_size"": ""4096""}",RESOURCE
+MO_4_1b,RESOURCE,MO,"{""pa"": ""0x75a9b000"", ""num_pages"": ""16"", ""page_size"": ""4096""}",RESOURCE
 VMR_d_6,RESOURCE,VMR,"{""va"": ""0x10012000"", ""vmr_type"": ""IPC_BUF"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
-MO_4_1c,RESOURCE,MO,"{""pa"": ""0x75aad000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_4_1c,RESOURCE,MO,"{""pa"": ""0x75aac000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
 VMR_d_7,RESOURCE,VMR,"{""va"": ""0x10013000"", ""vmr_type"": ""SHARED_FRAMES"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
 FILE_e_2,RESOURCE,FILE,,RESOURCE
 VCPU_5_5,RESOURCE,VCPU,,RESOURCE
 VMR_f_1,RESOURCE,VMR,"{""va"": ""0x10000000"", ""vmr_type"": ""OSM_DATA"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
 VMR_f_2,RESOURCE,VMR,"{""va"": ""0x400000"", ""vmr_type"": ""ELF_CODE"", ""num_pages"": ""475"", ""page_size"": ""4096""}",RESOURCE
-MO_4_1f,RESOURCE,MO,"{""pa"": ""0x75abc000"", ""num_pages"": ""475"", ""page_size"": ""4096""}",RESOURCE
+MO_4_1f,RESOURCE,MO,"{""pa"": ""0x75abb000"", ""num_pages"": ""475"", ""page_size"": ""4096""}",RESOURCE
 VMR_f_3,RESOURCE,VMR,"{""va"": ""0x5db000"", ""vmr_type"": ""ELF_DATA"", ""num_pages"": ""12"", ""page_size"": ""4096""}",RESOURCE
-MO_4_20,RESOURCE,MO,"{""pa"": ""0x764b8000"", ""num_pages"": ""12"", ""page_size"": ""4096""}",RESOURCE
+MO_4_20,RESOURCE,MO,"{""pa"": ""0x764b7000"", ""num_pages"": ""12"", ""page_size"": ""4096""}",RESOURCE
 VMR_f_4,RESOURCE,VMR,"{""va"": ""0x5000000000"", ""vmr_type"": ""HEAP"", ""num_pages"": ""100"", ""page_size"": ""4096""}",RESOURCE
-MO_4_21,RESOURCE,MO,"{""pa"": ""0x764c5000"", ""num_pages"": ""100"", ""page_size"": ""4096""}",RESOURCE
+MO_4_21,RESOURCE,MO,"{""pa"": ""0x764c4000"", ""num_pages"": ""100"", ""page_size"": ""4096""}",RESOURCE
 VMR_f_5,RESOURCE,VMR,"{""va"": ""0x10001000"", ""vmr_type"": ""STACK"", ""num_pages"": ""17"", ""page_size"": ""4096""}",RESOURCE
-MO_4_22,RESOURCE,MO,"{""pa"": ""0x76535000"", ""num_pages"": ""16"", ""page_size"": ""4096""}",RESOURCE
+MO_4_22,RESOURCE,MO,"{""pa"": ""0x76534000"", ""num_pages"": ""16"", ""page_size"": ""4096""}",RESOURCE
 VMR_f_6,RESOURCE,VMR,"{""va"": ""0x10012000"", ""vmr_type"": ""IPC_BUF"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
-MO_4_23,RESOURCE,MO,"{""pa"": ""0x76546000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_4_23,RESOURCE,MO,"{""pa"": ""0x76545000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
 VMR_f_7,RESOURCE,VMR,"{""va"": ""0x10013000"", ""vmr_type"": ""SHARED_FRAMES"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
-MO_4_24,RESOURCE,MO,"{""pa"": ""0x76547000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_4_24,RESOURCE,MO,"{""pa"": ""0x76546000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
 KVSTORE_10_1,RESOURCE,KVSTORE,,RESOURCE
 KVSTORE_10_2,RESOURCE,KVSTORE,,RESOURCE
 KVSTORE_10_3,RESOURCE,KVSTORE,,RESOURCE
@@ -1119,15 +1119,15 @@ KVSTORE_10_4,RESOURCE,KVSTORE,,RESOURCE
 KVSTORE_10_5,RESOURCE,KVSTORE,,RESOURCE
 VCPU_5_6,RESOURCE,VCPU,,RESOURCE
 VMR_11_1,RESOURCE,VMR,"{""va"": ""0x10000000"", ""vmr_type"": ""OSM_DATA"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
-VMR_11_2,RESOURCE,VMR,"{""va"": ""0x400000"", ""vmr_type"": ""ELF_CODE"", ""num_pages"": ""480"", ""page_size"": ""4096""}",RESOURCE
-MO_4_26,RESOURCE,MO,"{""pa"": ""0x76555000"", ""num_pages"": ""480"", ""page_size"": ""4096""}",RESOURCE
-VMR_11_3,RESOURCE,VMR,"{""va"": ""0x5e0000"", ""vmr_type"": ""ELF_DATA"", ""num_pages"": ""13"", ""page_size"": ""4096""}",RESOURCE
-MO_4_27,RESOURCE,MO,"{""pa"": ""0x76756000"", ""num_pages"": ""13"", ""page_size"": ""4096""}",RESOURCE
+VMR_11_2,RESOURCE,VMR,"{""va"": ""0x400000"", ""vmr_type"": ""ELF_CODE"", ""num_pages"": ""479"", ""page_size"": ""4096""}",RESOURCE
+MO_4_26,RESOURCE,MO,"{""pa"": ""0x76554000"", ""num_pages"": ""479"", ""page_size"": ""4096""}",RESOURCE
+VMR_11_3,RESOURCE,VMR,"{""va"": ""0x5df000"", ""vmr_type"": ""ELF_DATA"", ""num_pages"": ""13"", ""page_size"": ""4096""}",RESOURCE
+MO_4_27,RESOURCE,MO,"{""pa"": ""0x76754000"", ""num_pages"": ""13"", ""page_size"": ""4096""}",RESOURCE
 VMR_11_4,RESOURCE,VMR,"{""va"": ""0x5000000000"", ""vmr_type"": ""HEAP"", ""num_pages"": ""100"", ""page_size"": ""4096""}",RESOURCE
-MO_4_28,RESOURCE,MO,"{""pa"": ""0x76764000"", ""num_pages"": ""100"", ""page_size"": ""4096""}",RESOURCE
+MO_4_28,RESOURCE,MO,"{""pa"": ""0x76762000"", ""num_pages"": ""100"", ""page_size"": ""4096""}",RESOURCE
 VMR_11_5,RESOURCE,VMR,"{""va"": ""0x10001000"", ""vmr_type"": ""STACK"", ""num_pages"": ""17"", ""page_size"": ""4096""}",RESOURCE
-MO_4_29,RESOURCE,MO,"{""pa"": ""0x767d4000"", ""num_pages"": ""16"", ""page_size"": ""4096""}",RESOURCE
+MO_4_29,RESOURCE,MO,"{""pa"": ""0x767d2000"", ""num_pages"": ""16"", ""page_size"": ""4096""}",RESOURCE
 VMR_11_6,RESOURCE,VMR,"{""va"": ""0x10012000"", ""vmr_type"": ""IPC_BUF"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
-MO_4_2a,RESOURCE,MO,"{""pa"": ""0x767e5000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_4_2a,RESOURCE,MO,"{""pa"": ""0x767e3000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
 VMR_11_7,RESOURCE,VMR,"{""va"": ""0x10013000"", ""vmr_type"": ""SHARED_FRAMES"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
-MO_4_2b,RESOURCE,MO,"{""pa"": ""0x767e6000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_4_2b,RESOURCE,MO,"{""pa"": ""0x767e4000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
