@@ -18,3 +18,4 @@ scripts/model_state/tmp.output
 scripts/proc/out.debug
 scripts/proc/test.py
 scripts/proc/trial.cypher
+scripts/proc/fusey*

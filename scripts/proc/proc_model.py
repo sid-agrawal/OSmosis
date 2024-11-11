@@ -45,6 +45,8 @@ program_names: EasyDict = EasyDict(
     malloc="hello_malloc",
     mmap="hello_mmap",
     print_pid="hello_print_pid",
+    hello_file = "hello_file",
+    python_passthrough = "passthrough.py",
 )
 
 run_configs = [
@@ -80,9 +82,14 @@ run_configs = [
     ],
     # 6: Basic hello once
     [(program_names.basic, ProcessStartType.NORMAL)],
+    # 7: Fuse File Systems. Order matters as python_passthrought sets up the files needed by hello_file
+    [
+        (program_names.python_passthrough, ProcessStartType.NORMAL),
+        (program_names.hello_file, ProcessStartType.NORMAL),
+    ],
 ]
 
-to_run = run_configs[0]
+to_run = run_configs[7]
 
 
 def log(msg):
@@ -1037,13 +1044,14 @@ def do_proc_model(args):
             time.sleep(2)
             for (name, _), pid in zip(to_run, pids):
                 extract_process_data(data_main, pid, name, False)
-                # read_mountinfo_file(pid, True)  # mountinfo is not part of the model state, but we can view it
+                read_mountinfo_file(pid, True)  # mountinfo is not part of the model state, but we can view it
     except Exception as e:
         print(repr(e))
         traceback.print_exc()
         exit(1)
 
     for pid in pids:
+        print (f"Terminating PID {pid}")
         terminate_process(pid)
 
     # print("before pickle")

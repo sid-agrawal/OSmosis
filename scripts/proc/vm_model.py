@@ -243,7 +243,7 @@ def is_cellulos_aarch64_buildroot_osm_dir_updated() -> bool:
     dir2 = os.path.expanduser('~/buildroot/cellulos/qemu/buildroot-arm-cellulos-with-everything/output/target/root/proc')
 
     assert compare_directories(dir1, dir2, file_extension=".py", 
-                               exceptions=["vm_model.py", "import_csv.py"])
+                               exceptions=["vm_model.py", "import_csv.py", "passthrough.py"])
     
     osm_rootfs = os.path.expanduser("~/OSmosis/projects/sel4-gpi/apps/vmm/board/qemu_arm_virt/rootfs.cpio.gz")
     built_rootfs = os.path.expanduser('~/buildroot/cellulos/qemu/buildroot-arm-cellulos-with-everything/output/images/rootfs.cpio.gz')

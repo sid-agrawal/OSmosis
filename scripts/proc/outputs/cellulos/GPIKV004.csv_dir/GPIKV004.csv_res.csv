@@ -1119,15 +1119,15 @@ KVSTORE_10_4,RESOURCE,KVSTORE,,RESOURCE
 KVSTORE_10_5,RESOURCE,KVSTORE,,RESOURCE
 VCPU_5_6,RESOURCE,VCPU,,RESOURCE
 VMR_11_1,RESOURCE,VMR,"{""va"": ""0x10000000"", ""vmr_type"": ""OSM_DATA"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
-VMR_11_2,RESOURCE,VMR,"{""va"": ""0x400000"", ""vmr_type"": ""ELF_CODE"", ""num_pages"": ""479"", ""page_size"": ""4096""}",RESOURCE
-MO_4_26,RESOURCE,MO,"{""pa"": ""0x76555000"", ""num_pages"": ""479"", ""page_size"": ""4096""}",RESOURCE
+VMR_11_2,RESOURCE,VMR,"{""va"": ""0x400000"", ""vmr_type"": ""ELF_CODE"", ""num_pages"": ""480"", ""page_size"": ""4096""}",RESOURCE
+MO_4_26,RESOURCE,MO,"{""pa"": ""0x76555000"", ""num_pages"": ""480"", ""page_size"": ""4096""}",RESOURCE
 VMR_11_3,RESOURCE,VMR,"{""va"": ""0x5e0000"", ""vmr_type"": ""ELF_DATA"", ""num_pages"": ""13"", ""page_size"": ""4096""}",RESOURCE
-MO_4_27,RESOURCE,MO,"{""pa"": ""0x76755000"", ""num_pages"": ""13"", ""page_size"": ""4096""}",RESOURCE
+MO_4_27,RESOURCE,MO,"{""pa"": ""0x76756000"", ""num_pages"": ""13"", ""page_size"": ""4096""}",RESOURCE
 VMR_11_4,RESOURCE,VMR,"{""va"": ""0x5000000000"", ""vmr_type"": ""HEAP"", ""num_pages"": ""100"", ""page_size"": ""4096""}",RESOURCE
-MO_4_28,RESOURCE,MO,"{""pa"": ""0x76763000"", ""num_pages"": ""100"", ""page_size"": ""4096""}",RESOURCE
+MO_4_28,RESOURCE,MO,"{""pa"": ""0x76764000"", ""num_pages"": ""100"", ""page_size"": ""4096""}",RESOURCE
 VMR_11_5,RESOURCE,VMR,"{""va"": ""0x10001000"", ""vmr_type"": ""STACK"", ""num_pages"": ""17"", ""page_size"": ""4096""}",RESOURCE
-MO_4_29,RESOURCE,MO,"{""pa"": ""0x767d3000"", ""num_pages"": ""16"", ""page_size"": ""4096""}",RESOURCE
+MO_4_29,RESOURCE,MO,"{""pa"": ""0x767d4000"", ""num_pages"": ""16"", ""page_size"": ""4096""}",RESOURCE
 VMR_11_6,RESOURCE,VMR,"{""va"": ""0x10012000"", ""vmr_type"": ""IPC_BUF"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
-MO_4_2a,RESOURCE,MO,"{""pa"": ""0x767e4000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_4_2a,RESOURCE,MO,"{""pa"": ""0x767e5000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
 VMR_11_7,RESOURCE,VMR,"{""va"": ""0x10013000"", ""vmr_type"": ""SHARED_FRAMES"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
-MO_4_2b,RESOURCE,MO,"{""pa"": ""0x767e5000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_4_2b,RESOURCE,MO,"{""pa"": ""0x767e6000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
