@@ -11,6 +11,10 @@ import signal
 import shutil
 
 class Passthrough(Operations):
+    """
+    A trivial FUSE bassed passthough file system.
+    SOURCE: https://github.com/skorokithakis/python-fuse-sample/blob/master/passthrough.py
+    """
     def __init__(self, root):
         self.root = root
 
