@@ -89,7 +89,7 @@ run_configs = [
     ],
 ]
 
-to_run = run_configs[7]
+to_run = run_configs[5]
 
 
 def log(msg):
@@ -622,7 +622,7 @@ def run_process(name: str, start_type: ProcessStartType = False) -> tuple[int, i
 
         # We need to use another program to start the process for us
         process = subprocess.Popen(
-            ["sudo", "./create_proc_in_ns", name, temp_output_file],
+            ["sudo", "./hello_create_proc_in_ns", name, temp_output_file],
             stderr=subprocess.PIPE,
         )
 
@@ -962,7 +962,7 @@ def extract_process_data(data: ProcFsData, pid: int, name: str, should_print=Fal
     data.procs[pid] = process
 
     print(f"Extracting process {pid}: {data.procs[pid].name}")
-    # extract_namespaces(data, pid, should_print) # namespaces do not get incorporated into the generic model state yet
+    extract_namespaces(data, pid, True) # namespaces do not get incorporated into the generic model state yet
     extract_from_status(data, pid, should_print)
     extract_memory_data(data, pid, should_print)
 
@@ -997,7 +997,7 @@ def do_cellulos_model(args):
 
         print(f"Running CMD: {simulate_cmd} in {os.getcwd()}")
         phandle = pexpect.spawn(simulate_cmd)
-        phandle.expect("BEGIN MODEL STATE:")
+        phandle.expect("BEGIN MODEL STATE")
         sim_output = phandle.before.decode()
 
         test_output = []
@@ -1044,7 +1044,7 @@ def do_proc_model(args):
             time.sleep(2)
             for (name, _), pid in zip(to_run, pids):
                 extract_process_data(data_main, pid, name, False)
-                read_mountinfo_file(pid, True)  # mountinfo is not part of the model state, but we can view it
+                # read_mountinfo_file(pid, True)  # mountinfo is not part of the model state, but we can view it
     except Exception as e:
         print(repr(e))
         traceback.print_exc()
