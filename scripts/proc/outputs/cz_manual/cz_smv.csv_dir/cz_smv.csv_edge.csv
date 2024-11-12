@@ -1,0 +1,43 @@
+:START_ID,DATA,EXTRA,:END_ID,:TYPE
+PD_0,"{'perms': 'RWX', 'pds': [['PD_0']]}",,VMR_SPACE_1,HOLD
+PD_0,"{'perms': 'RWX', 'pds': [['PD_0']]}",,MO_SPACE_2,HOLD
+PD_0,"{'perms': 'RWX', 'pds': [['PD_0']]}",,VCPU_SPACE_3,HOLD
+PD_0,"{'perms': 'RWX', 'pds': [['PD_0']]}",,PCPU_SPACE_4,HOLD
+PD_0,"{'perms': 'RWX', 'pds': [['PD_0']]}",,VMR_SPACE_5,HOLD
+PD_0,"{'perms': 'RWX', 'pds': [['PD_0']]}",,MO_SPACE_6,HOLD
+PD_0,"{'perms': 'RWX', 'pds': [['PD_0']]}",,VCPU_SPACE_7,HOLD
+PD_0,"{'perms': 'RWX', 'pds': [['PD_0']]}",,PCPU_SPACE_8,HOLD
+PD_1,VMR,,PD_0,REQUEST
+PD_1,"{'perms': 'Permission.R', 'pds': [['PD_0']]}",,VMR_1_1,HOLD
+PD_1,"{'perms': 'Permission.R', 'pds': [['PD_0']]}",,VMR_1_2,HOLD
+PD_1,"{'perms': 'Permission.R', 'pds': [['PD_0']]}",,VMR_1_3,HOLD
+PD_1,"{'perms': 'Permission.R', 'pds': [['PD_0']]}",,VCPU_3_1,HOLD
+VMR_1_1,NONE,,VMR_SPACE_1,SUBSET
+VMR_1_1,{'pds': [['PD_0']]},,MO_2_1,MAP
+MO_2_1,NONE,,MO_SPACE_2,SUBSET
+VMR_1_2,NONE,,VMR_SPACE_1,SUBSET
+VMR_1_2,{'pds': [['PD_0']]},,MO_2_2,MAP
+MO_2_2,NONE,,MO_SPACE_2,SUBSET
+VMR_1_3,NONE,,VMR_SPACE_1,SUBSET
+VMR_1_3,{'pds': [['PD_0']]},,MO_2_3,MAP
+MO_2_3,NONE,,MO_SPACE_2,SUBSET
+VCPU_3_1,NONE,,VCPU_SPACE_3,SUBSET
+VCPU_3_1,{'pds': [['PD_0']]},,PCPU_4_1,MAP
+PCPU_4_1,NONE,,PCPU_SPACE_4,SUBSET
+PD_2,VMR,,PD_0,REQUEST
+PD_2,"{'perms': 'Permission.R', 'pds': [['PD_0']]}",,VMR_5_1,HOLD
+PD_2,"{'perms': 'Permission.R', 'pds': [['PD_0']]}",,VMR_5_2,HOLD
+PD_2,"{'perms': 'Permission.R', 'pds': [['PD_0']]}",,VMR_5_3,HOLD
+PD_2,"{'perms': 'Permission.R', 'pds': [['PD_0']]}",,VCPU_7_1,HOLD
+VMR_5_1,NONE,,VMR_SPACE_5,SUBSET
+VMR_5_1,{'pds': [['PD_0']]},,MO_6_1,MAP
+MO_6_1,NONE,,MO_SPACE_6,SUBSET
+VMR_5_2,NONE,,VMR_SPACE_5,SUBSET
+VMR_5_2,{'pds': [['PD_0']]},,MO_6_2,MAP
+MO_6_2,NONE,,MO_SPACE_6,SUBSET
+VMR_5_3,NONE,,VMR_SPACE_5,SUBSET
+VMR_5_3,{'pds': [['PD_0']]},,MO_6_3,MAP
+MO_6_3,NONE,,MO_SPACE_6,SUBSET
+VCPU_7_1,NONE,,VCPU_SPACE_7,SUBSET
+VCPU_7_1,{'pds': [['PD_0']]},,PCPU_8_1,MAP
+PCPU_8_1,NONE,,PCPU_SPACE_8,SUBSET

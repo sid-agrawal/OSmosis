@@ -16,12 +16,14 @@ class EdgeType(Enum):
     MAP = 2
     SUBSET = 3
     REQUEST = 4
-    CREATEDBY = 5
+    # CREATEDBY = 5
     
 class ResourceType(Enum):
     VMR = 1
     CVA = 2
     MO = 3 # Same as PMR, a region of contiguous virtual memory
+    VCPU = 4 # Same as PMR, a region of contiguous virtual memory
+    PCPU = 5 # Same as PMR, a region of contiguous virtual memory
 
 class VmrType(Enum):
     UNKNOWN = 0
