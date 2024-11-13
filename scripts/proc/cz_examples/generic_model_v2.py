@@ -24,6 +24,7 @@ class ResourceType(Enum):
     MO = 3 # Same as PMR, a region of contiguous virtual memory
     VCPU = 4 # Same as PMR, a region of contiguous virtual memory
     PCPU = 5 # Same as PMR, a region of contiguous virtual memory
+    L3SET = 6 # Same as PMR, a region of contiguous virtual memory
 
 class VmrType(Enum):
     UNKNOWN = 0
