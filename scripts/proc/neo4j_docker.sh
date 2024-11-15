@@ -4,9 +4,8 @@ set -e
 NEO4J_DIR=$HOME/neo4j
 NEO4J_CONTAINER_NAME=neo4j-osm
 NEO4J_IMAGE_NAME=neo4j_img
-USAGE_TEXT=$'Usage: ./neo4j_docker.sh ACTION CSV_FILE [NEO4J_DIR] [NEO4J_CONTAINER_NAME]
-            ACTION = one of start, stop, clean
-            CSV_FILE is only needed for ACTION=start'
+USAGE_TEXT=$'Usage: ./neo4j_docker.sh ACTION  [NEO4J_DIR] [NEO4J_CONTAINER_NAME]
+            ACTION = one of start, stop, clean'
 
 setNeo4jPaths() {
   if [ -z "$1" ]; then
