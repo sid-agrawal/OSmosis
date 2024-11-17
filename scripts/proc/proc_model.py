@@ -36,6 +36,12 @@ class ProcessStartType(Enum):
 
     NORMAL = 1  # start the process in the default way
     NEW_PID_NS = 2  # start the process in a new PID namespace
+                    # The mapping of the host pid to ns-pid can be found with
+                    # cat /proc/PID/status| grep -i NSpid
+    NEW_MNT_NS = 3  # start the process in a new PID namespace
+                    # The mapping of the host path to ns-path can be found with
+                    # ls -la /proc/PID/root
+
 
 
 program_names: EasyDict = EasyDict(
@@ -776,6 +782,15 @@ def extract_namespaces(data: ProcFsData, pid: int, should_print: bool = False):
         print("\n\n")
 
     data.procs[pid].namespaces = namespaces
+    
+    # Integrate it to the model
+    """
+     - What is the resource
+        - What does the perms on the edge mean
+     - What is the resource space
+     - What does allocating from the RS mean ?
+     - Edtablishing map edge
+    """
 
 
 def understanding_pagemap(results):
@@ -1039,12 +1054,13 @@ def do_proc_model(args):
         if args.pid:
             p = psutil.Process(args.pid)
             extract_process_data(data_main, args.pid, p.name(), False)
+            read_mountinfo_file(args.pid, True)  # mountinfo is not part of the model state, but we can view it
         else:
             # We add this delay so that the gettimeofday call in hello_static gets a chance to run
             time.sleep(2)
             for (name, _), pid in zip(to_run, pids):
                 extract_process_data(data_main, pid, name, False)
-                # read_mountinfo_file(pid, True)  # mountinfo is not part of the model state, but we can view it
+                read_mountinfo_file(pid, True)  # mountinfo is not part of the model state, but we can view it
     except Exception as e:
         print(repr(e))
         traceback.print_exc()

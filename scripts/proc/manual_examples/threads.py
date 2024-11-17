@@ -8,20 +8,22 @@ parser.add_argument("-f", "--file", help="a LOCAL file for CSV output", required
 args = parser.parse_args()
 
 
-def make_generic_process_with_threads(model: ModelGraph, name: str, kernel_id: int, mo_rs_id: int, pcpu_rs_id: int):
+def make_generic_process_with_threads(
+    model: ModelGraph, name: str, kernel_id: int, mo_rs_id: int, pcpu_rs_id: int
+):
 
     # Add T1
     t1_id = model.add_pd_node(f"{name}_T1")
-    req_id = model.add_request_edge(t1_id, kernel_id, 
-                                    ResourceType.VMR, kernel_id)
+    req_id = model.add_request_edge(t1_id, kernel_id, ResourceType.VMR, kernel_id)
     # Add T2
     t2_id = model.add_pd_node(f"{name}_T2")
-    req_id = model.add_request_edge(t2_id, kernel_id, 
-                                    ResourceType.VMR, kernel_id)
+    req_id = model.add_request_edge(t2_id, kernel_id, ResourceType.VMR, kernel_id)
 
     # VAS Resource Space, node, map edge to physical resource and edge from the kernel
     vmr_rs_id = model.add_resource_space_node(ResourceType.VMR)
-    model.add_hold_edge(perms_all, kernel_id, ResourceType.VMR, vmr_rs_id, None, [kernel_id])
+    model.add_hold_edge(
+        perms_all, kernel_id, ResourceType.VMR, vmr_rs_id, None, [kernel_id]
+    )
     model.add_map_edge(
         ResourceType.VMR, ResourceType.MO, vmr_rs_id, mo_rs_id, None, None, [kernel_id]
     )
@@ -31,9 +33,17 @@ def make_generic_process_with_threads(model: ModelGraph, name: str, kernel_id: i
 
     # VCPU Resource Space, node, map edge to physical resource and edge from the kernel
     vcpu_rs_id = model.add_resource_space_node(ResourceType.ExecContext)
-    model.add_hold_edge(perms_all, kernel_id, ResourceType.ExecContext, vcpu_rs_id, None, [kernel_id])
+    model.add_hold_edge(
+        perms_all, kernel_id, ResourceType.ExecContext, vcpu_rs_id, None, [kernel_id]
+    )
     model.add_map_edge(
-        ResourceType.ExecContext, ResourceType.PCPU, vcpu_rs_id, pcpu_rs_id, None, None, [kernel_id]
+        ResourceType.ExecContext,
+        ResourceType.PCPU,
+        vcpu_rs_id,
+        pcpu_rs_id,
+        None,
+        None,
+        [kernel_id],
     )
 
     # Add VMRs, MO and mappsings
@@ -71,7 +81,7 @@ def make_generic_process_with_threads(model: ModelGraph, name: str, kernel_id: i
             mo_rs_id,
             vmr_res_id,
             mo_res_id,
-            [kernel_id]
+            [kernel_id],
         )
 
     # Add CPU virtual and physical for two threads
@@ -83,7 +93,12 @@ def make_generic_process_with_threads(model: ModelGraph, name: str, kernel_id: i
         )
         # PD --HOLD--> VCPU
         model.add_hold_edge(
-            Permission.R, t_id, ResourceType.ExecContext, vcpu_rs_id, vcpu_res_id, [kernel_id]
+            Permission.R,
+            t_id,
+            ResourceType.ExecContext,
+            vcpu_rs_id,
+            vcpu_res_id,
+            [kernel_id],
         )
 
         # Make MO Node
@@ -107,7 +122,7 @@ def make_generic_process_with_threads(model: ModelGraph, name: str, kernel_id: i
             [kernel_id],
         )
 
-    return  t1_id, t2_id
+    return t1_id, t2_id
 
 
 if __name__ == "__main__":
@@ -116,19 +131,24 @@ if __name__ == "__main__":
 
     # Make Kernel PD
     kernel_id = model.add_pd_node("Kernel", 0x0)
-    
+
     # Create HW
     # MO Resource Space
     mo_rs_id = model.add_resource_space_node(ResourceType.MO)
-    model.add_hold_edge(perms_all, kernel_id, ResourceType.MO, mo_rs_id, None, [kernel_id])
+    model.add_hold_edge(
+        perms_all, kernel_id, ResourceType.MO, mo_rs_id, None, [kernel_id]
+    )
 
     # PCPU Resource Space
     pcpu_rs_id = model.add_resource_space_node(ResourceType.PCPU)
-    model.add_hold_edge(perms_all, kernel_id, ResourceType.PCPU, pcpu_rs_id, None, [kernel_id])
+    model.add_hold_edge(
+        perms_all, kernel_id, ResourceType.PCPU, pcpu_rs_id, None, [kernel_id]
+    )
 
     # Process
-    pid1, pid2 = make_generic_process_with_threads(model, "P1", kernel_id, mo_rs_id, pcpu_rs_id)
-    
-    
-    model.to_csv(filename = args.file)
+    pid1, pid2 = make_generic_process_with_threads(
+        model, "P1", kernel_id, mo_rs_id, pcpu_rs_id
+    )
+
+    model.to_csv(filename=args.file)
     print(args.file, "has the CSV of the model state")

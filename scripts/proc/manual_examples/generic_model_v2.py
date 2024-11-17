@@ -16,15 +16,19 @@ class EdgeType(Enum):
     MAP = 2
     SUBSET = 3
     REQUEST = 4
+    BIND = 5
     # CREATEDBY = 5
-    
+
 class ResourceType(Enum):
     VMR = 1
     CVA = 2
-    MO = 3 # Same as PMR, a region of contiguous virtual memory
-    VCPU = 4 # Same as PMR, a region of contiguous virtual memory
-    PCPU = 5 # Same as PMR, a region of contiguous virtual memory
-    L3SET = 6 # Same as PMR, a region of contiguous virtual memory
+    MO = 3  # Same as PMR, a region of contiguous virtual memory
+    EC = 4  # Execution Context
+    VCPU = 5  # Virtual CPU Time
+    PCPU = 6  # Physical CPU
+    L3SET = 7  #
+    PID = 8  #
+
 
 class VmrType(Enum):
     UNKNOWN = 0
@@ -85,7 +89,7 @@ class EasyDict():
     
     def __repr__(self):
         return self.__dict__.__str__()
-        
+
 class ModelGraph:
     def __init__(self):
         self.g = nx.MultiDiGraph()
