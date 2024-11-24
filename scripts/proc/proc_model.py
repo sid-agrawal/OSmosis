@@ -996,7 +996,10 @@ def extract_from_status(data: ProcFsData, pid: int, should_print=False):
     assert (
         pid == status.ns_pid[0]
     ), "PID from status should have been the same as the given PID"
-    data.procs[pid].pid_in_ns = status.ns_pid[1] if len(status.ns_pid) > 1 else pid
+    # Assuming only 1 level of PID NS.
+    # Then ns_pid[0] is for the root PID NS
+    # and  ns_pid[1] is for the child PID NS
+    data.procs[pid].pid_in_ns = status.ns_pid[1] if len(status.ns_pid) == 2 else pid
 
 
 def extract_process_data(data: ProcFsData, pid: int, name: str, should_print=False):
