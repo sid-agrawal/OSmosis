@@ -12,6 +12,7 @@ args = parser.parse_args()
 
 class HW:
     mo_rs_id: int
+    pd_rs_id: int
     pcpu_rs_id: int
     l3set_rs_id: int
     l3set_res_dict: EasyDict = EasyDict()
@@ -25,7 +26,7 @@ def pick_random(hw) -> int:
 
 
 def make_generic_process(model: ModelGraph, name: str, kernel_id: int, hw: HW) -> int:
-    pd_id = model.add_pd_node(name)
+    pd_id = model.add_pd_node(name, hw.pd_rs_id)
     req_id = model.add_request_edge(pd_id, kernel_id, ResourceType.VMR, kernel_id)
 
     # VAS Resource Space
@@ -145,13 +146,23 @@ if __name__ == "__main__":
     hw = HW()
 
     # Make Kernel PD
-    kernel_id = model.add_pd_node("Kernel", 0x0)
+    # kernel_id = model.add_pd_node("Kernel", 0x0)
+    kernel_id =  0
+    model.g.add_node(
+        f"PD_{kernel_id}",type=NodeType.PD.name, data="Kernel", extra=""
+    )
 
     # Create HW
     # MO Resource Space
     hw.mo_rs_id = model.add_resource_space_node(ResourceType.MO)
     model.add_hold_edge(
         perms_all, kernel_id, ResourceType.MO, hw.mo_rs_id, None, [kernel_id]
+    )
+    
+    # PD Resource Space
+    hw.pd_rs_id = model.add_resource_space_node(ResourceType.PD)
+    model.add_hold_edge(
+        perms_all, kernel_id, ResourceType.PD, hw.pd_rs_id, None, [kernel_id]
     )
 
     # PCPU Resource Space
