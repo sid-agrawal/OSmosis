@@ -50,7 +50,7 @@ class ProcessStartType(Enum):
     NEW_MNT_NS = 3  # start the process in a new PID namespace
                     # The mapping of the host path to ns-path can be found with
                     # ls -la /proc/PID/root
-
+    DOCKER = 4      # Start a docker command
 
 
 program_names: EasyDict = EasyDict(
@@ -62,6 +62,7 @@ program_names: EasyDict = EasyDict(
     print_pid="hello_print_pid",
     hello_file = "hello_file",
     python_passthrough = "passthrough.py",
+    docker_ubuntu_bash = "unbuntu bash"
 )
 
 run_configs = [
@@ -93,18 +94,27 @@ run_configs = [
     # 5: Hello in different PID namespaces twice
     [
         (program_names.print_pid, ProcessStartType.NEW_PID_NS),
-        (program_names.print_pid, ProcessStartType.NEW_PID_NS),
+        # (program_names.print_pid, ProcessStartType.NEW_PID_NS),
     ],
     # 6: Basic hello once
-    [(program_names.basic, ProcessStartType.NORMAL)],
+    [
+        (program_names.basic, ProcessStartType.NORMAL)
+    ],
     # 7: Fuse File Systems. Order matters as python_passthrought sets up the files needed by hello_file
     [
         (program_names.python_passthrough, ProcessStartType.NORMAL),
         (program_names.hello_file, ProcessStartType.NORMAL),
     ],
+    [
+        (program_names.python_passthrough, ProcessStartType.NORMAL),
+        (program_names.hello_file, ProcessStartType.NORMAL),
+    ],
+    [
+        (program_names.docker_ubuntu_bash, ProcessStartType.DOCKER),
+    ],
 ]
 
-to_run = run_configs[5]
+to_run = run_configs[6]
 
 
 def log(msg):
@@ -662,6 +672,28 @@ def run_process(name: str, start_type: ProcessStartType = False) -> tuple[int, i
 
             elif not line:
                 time.sleep(2)
+    elif start_type == ProcessStartType.DOCKER:
+        # start in docker
+        args = name.split()
+        assert len(args) == 2
+        image = args[0]
+        cmd = args[1]
+
+        # Docker Run YY
+        docker_cmd("run", image, cmd)
+ 
+        # Docker Inspect to get the PID YY
+        inspect_op = docker_cmd("inspect", image)
+
+        # Get the PID of the init process of the container
+        # as per the host
+        # json parse 
+        # YY
+        pid = 0
+
+
+
+
     else:
         process = subprocess.Popen(f"./{name}", text=True)
 
