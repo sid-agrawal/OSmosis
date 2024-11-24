@@ -7,6 +7,7 @@ from collections import defaultdict
 from errno import ENOENT
 from stat import S_IFDIR, S_IFLNK, S_IFREG
 from time import time
+import os
 
 from fuse import FUSE, FuseOSError, Operations, LoggingMixIn
 
@@ -59,6 +60,9 @@ class Memory(LoggingMixIn, Operations):
     def getxattr(self, path, name, position=0):
         attrs = self.files[path].get('attrs', {})
 
+        # Thought this is getting called, I am not sure how to export it to 
+        # userspace on the client side.
+        attrs["server_pid"] = os.getpid()
         try:
             return attrs[name]
         except KeyError:
