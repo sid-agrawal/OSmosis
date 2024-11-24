@@ -824,14 +824,6 @@ def extract_namespaces(data: ProcFsData, pid: int, should_print: bool = False):
 
     data.procs[pid].namespaces = namespaces
     
-    # Integrate it to the model
-    """
-     - What is the resource
-        - What does the perms on the edge mean
-     - What is the resource space
-     - What does allocating from the RS mean ?
-     - Edtablishing map edge
-    """
 
 
 def understanding_pagemap(results):
