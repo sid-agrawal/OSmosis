@@ -1080,6 +1080,8 @@ def do_proc_model(args):
     else:
         data_main.os_name = "Host Linux"
 
+    # This is system Wide
+    extract_all_namespaces(data_main, True)
 
     if args.pid is not None:
         print(f"PID provided: {args.pid}")
