@@ -3,7 +3,7 @@ import fcntl
 import sys
 import argparse
 
-# See: https://man7.org/linux/man-sudo pages/man2/NS_GET_USERNS.2const.html
+# See: https://man7.org/linux/man-pages/man2/NS_GET_USERNS.2const.html
 # Constants for ioctl operations
 NS_GET_USERNS = 0xb701
 NS_GET_PARENT = 0xb702
