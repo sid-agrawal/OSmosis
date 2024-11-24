@@ -782,7 +782,8 @@ def read_mountinfo_file(pid: int, should_print: bool = False) -> list[pypfs.moun
     return mounts
 
 
-def extract_namespaces(data: ProcFsData, pid: int, should_print: bool = False):
+# Unsused
+def extract_namespaces_for_pid(data: ProcFsData, pid: int, should_print: bool = False):
     """
     Find the namespaces this process belongs to
     Add to global data if not already present, and add to the process' list of namespaces
@@ -1010,7 +1011,7 @@ def extract_process_data(data: ProcFsData, pid: int, name: str, should_print=Fal
     data.procs[pid] = process
 
     print(f"Extracting process {pid}: {data.procs[pid].name}")
-    extract_namespaces(data, pid, True) # namespaces do not get incorporated into the generic model state yet
+
     extract_from_status(data, pid, should_print)
     extract_memory_data(data, pid, should_print)
 
