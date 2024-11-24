@@ -320,6 +320,16 @@ def is_root():
 
 def docker_cmd(cmd: str, container: str, exec_cmd: str="", debug: bool=False):
     match cmd:
+        case "run":
+            assert exec_cmd != ""
+            command = [
+                'docker',
+                'run',
+                container,
+                '-it',
+                exec_cmd
+            ]
+
         case "exec":
             assert exec_cmd != ""
             command = [
