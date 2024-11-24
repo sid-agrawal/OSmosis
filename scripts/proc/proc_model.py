@@ -1095,13 +1095,13 @@ def do_proc_model(args):
         if args.pid:
             p = psutil.Process(args.pid)
             extract_process_data(data_main, args.pid, p.name(), False)
-            read_mountinfo_file(args.pid, True)  # mountinfo is not part of the model state, but we can view it
+            read_mountinfo_file(args.pid, False)  # mountinfo is not part of the model state, but we can view it
         else:
             # We add this delay so that the gettimeofday call in hello_static gets a chance to run
             time.sleep(2)
             for (name, _), pid in zip(to_run, pids):
                 extract_process_data(data_main, pid, name, False)
-                read_mountinfo_file(pid, True)  # mountinfo is not part of the model state, but we can view it
+                read_mountinfo_file(pid, False)  # mountinfo is not part of the model state, but we can view it
     except Exception as e:
         print(repr(e))
         traceback.print_exc()
