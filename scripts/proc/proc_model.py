@@ -22,8 +22,6 @@ import generic_model as gm
 import sys
 import pprint as pp
 import argparse
-import pickle
-import datetime
 import pexpect
 
 # PFS Setup
@@ -378,22 +376,6 @@ class ProcFsData:
                 pd_incharge=self.os_name
             )
 
-    def to_pickle_file(self, filename: str):
-        """
-        Present a pickled ASCII data to a file
-        """
-
-        # Serialize the data structure to an ASCII string
-        pickle_dict = {
-            "namespaces": self.namespaces,
-            "procs": self.procs,
-            "pmrs": self.pmrs,
-            "devices": self.devices,
-        }
-        ascii_string = pickle.dumps(pickle_dict).decode("ascii")
-
-        with open(filename, "w") as file:
-            file.write(ascii_string)
 
     def to_generic_model(
         self,
@@ -1109,9 +1091,6 @@ def do_proc_model(args):
         print (f"Terminating PID {pid}")
         terminate_process(pid)
 
-    # print("before pickle")
-    # data_main.to_pickle_file(args.pickle)
-    # print("after pickle")
 
     data_main.to_generic_model(
         MappingType.CONTIGUOUS,
@@ -1136,15 +1115,6 @@ if __name__ == "__main__":
     parser.add_argument(
         "--csv", type=str, required=True, help="CSV to output the model state in"
     )
-    parser.add_argument(
-        "--pickle", type=str, help="file to put the ascii pickle data in"
-    )
-    # parser.add_argument(
-    #     "--id-offset",
-    #     type=int,
-    #     help="ID node IDs; typically used for running this in the guest",
-    #     default=0,
-    # )
     parser.add_argument(
         "-g",
         "--guest",
