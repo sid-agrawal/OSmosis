@@ -62,7 +62,8 @@ def split(input, pd, res, rs, edge):
         elif row_type == "RESOURCE_SPACE":
             rs_csv.writerow([row_id,row_type,  row_data, extra, row_type])
         else:
-            assert edge_type in ["MAP", "HOLD", "SUBSET", "REQUEST"]
+            if edge_type not in ["MAP", "HOLD", "SUBSET", "REQUEST"]:
+                raise ValueError(f"Invalid edge type '{edge_type}' in row {input_csv.line_num}: {row}")
             edge_csv.writerow([edge_from, row_data, extra, edge_to, edge_type])
 
 def main():
