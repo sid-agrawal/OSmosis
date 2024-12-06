@@ -217,14 +217,14 @@ def insert_with_split(d: IntervalDict, start ,end, info: any):
         d.put(start, end , info)
 
 #     ```
-#      Lies outside 
-#      Get_intervals should return zero here. 
+#      Lies outside
+#      Get_intervals should return zero here.
 #      No Split needed
 #                                     <------Existing---Region----->
-#                                                                       <-----New---Region--->                  
-#        <-----New---Region--->                  
-    
-    
+#                                                                       <-----New---Region--->
+#        <-----New---Region--->
+
+
 #      A new entry can overlap with
 #      Types of Split needed when overlaps
 #      Overlap with start
@@ -241,15 +241,15 @@ def insert_with_split(d: IntervalDict, start ,end, info: any):
 #       2.a>    |   |                  <-----New---Region--->    Less than end    : 1 insert and 1 split
 #       2.b>    |   |<-----------------------New---Region--->    Equal to end     : 1 inser and 0 split
 #       2.c>    |<---------New---Region--------------------->    Greater than end : 2 insert and 0 split
-    
+
 #      Old Lies within new:
-#       3.a>                                  <-----Existing---Region--->      # 1.c or 2.c 
+#       3.a>                                  <-----Existing---Region--->      # 1.c or 2.c
 #      .                                  <---------------New---Region------->
 
-    
+
 #      New lies Within Old
 #                                   <-------------Existing---Region----->
-#       4.a>                                  <-----New---Region--->      # 1.a and 2.a combined             
+#       4.a>                                  <-----New---Region--->      # 1.a and 2.a combined
 
 
 #      Double Over Lap
@@ -261,7 +261,6 @@ def insert_with_split(d: IntervalDict, start ,end, info: any):
 
 #      Split if this PMR extends over an entire older PMR
 # ```
-
 
 
 def sizeof_fmt(num, suffix="B"):
@@ -318,31 +317,54 @@ def compare_directories(dir1, dir2, file_extension, exceptions) -> bool:
 def is_root():
     return os.geteuid() == 0
 
-def docker_cmd(cmd: str, container: str, exec_cmd: str="", debug: bool=False):
+
+def docker_cmd(
+    cmd: str, container_name: str, exec_cmd: str = "", image: str = "", debug: bool = False
+):
+
+    assert container_name != ""
+
     match cmd:
         case "run":
-            assert exec_cmd != ""
+            assert image != ""
+            command = [
+                "docker",
+                "run",
+                "--rm",
+                "-id", # Detach
+                "--name",
+                container_name,
+                image,
+                exec_cmd,
+            ]
+        case "rm":
             command = [
                 'docker',
-                'run',
-                container,
-                '-it',
-                exec_cmd
+                'rm',
+                '-f',
+                container_name
             ]
-
+        case "inspect":
+            command = [
+                'docker',
+                'inspect',
+                container_name
+            ]
         case "exec":
             assert exec_cmd != ""
             command = [
                 'docker',
                 'exec',
-                container,
+                container_name,
                 'sh',
                 '-c',
                 exec_cmd
             ]
-
         case "restart":
-            command = [ "docker", "restart", container]
+            command = [ 'docker', 
+                       'restart', 
+                       container_name
+                       ]
         case  _: 
             raise ValueError("Invalid Qemu Monitor Command")
 
@@ -358,8 +380,10 @@ def docker_cmd(cmd: str, container: str, exec_cmd: str="", debug: bool=False):
         if debug:
             print("Command output:", result.stdout)
         print("SUCCESS")
+        return result.stdout
     except subprocess.CalledProcessError as e:
         raise RuntimeError(f"Error occurred: {e.stderr}")
+
 
 def run(cmds: list[str], debug:bool = False):
     print (f"RUNNING: {cmds}")

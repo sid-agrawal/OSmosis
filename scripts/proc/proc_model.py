@@ -1,6 +1,7 @@
 import os
 import psutil
 import signal
+import json
 import subprocess
 from enum import Enum
 import time
@@ -60,7 +61,7 @@ program_names: EasyDict = EasyDict(
     print_pid="hello_print_pid",
     hello_file = "hello_file",
     python_passthrough = "passthrough.py",
-    docker_ubuntu_bash = "unbuntu bash"
+    docker_ubuntu_bash = "ubuntu"
 )
 
 run_configs = [
@@ -95,24 +96,22 @@ run_configs = [
         # (program_names.print_pid, ProcessStartType.NEW_PID_NS),
     ],
     # 6: Basic hello once
-    [
-        (program_names.basic, ProcessStartType.NORMAL)
-    ],
+    [(program_names.basic, ProcessStartType.NORMAL)],
     # 7: Fuse File Systems. Order matters as python_passthrought sets up the files needed by hello_file
     [
         (program_names.python_passthrough, ProcessStartType.NORMAL),
         (program_names.hello_file, ProcessStartType.NORMAL),
     ],
+    # 8: Docker bash
     [
-        (program_names.python_passthrough, ProcessStartType.NORMAL),
-        (program_names.hello_file, ProcessStartType.NORMAL),
-    ],
-    [
-        (program_names.docker_ubuntu_bash, ProcessStartType.DOCKER),
+        (
+            program_names.docker_ubuntu_bash + " test-docker " + "bash",
+            ProcessStartType.DOCKER,
+        ),
     ],
 ]
 
-to_run = run_configs[6]
+to_run = run_configs[8]
 
 
 def log(msg):
@@ -275,11 +274,99 @@ str_to_namespace_type = {
     "time": NamespaceType.TIME,
 }
 
+class FileSystemType(Enum):
+    EXT4 = 1
+    OVERLAY = 2
+    SQUASHFS = 3
+    FUSE = 4
+    # THESE GO TO KERNEL
+    BINFMT_MISC = 5
+    BPF = 6
+    CGROUP2 = 7
+    CONFIGFS = 8
+    DEBUGFS = 9
+    DEVPTS = 10
+    EFIVARFS = 11
+    FUSECTL = 12
+    HUGETLBFS = 13
+    MQUEUE = 14
+    NSFS = 15
+    PROC = 16
+    PSTORE = 17
+    RAMFS = 18
+    SECURITYFS = 19
+    SYSFS = 20
+    SYSTEMD_1 = 21
+    TMPFS = 22
+    TRACEFS = 23
+    UDEV = 24
+
+
+# Use to convert a namespace type as string to NamespaceType
+str_to_filesystem_type = {
+
+    "ext4" : FileSystemType.EXT4,
+    "overlay" : FileSystemType.OVERLAY,
+    "squashfs" : FileSystemType.SQUASHFS,
+    "fuse" : FileSystemType.FUSE,
+    "binfmt_misc" : FileSystemType.BINFMT_MISC,
+    "bpf" : FileSystemType.BPF,
+    "cgroup2" : FileSystemType.CGROUP2,
+    "configfs" : FileSystemType.CONFIGFS,
+    "debugfs" : FileSystemType.DEBUGFS,
+    "devpts" : FileSystemType.DEVPTS,
+    "efivarfs" : FileSystemType.EFIVARFS,
+    "fusectl" : FileSystemType.FUSECTL,
+    "hugetlbfs" : FileSystemType.HUGETLBFS,
+    "mqueue" : FileSystemType.MQUEUE,
+    "nsfs" : FileSystemType.NSFS,
+    "proc" : FileSystemType.PROC,
+    "pstore" : FileSystemType.PSTORE,
+    "ramfs" : FileSystemType.RAMFS,
+    "securityfs" : FileSystemType.SECURITYFS,
+    "sysfs" : FileSystemType.SYSFS,
+    "systemd-1" : FileSystemType.SYSTEMD_1,
+    "tmpfs" : FileSystemType.TMPFS,
+    "tracefs" : FileSystemType.TRACEFS,
+    "udev" : FileSystemType.UDEV,
+}
+
+kernel_interface_file_systems = [
+    FileSystemType.BINFMT_MISC,
+    FileSystemType.BPF,
+    FileSystemType.CGROUP2,
+    FileSystemType.CONFIGFS,
+    FileSystemType.DEBUGFS,
+    FileSystemType.DEVPTS,
+    FileSystemType.EFIVARFS,
+    FileSystemType.FUSECTL,
+    FileSystemType.HUGETLBFS,
+    FileSystemType.MQUEUE,
+    FileSystemType.NSFS,
+    FileSystemType.OVERLAY,
+    FileSystemType.PROC,
+    FileSystemType.PSTORE,
+    FileSystemType.RAMFS,
+    FileSystemType.SECURITYFS,
+    FileSystemType.SYSFS,
+    FileSystemType.SYSTEMD_1,
+    FileSystemType.TMPFS,
+    FileSystemType.TRACEFS,
+    FileSystemType.UDEV,
+]
 
 @dataclass
 class Namespace:
     type: NamespaceType
-    handle: int
+    handle: int # Assumed unique ID
+    host_pids: set[int] # PIDs (in host PID namespace) of all processes in that namespace
+    generic_data:  EasyDict = EasyDict() # NS specific data.
+             #   For PID_NS, we store the mapping from pid_in_host to pid_in child NS, for now we only support two levels.
+             #   { "pid_host" : [
+             #                      (pid_host, root_PID NS ID),
+             #                      (pid_in_ns, child PID NS ID)
+             #                   ] 
+             #   }
 
 
 @dataclass
@@ -294,6 +381,7 @@ class Process:
     model_id: int = 0  # The ID of this node in the model state, once added
     pid_in_ns: int = 0  # PID of the process according to its own PID namespace
     # The PID (in global PID namespace) will be the key of the dict this is in
+    pid_mounts: list[pypfs.mount] = field(default_factory=lambda: list())
 
 
 @dataclass
@@ -606,6 +694,104 @@ class ProcFsData:
                     pd_incharge=self.os_name,
                 )
 
+        # YY
+        # Create all the PID NS resources, resources_spaces, map_edges, and subset edgs.
+        # We will add hold edges when we iterate throught the loops of processes.
+        # 1. Create a new ResourceServer for each PID NS
+        for ns in self.namespaces.values():
+            if ns.type != NamespaceType.PID:
+                continue
+            self.model.add_resource_space_node(gm.ResourceType.PID, ns.handle)
+            self.model.add_hold_edge(gm.perms_all, kernel_id, gm.ResourceType.PID, ns.handle)
+
+        # 2. Create resource nodes, one for each PID, in each NS
+        # 3 Create subset edges
+        # We re-run the loop to ensure that all resource-spaces are already created
+        # When we add the resource space nodes.
+        # A process in a child PID NS, will not show up in the ns.host_pids of the parent NS.
+
+        for ns in self.namespaces.values():
+            if ns.type != NamespaceType.PID:
+                continue
+            for pid in ns.host_pids:
+                if len(ns.generic_data[pid]) == 1:
+                    self.model.add_resource_node(gm.ResourceType.PID, ns.handle, pid)
+                else:
+                    pid_ns_info = ns.generic_data[pid]
+
+                    parent_ns_pid, parent_ns_id = pid_ns_info[0]
+                    child_ns_pid, child_ns_id = pid_ns_info[1]
+                    print(f"ns.handle: {ns.handle}")
+                    print(f"parent_ns_pid: {parent_ns_pid}, parent_ns_id: {parent_ns_id} " ,end = "")
+                    print(f"child_ns_pid: {child_ns_pid}, child_ns_id: {child_ns_id}")
+
+                    assert pid == parent_ns_pid
+                    assert child_ns_id == ns.handle
+
+                    self.model.add_resource_node(
+                        gm.ResourceType.PID, parent_ns_id, parent_ns_pid
+                    )
+                    self.model.add_resource_node(
+                        gm.ResourceType.PID, child_ns_id, child_ns_pid
+                    )
+
+        # 4 create map edges, if a process is in 2 NS, then it has two resource nodes.
+        # We say parent and child
+        for ns in self.namespaces.values():
+            if ns.type not in [NamespaceType.PID, NamespaceType.MNT]:
+                continue
+
+            for pid in ns.host_pids:
+                if len(ns.generic_data[pid]) > 1:
+                    pid_ns_info = ns.generic_data[pid]
+
+                    assert pid == pid_ns_info[0][0]  # Child
+                    parent_ns_pid, parent_ns_id = pid_ns_info[0]
+                    child_ns_pid, child_ns_id = pid_ns_info[1]
+
+                    self.model.add_map_edge(
+                        gm.ResourceType.PID,
+                        gm.ResourceType.PID,
+                        child_ns_id,
+                        parent_ns_id)
+                    self.model.add_map_edge(
+                        gm.ResourceType.PID,
+                        gm.ResourceType.PID,
+                        child_ns_id,
+                        parent_ns_id,
+                        child_ns_pid,
+                        parent_ns_pid,
+                    )
+
+        # Local function.
+        def get_pid_ns_handle_for_proc(process_info: Process):
+            for ns_info in process_info.namespaces:
+                if ns_info.type == NamespaceType.PID:
+                    return ns_info.handle
+
+        # 4 Create hold edges; YY, doe it nest
+        for process_info in self.procs.values():
+            pid_ns_handle = get_pid_ns_handle_for_proc(process_info)
+            ns_info = self.namespaces[pid_ns_handle]
+
+            for pid in ns_info.host_pids:
+                if len(ns_info.generic_data[pid]) > 1:
+                    pid_ns_info = ns_info.generic_data[pid]
+
+                    assert pid == pid_ns_info[0][0]  # Child
+                    parent_ns_pid, parent_ns_id = pid_ns_info[0]
+                    child_ns_pid, child_ns_id = pid_ns_info[1]
+
+                self.model.add_hold_edge(
+                    gm.perms_all,
+                    pd_id,
+                    gm.ResourceType.PID,
+                    pid_ns_handle,
+                    child_ns_pid)
+
+
+
+
         return self.model
 
 
@@ -657,24 +843,25 @@ def run_process(name: str, start_type: ProcessStartType = False) -> tuple[int, i
     elif start_type == ProcessStartType.DOCKER:
         # start in docker
         args = name.split()
-        assert len(args) == 2
+        assert len(args) == 3
         image = args[0]
-        cmd = args[1]
+        container_name = args[1]
+        cmd = args[2]
+        docker_cmd(cmd="rm", container_name=container_name)
 
         # Docker Run YY
-        docker_cmd("run", image, cmd)
+        docker_cmd(cmd="run", container_name=container_name, exec_cmd=cmd, image=image)
  
         # Docker Inspect to get the PID YY
-        inspect_op = docker_cmd("inspect", image)
+        inspect_output = docker_cmd("inspect", container_name)
 
-        # Get the PID of the init process of the container
-        # as per the host
-        # json parse 
-        # YY
-        pid = 0
+        # Parse the JSON output
+        inspect_json_dict = json.loads(inspect_output)
 
+        # Extract the PID from the State.Pid field
+        pid = inspect_json_dict[0]["State"]["Pid"]
 
-
+        return pid
 
     else:
         process = subprocess.Popen(f"./{name}", text=True)
@@ -735,7 +922,7 @@ def read_status_file(pid: int, should_print: bool = False) -> pypfs.task_status:
 
 def read_mountinfo_file(pid: int, should_print: bool = False) -> list[pypfs.mount]:
     """
-    Parse a /proc/pid/status file
+    Parse a /proc/pid/mountinfo file
 
     :param pid: the pid of the process to read mountinfo for
     :param should_print: if true, prints the raw data
@@ -752,17 +939,59 @@ def read_mountinfo_file(pid: int, should_print: bool = False) -> list[pypfs.moun
     # the device number seems to vary widely. I don't know what it means.
 
     if should_print:
-        print("MOUNTS")
+        header = ["ID", "Parent", "Device", "FS_TYPE", "Point", "Source", "Root"]
+        print(    "{:<8} {:<8} {:<12} {:<20} {:<40} {:<20} {:<20}".format(*header))
+        ignored_fs_types = ["squashfs"]
         for mount in mounts:
-            print(f"Mount {mount.id}")
-            print(f"- Parent: {mount.parent_id}")
-            print(f"- Device: {mount.device}")
-            print(f"- Root: {mount.root}")
-            print(f"- Source: {mount.source}")
-            print(f"- Point: {mount.point}")
+            if mount.filesystem_type in ignored_fs_types:
+                continue
+            print(
+            "{:<8} {:<8} {:<12} {:<20} {:<40} {:<20} {:<20}".format(
+                mount.id,
+                mount.parent_id,
+                mount.device,
+                mount.filesystem_type,
+                mount.point,
+                mount.source,
+                mount.root,
+            )
+            )
 
     return mounts
 
+
+def extract_mountinfo_for_pid(data: ProcFsData, pid: int, should_print: bool = False):
+    """
+    Show each mount point as a resource, which the mount_ns as the resource_space.
+        - For overlayFS and ext4, show host dirs.
+        - For other, show that it is some kernel-data resource. 
+    
+    1. What is the resource?
+        A. It is the mount/dir
+    2. What is the resource space ?
+        A. It is the mnt namespace
+    3. What does it map to? one of the following:
+        A. Blocks
+        A. Another path on the host
+            - New NS
+            - Host NS
+        A. Or kernel internal state resource
+            - Cannot say anything about psuedo FS
+    4. What does the follwing map to:
+        A. /proc/pid        --> PID resource 
+        A. /proc/sys        --> Generic Kernel Resource
+        A. /proc/sys/kernel --> Generic Kernel Resource
+        A. /sys/kernel      --> Generic Kernel Resource
+        A. /sys/firmware    --> Generic Kernel Resource
+    5. What do we do for mount namespaces:
+        A. Find dir on host.
+
+    Helper Functions to write:
+    - Get all mounts.
+    - For an overlayFS get the paths.
+    """
+
+    data.procs[pid].pid_mounts = read_mountinfo_file(pid, True)
 
 # Unsused
 def extract_namespaces_for_pid(data: ProcFsData, pid: int, should_print: bool = False):
@@ -775,14 +1004,14 @@ def extract_namespaces_for_pid(data: ProcFsData, pid: int, should_print: bool = 
     """
 
     task = pfs_obj.get_task(pid)
-    ns_data = task.get_ns()
+    task_ns_data = task.get_ns()
 
     # This only gets us the namespace type and handle
     # To find what the parent NS is, you can use ioctl, as shown in get_ns_info.c
     # I'm not sure if there is any other way to do this
 
     namespaces = []
-    for path, handle in ns_data.items():
+    for path, handle in task_ns_data.items():
         namespace_type = str_to_namespace_type[path]
 
         if namespace_type == NamespaceType.NONE:
@@ -806,7 +1035,6 @@ def extract_namespaces_for_pid(data: ProcFsData, pid: int, should_print: bool = 
         print("\n\n")
 
     data.procs[pid].namespaces = namespaces
-    
 
 
 def understanding_pagemap(results):
@@ -999,6 +1227,8 @@ def extract_process_data(data: ProcFsData, pid: int, name: str, should_print=Fal
 
     extract_from_status(data, pid, should_print)
     extract_memory_data(data, pid, should_print)
+    extract_namespaces_for_pid(data, pid, should_print)
+    #extract_mountinfo_for_pid(data, pid, should_print)
 
     if should_print:
         print(f"Extracted process {pid}: {data.procs[pid].name}")
@@ -1052,6 +1282,96 @@ def do_cellulos_model(args):
             print(ln, file=out_file)
 
 
+# Get all namespaces in the systems YY
+def extract_all_namespaces(data_main, should_print=False):
+    """
+    For each process in the system:
+        \ Find its NS and add it to data_main
+        \ For each NS track which PIDs are in it.
+        \ Additionally, track NS Type specific info in namespace.data which is a free form dict.
+           \ PID NS: For PID NS we track the following info in the dict
+              \ - key: PID as per the root PID NS
+                - value: A tuple of PIDs and the PID NS in which the PID exists.
+                  For example: If a bash is run as the first process in a docker container. The value would look like
+                  [
+                    (host_pid of the bash, ID of the root PID NS)
+                    (1, ID of the child PID NS)
+                  ]
+    """
+
+    # get_processes returns a list of tasks
+    processes = pfs_obj.get_processes()
+    def create_pid_ns_generic_data(pid):
+        status = read_status_file(pid)
+        ns_pid = status.ns_pid
+        assert (pid == ns_pid[0])
+        child_ns_id, parent_ns_id = getNSInfo(pid, "pid")
+        if parent_ns_id == -1:
+            return [
+            (ns_pid[0], parent_ns_id)
+        ]
+        else:
+            return [
+            (ns_pid[0], parent_ns_id),
+            (ns_pid[1], child_ns_id)
+        ]
+
+    for task in processes:
+        ns_pids = task.get_status(set()).ns_pid
+        host_pid = ns_pids[0]
+        # Out script only supports only 1 level of PID namespaces for now.
+        # So that is:
+        #     HOST: THE PID NS create by init
+        #     Docker: the PID NS created by docker
+        if len(ns_pids) > 2:
+            print(f"Error: ns_pids length is greater than 2. ns_pids: {ns_pids} for PID{host_pid}")
+            raise AssertionError("ns_pids length is greater than 2")
+
+
+        generic_ns_data = []
+
+        task_ns_data = task.get_ns()
+        for path, handle in task_ns_data.items():
+            namespace_type = str_to_namespace_type[path]
+            match namespace_type:
+                case NamespaceType.PID:
+                    generic_ns_data = create_pid_ns_generic_data(host_pid)
+                case NamespaceType.NONE:
+                    continue
+                case _:
+                    generic_ns_data = []
+
+            if handle in data_main.namespaces:
+                assert (
+                    data_main.namespaces[handle].type == namespace_type
+                ), "duplicate handle for different ns"
+                # Append the taskID
+                namespace = data_main.namespaces[handle]
+                namespace.host_pids.append(host_pid)
+                # The the PIDs in all PID_NS for this host-PID
+                namespace.generic_data[host_pid] = generic_ns_data
+
+            else:
+                namespace = Namespace(
+                    type=namespace_type,
+                    handle=handle,
+                    host_pids=[host_pid],
+                    generic_data={host_pid: generic_ns_data}
+                )
+                data_main.namespaces[handle] = namespace
+
+    if should_print:
+        print("NAMESPACES")
+        for ns_info in data_main.namespaces.values():
+            if ns_info.type != NamespaceType.PID:
+                continue
+            print(f"- NS: type {ns_info.type.name}, handle {ns_info.handle}", end="")
+            print(f"PID Count: {len(ns_info.host_pids)}")
+            # for v in ns_info.generic_data.values():
+            #     print(f"DATA GENERIC: {v}")
+        print("\n\n")
+
+
 def do_proc_model(args):
     # PIDs when this script starts them
     pids = []
@@ -1062,8 +1382,6 @@ def do_proc_model(args):
     else:
         data_main.os_name = "Host Linux"
 
-    # This is system Wide
-    extract_all_namespaces(data_main, True)
 
     if args.pid is not None:
         print(f"PID provided: {args.pid}")
@@ -1071,17 +1389,18 @@ def do_proc_model(args):
         print("Starting processes from this script")
         pids = [run_process(name, start_type) for (name, start_type) in to_run]
 
+    # This is system Wide
+    extract_all_namespaces(data_main, True)
+
     try:
         if args.pid:
             p = psutil.Process(args.pid)
             extract_process_data(data_main, args.pid, p.name(), False)
-            read_mountinfo_file(args.pid, False)  # mountinfo is not part of the model state, but we can view it
         else:
             # We add this delay so that the gettimeofday call in hello_static gets a chance to run
             time.sleep(2)
             for (name, _), pid in zip(to_run, pids):
                 extract_process_data(data_main, pid, name, False)
-                read_mountinfo_file(pid, False)  # mountinfo is not part of the model state, but we can view it
     except Exception as e:
         print(repr(e))
         traceback.print_exc()
