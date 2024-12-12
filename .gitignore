@@ -19,7 +19,3 @@ scripts/proc/out.debug
 scripts/proc/test.py
 scripts/proc/trial.cypher
 scripts/proc/fusey*
-scripts/proc/tmp.csv_dir/tmp.csv_edge.csv
-scripts/proc/tmp.csv_dir/tmp.csv_pd.csv
-scripts/proc/tmp.csv_dir/tmp.csv_res.csv
-scripts/proc/tmp.csv_dir/tmp.csv_rs.csv
