@@ -52,6 +52,8 @@ assert N1.Type == N2.Type
 """
 
 import networkx as nx
+import matplotlib
+matplotlib.use('TkAgg')  # or 'Qt5Agg'
 import matplotlib.pyplot as plt
 
 class ModelGraph:
@@ -155,4 +157,5 @@ if __name__ == "__main__":
         g = g_list[idx]
         print (f"printing: {type(g)}")
         g.draw_graph(axs[idx])
-    plt.show()
+    # plt.show()
+    plt.savefig("sub.pdf")
