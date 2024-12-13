@@ -81,6 +81,21 @@ class ModelGraph:
         self.g.add_edge(from_node, to_node, **attributes)
         return self
 
+    def copy_node(self, source_graph, node_id):
+        """
+        Copy a node from the source graph to the current graph.
+
+        :param source_graph: The graph to copy the node from
+        :param node_id: The ID of the node to copy
+        """
+        if node_id in source_graph.g:
+            node_attributes = source_graph.g.nodes[node_id]
+            self.add_node(node_id, **node_attributes)
+        else:
+            raise ValueError(f"Node {node_id} does not exist in the source graph")
+        
+        return self
+
     def draw_graph(self, ax):
         # Draw the graph
         pos = nx.spring_layout(self.g)
@@ -90,8 +105,8 @@ class ModelGraph:
             with_labels=True,
             node_color="lightblue",
             edge_color="gray",
-            node_size=2000,
-            font_size=15,
+            # node_size=2000,
+            # font_size=15,
             ax=ax
         )
 
@@ -115,7 +130,9 @@ def enumerate(
     
     
     """
-    return [n1, n2, chain, ir]
+    g = ModelGraph().copy_node(ir, "code")
+
+    return [g, n2, chain, ir]
 
 
 if __name__ == "__main__":
