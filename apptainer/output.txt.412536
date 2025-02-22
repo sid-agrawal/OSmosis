@@ -1,0 +1,44 @@
+rseq(0x7f0f597fafe0, 0x20, 0, 0x53053053) = 0
+set_robust_list(0x7f0f597fa9a0, 24)     = 0
+rt_sigprocmask(SIG_SETMASK, ~[KILL STOP RTMIN RT_1], NULL, 8) = 0
+mmap(0x7f0f40000000, 67108864, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f0f40000000
+mprotect(0x7f0f40000000, 135168, PROT_READ|PROT_WRITE) = 0
+sigaltstack(NULL, {ss_sp=NULL, ss_flags=SS_DISABLE, ss_size=0}) = 0
+sigaltstack({ss_sp=0xc000590000, ss_flags=0, ss_size=32768}, NULL) = 0
+rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
+gettid()                                = 412536
+getpid()                                = 412524
+tgkill(412524, 412534, SIGURG)          = 0
+--- SIGURG {si_signo=SIGURG, si_code=SI_TKILL, si_pid=412524, si_uid=1000} ---
+rt_sigreturn({mask=[]})                 = 0
+futex(0x55b03eecc360, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0xc0000b0448, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=3000}, NULL) = 0
+futex(0xc0000afd48, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0xc0000b0448, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+futex(0xc0000afd48, FUTEX_WAKE_PRIVATE, 1) = 1
+--- SIGURG {si_signo=SIGURG, si_code=SI_TKILL, si_pid=412524, si_uid=1000} ---
+rt_sigreturn({mask=[]})                 = 94215457071136
+getpid()                                = 412524
+tgkill(412524, 412534, SIGURG)          = 0
+--- SIGURG {si_signo=SIGURG, si_code=SI_TKILL, si_pid=412524, si_uid=1000} ---
+rt_sigreturn({mask=[]})                 = 756
+getpid()                                = 412524
+tgkill(412524, 412534, SIGURG)          = 0
+futex(0xc0000b0448, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+futex(0xc000500148, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0xc0000b0448, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+futex(0xc0000b0448, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+sched_yield()                           = 0
+futex(0x55b03eecee98, FUTEX_WAIT_PRIVATE, 2, NULL) = 0
+futex(0x55b03eecee98, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0xc0000aef48, FUTEX_WAKE_PRIVATE, 1) = 1
+sched_yield()                           = 0
+futex(0x55b03eecee98, FUTEX_WAIT_PRIVATE, 2, NULL) = -1 EAGAIN (Resource temporarily unavailable)
+--- SIGURG {si_signo=SIGURG, si_code=SI_TKILL, si_pid=412524, si_uid=1000} ---
+rt_sigreturn({mask=[]})                 = -1 EAGAIN (Resource temporarily unavailable)
+futex(0x55b03eecee98, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0xc0000aef48, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0x55b03eecef98, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0xc0000b0448, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+futex(0xc0000b0448, FUTEX_WAIT_PRIVATE, 0, NULL) = ?

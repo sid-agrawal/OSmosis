@@ -1,0 +1,72 @@
+rseq(0x7f7b6b79ffe0, 0x20, 0, 0x53053053) = 0
+set_robust_list(0x7f7b6b79f9a0, 24)     = 0
+rt_sigprocmask(SIG_SETMASK, ~[KILL STOP RTMIN RT_1], NULL, 8) = 0
+mmap(NULL, 134217728, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f7b6275e000
+munmap(0x7f7b6275e000, 25829376)        = 0
+munmap(0x7f7b68000000, 41279488)        = 0
+mprotect(0x7f7b64000000, 135168, PROT_READ|PROT_WRITE) = 0
+sigaltstack(NULL, {ss_sp=NULL, ss_flags=SS_DISABLE, ss_size=0}) = 0
+sigaltstack({ss_sp=0xc0000a0000, ss_flags=0, ss_size=32768}, NULL) = 0
+rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
+gettid()                                = 412543
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=20000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=40000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=80000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=160000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=320000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=640000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=1280000}, NULL) = 0
+epoll_pwait(4, [{events=EPOLLOUT, data={u32=3487563777, u64=9186051141067079681}}], 128, 0, NULL, 0) = 1
+nanosleep({tv_sec=0, tv_nsec=2560000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=5120000}, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=10000000},  <unfinished ...>) = ?

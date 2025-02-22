@@ -1,0 +1,92 @@
+rseq(0x7f0f5bffffe0, 0x20, 0, 0x53053053) = 0
+set_robust_list(0x7f0f5bfff9a0, 24)     = 0
+rt_sigprocmask(SIG_SETMASK, ~[KILL STOP RTMIN RT_1], NULL, 8) = 0
+mmap(NULL, 134217728, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f0f4c000000
+munmap(0x7f0f50000000, 67108864)        = 0
+mprotect(0x7f0f4c000000, 135168, PROT_READ|PROT_WRITE) = 0
+sigaltstack(NULL, {ss_sp=NULL, ss_flags=SS_DISABLE, ss_size=0}) = 0
+sigaltstack({ss_sp=0xc0000d8000, ss_flags=0, ss_size=32768}, NULL) = 0
+rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
+gettid()                                = 412531
+futex(0xc0000af648, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+futex(0xc0000af648, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+futex(0x55b03eecc360, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0xc0000af648, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+futex(0x55b03eecc360, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0xc0000af648, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+futex(0x55b03eecc360, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0xc0000af648, FUTEX_WAIT_PRIVATE, 0, NULL) = -1 EAGAIN (Resource temporarily unavailable)
+futex(0x55b03eecc360, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0xc0000af648, FUTEX_WAIT_PRIVATE, 0, NULL) = -1 EAGAIN (Resource temporarily unavailable)
+futex(0xc0000aef48, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0x55b03eecc360, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0xc0000af648, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+futex(0xc0000aef48, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0x55b03eecc360, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0xc0000af648, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+futex(0x55b03eecc360, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0xc0000af648, FUTEX_WAIT_PRIVATE, 0, NULL) = -1 EAGAIN (Resource temporarily unavailable)
+futex(0x55b03eecc360, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0xc0000af648, FUTEX_WAIT_PRIVATE, 0, NULL) = -1 EAGAIN (Resource temporarily unavailable)
+futex(0xc0000af648, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+futex(0x55b03eecc360, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0xc0000af648, FUTEX_WAIT_PRIVATE, 0, NULL) = -1 EAGAIN (Resource temporarily unavailable)
+futex(0xc0000af648, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+futex(0xc0000af648, FUTEX_WAIT_PRIVATE, 0, NULL) = -1 EAGAIN (Resource temporarily unavailable)
+nanosleep({tv_sec=0, tv_nsec=3000}, NULL) = 0
+futex(0xc0000aef48, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0x55b03eecc360, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0xc0000af648, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+futex(0xc0000af648, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+futex(0x55b03eecc360, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0xc0000af648, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+futex(0x55b03eecc360, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0xc0000af648, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+futex(0xc0000af648, FUTEX_WAIT_PRIVATE, 0, NULL) = -1 EAGAIN (Resource temporarily unavailable)
+futex(0xc0000af648, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+futex(0xc0000aef48, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0x55b03eecc360, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0xc0000af648, FUTEX_WAIT_PRIVATE, 0, NULL) = -1 EAGAIN (Resource temporarily unavailable)
+futex(0xc0000af648, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+futex(0xc0000af648, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+futex(0xc0000af648, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+mmap(NULL, 262144, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f0f6001e000
+mmap(NULL, 65536, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f0fa7e3c000
+rt_sigprocmask(SIG_SETMASK, ~[RTMIN RT_1], [], 8) = 0
+mmap(NULL, 8392704, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_STACK, -1, 0) = 0x7f0f597fb000
+mprotect(0x7f0f597fc000, 8388608, PROT_READ|PROT_WRITE) = 0
+rt_sigprocmask(SIG_BLOCK, ~[], ~[KILL STOP RTMIN RT_1], 8) = 0
+clone3({flags=CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID, child_tid=0x7f0f59ffb990, parent_tid=0x7f0f59ffb990, exit_signal=0, stack=0x7f0f597fb000, stack_size=0x7fff80, tls=0x7f0f59ffb6c0} => {parent_tid=[412535]}, 88) = 412535
+rt_sigprocmask(SIG_SETMASK, ~[KILL STOP RTMIN RT_1], NULL, 8) = 0
+rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
+getpid()                                = 412524
+tgkill(412524, 412524, SIGURG)          = 0
+sched_yield()                           = 0
+futex(0x55b03eecee98, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0x55b03eecc360, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0xc0000af648, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+futex(0xc0000aef48, FUTEX_WAKE_PRIVATE, 1) = 1
+getpid()                                = 412524
+tgkill(412524, 412535, SIGURG)          = 0
+--- SIGURG {si_signo=SIGURG, si_code=SI_TKILL, si_pid=412524, si_uid=1000} ---
+rt_sigreturn({mask=[]})                 = 824634864608
+--- SIGURG {si_signo=SIGURG, si_code=SI_TKILL, si_pid=412524, si_uid=1000} ---
+rt_sigreturn({mask=[]})                 = 824637203264
+--- SIGURG {si_signo=SIGURG, si_code=SI_TKILL, si_pid=412524, si_uid=1000} ---
+rt_sigreturn({mask=[]})                 = 824638452544
+getpid()                                = 412524
+tgkill(412524, 412530, SIGURG)          = 0
+read(3, "s image driver will only be used"..., 5376) = 1382
+read(3, "", 3994)                       = 0
+futex(0xc0000b0448, FUTEX_WAKE_PRIVATE, 1) = 1
+--- SIGURG {si_signo=SIGURG, si_code=SI_TKILL, si_pid=412524, si_uid=1000} ---
+rt_sigreturn({mask=[]})                 = 18446744069414584355
+sched_yield()                           = 0
+futex(0x55b03eecee98, FUTEX_WAIT_PRIVATE, 2, NULL) = ? ERESTARTSYS (To be restarted if SA_RESTART is set)
+--- SIGURG {si_signo=SIGURG, si_code=SI_TKILL, si_pid=412524, si_uid=1000} ---
+rt_sigreturn({mask=[]})                 = 202
+futex(0x55b03eecee98, FUTEX_WAIT_PRIVATE, 2, NULL) = -1 EAGAIN (Resource temporarily unavailable)
+futex(0x55b03eecee98, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0x55b03eecef98, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0xc0000af648, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+futex(0xc0000af648, FUTEX_WAIT_PRIVATE, 0, NULL) = ?

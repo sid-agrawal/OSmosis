@@ -1,0 +1,382 @@
+rseq(0x7f7b6af5efe0, 0x20, 0, 0x53053053) = 0
+set_robust_list(0x7f7b6af5e9a0, 24)     = 0
+rt_sigprocmask(SIG_SETMASK, ~[KILL STOP RTMIN RT_1], NULL, 8) = 0
+mmap(NULL, 134217728, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f7b5c000000
+munmap(0x7f7b60000000, 67108864)        = 0
+mprotect(0x7f7b5c000000, 135168, PROT_READ|PROT_WRITE) = 0
+sigaltstack(NULL, {ss_sp=NULL, ss_flags=SS_DISABLE, ss_size=0}) = 0
+sigaltstack({ss_sp=0xc0000aa000, ss_flags=0, ss_size=32768}, NULL) = 0
+rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
+gettid()                                = 412544
+mmap(NULL, 262144, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f7b69f1d000
+rt_sigprocmask(SIG_SETMASK, ~[RTMIN RT_1], [], 8) = 0
+mmap(NULL, 8392704, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_STACK, -1, 0) = 0x7f7b6971c000
+mprotect(0x7f7b6971d000, 8388608, PROT_READ|PROT_WRITE) = 0
+rt_sigprocmask(SIG_BLOCK, ~[], ~[KILL STOP RTMIN RT_1], 8) = 0
+clone3({flags=CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID, child_tid=0x7f7b69f1c990, parent_tid=0x7f7b69f1c990, exit_signal=0, stack=0x7f7b6971c000, stack_size=0x7fff80, tls=0x7f7b69f1c6c0} => {parent_tid=[412546]}, 88) = 412546
+rt_sigprocmask(SIG_SETMASK, ~[KILL STOP RTMIN RT_1], NULL, 8) = 0
+rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
+futex(0xc00008cf48, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+futex(0xc00008cf48, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=3000}, NULL) = 0
+futex(0xc000100148, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0xc00008cf48, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+mmap(NULL, 262144, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f7b68d7b000
+openat(AT_FDCWD, "/etc/apptainer/apptainer.conf", O_RDONLY|O_CLOEXEC) = 3
+fcntl(3, F_GETFL)                       = 0x8000 (flags O_RDONLY|O_LARGEFILE)
+fcntl(3, F_SETFL, O_RDONLY|O_NONBLOCK|O_LARGEFILE) = 0
+epoll_create1(EPOLL_CLOEXEC)            = 4
+eventfd2(0, EFD_CLOEXEC|EFD_NONBLOCK)   = 5
+epoll_ctl(4, EPOLL_CTL_ADD, 5, {events=EPOLLIN, data={u32=2606410616, u64=93933541174136}}) = 0
+epoll_ctl(4, EPOLL_CTL_ADD, 3, {events=EPOLLIN|EPOLLOUT|EPOLLRDHUP|EPOLLET, data={u32=3504865281, u64=9186051141084381185}}) = -1 EPERM (Operation not permitted)
+fcntl(3, F_GETFL)                       = 0x8800 (flags O_RDONLY|O_NONBLOCK|O_LARGEFILE)
+fcntl(3, F_SETFL, O_RDONLY|O_LARGEFILE) = 0
+read(3, "# APPTAINER.CONF\n# This is the g"..., 512) = 512
+read(3, "irectories, which do not need lo"..., 384) = 384
+read(3, "ilize.\nmax loop devices = 256\n\n#"..., 512) = 512
+read(3, "fig passwd = yes\n\n# CONFIG GROUP"..., 640) = 640
+read(3, "matically bind mount /dev within"..., 1024) = 1024
+read(3, "tainer? If\n# the --contain optio"..., 1024) = 1024
+read(3, "nsswitch.conf\n#bind path = /opt\n"..., 1280) = 1280
+read(3, "EFAULT: yes\n# Enabling this opti"..., 1536) = 1536
+read(3, "ot possible on the host.\n#\n# You"..., 2560) = 2560
+read(3, " allowed.  Ignored for the root\n"..., 2816) = 2816
+read(3, "case of a fakeroot execution whe"..., 4096) = 4096
+read(3, "s image driver will only be used"..., 5376) = 1382
+read(3, "", 3994)                       = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/etc/apptainer/apptainer.conf", {st_mode=S_IFREG|0644, st_size=17766, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/etc/apptainer/capability.json", {st_mode=S_IFREG|0644, st_size=0, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/etc/apptainer/ecl.toml", {st_mode=S_IFREG|0644, st_size=1904, ...}, 0) = 0
+getuid()                                = 1000
+getpid()                                = 412542
+openat(AT_FDCWD, "/proc/412542/uid_map", O_RDONLY|O_CLOEXEC) = 3
+fcntl(3, F_GETFL)                       = 0x8000 (flags O_RDONLY|O_LARGEFILE)
+fcntl(3, F_SETFL, O_RDONLY|O_NONBLOCK|O_LARGEFILE) = 0
+epoll_ctl(4, EPOLL_CTL_ADD, 3, {events=EPOLLIN|EPOLLOUT|EPOLLRDHUP|EPOLLET, data={u32=3504865282, u64=9186051141084381186}}) = -1 EPERM (Operation not permitted)
+fcntl(3, F_GETFL)                       = 0x8800 (flags O_RDONLY|O_NONBLOCK|O_LARGEFILE)
+fcntl(3, F_SETFL, O_RDONLY|O_LARGEFILE) = 0
+read(3, "         0          0 4294967295"..., 4096) = 33
+close(3)                                = 0
+getuid()                                = 1000
+geteuid()                               = 1000
+openat(AT_FDCWD, "/etc/apptainer/ecl.toml", O_RDONLY|O_CLOEXEC) = 3
+fcntl(3, F_GETFL)                       = 0x8000 (flags O_RDONLY|O_LARGEFILE)
+fcntl(3, F_SETFL, O_RDONLY|O_NONBLOCK|O_LARGEFILE) = 0
+epoll_ctl(4, EPOLL_CTL_ADD, 3, {events=EPOLLIN|EPOLLOUT|EPOLLRDHUP|EPOLLET, data={u32=3504865283, u64=9186051141084381187}}) = -1 EPERM (Operation not permitted)
+fcntl(3, F_GETFL)                       = 0x8800 (flags O_RDONLY|O_NONBLOCK|O_LARGEFILE)
+fcntl(3, F_SETFL, O_RDONLY|O_LARGEFILE) = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=1904, ...}) = 0
+read(3, "# Apptainer Execution Control Li"..., 1905) = 1904
+read(3, "", 1)                          = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/usr/libexec/apptainer/bin/squashfuse_ll", {st_mode=S_IFREG|0755, st_size=39144, ...}, 0) = 0
+faccessat2(AT_FDCWD, "/usr/libexec/apptainer/bin/squashfuse_ll", X_OK, AT_EACCESS) = 0
+newfstatat(AT_FDCWD, "/usr/libexec/apptainer/bin/fuse2fs", {st_mode=S_IFREG|0755, st_size=344048, ...}, 0) = 0
+faccessat2(AT_FDCWD, "/usr/libexec/apptainer/bin/fuse2fs", X_OK, AT_EACCESS) = 0
+newfstatat(AT_FDCWD, "/usr/libexec/apptainer/bin/fuse-overlayfs", {st_mode=S_IFREG|0755, st_size=101096, ...}, 0) = 0
+faccessat2(AT_FDCWD, "/usr/libexec/apptainer/bin/fuse-overlayfs", X_OK, AT_EACCESS) = 0
+newfstatat(AT_FDCWD, "/usr/libexec/apptainer/bin/gocryptfs", {st_mode=S_IFREG|0755, st_size=4572424, ...}, 0) = 0
+faccessat2(AT_FDCWD, "/usr/libexec/apptainer/bin/gocryptfs", X_OK, AT_EACCESS) = 0
+pipe2([3, 6], O_CLOEXEC)                = 0
+fcntl(3, F_GETFL)                       = 0 (flags O_RDONLY)
+fcntl(3, F_SETFL, O_RDONLY|O_NONBLOCK)  = 0
+epoll_ctl(4, EPOLL_CTL_ADD, 3, {events=EPOLLIN|EPOLLOUT|EPOLLRDHUP|EPOLLET, data={u32=3504865284, u64=9186051141084381188}}) = 0
+fcntl(6, F_GETFL)                       = 0x1 (flags O_WRONLY)
+fcntl(6, F_SETFL, O_WRONLY|O_NONBLOCK)  = 0
+epoll_ctl(4, EPOLL_CTL_ADD, 6, {events=EPOLLIN|EPOLLOUT|EPOLLRDHUP|EPOLLET, data={u32=3487563777, u64=9186051141067079681}}) = 0
+openat(AT_FDCWD, "/dev/null", O_RDONLY|O_CLOEXEC) = 7
+fcntl(7, F_GETFL)                       = 0x8000 (flags O_RDONLY|O_LARGEFILE)
+fcntl(7, F_SETFL, O_RDONLY|O_NONBLOCK|O_LARGEFILE) = 0
+epoll_ctl(4, EPOLL_CTL_ADD, 7, {events=EPOLLIN|EPOLLOUT|EPOLLRDHUP|EPOLLET, data={u32=3470262273, u64=9186051141049778177}}) = -1 EPERM (Operation not permitted)
+fcntl(7, F_GETFL)                       = 0x8800 (flags O_RDONLY|O_NONBLOCK|O_LARGEFILE)
+fcntl(7, F_SETFL, O_RDONLY|O_LARGEFILE) = 0
+getpid()                                = 412542
+pidfd_open(412542, 0)                   = 8
+waitid(P_PIDFD, 8, NULL, WEXITED, NULL) = -1 ECHILD (No child processes)
+pidfd_send_signal(8, 0, NULL, 0)        = 0
+close(8)                                = 0
+fcntl(6, F_GETFL)                       = 0x801 (flags O_WRONLY|O_NONBLOCK)
+fcntl(6, F_SETFL, O_WRONLY)             = 0
+fcntl(6, F_GETFL)                       = 0x1 (flags O_WRONLY)
+pipe2([8, 9], O_CLOEXEC)                = 0
+getpid()                                = 412542
+rt_sigprocmask(SIG_SETMASK, NULL, [], 8) = 0
+rt_sigprocmask(SIG_SETMASK, ~[], NULL, 8) = 0
+clone(child_stack=NULL, flags=CLONE_VM|CLONE_PIDFD|CLONE_VFORK|SIGCHLD, parent_tid=[10]) = 412548
+rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
+close(9)                                = 0
+read(8, "", 8)                          = 0
+close(8)                                = 0
+epoll_ctl(4, EPOLL_CTL_DEL, 6, 0xc00002f8dc) = 0
+close(6)                                = 0
+close(7)                                = 0
+read(3, 0xc000132000, 4096)             = -1 EAGAIN (Resource temporarily unavailable)
+epoll_pwait(4, [], 128, 0, NULL, 0)     = 0
+epoll_pwait(4, [{events=EPOLLIN, data={u32=3504865284, u64=9186051141084381188}}], 128, -1, NULL, 0) = 1
+read(3, "squashfuse 0.5.1 (c) 2012 Dave V"..., 4096) = 120
+read(3, "\n/usr/libexec/apptainer/bin/squa"..., 3976) = 51
+read(3, "    -o offset=N            offse"..., 3925) = 64
+read(3, "    -o subdir=PATH         mount"..., 3861) = 62
+read(3, "    -o notify_pipe=PATH    named"..., 3799) = 143
+read(3, "    -o timeout=N           idle "..., 3656) = 64
+read(3, "    -o uid=N               set f"..., 3592) = 51
+waitid(P_PIDFD, 10, {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=412548, si_uid=1000, si_status=2, si_utime=0, si_stime=0}, WEXITED, {ru_utime={tv_sec=0, tv_usec=0}, ru_stime={tv_sec=0, tv_usec=2042}, ...}) = 0
+--- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=412548, si_uid=1000, si_status=2, si_utime=0, si_stime=0} ---
+rt_sigreturn({mask=[]})                 = 0
+close(10)                               = 0
+epoll_ctl(4, EPOLL_CTL_DEL, 3, 0xc00002fa3c) = 0
+close(3)                                = 0
+getuid()                                = 1000
+socket(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC|SOCK_NONBLOCK, 0) = 3
+connect(3, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+close(3)                                = 0
+socket(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC|SOCK_NONBLOCK, 0) = 3
+connect(3, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/etc/nsswitch.conf", {st_mode=S_IFREG|0644, st_size=593, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+openat(AT_FDCWD, "/etc/nsswitch.conf", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=593, ...}) = 0
+read(3, "# /etc/nsswitch.conf\n#\n# Example"..., 4096) = 593
+read(3, "", 4096)                       = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=593, ...}) = 0
+close(3)                                = 0
+openat(AT_FDCWD, "/etc/passwd", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=4175, ...}) = 0
+lseek(3, 0, SEEK_SET)                   = 0
+read(3, "root:x:0:0:root:/root:/bin/bash\n"..., 4096) = 4096
+close(3)                                = 0
+getgroups(0, NULL)                      = 11
+getgroups(11, [4, 24, 27, 30, 46, 120, 132, 133, 142, 998, 1000]) = 11
+socket(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC|SOCK_NONBLOCK, 0) = 3
+connect(3, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+close(3)                                = 0
+socket(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC|SOCK_NONBLOCK, 0) = 3
+connect(3, {sa_family=AF_UNIX, sun_path="/var/run/nscd/socket"}, 110) = -1 ENOENT (No such file or directory)
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/etc/nsswitch.conf", {st_mode=S_IFREG|0644, st_size=593, ...}, 0) = 0
+openat(AT_FDCWD, "/etc/group", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=1685, ...}) = 0
+lseek(3, 0, SEEK_SET)                   = 0
+read(3, "root:x:0:\ndaemon:x:1:\nbin:x:2:\ns"..., 4096) = 1685
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/etc/nsswitch.conf", {st_mode=S_IFREG|0644, st_size=593, ...}, 0) = 0
+openat(AT_FDCWD, "/etc/group", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=1685, ...}) = 0
+lseek(3, 0, SEEK_SET)                   = 0
+read(3, "root:x:0:\ndaemon:x:1:\nbin:x:2:\ns"..., 4096) = 1685
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/etc/nsswitch.conf", {st_mode=S_IFREG|0644, st_size=593, ...}, 0) = 0
+openat(AT_FDCWD, "/etc/group", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=1685, ...}) = 0
+lseek(3, 0, SEEK_SET)                   = 0
+read(3, "root:x:0:\ndaemon:x:1:\nbin:x:2:\ns"..., 4096) = 1685
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/etc/nsswitch.conf", {st_mode=S_IFREG|0644, st_size=593, ...}, 0) = 0
+openat(AT_FDCWD, "/etc/group", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=1685, ...}) = 0
+lseek(3, 0, SEEK_SET)                   = 0
+read(3, "root:x:0:\ndaemon:x:1:\nbin:x:2:\ns"..., 4096) = 1685
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/etc/nsswitch.conf", {st_mode=S_IFREG|0644, st_size=593, ...}, 0) = 0
+openat(AT_FDCWD, "/etc/group", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=1685, ...}) = 0
+lseek(3, 0, SEEK_SET)                   = 0
+read(3, "root:x:0:\ndaemon:x:1:\nbin:x:2:\ns"..., 4096) = 1685
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/etc/nsswitch.conf", {st_mode=S_IFREG|0644, st_size=593, ...}, 0) = 0
+openat(AT_FDCWD, "/etc/group", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=1685, ...}) = 0
+lseek(3, 0, SEEK_SET)                   = 0
+read(3, "root:x:0:\ndaemon:x:1:\nbin:x:2:\ns"..., 4096) = 1685
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/etc/nsswitch.conf", {st_mode=S_IFREG|0644, st_size=593, ...}, 0) = 0
+openat(AT_FDCWD, "/etc/group", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=1685, ...}) = 0
+lseek(3, 0, SEEK_SET)                   = 0
+read(3, "root:x:0:\ndaemon:x:1:\nbin:x:2:\ns"..., 4096) = 1685
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/etc/nsswitch.conf", {st_mode=S_IFREG|0644, st_size=593, ...}, 0) = 0
+openat(AT_FDCWD, "/etc/group", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=1685, ...}) = 0
+lseek(3, 0, SEEK_SET)                   = 0
+read(3, "root:x:0:\ndaemon:x:1:\nbin:x:2:\ns"..., 4096) = 1685
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/etc/nsswitch.conf", {st_mode=S_IFREG|0644, st_size=593, ...}, 0) = 0
+openat(AT_FDCWD, "/etc/group", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=1685, ...}) = 0
+lseek(3, 0, SEEK_SET)                   = 0
+read(3, "root:x:0:\ndaemon:x:1:\nbin:x:2:\ns"..., 4096) = 1685
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/etc/nsswitch.conf", {st_mode=S_IFREG|0644, st_size=593, ...}, 0) = 0
+openat(AT_FDCWD, "/etc/group", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=1685, ...}) = 0
+lseek(3, 0, SEEK_SET)                   = 0
+read(3, "root:x:0:\ndaemon:x:1:\nbin:x:2:\ns"..., 4096) = 1685
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/etc/nsswitch.conf", {st_mode=S_IFREG|0644, st_size=593, ...}, 0) = 0
+openat(AT_FDCWD, "/etc/group", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=1685, ...}) = 0
+lseek(3, 0, SEEK_SET)                   = 0
+read(3, "root:x:0:\ndaemon:x:1:\nbin:x:2:\ns"..., 4096) = 1685
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/etc/nsswitch.conf", {st_mode=S_IFREG|0644, st_size=593, ...}, 0) = 0
+openat(AT_FDCWD, "/etc/group", O_RDONLY|O_CLOEXEC) = 3
+fstat(3, {st_mode=S_IFREG|0644, st_size=1685, ...}) = 0
+lseek(3, 0, SEEK_SET)                   = 0
+read(3, "root:x:0:\ndaemon:x:1:\nbin:x:2:\ns"..., 4096) = 1685
+close(3)                                = 0
+getuid()                                = 1000
+openat(AT_FDCWD, "/etc/apptainer/capability.json", O_RDONLY|O_CLOEXEC) = 3
+fcntl(3, F_GETFL)                       = 0x8000 (flags O_RDONLY|O_LARGEFILE)
+fcntl(3, F_SETFL, O_RDONLY|O_NONBLOCK|O_LARGEFILE) = 0
+epoll_ctl(4, EPOLL_CTL_ADD, 3, {events=EPOLLIN|EPOLLOUT|EPOLLRDHUP|EPOLLET, data={u32=3504865285, u64=9186051141084381189}}) = -1 EPERM (Operation not permitted)
+fcntl(3, F_GETFL)                       = 0x8800 (flags O_RDONLY|O_NONBLOCK|O_LARGEFILE)
+fcntl(3, F_SETFL, O_RDONLY|O_LARGEFILE) = 0
+read(3, "", 512)                        = 0
+getuid()                                = 1000
+newfstatat(AT_FDCWD, "/etc/nsswitch.conf", {st_mode=S_IFREG|0644, st_size=593, ...}, 0) = 0
+openat(AT_FDCWD, "/etc/passwd", O_RDONLY|O_CLOEXEC) = 6
+fstat(6, {st_mode=S_IFREG|0644, st_size=4175, ...}) = 0
+lseek(6, 0, SEEK_SET)                   = 0
+read(6, "root:x:0:0:root:/root:/bin/bash\n"..., 4096) = 4096
+close(6)                                = 0
+getgroups(0, NULL)                      = 11
+getgroups(11, [4, 24, 27, 30, 46, 120, 132, 133, 142, 998, 1000]) = 11
+newfstatat(AT_FDCWD, "/etc/nsswitch.conf", {st_mode=S_IFREG|0644, st_size=593, ...}, 0) = 0
+openat(AT_FDCWD, "/etc/group", O_RDONLY|O_CLOEXEC) = 6
+fstat(6, {st_mode=S_IFREG|0644, st_size=1685, ...}) = 0
+lseek(6, 0, SEEK_SET)                   = 0
+read(6, "root:x:0:\ndaemon:x:1:\nbin:x:2:\ns"..., 4096) = 1685
+close(6)                                = 0
+newfstatat(AT_FDCWD, "/etc/nsswitch.conf", {st_mode=S_IFREG|0644, st_size=593, ...}, 0) = 0
+openat(AT_FDCWD, "/etc/group", O_RDONLY|O_CLOEXEC) = 6
+fstat(6, {st_mode=S_IFREG|0644, st_size=1685, ...}) = 0
+lseek(6, 0, SEEK_SET)                   = 0
+read(6, "root:x:0:\ndaemon:x:1:\nbin:x:2:\ns"..., 4096) = 1685
+close(6)                                = 0
+newfstatat(AT_FDCWD, "/etc/nsswitch.conf", {st_mode=S_IFREG|0644, st_size=593, ...}, 0) = 0
+openat(AT_FDCWD, "/etc/group", O_RDONLY|O_CLOEXEC) = 6
+fstat(6, {st_mode=S_IFREG|0644, st_size=1685, ...}) = 0
+lseek(6, 0, SEEK_SET)                   = 0
+read(6, "root:x:0:\ndaemon:x:1:\nbin:x:2:\ns"..., 4096) = 1685
+close(6)                                = 0
+newfstatat(AT_FDCWD, "/etc/nsswitch.conf", {st_mode=S_IFREG|0644, st_size=593, ...}, 0) = 0
+openat(AT_FDCWD, "/etc/group", O_RDONLY|O_CLOEXEC) = 6
+fstat(6, {st_mode=S_IFREG|0644, st_size=1685, ...}) = 0
+lseek(6, 0, SEEK_SET)                   = 0
+read(6, "root:x:0:\ndaemon:x:1:\nbin:x:2:\ns"..., 4096) = 1685
+close(6)                                = 0
+newfstatat(AT_FDCWD, "/etc/nsswitch.conf", {st_mode=S_IFREG|0644, st_size=593, ...}, 0) = 0
+openat(AT_FDCWD, "/etc/group", O_RDONLY|O_CLOEXEC) = 6
+fstat(6, {st_mode=S_IFREG|0644, st_size=1685, ...}) = 0
+lseek(6, 0, SEEK_SET)                   = 0
+read(6, "root:x:0:\ndaemon:x:1:\nbin:x:2:\ns"..., 4096) = 1685
+close(6)                                = 0
+newfstatat(AT_FDCWD, "/etc/nsswitch.conf", {st_mode=S_IFREG|0644, st_size=593, ...}, 0) = 0
+openat(AT_FDCWD, "/etc/group", O_RDONLY|O_CLOEXEC) = 6
+fstat(6, {st_mode=S_IFREG|0644, st_size=1685, ...}) = 0
+lseek(6, 0, SEEK_SET)                   = 0
+read(6, "root:x:0:\ndaemon:x:1:\nbin:x:2:\ns"..., 4096) = 1685
+close(6)                                = 0
+newfstatat(AT_FDCWD, "/etc/nsswitch.conf", {st_mode=S_IFREG|0644, st_size=593, ...}, 0) = 0
+openat(AT_FDCWD, "/etc/group", O_RDONLY|O_CLOEXEC) = 6
+fstat(6, {st_mode=S_IFREG|0644, st_size=1685, ...}) = 0
+lseek(6, 0, SEEK_SET)                   = 0
+read(6, "root:x:0:\ndaemon:x:1:\nbin:x:2:\ns"..., 4096) = 1685
+close(6)                                = 0
+newfstatat(AT_FDCWD, "/etc/nsswitch.conf", {st_mode=S_IFREG|0644, st_size=593, ...}, 0) = 0
+openat(AT_FDCWD, "/etc/group", O_RDONLY|O_CLOEXEC) = 6
+fstat(6, {st_mode=S_IFREG|0644, st_size=1685, ...}) = 0
+lseek(6, 0, SEEK_SET)                   = 0
+read(6, "root:x:0:\ndaemon:x:1:\nbin:x:2:\ns"..., 4096) = 1685
+close(6)                                = 0
+newfstatat(AT_FDCWD, "/etc/nsswitch.conf", {st_mode=S_IFREG|0644, st_size=593, ...}, 0) = 0
+openat(AT_FDCWD, "/etc/group", O_RDONLY|O_CLOEXEC) = 6
+fstat(6, {st_mode=S_IFREG|0644, st_size=1685, ...}) = 0
+lseek(6, 0, SEEK_SET)                   = 0
+read(6, "root:x:0:\ndaemon:x:1:\nbin:x:2:\ns"..., 4096) = 1685
+close(6)                                = 0
+newfstatat(AT_FDCWD, "/etc/nsswitch.conf", {st_mode=S_IFREG|0644, st_size=593, ...}, 0) = 0
+openat(AT_FDCWD, "/etc/group", O_RDONLY|O_CLOEXEC) = 6
+fstat(6, {st_mode=S_IFREG|0644, st_size=1685, ...}) = 0
+lseek(6, 0, SEEK_SET)                   = 0
+read(6, "root:x:0:\ndaemon:x:1:\nbin:x:2:\ns"..., 4096) = 1685
+close(6)                                = 0
+newfstatat(AT_FDCWD, "/etc/nsswitch.conf", {st_mode=S_IFREG|0644, st_size=593, ...}, 0) = 0
+openat(AT_FDCWD, "/etc/group", O_RDONLY|O_CLOEXEC) = 6
+fstat(6, {st_mode=S_IFREG|0644, st_size=1685, ...}) = 0
+lseek(6, 0, SEEK_SET)                   = 0
+read(6, "root:x:0:\ndaemon:x:1:\nbin:x:2:\ns"..., 4096) = 1685
+close(6)                                = 0
+close(3)                                = 0
+openat(AT_FDCWD, "/proc/self/mountinfo", O_RDONLY|O_CLOEXEC) = 3
+fcntl(3, F_GETFL)                       = 0x8000 (flags O_RDONLY|O_LARGEFILE)
+fcntl(3, F_SETFL, O_RDONLY|O_NONBLOCK|O_LARGEFILE) = 0
+epoll_ctl(4, EPOLL_CTL_ADD, 3, {events=EPOLLIN|EPOLLOUT|EPOLLRDHUP|EPOLLET, data={u32=3504865286, u64=9186051141084381190}}) = 0
+read(3, "24 30 0:22 / /sys rw,nosuid,node"..., 4096) = 4014
+read(3, "62 30 7:17 / /snap/cups/1058 ro,"..., 4096) = 4083
+newfstatat(AT_FDCWD, "/var/lib/docker/overlay2/e5526151b8950f90cf87e9008afddccb8db43f63d5e77ff3857d2a94a8d47a77/merged", 0xc0002deed8, 0) = -1 EACCES (Permission denied)
+read(3, "2323 245 0:4 mnt:[4026533799] /r"..., 4096) = 515
+read(3, "", 3581)                       = 0
+epoll_ctl(4, EPOLL_CTL_DEL, 3, 0xc00002f65c) = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/etc", {st_mode=S_IFDIR|0755, st_size=12288, ...}, AT_SYMLINK_NOFOLLOW) = 0
+newfstatat(AT_FDCWD, "/etc/localtime", {st_mode=S_IFLNK|0777, st_size=37, ...}, AT_SYMLINK_NOFOLLOW) = 0
+readlinkat(AT_FDCWD, "/etc/localtime", "/usr/share/zoneinfo/America/Vanc"..., 128) = 37
+newfstatat(AT_FDCWD, "/usr", {st_mode=S_IFDIR|0755, st_size=4096, ...}, AT_SYMLINK_NOFOLLOW) = 0
+newfstatat(AT_FDCWD, "/usr/share", {st_mode=S_IFDIR|0755, st_size=16384, ...}, AT_SYMLINK_NOFOLLOW) = 0
+newfstatat(AT_FDCWD, "/usr/share/zoneinfo", {st_mode=S_IFDIR|0755, st_size=4096, ...}, AT_SYMLINK_NOFOLLOW) = 0
+newfstatat(AT_FDCWD, "/usr/share/zoneinfo/America", {st_mode=S_IFDIR|0755, st_size=20480, ...}, AT_SYMLINK_NOFOLLOW) = 0
+newfstatat(AT_FDCWD, "/usr/share/zoneinfo/America/Vancouver", {st_mode=S_IFREG|0644, st_size=2892, ...}, AT_SYMLINK_NOFOLLOW) = 0
+newfstatat(AT_FDCWD, "/etc", {st_mode=S_IFDIR|0755, st_size=12288, ...}, AT_SYMLINK_NOFOLLOW) = 0
+newfstatat(AT_FDCWD, "/etc/hosts", {st_mode=S_IFREG|0644, st_size=220, ...}, AT_SYMLINK_NOFOLLOW) = 0
+newfstatat(AT_FDCWD, "/home", {st_mode=S_IFDIR|0755, st_size=4096, ...}, AT_SYMLINK_NOFOLLOW) = 0
+newfstatat(AT_FDCWD, "/home/siagraw", {st_mode=S_IFDIR|0755, st_size=4096, ...}, AT_SYMLINK_NOFOLLOW) = 0
+newfstatat(AT_FDCWD, "/home", {st_mode=S_IFDIR|0755, st_size=4096, ...}, AT_SYMLINK_NOFOLLOW) = 0
+newfstatat(AT_FDCWD, "/home/siagraw", {st_mode=S_IFDIR|0755, st_size=4096, ...}, AT_SYMLINK_NOFOLLOW) = 0
+newfstatat(AT_FDCWD, "/home/siagraw/OSmosis", {st_mode=S_IFDIR|0775, st_size=4096, ...}, AT_SYMLINK_NOFOLLOW) = 0
+newfstatat(AT_FDCWD, "/home/siagraw/OSmosis/apptainer", {st_mode=S_IFDIR|0775, st_size=4096, ...}, AT_SYMLINK_NOFOLLOW) = 0
+newfstatat(AT_FDCWD, "/home", {st_mode=S_IFDIR|0755, st_size=4096, ...}, AT_SYMLINK_NOFOLLOW) = 0
+newfstatat(AT_FDCWD, "/home/siagraw", {st_mode=S_IFDIR|0755, st_size=4096, ...}, AT_SYMLINK_NOFOLLOW) = 0
+newfstatat(AT_FDCWD, "/home/siagraw/OSmosis", {st_mode=S_IFDIR|0775, st_size=4096, ...}, AT_SYMLINK_NOFOLLOW) = 0
+newfstatat(AT_FDCWD, "/home/siagraw/OSmosis/apptainer", {st_mode=S_IFDIR|0775, st_size=4096, ...}, AT_SYMLINK_NOFOLLOW) = 0
+newfstatat(AT_FDCWD, "/home/siagraw/OSmosis/apptainer/first.sif", {st_mode=S_IFREG|0755, st_size=66863104, ...}, AT_SYMLINK_NOFOLLOW) = 0
+faccessat(AT_FDCWD, "/home/siagraw/OSmosis/apptainer/first.sif", R_OK) = 0
+openat(AT_FDCWD, "/home/siagraw/OSmosis/apptainer/first.sif", O_RDONLY|O_CLOEXEC) = 3
+fcntl(3, F_GETFL)                       = 0x8000 (flags O_RDONLY|O_LARGEFILE)
+fcntl(3, F_SETFL, O_RDONLY|O_NONBLOCK|O_LARGEFILE) = 0
+epoll_ctl(4, EPOLL_CTL_ADD, 3, {events=EPOLLIN|EPOLLOUT|EPOLLRDHUP|EPOLLET, data={u32=3504865287, u64=9186051141084381191}}) = -1 EPERM (Operation not permitted)
+fcntl(3, F_GETFL)                       = 0x8800 (flags O_RDONLY|O_NONBLOCK|O_LARGEFILE)
+fcntl(3, F_SETFL, O_RDONLY|O_LARGEFILE) = 0
+fstat(3, {st_mode=S_IFREG|0755, st_size=66863104, ...}) = 0
+close(3)                                = 0
+openat(AT_FDCWD, "/home/siagraw/OSmosis/apptainer/first.sif", O_RDONLY|O_CLOEXEC) = 3
+fcntl(3, F_GETFL)                       = 0x8000 (flags O_RDONLY|O_LARGEFILE)
+fcntl(3, F_SETFL, O_RDONLY|O_NONBLOCK|O_LARGEFILE) = 0
+epoll_ctl(4, EPOLL_CTL_ADD, 3, {events=EPOLLIN|EPOLLOUT|EPOLLRDHUP|EPOLLET, data={u32=3504865288, u64=9186051141084381192}}) = -1 EPERM (Operation not permitted)
+fcntl(3, F_GETFL)                       = 0x8800 (flags O_RDONLY|O_NONBLOCK|O_LARGEFILE)
+fcntl(3, F_SETFL, O_RDONLY|O_LARGEFILE) = 0
+fstat(3, {st_mode=S_IFREG|0755, st_size=66863104, ...}) = 0
+read(3, "#!/usr/bin/env run-singularity\n\0"..., 2048) = 2048
+pread64(3, "#!/usr/bin/env run-singularity\n\0"..., 128, 0) = 128
+pread64(3, "\1@\0\0\1\1\0\0\0\1\0\0\360\0\0\0\0\260}\0\0\0\0\0\0h\0\0\0\0\0\0"..., 28080, 4096) = 28080
+pread64(3, "hsqs\365\f\0\0G\262\243g\0\0\2\0&\1\0\0\1\0\21\0\300\0\7\0\4\0\0\0"..., 2048, 36864) = 2048
+fcntl(3, F_SETFD, 0x80000 /* FD_??? */) = 0
+futex(0x556e9b589c40, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0xc00008cf48, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+openat(AT_FDCWD, "/etc/apptainer/ecl.toml", O_RDONLY|O_CLOEXEC) = 6
+fcntl(6, F_GETFL)                       = 0x8000 (flags O_RDONLY|O_LARGEFILE)
+fcntl(6, F_SETFL, O_RDONLY|O_NONBLOCK|O_LARGEFILE) = 0
+epoll_ctl(4, EPOLL_CTL_ADD, 6, {events=EPOLLIN|EPOLLOUT|EPOLLRDHUP|EPOLLET, data={u32=3504865289, u64=9186051141084381193}}) = -1 EPERM (Operation not permitted)
+fcntl(6, F_GETFL)                       = 0x8800 (flags O_RDONLY|O_NONBLOCK|O_LARGEFILE)
+fcntl(6, F_SETFL, O_RDONLY|O_LARGEFILE) = 0
+fstat(6, {st_mode=S_IFREG|0644, st_size=1904, ...}) = 0
+read(6, "# Apptainer Execution Control Li"..., 1905) = 1904
+read(6, "", 1)                          = 0
+close(6)                                = 0
+ioctl(0, TIOCGPGRP, [412521])           = 0
+getpgid(0)                              = 412521
+socketpair(AF_UNIX, SOCK_STREAM|SOCK_CLOEXEC, 0, [6, 7]) = 0
+exit_group(0)                           = ?

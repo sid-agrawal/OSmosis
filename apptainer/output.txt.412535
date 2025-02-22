@@ -1,0 +1,64 @@
+rseq(0x7f0f59ffbfe0, 0x20, 0, 0x53053053) = 0
+set_robust_list(0x7f0f59ffb9a0, 24)     = 0
+rt_sigprocmask(SIG_SETMASK, ~[KILL STOP RTMIN RT_1], NULL, 8) = 0
+mmap(NULL, 134217728, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f0f3c000000
+munmap(0x7f0f40000000, 67108864)        = 0
+mprotect(0x7f0f3c000000, 135168, PROT_READ|PROT_WRITE) = 0
+sigaltstack(NULL, {ss_sp=NULL, ss_flags=SS_DISABLE, ss_size=0}) = 0
+sigaltstack({ss_sp=0xc000506000, ss_flags=0, ss_size=32768}, NULL) = 0
+rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
+gettid()                                = 412535
+rt_sigprocmask(SIG_SETMASK, ~[RTMIN RT_1], [], 8) = 0
+mmap(NULL, 8392704, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_STACK, -1, 0) = 0x7f0f587f9000
+mprotect(0x7f0f587fa000, 8388608, PROT_READ|PROT_WRITE) = 0
+rt_sigprocmask(SIG_BLOCK, ~[], ~[KILL STOP RTMIN RT_1], 8) = 0
+clone3({flags=CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID, child_tid=0x7f0f58ff9990, parent_tid=0x7f0f58ff9990, exit_signal=0, stack=0x7f0f587f9000, stack_size=0x7fff80, tls=0x7f0f58ff96c0} => {parent_tid=[412537]}, 88) = 412537
+rt_sigprocmask(SIG_SETMASK, ~[KILL STOP RTMIN RT_1], NULL, 8) = 0
+rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
+futex(0xc000500148, FUTEX_WAIT_PRIVATE, 0, NULL) = -1 EAGAIN (Resource temporarily unavailable)
+futex(0x55b03eecc360, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0xc000500148, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+sched_yield()                           = 0
+futex(0x55b03eecee98, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0xc000500148, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+sched_yield()                           = 0
+futex(0x55b03eecee98, FUTEX_WAIT_PRIVATE, 2, NULL) = 0
+futex(0x55b03eecef98, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0x55b03eecee98, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0xc000598148, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0x55b03eecc360, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0xc000500148, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+futex(0xc000500148, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+ioctl(2, TCGETS, {c_iflag=ICRNL|IXANY|IXOFF|IUTF8, c_oflag=NL0|CR0|TAB0|BS0|VT0|FF0|OPOST|ONLCR, c_cflag=B38400|CS8|CREAD, c_lflag=ISIG|ICANON|ECHO|ECHOE|ECHOK|IEXTEN|ECHOCTL|ECHOKE, ...}) = 0
+ioctl(2, TCGETS, {c_iflag=ICRNL|IXANY|IXOFF|IUTF8, c_oflag=NL0|CR0|TAB0|BS0|VT0|FF0|OPOST|ONLCR, c_cflag=B38400|CS8|CREAD, c_lflag=ISIG|ICANON|ECHO|ECHOE|ECHOK|IEXTEN|ECHOCTL|ECHOKE, ...}) = 0
+geteuid()                               = 1000
+newfstatat(AT_FDCWD, "/etc/singularity/", 0xc000617bd8, 0) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/etc/apptainer/apptainer.conf", O_RDONLY|O_CLOEXEC) = 3
+fcntl(3, F_GETFL)                       = 0x8000 (flags O_RDONLY|O_LARGEFILE)
+fcntl(3, F_SETFL, O_RDONLY|O_NONBLOCK|O_LARGEFILE) = 0
+epoll_ctl(4, EPOLL_CTL_ADD, 3, {events=EPOLLIN|EPOLLOUT|EPOLLRDHUP|EPOLLET, data={u32=1311244292, u64=9155721170768101380}}) = -1 EPERM (Operation not permitted)
+fcntl(3, F_GETFL)                       = 0x8800 (flags O_RDONLY|O_NONBLOCK|O_LARGEFILE)
+fcntl(3, F_SETFL, O_RDONLY|O_LARGEFILE) = 0
+read(3, "# APPTAINER.CONF\n# This is the g"..., 512) = 512
+read(3, "irectories, which do not need lo"..., 384) = 384
+read(3, "ilize.\nmax loop devices = 256\n\n#"..., 512) = 512
+read(3, "fig passwd = yes\n\n# CONFIG GROUP"..., 640) = 640
+read(3, "matically bind mount /dev within"..., 1024) = 1024
+read(3, "tainer? If\n# the --contain optio"..., 1024) = 1024
+read(3, "nsswitch.conf\n#bind path = /opt\n"..., 1280) = 1280
+read(3, "EFAULT: yes\n# Enabling this opti"..., 1536) = 1536
+epoll_pwait(4, [], 128, 0, NULL, 0)     = 0
+futex(0xc0000b0448, FUTEX_WAKE_PRIVATE, 1) = 1
+read(3, "ot possible on the host.\n#\n# You"..., 2560) = 2560
+getpid()                                = 412524
+tgkill(412524, 412536, SIGURG)          = 0
+mmap(NULL, 65536, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f0fa7e1c000
+read(3, " allowed.  Ignored for the root\n"..., 2816) = 2816
+--- SIGURG {si_signo=SIGURG, si_code=SI_TKILL, si_pid=412524, si_uid=1000} ---
+rt_sigreturn({mask=[]})                 = 54043636031029277
+getpid()                                = 412524
+tgkill(412524, 412531, SIGURG)          = 0
+getpid()                                = 412524
+tgkill(412524, 412531, SIGURG)          = 0
+futex(0xc000500148, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+futex(0xc000500148, FUTEX_WAIT_PRIVATE, 0, NULL) = ?

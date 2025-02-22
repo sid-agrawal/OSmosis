@@ -1,0 +1,15 @@
+rseq(0x7f7b69f1cfe0, 0x20, 0, 0x53053053) = 0
+set_robust_list(0x7f7b69f1c9a0, 24)     = 0
+rt_sigprocmask(SIG_SETMASK, ~[KILL STOP RTMIN RT_1], NULL, 8) = 0
+mmap(NULL, 134217728, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f7b54000000
+munmap(0x7f7b58000000, 67108864)        = 0
+mprotect(0x7f7b54000000, 135168, PROT_READ|PROT_WRITE) = 0
+sigaltstack(NULL, {ss_sp=NULL, ss_flags=SS_DISABLE, ss_size=0}) = 0
+sigaltstack({ss_sp=0xc000106000, ss_flags=0, ss_size=32768}, NULL) = 0
+rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
+gettid()                                = 412546
+futex(0xc000100148, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=3000}, NULL) = 0
+futex(0xc00008cf48, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0xc000100148, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+futex(0xc000100148, FUTEX_WAIT_PRIVATE, 0, NULL) = ?

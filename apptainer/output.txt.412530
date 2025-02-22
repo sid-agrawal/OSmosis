@@ -1,0 +1,258 @@
+rseq(0x7f0f6089efe0, 0x20, 0, 0x53053053) = 0
+set_robust_list(0x7f0f6089e9a0, 24)     = 0
+rt_sigprocmask(SIG_SETMASK, ~[KILL STOP RTMIN RT_1], NULL, 8) = 0
+mmap(NULL, 134217728, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f0f537ff000
+munmap(0x7f0f537ff000, 8392704)         = 0
+munmap(0x7f0f58000000, 58716160)        = 0
+mprotect(0x7f0f54000000, 135168, PROT_READ|PROT_WRITE) = 0
+sigaltstack(NULL, {ss_sp=NULL, ss_flags=SS_DISABLE, ss_size=0}) = 0
+sigaltstack({ss_sp=0xc0000cc000, ss_flags=0, ss_size=32768}, NULL) = 0
+rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
+gettid()                                = 412530
+mmap(NULL, 262144, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f0fa7e4c000
+rt_sigprocmask(SIG_SETMASK, ~[RTMIN RT_1], [], 8) = 0
+mmap(NULL, 8392704, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_STACK, -1, 0) = 0x7f0f5affe000
+mprotect(0x7f0f5afff000, 8388608, PROT_READ|PROT_WRITE) = 0
+rt_sigprocmask(SIG_BLOCK, ~[], ~[KILL STOP RTMIN RT_1], 8) = 0
+clone3({flags=CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID, child_tid=0x7f0f5b7fe990, parent_tid=0x7f0f5b7fe990, exit_signal=0, stack=0x7f0f5affe000, stack_size=0x7fff80, tls=0x7f0f5b7fe6c0} => {parent_tid=[412532]}, 88) = 412532
+rt_sigprocmask(SIG_SETMASK, ~[KILL STOP RTMIN RT_1], NULL, 8) = 0
+rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
+futex(0x55b03eecc360, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0xc0000aef48, FUTEX_WAIT_PRIVATE, 0, NULL) = -1 EAGAIN (Resource temporarily unavailable)
+futex(0x55b03eecc360, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0xc0000aef48, FUTEX_WAIT_PRIVATE, 0, NULL) = -1 EAGAIN (Resource temporarily unavailable)
+futex(0x55b03eecc360, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0xc0000aef48, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=3000}, NULL) = 0
+futex(0xc000100148, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0xc0000aef48, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+rt_sigprocmask(SIG_SETMASK, ~[RTMIN RT_1], [], 8) = 0
+mmap(NULL, 8392704, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_STACK, -1, 0) = 0x7f0f59ffc000
+mprotect(0x7f0f59ffd000, 8388608, PROT_READ|PROT_WRITE) = 0
+rt_sigprocmask(SIG_BLOCK, ~[], ~[KILL STOP RTMIN RT_1], 8) = 0
+clone3({flags=CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID, child_tid=0x7f0f5a7fc990, parent_tid=0x7f0f5a7fc990, exit_signal=0, stack=0x7f0f59ffc000, stack_size=0x7fff80, tls=0x7f0f5a7fc6c0} => {parent_tid=[412534]}, 88) = 412534
+rt_sigprocmask(SIG_SETMASK, ~[KILL STOP RTMIN RT_1], NULL, 8) = 0
+rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
+futex(0x55b03eecc360, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0xc0000aef48, FUTEX_WAIT_PRIVATE, 0, NULL) = -1 EAGAIN (Resource temporarily unavailable)
+futex(0x55b03eecc360, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0xc0000aef48, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+futex(0x55b03eecc360, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0xc0000aef48, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+futex(0x55b03eecc360, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0xc0000aef48, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+futex(0xc0000aef48, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+futex(0xc0000aef48, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+futex(0xc0000aef48, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+nanosleep({tv_sec=0, tv_nsec=3000}, NULL) = 0
+futex(0xc0000af648, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0x55b03eecc360, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0xc0000aef48, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+futex(0xc0000aef48, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+futex(0x55b03eecc360, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0xc0000aef48, FUTEX_WAIT_PRIVATE, 0, NULL) = -1 EAGAIN (Resource temporarily unavailable)
+futex(0xc0000aef48, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+futex(0xc0000aef48, FUTEX_WAIT_PRIVATE, 0, NULL) = -1 EAGAIN (Resource temporarily unavailable)
+nanosleep({tv_sec=0, tv_nsec=3000}, NULL) = 0
+futex(0xc0000aef48, FUTEX_WAIT_PRIVATE, 0, NULL) = -1 EAGAIN (Resource temporarily unavailable)
+nanosleep({tv_sec=0, tv_nsec=3000}, NULL) = 0
+futex(0xc0000aef48, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+futex(0xc0000aef48, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+futex(0xc0000aef48, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+futex(0xc0000aef48, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+futex(0xc0000af648, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0xc0000afd48, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0x55b03eecc360, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0xc0000aef48, FUTEX_WAIT_PRIVATE, 0, NULL) = -1 EAGAIN (Resource temporarily unavailable)
+nanosleep({tv_sec=0, tv_nsec=3000}, NULL) = 0
+futex(0xc0000afd48, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0x55b03eecc360, FUTEX_WAKE_PRIVATE, 1) = 1
+sched_yield()                           = 0
+futex(0x55b03eecee98, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0xc0000aef48, FUTEX_WAIT_PRIVATE, 0, NULL) = -1 EAGAIN (Resource temporarily unavailable)
+futex(0xc0000afd48, FUTEX_WAKE_PRIVATE, 1) = 1
+--- SIGURG {si_signo=SIGURG, si_code=SI_TKILL, si_pid=412524, si_uid=1000} ---
+rt_sigreturn({mask=[]})                 = 94215458265600
+getpid()                                = 412524
+tgkill(412524, 412534, SIGURG)          = 0
+getpid()                                = 412524
+tgkill(412524, 412534, SIGURG)          = 0
+futex(0xc0000aef48, FUTEX_WAIT_PRIVATE, 0, NULL) = ? ERESTARTSYS (To be restarted if SA_RESTART is set)
+--- SIGURG {si_signo=SIGURG, si_code=SI_TKILL, si_pid=412524, si_uid=1000} ---
+rt_sigreturn({mask=[]})                 = 202
+futex(0xc0000aef48, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+mmap(NULL, 65536, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f0fa7e2c000
+rt_sigprocmask(SIG_SETMASK, ~[RTMIN RT_1], [], 8) = 0
+mmap(NULL, 8392704, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_STACK, -1, 0) = 0x7f0f3b7ff000
+mprotect(0x7f0f3b800000, 8388608, PROT_READ|PROT_WRITE) = 0
+rt_sigprocmask(SIG_BLOCK, ~[], ~[KILL STOP RTMIN RT_1], 8) = 0
+clone3({flags=CLONE_VM|CLONE_FS|CLONE_FILES|CLONE_SIGHAND|CLONE_THREAD|CLONE_SYSVSEM|CLONE_SETTLS|CLONE_PARENT_SETTID|CLONE_CHILD_CLEARTID, child_tid=0x7f0f3bfff990, parent_tid=0x7f0f3bfff990, exit_signal=0, stack=0x7f0f3b7ff000, stack_size=0x7fff80, tls=0x7f0f3bfff6c0} => {parent_tid=[412538]}, 88) = 412538
+rt_sigprocmask(SIG_SETMASK, ~[KILL STOP RTMIN RT_1], NULL, 8) = 0
+rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
+getpid()                                = 412524
+tgkill(412524, 412531, SIGURG)          = 0
+--- SIGURG {si_signo=SIGURG, si_code=SI_TKILL, si_pid=412524, si_uid=1000} ---
+rt_sigreturn({mask=[]})                 = 0
+read(3, "case of a fakeroot execution whe"..., 4096) = 4096
+getpid()                                = 412524
+--- SIGURG {si_signo=SIGURG, si_code=SI_TKILL, si_pid=412524, si_uid=1000} ---
+rt_sigreturn({mask=[]})                 = 412524
+tgkill(412524, 412538, SIGURG)          = 0
+getpid()                                = 412524
+tgkill(412524, 412531, SIGURG)          = 0
+futex(0xc000700148, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0xc0000aef48, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+sched_yield()                           = 0
+futex(0x55b03eecee98, FUTEX_WAIT_PRIVATE, 2, NULL) = -1 EAGAIN (Resource temporarily unavailable)
+sched_yield()                           = 0
+futex(0x55b03eecee98, FUTEX_WAIT_PRIVATE, 2, NULL) = -1 EAGAIN (Resource temporarily unavailable)
+futex(0x55b03eecee98, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0xc0000aef48, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+futex(0xc0000af648, FUTEX_WAKE_PRIVATE, 1) = 1
+sched_yield()                           = 0
+futex(0x55b03eecee98, FUTEX_WAIT_PRIVATE, 2, NULL) = ? ERESTARTSYS (To be restarted if SA_RESTART is set)
+--- SIGURG {si_signo=SIGURG, si_code=SI_TKILL, si_pid=412524, si_uid=1000} ---
+rt_sigreturn({mask=[]})                 = 202
+futex(0x55b03eecee98, FUTEX_WAIT_PRIVATE, 2, NULL) = -1 EAGAIN (Resource temporarily unavailable)
+futex(0x55b03eecee98, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0x55b03eecef70, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0xc0000aef48, FUTEX_WAIT_PRIVATE, 0, NULL) = 0
+sched_yield()                           = 0
+futex(0x55b03eee7610, FUTEX_WAIT_PRIVATE, 2, NULL) = 0
+futex(0x55b03eee7610, FUTEX_WAKE_PRIVATE, 1) = 0
+mmap(NULL, 262144, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f0f586b9000
+futex(0x55b03eecef98, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0xc0000b0448, FUTEX_WAKE_PRIVATE, 1) = 1
+close(3)                                = 0
+faccessat(AT_FDCWD, "/home/siagraw", R_OK) = 0
+newfstatat(AT_FDCWD, "/home/siagraw/.apptainer", {st_mode=S_IFDIR|0700, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/home/siagraw/.apptainer", {st_mode=S_IFDIR|0700, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/home/siagraw/.apptainer/remote.yaml", 0xc000617628, 0) = -1 ENOENT (No such file or directory)
+getuid()                                = 1000
+getgid()                                = 1000
+umask(022)                              = 002
+getpid()                                = 412524
+openat(AT_FDCWD, "/proc/412524/uid_map", O_RDONLY|O_CLOEXEC) = 3
+fcntl(3, F_GETFL)                       = 0x8000 (flags O_RDONLY|O_LARGEFILE)
+fcntl(3, F_SETFL, O_RDONLY|O_NONBLOCK|O_LARGEFILE) = 0
+epoll_ctl(4, EPOLL_CTL_ADD, 3, {events=EPOLLIN|EPOLLOUT|EPOLLRDHUP|EPOLLET, data={u32=1311244293, u64=9155721170768101381}}) = -1 EPERM (Operation not permitted)
+fcntl(3, F_GETFL)                       = 0x8800 (flags O_RDONLY|O_NONBLOCK|O_LARGEFILE)
+fcntl(3, F_SETFL, O_RDONLY|O_LARGEFILE) = 0
+read(3, "         0          0 4294967295"..., 4096) = 33
+close(3)                                = 0
+newfstatat(AT_FDCWD, ".", {st_mode=S_IFDIR|0775, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/home/siagraw/OSmosis/apptainer", {st_mode=S_IFDIR|0775, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/home", {st_mode=S_IFDIR|0755, st_size=4096, ...}, AT_SYMLINK_NOFOLLOW) = 0
+newfstatat(AT_FDCWD, "/home/siagraw", {st_mode=S_IFDIR|0755, st_size=4096, ...}, AT_SYMLINK_NOFOLLOW) = 0
+newfstatat(AT_FDCWD, "/home/siagraw/OSmosis", {st_mode=S_IFDIR|0775, st_size=4096, ...}, AT_SYMLINK_NOFOLLOW) = 0
+newfstatat(AT_FDCWD, "/home/siagraw/OSmosis/apptainer", {st_mode=S_IFDIR|0775, st_size=4096, ...}, AT_SYMLINK_NOFOLLOW) = 0
+newfstatat(AT_FDCWD, "/home/siagraw/OSmosis/apptainer/first.sif", {st_mode=S_IFREG|0755, st_size=66863104, ...}, AT_SYMLINK_NOFOLLOW) = 0
+faccessat(AT_FDCWD, "/home/siagraw/OSmosis/apptainer/first.sif", R_OK) = 0
+openat(AT_FDCWD, "/home/siagraw/OSmosis/apptainer/first.sif", O_RDONLY|O_CLOEXEC) = 3
+fcntl(3, F_GETFL)                       = 0x8000 (flags O_RDONLY|O_LARGEFILE)
+fcntl(3, F_SETFL, O_RDONLY|O_NONBLOCK|O_LARGEFILE) = 0
+epoll_ctl(4, EPOLL_CTL_ADD, 3, {events=EPOLLIN|EPOLLOUT|EPOLLRDHUP|EPOLLET, data={u32=1311244294, u64=9155721170768101382}}) = -1 EPERM (Operation not permitted)
+fcntl(3, F_GETFL)                       = 0x8800 (flags O_RDONLY|O_NONBLOCK|O_LARGEFILE)
+fcntl(3, F_SETFL, O_RDONLY|O_LARGEFILE) = 0
+fstat(3, {st_mode=S_IFREG|0755, st_size=66863104, ...}) = 0
+close(3)                                = 0
+openat(AT_FDCWD, "/home/siagraw/OSmosis/apptainer/first.sif", O_RDONLY|O_CLOEXEC) = 3
+fcntl(3, F_GETFL)                       = 0x8000 (flags O_RDONLY|O_LARGEFILE)
+fcntl(3, F_SETFL, O_RDONLY|O_NONBLOCK|O_LARGEFILE) = 0
+epoll_ctl(4, EPOLL_CTL_ADD, 3, {events=EPOLLIN|EPOLLOUT|EPOLLRDHUP|EPOLLET, data={u32=1311244295, u64=9155721170768101383}}) = -1 EPERM (Operation not permitted)
+fcntl(3, F_GETFL)                       = 0x8800 (flags O_RDONLY|O_NONBLOCK|O_LARGEFILE)
+fcntl(3, F_SETFL, O_RDONLY|O_LARGEFILE) = 0
+fstat(3, {st_mode=S_IFREG|0755, st_size=66863104, ...}) = 0
+read(3, "#!/usr/bin/env run-singularity\n\0"..., 2048) = 2048
+pread64(3, "#!/usr/bin/env run-singularity\n\0"..., 128, 0) = 128
+pread64(3, "\1@\0\0\1\1\0\0\0\1\0\0\360\0\0\0\0\260}\0\0\0\0\0\0h\0\0\0\0\0\0"..., 28080, 4096) = 28080
+pread64(3, "hsqs\365\f\0\0G\262\243g\0\0\2\0&\1\0\0\1\0\21\0\300\0\7\0\4\0\0\0"..., 2048, 36864) = 2048
+fcntl(3, F_SETFD, 0x80000 /* FD_??? */) = 0
+close(3)                                = 0
+getrlimit(RLIMIT_STACK, {rlim_cur=8192*1024, rlim_max=RLIM64_INFINITY}) = 0
+newfstatat(AT_FDCWD, ".", {st_mode=S_IFDIR|0775, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/home/siagraw/OSmosis/apptainer", {st_mode=S_IFDIR|0775, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "first.sif", {st_mode=S_IFREG|0755, st_size=66863104, ...}, 0) = 0
+getuid()                                = 1000
+geteuid()                               = 1000
+openat(AT_FDCWD, "/etc/apptainer/ecl.toml", O_RDONLY|O_CLOEXEC) = 3
+fcntl(3, F_GETFL)                       = 0x8000 (flags O_RDONLY|O_LARGEFILE)
+fcntl(3, F_SETFL, O_RDONLY|O_NONBLOCK|O_LARGEFILE) = 0
+epoll_ctl(4, EPOLL_CTL_ADD, 3, {events=EPOLLIN|EPOLLOUT|EPOLLRDHUP|EPOLLET, data={u32=1311244296, u64=9155721170768101384}}) = -1 EPERM (Operation not permitted)
+fcntl(3, F_GETFL)                       = 0x8800 (flags O_RDONLY|O_NONBLOCK|O_LARGEFILE)
+fcntl(3, F_SETFL, O_RDONLY|O_LARGEFILE) = 0
+fstat(3, {st_mode=S_IFREG|0644, st_size=1904, ...}) = 0
+read(3, "# Apptainer Execution Control Li"..., 1905) = 1904
+read(3, "", 1)                          = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/usr/libexec/apptainer/bin/squashfuse_ll", {st_mode=S_IFREG|0755, st_size=39144, ...}, 0) = 0
+faccessat2(AT_FDCWD, "/usr/libexec/apptainer/bin/squashfuse_ll", X_OK, AT_EACCESS) = 0
+newfstatat(AT_FDCWD, "/usr/libexec/apptainer/bin/fuse2fs", {st_mode=S_IFREG|0755, st_size=344048, ...}, 0) = 0
+faccessat2(AT_FDCWD, "/usr/libexec/apptainer/bin/fuse2fs", X_OK, AT_EACCESS) = 0
+newfstatat(AT_FDCWD, "/usr/libexec/apptainer/bin/fuse-overlayfs", {st_mode=S_IFREG|0755, st_size=101096, ...}, 0) = 0
+faccessat2(AT_FDCWD, "/usr/libexec/apptainer/bin/fuse-overlayfs", X_OK, AT_EACCESS) = 0
+newfstatat(AT_FDCWD, "/usr/libexec/apptainer/bin/gocryptfs", {st_mode=S_IFREG|0755, st_size=4572424, ...}, 0) = 0
+faccessat2(AT_FDCWD, "/usr/libexec/apptainer/bin/gocryptfs", X_OK, AT_EACCESS) = 0
+pipe2([3, 6], O_CLOEXEC)                = 0
+fcntl(3, F_GETFL)                       = 0 (flags O_RDONLY)
+fcntl(3, F_SETFL, O_RDONLY|O_NONBLOCK)  = 0
+epoll_ctl(4, EPOLL_CTL_ADD, 3, {events=EPOLLIN|EPOLLOUT|EPOLLRDHUP|EPOLLET, data={u32=1311244297, u64=9155721170768101385}}) = 0
+fcntl(6, F_GETFL)                       = 0x1 (flags O_WRONLY)
+fcntl(6, F_SETFL, O_WRONLY|O_NONBLOCK)  = 0
+epoll_ctl(4, EPOLL_CTL_ADD, 6, {events=EPOLLIN|EPOLLOUT|EPOLLRDHUP|EPOLLET, data={u32=1293942785, u64=9155721170750799873}}) = 0
+openat(AT_FDCWD, "/dev/null", O_RDONLY|O_CLOEXEC) = 7
+fcntl(7, F_GETFL)                       = 0x8000 (flags O_RDONLY|O_LARGEFILE)
+fcntl(7, F_SETFL, O_RDONLY|O_NONBLOCK|O_LARGEFILE) = 0
+epoll_ctl(4, EPOLL_CTL_ADD, 7, {events=EPOLLIN|EPOLLOUT|EPOLLRDHUP|EPOLLET, data={u32=1276641281, u64=9155721170733498369}}) = -1 EPERM (Operation not permitted)
+fcntl(7, F_GETFL)                       = 0x8800 (flags O_RDONLY|O_NONBLOCK|O_LARGEFILE)
+fcntl(7, F_SETFL, O_RDONLY|O_LARGEFILE) = 0
+getpid()                                = 412524
+pidfd_open(412524, 0)                   = 8
+waitid(P_PIDFD, 8, NULL, WEXITED, NULL) = -1 ECHILD (No child processes)
+pidfd_send_signal(8, 0, NULL, 0)        = 0
+close(8)                                = 0
+fcntl(6, F_GETFL)                       = 0x801 (flags O_WRONLY|O_NONBLOCK)
+fcntl(6, F_SETFL, O_WRONLY)             = 0
+fcntl(6, F_GETFL)                       = 0x1 (flags O_WRONLY)
+pipe2([8, 9], O_CLOEXEC)                = 0
+getpid()                                = 412524
+rt_sigprocmask(SIG_SETMASK, NULL, [], 8) = 0
+rt_sigprocmask(SIG_SETMASK, ~[], NULL, 8) = 0
+clone(child_stack=NULL, flags=CLONE_VM|CLONE_PIDFD|CLONE_VFORK|SIGCHLD, parent_tid=[10]) = 412541
+rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
+close(9)                                = 0
+read(8, "", 8)                          = 0
+close(8)                                = 0
+epoll_ctl(4, EPOLL_CTL_DEL, 6, 0xc000690b54) = 0
+close(6)                                = 0
+close(7)                                = 0
+read(3, 0xc000001000, 4096)             = -1 EAGAIN (Resource temporarily unavailable)
+epoll_pwait(4, [], 128, 0, NULL, 0)     = 0
+epoll_pwait(4, [{events=EPOLLIN, data={u32=1311244297, u64=9155721170768101385}}], 128, -1, NULL, 0) = 1
+read(3, "squashfuse 0.5.1 (c) 2012 Dave V"..., 4096) = 120
+read(3, "\n/usr/libexec/apptainer/bin/squa"..., 3976) = 51
+read(3, "    -o offset=N            offse"..., 3925) = 64
+read(3, "    -o subdir=PATH         mount"..., 3861) = 62
+read(3, "    -o notify_pipe=PATH    named"..., 3799) = 143
+read(3, "    -o timeout=N           idle "..., 3656) = 64
+read(3, "    -o uid=N               set f"..., 3592) = 51
+waitid(P_PIDFD, 10, {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=412541, si_uid=1000, si_status=2, si_utime=0, si_stime=0}, WEXITED, {ru_utime={tv_sec=0, tv_usec=1673}, ru_stime={tv_sec=0, tv_usec=0}, ...}) = 0
+--- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=412541, si_uid=1000, si_status=2, si_utime=0, si_stime=0} ---
+rt_sigreturn({mask=[]})                 = 0
+close(10)                               = 0
+epoll_ctl(4, EPOLL_CTL_DEL, 3, 0xc000690cb4) = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "first.sif", {st_mode=S_IFREG|0755, st_size=66863104, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/libexec/apptainer/plugin", 0xc0005356f8, 0) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/proc/filesystems", O_RDONLY|O_CLOEXEC) = 3
+fcntl(3, F_GETFL)                       = 0x8000 (flags O_RDONLY|O_LARGEFILE)
+fcntl(3, F_SETFL, O_RDONLY|O_NONBLOCK|O_LARGEFILE) = 0
+epoll_ctl(4, EPOLL_CTL_ADD, 3, {events=EPOLLIN|EPOLLOUT|EPOLLRDHUP|EPOLLET, data={u32=1311244298, u64=9155721170768101386}}) = 0
+read(3, "nodev\tsysfs\nnodev\ttmpfs\nnodev\tbd"..., 4096) = 428
+epoll_ctl(4, EPOLL_CTL_DEL, 3, 0xc000690f1c) = 0
+close(3)                                = 0
+newfstatat(AT_FDCWD, "/usr/libexec/apptainer/plugin", 0xc0005357c8, 0) = -1 ENOENT (No such file or directory)
+newfstatat(AT_FDCWD, "/usr/libexec/apptainer/bin/starter-suid", {st_mode=S_IFREG|S_ISUID|0755, st_size=19117544, ...}, 0) = 0
+getrlimit(RLIMIT_STACK, {rlim_cur=8192*1024, rlim_max=RLIM64_INFINITY}) = 0
+setrlimit(RLIMIT_NOFILE, {rlim_cur=1024, rlim_max=1024*1024}) = 0
+execve("/usr/libexec/apptainer/bin/starter-suid", ["Apptainer runtime parent"], 0xc000643300 /* 3 vars */ <pid changed to 412524 ...>
