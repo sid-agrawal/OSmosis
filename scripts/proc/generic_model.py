@@ -2,6 +2,7 @@ from enum import Enum
 import networkx as nx
 import csv
 import json
+from typing import Optional
 
 ## Constants
 page_size = 4096  # Assume all 4k pages for now
@@ -116,9 +117,8 @@ class ModelGraph:
     def add_resource_node(
         self,
         res_type: ResourceType,
-        space_id: int,
-        res_id: int | None = None,
-        extra: str = None,
+        res_id: Optional[int] = None,
+        extra: Optional[str] = None,
     ) -> int:
         """
         Add a resource node to a model state graph, including the subset edge to the resource space
@@ -191,7 +191,7 @@ class ModelGraph:
             ResourceType.MO, space_id, None, json.dumps(extra)
         )
 
-    def add_pd_node(self, name: str, pd_id: int | None = None) -> int:
+    def add_pd_node(self, name: str, pd_id: Optional[int] = None) -> int:
         """
         Add a PD node to a model state graph
 
@@ -240,8 +240,8 @@ class ModelGraph:
         edge_type: EdgeType,
         string_id_from: str,
         string_id_to: str,
-        data: str | None = "NONE",
-        extra: str | None = "",
+        data: Optional[str] = "NONE",
+        extra: Optional[str] = "",
     ):
         """
         Internal function to add an edge to the model state
@@ -260,8 +260,8 @@ class ModelGraph:
         pd_id: int,
         res_type: ResourceType,
         space_id: int,
-        res_id: int | None = None,
-        pd_incharge: str | None = None,
+        res_id: Optional[int] = None,
+        pd_incharge: Optional[str] = None,
     ):
         """
         Add a hold edge from a PD to a resource or resource space
@@ -289,9 +289,9 @@ class ModelGraph:
         res_type_2: int,
         space_id_1: int,
         space_id_2: int,
-        res_id_1: int | None = None,
-        res_id_2: int | None = None,
-        pd_incharge: str | None = None,
+        res_id_1: Optional[int] = None,
+        res_id_2: Optional[int] = None,
+        pd_incharge: Optional[str] = None,
     ):
         """
         Add a map edge from a PD to a resource to a resource or a resource space to a resource space
@@ -322,7 +322,7 @@ class ModelGraph:
         self.__add_edge(EdgeType.MAP, source_string_id, dest_string_id, data="", extra=json.dumps(extra))
 
     def add_map_edge_raw(
-        self, source_string_id: str, dest_string_id: str, pd_incharge: str | None = None
+        self, source_string_id: str, dest_string_id: str, pd_incharge: Optional[str] = None
     ):
         """
         Add a map edge from a node to another node
@@ -339,7 +339,7 @@ class ModelGraph:
         dest_pd_id: int, 
         res_type: ResourceType, 
         space_id: int,
-        pd_incharge: str | None = None,
+        pd_incharge: Optional[str] = None,
     ):
         """
         Add a request edge from a PD to a PD

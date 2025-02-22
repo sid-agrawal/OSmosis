@@ -324,49 +324,48 @@ def docker_cmd(
 
     assert container_name != ""
 
-    match cmd:
-        case "run":
-            assert image != ""
-            command = [
-                "docker",
-                "run",
-                "--rm",
-                "-id", # Detach
-                "--name",
-                container_name,
-                image,
-                exec_cmd,
-            ]
-        case "rm":
-            command = [
-                'docker',
-                'rm',
-                '-f',
-                container_name
-            ]
-        case "inspect":
-            command = [
-                'docker',
-                'inspect',
-                container_name
-            ]
-        case "exec":
-            assert exec_cmd != ""
-            command = [
-                'docker',
-                'exec',
-                container_name,
-                'sh',
-                '-c',
-                exec_cmd
-            ]
-        case "restart":
-            command = [ 'docker', 
-                       'restart', 
-                       container_name
-                       ]
-        case  _: 
-            raise ValueError("Invalid Qemu Monitor Command")
+    if cmd == "run":
+        assert image != ""
+        command = [
+            "docker",
+            "run",
+            "--rm",
+            "-id", # Detach
+            "--name",
+            container_name,
+            image,
+            exec_cmd,
+        ]
+    elif cmd == "rm":
+        command = [
+            'docker',
+            'rm',
+            '-f',
+            container_name
+        ]
+    elif cmd == "inspect":
+        command = [
+            'docker',
+            'inspect',
+            container_name
+        ]
+    elif cmd == "exec":
+        assert exec_cmd != ""
+        command = [
+            'docker',
+            'exec',
+            container_name,
+            'sh',
+            '-c',
+            exec_cmd
+        ]
+    elif cmd == "restart":
+        command = [ 'docker', 
+                   'restart', 
+                   container_name
+                   ]
+    else: 
+        raise ValueError("Invalid Qemu Monitor Command")
 
     print (f"RUNNING: {command}")
     try:

@@ -47,17 +47,16 @@ def getNSInfo(pid: int, ns_type: str) -> list[str]:
     pathname = f"/proc/{pid}/ns/pid"
     ns_fd = os.open(pathname, os.O_RDONLY)
 
-    match ns_type:
-        case "pid":
-            # Perform ioctl operation, to get the parent NS's fd.
-            parent_ns_fd = ioctl_wrapper(ns_fd, NS_GET_PARENT)
-        case "user":
-            # A separate ioctl is needed to get the fd to the current processes USER NS_ID.
-            ns_fd = ioctl_wrapper(ns_fd, NS_GET_USERNS)
-            # Perform ioctl operation, to get the parent NS's fd.
-            parent_ns_fd = ioctl_wrapper(ns_fd, NS_GET_PARENT)
-        case _:
-            raise ValueError ("Invalid NS Type")
+    if ns_type == "pid":
+        # Perform ioctl operation, to get the parent NS's fd.
+        parent_ns_fd = ioctl_wrapper(ns_fd, NS_GET_PARENT)
+    elif ns_type == "user":
+        # A separate ioctl is needed to get the fd to the current processes USER NS_ID.
+        ns_fd = ioctl_wrapper(ns_fd, NS_GET_USERNS)
+        # Perform ioctl operation, to get the parent NS's fd.
+        parent_ns_fd = ioctl_wrapper(ns_fd, NS_GET_PARENT)
+    else:
+        raise ValueError("Invalid NS Type")
 
     rv = [
         get_ns_ID_from_fd(ns_fd), 

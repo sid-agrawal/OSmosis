@@ -631,16 +631,14 @@ def extract_all_namespaces(data_main, should_print=False):
         task_ns_data = task.get_ns()
         for path, handle in task_ns_data.items():
             namespace_type = str_to_namespace_type[path]
-            match namespace_type:
-                case NamespaceType.PID:
-                    generic_ns_data = create_pid_ns_generic_data(host_pid)
-                case NamespaceType.MNT:
-                    generic_ns_data = create_mnt_ns_generic_data(host_pid)
-                # Skip
-                case NamespaceType.NONE:
-                    continue
-                case _:
-                    generic_ns_data = []
+            if namespace_type == NamespaceType.PID:
+                generic_ns_data = create_pid_ns_generic_data(host_pid)
+            elif namespace_type == NamespaceType.MNT:
+                generic_ns_data = create_mnt_ns_generic_data(host_pid)
+            elif namespace_type == NamespaceType.NONE:
+                continue
+            else:
+                generic_ns_data = []
 
             if handle in data_main.namespaces:
                 assert (
@@ -736,12 +734,15 @@ def do_proc_model(args):
 
 
 def do_cellulos_model(args):
-
+#
+# make -C /home/siagraw/sel4/seL4-CAmkES-L4v-dockerfiles user_run_l4v HOST_DIR=$(pwd) EXEC="sh -c 'cd /host/docker-build && cmake . && ninja '"
+#
     simulate_cmd = "./simulate"
 
     original_dir = os.getcwd()
     try:
-        os.chdir("/home/" + os.getlogin() + "/OSmosis/qemu-build/")
+        # os.chdir("/home/" + os.getlogin() + "/OSmosis/qemu-build/")
+        os.chdir("/host/qemu-build/")
         # Build the right test has been compiled
         run(
             [
@@ -815,13 +816,12 @@ if __name__ == "__main__":
     # Parse the arguments
     args = parser.parse_args()
 
-    match args.os:
-        case "linux":
-            do_proc_model(args)
-        case "cellulos":
-            do_cellulos_model(args)
-        case _:
-            raise ValueError("Invalid platform")
+    if args.os == "linux":
+        do_proc_model(args)
+    elif args.os == "cellulos":
+        do_cellulos_model(args)
+    else:
+        raise ValueError("Invalid platform")
 
     if args.load_csv:
         from import_csv import upload_csv_import
