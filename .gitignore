@@ -1,5 +1,6 @@
 .sel4_cache
 qemu-build
+docker-build
 qemu-build-nosudo
 build
 build*
@@ -8,6 +9,7 @@ compile_commands.json
 doxygen/
 .vscode/settings.json
 **/venv/
+pyenv
 **/__pycache__/
 scripts/model_state/config.txt
 scripts/model_state/*.csv
