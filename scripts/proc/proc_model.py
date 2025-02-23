@@ -579,11 +579,11 @@ def terminate_process(pid: int):
 def extract_all_namespaces(data_main, should_print=False):
     """
     For each process in the system:
-        \ Find its NS and add it to data_main
-        \ For each NS track which PIDs are in it.
-        \ Additionally, track NS Type specific info in namespace.data which is a free form dict.
-           \ PID NS: For PID NS we track the following info in the dict
-              \ - key: PID as per the root PID NS
+        - Find its NS and add it to data_main
+        - For each NS track which PIDs are in it.
+        - Additionally, track NS Type specific info in namespace.data which is a free form dict.
+           - PID NS: For PID NS we track the following info in the dict
+              - - key: PID as per the root PID NS
                 - value: A tuple of PIDs and the PID NS in which the PID exists.
                   For example: If a bash is run as the first process in a docker container. The value would look like
                   [
@@ -737,22 +737,37 @@ def do_proc_model(args):
 
 def do_cellulos_model(args):
 
-    simulate_cmd = "./simulate"
-
+    # make -C /home/siagraw/sel4/seL4-CAmkES-L4v-dockerfiles user_run_l4v HOST_DIR=$(pwd) EXEC="sh -c 'cd /host/qemu-build && cmake . && ninja '"
     original_dir = os.getcwd()
     try:
-        os.chdir("/home/" + os.getlogin() + "/OSmosis/qemu-build/")
-        # Build the right test has been compiled
+        # Run cmake inside the container
+        # We invoke the container using 'make'
         run(
             [
-                "cmake",
-                ".",
-                f"-DLibSel4TestPrinterRegex={args.testname}",
-                "-DGPIExtractModel=ON",
+                "make",
+                "-C",
+                "/home/siagraw/sel4/seL4-CAmkES-L4v-dockerfiles",
+                "user_run_l4v",
+                "HOST_DIR=/home/siagraw/OSmosis",
+                f"EXEC=sh -c 'cd /host/qemu-build && cmake . -DLibSel4TestPrinterRegex={args.testname} -DGPIExtractModel=ON'",
             ]
         )
-        run(["ninja"])
 
+        # Make the image
+        run(
+            [
+                "make",
+                "-C",
+                "/home/siagraw/sel4/seL4-CAmkES-L4v-dockerfiles",
+                "user_run_l4v",
+                "HOST_DIR=/home/siagraw/OSmosis",
+                f"EXEC=sh -c 'cd /host/qemu-build && ninja'"
+            ]
+        )
+
+        # Run the simulation outside the container.
+        simulate_cmd = "./simulate"
+        os.chdir("/home/" + os.getlogin() + "/OSmosis/qemu-build/")
         print(f"Running CMD: {simulate_cmd} in {os.getcwd()}")
         phandle = pexpect.spawn(simulate_cmd)
         phandle.expect("BEGIN MODEL STATE")
@@ -778,7 +793,6 @@ def do_cellulos_model(args):
 
 if __name__ == "__main__":
 
-    assert is_root()
     # Define the argument parser
     parser = argparse.ArgumentParser(
         description="OSmosis Model state from multiple subsystems"
@@ -817,6 +831,7 @@ if __name__ == "__main__":
 
     match args.os:
         case "linux":
+            assert is_root()
             do_proc_model(args)
         case "cellulos":
             do_cellulos_model(args)
