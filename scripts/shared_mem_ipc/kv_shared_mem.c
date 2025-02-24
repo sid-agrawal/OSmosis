@@ -5,43 +5,8 @@
 #include <stdatomic.h>
 #include <unistd.h>
 #include <time.h>
+#include "kv_inmemory.h"
 
-#define MAX_KEYS 100
-
-typedef struct {
-    int key;
-    int value;
-} kv_pair;
-
-kv_pair kv_store[MAX_KEYS];
-int kv_count = 0;
-
-int get(int key) {
-    for (int i = 0; i < kv_count; i++) {
-        if (kv_store[i].key == key) {
-            return kv_store[i].value;
-        }
-    }
-    return -1; // Key not found
-}
-
-void set(int key, int value) {
-    printf("Setting key: %d, value: %d\n", key, value);
-    for (int i = 0; i < kv_count; i++) {
-        if (kv_store[i].key == key) {
-            kv_store[i].value = value;
-            return;
-        }
-    }
-    if (kv_count < MAX_KEYS) {
-        kv_store[kv_count].key = key;
-        kv_store[kv_count].value = value;
-        kv_count++;
-    } else {
-        printf("Key-Value store is full\n");
-    }
-}
-#define BUFFER_SIZE 256
 
 typedef enum {
     GET,
@@ -78,9 +43,9 @@ void *thread1_func(void *arg) {
             printf("SET: Success\n");
         } else {
             if (shared_buffer->result != -1 ) {
-                printf("get: Success. Value : %d\n", shared_buffer->result);
+                printf("GET: Success. Value : %d\n", shared_buffer->result);
             } else {
-                printf("get: Error : %d\n", shared_buffer->result);
+                printf("GET: Error : %d\n", shared_buffer->result);
             }
         }
         atomic_store(&shared_buffer->result_ready, 0);
@@ -99,13 +64,18 @@ void *thread2_func(void *arg) {
         while (!atomic_load(&shared_buffer->message_ready)) {
             // Busy-wait
         }
-        char value_str[BUFFER_SIZE];
+        char key_str[20];
+        sprintf(key_str, "%d", shared_buffer->key);
+
+        char value_str[20];
         if (shared_buffer->cmd == SET) {
             sprintf(value_str, "%d", shared_buffer->value);
+        } else {
+            sprintf(value_str, "NA");
         }
-        printf("Thread 2 received message: %s %s\n", 
-            shared_buffer->cmd == GET ? "GET" : "SET",
-            shared_buffer->cmd == GET ? "" : value_str);
+        // printf("Thread 2 received message: %s %s %s\n", 
+        //     shared_buffer->cmd == GET ? "GET" : "SET",
+        //     key_str, value_str);
         atomic_store(&shared_buffer->message_ready, 0);
 
         if (shared_buffer->cmd == SET) {
