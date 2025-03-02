@@ -1,0 +1,42 @@
+ID:ID,NODE_TYPE,DATA,EXTRA,:LABEL
+VMR_7_1,RESOURCE,VMR,"{""va"": ""0x2f400000"", ""vmr_type"": ""STACK"", ""num_pages"": ""17"", ""page_size"": ""4096""}",RESOURCE
+MO_4_1,RESOURCE,MO,"{""pa"": ""0x0"", ""num_pages"": ""16"", ""page_size"": ""4096""}",RESOURCE
+VMR_7_2,RESOURCE,VMR,"{""va"": ""0x10000000"", ""vmr_type"": ""UNKNOWN"", ""num_pages"": ""128000"", ""page_size"": ""4096""}",RESOURCE
+MO_4_2,RESOURCE,MO,"{""pa"": ""0x0"", ""num_pages"": ""0"", ""page_size"": ""4096""}",RESOURCE
+VMR_7_3,RESOURCE,VMR,"{""va"": ""0x2f425000"", ""vmr_type"": ""GENERIC"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_4_3,RESOURCE,MO,"{""pa"": ""0x6000f000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+VMR_7_6,RESOURCE,VMR,"{""va"": ""0x2f486000"", ""vmr_type"": ""GENERIC"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_4_8,RESOURCE,MO,"{""pa"": ""0x749f2000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+VMR_8_1,RESOURCE,VMR,"{""va"": ""0x400000"", ""vmr_type"": ""ELF_CODE"", ""num_pages"": ""556"", ""page_size"": ""4096""}",RESOURCE
+MO_4_4,RESOURCE,MO,"{""pa"": ""0x7fd8a000"", ""num_pages"": ""556"", ""page_size"": ""4096""}",RESOURCE
+VMR_8_2,RESOURCE,VMR,"{""va"": ""0x62c000"", ""vmr_type"": ""ELF_DATA"", ""num_pages"": ""22615"", ""page_size"": ""4096""}",RESOURCE
+MO_4_5,RESOURCE,MO,"{""pa"": ""0x7ffa4000"", ""num_pages"": ""22615"", ""page_size"": ""4096""}",RESOURCE
+VMR_8_3,RESOURCE,VMR,"{""va"": ""0x10000000"", ""vmr_type"": ""SHARED_FRAMES"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+VMR_8_4,RESOURCE,VMR,"{""va"": ""0x10001000"", ""vmr_type"": ""IPC_BUF"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_4_6,RESOURCE,MO,"{""pa"": ""0x749e0000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+VMR_8_5,RESOURCE,VMR,"{""va"": ""0x10002000"", ""vmr_type"": ""STACK"", ""num_pages"": ""17"", ""page_size"": ""4096""}",RESOURCE
+MO_4_7,RESOURCE,MO,"{""pa"": ""0x749e1000"", ""num_pages"": ""16"", ""page_size"": ""4096""}",RESOURCE
+VCPU_5_1,RESOURCE,VCPU,,RESOURCE
+PCPU_1_0,RESOURCE,PCPU,,RESOURCE
+VCPU_5_2,RESOURCE,VCPU,,RESOURCE
+VMR_9_1,RESOURCE,VMR,"{""va"": ""0x10000000"", ""vmr_type"": ""OSM_DATA"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+VMR_9_2,RESOURCE,VMR,"{""va"": ""0x400000"", ""vmr_type"": ""ELF_CODE"", ""num_pages"": ""201"", ""page_size"": ""4096""}",RESOURCE
+MO_4_9,RESOURCE,MO,"{""pa"": ""0x749fd000"", ""num_pages"": ""201"", ""page_size"": ""4096""}",RESOURCE
+VMR_9_3,RESOURCE,VMR,"{""va"": ""0x4c9000"", ""vmr_type"": ""ELF_DATA"", ""num_pages"": ""20"", ""page_size"": ""4096""}",RESOURCE
+MO_4_a,RESOURCE,MO,"{""pa"": ""0x74b55000"", ""num_pages"": ""20"", ""page_size"": ""4096""}",RESOURCE
+VMR_9_4,RESOURCE,VMR,"{""va"": ""0x5000000000"", ""vmr_type"": ""HEAP"", ""num_pages"": ""100"", ""page_size"": ""4096""}",RESOURCE
+MO_4_b,RESOURCE,MO,"{""pa"": ""0x74b6a000"", ""num_pages"": ""100"", ""page_size"": ""4096""}",RESOURCE
+VMR_9_5,RESOURCE,VMR,"{""va"": ""0x10001000"", ""vmr_type"": ""STACK"", ""num_pages"": ""17"", ""page_size"": ""4096""}",RESOURCE
+MO_4_c,RESOURCE,MO,"{""pa"": ""0x74bda000"", ""num_pages"": ""16"", ""page_size"": ""4096""}",RESOURCE
+VMR_9_6,RESOURCE,VMR,"{""va"": ""0x10012000"", ""vmr_type"": ""IPC_BUF"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_4_d,RESOURCE,MO,"{""pa"": ""0x74beb000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_4_e,RESOURCE,MO,"{""pa"": ""0x74bec000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+VMR_a_1,RESOURCE,VMR,"{""va"": ""0x10000000"", ""vmr_type"": ""OSM_DATA"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+VMR_a_2,RESOURCE,VMR,"{""va"": ""0x10001000"", ""vmr_type"": ""STACK"", ""num_pages"": ""17"", ""page_size"": ""4096""}",RESOURCE
+MO_4_f,RESOURCE,MO,"{""pa"": ""0x74bf7000"", ""num_pages"": ""16"", ""page_size"": ""4096""}",RESOURCE
+VMR_a_3,RESOURCE,VMR,"{""va"": ""0x400000"", ""vmr_type"": ""ELF_CODE"", ""num_pages"": ""201"", ""page_size"": ""4096""}",RESOURCE
+VMR_a_4,RESOURCE,VMR,"{""va"": ""0x4c9000"", ""vmr_type"": ""ELF_DATA"", ""num_pages"": ""20"", ""page_size"": ""4096""}",RESOURCE
+VMR_a_5,RESOURCE,VMR,"{""va"": ""0x5000000000"", ""vmr_type"": ""HEAP"", ""num_pages"": ""100"", ""page_size"": ""4096""}",RESOURCE
+VMR_a_6,RESOURCE,VMR,"{""va"": ""0x10012000"", ""vmr_type"": ""IPC_BUF"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_4_10,RESOURCE,MO,"{""pa"": ""0x75411000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+VCPU_5_3,RESOURCE,VCPU,,RESOURCE

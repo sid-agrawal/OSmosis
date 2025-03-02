@@ -1,0 +1,3 @@
+ID:ID,NODE_TYPE,DATA,EXTRA,:LABEL
+PD_1,PD,Host Linux,,PD
+PD_2,PD,kv_app_in_vm,,PD
