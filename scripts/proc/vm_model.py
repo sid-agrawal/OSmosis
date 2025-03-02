@@ -279,6 +279,8 @@ def get_cellulos_vm_state(get_host: bool, guest_file: str, g2h_file: str, host_f
     try: 
         os.chdir("/home/" + os.getlogin() + "/OSmosis/qemu-build/")
         # Build the OSM VM Test
+
+        FIX
         run(
             [
                 "cmake",
@@ -295,6 +297,8 @@ def get_cellulos_vm_state(get_host: bool, guest_file: str, g2h_file: str, host_f
         sim_phandle, host_csv = get_cellulos_phandle(sim_cmd)
 
         # Run the process, inside the guest.
+        FIX
+        FIX
         sim_phandle.sendline("python proc_model.py --os linux --csv ./hello.csv -g")
         sim_phandle.expect("#", timeout=120)
         sim_phandle.sendline("cat ./hello.csv")

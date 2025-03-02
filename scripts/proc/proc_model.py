@@ -1,5 +1,4 @@
 import os
-import psutil
 import signal
 import json
 import subprocess
@@ -561,7 +560,7 @@ def extract_process_data(data: ProcFsData, pid: int, name: str, should_print=Fal
 
     extract_from_status(data, pid, should_print)
     extract_memory_data(data, pid, should_print)
-    extract_namespaces_for_pid(data, pid, should_print)
+    # extract_namespaces_for_pid(data, pid, should_print)
     #extract_mountinfo_for_pid(data, pid, should_print)
 
     if should_print:
@@ -696,7 +695,7 @@ def do_proc_model(args):
     # Extract Info for all the PIDs
     #############################################
     # This is system Wide
-    extract_all_namespaces(data_main, True)
+    # extract_all_namespaces(data_main, True)
 
     # This is for the processe of interest
     try:
@@ -831,6 +830,7 @@ if __name__ == "__main__":
 
     match args.os:
         case "linux":
+            import psutil
             assert is_root()
             do_proc_model(args)
         case "cellulos":
