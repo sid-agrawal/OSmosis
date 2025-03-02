@@ -363,6 +363,18 @@ class ModelGraph:
             EdgeType.REQUEST, source_string_id, dest_string_id, rs_string_id, extra= json.dumps(extra)
         )
 
+    def add_request_edge_raw(
+        self, source_string_id: str, dest_string_id: str, pd_incharge: str | None = None
+    ):
+        """
+        Add a request edge from a node to another node
+        Assumes that source_string_id & des_string_id is correctly formatted.
+
+        """
+
+        extra = { "pd_incharge" : pd_incharge}
+        self.__add_edge(EdgeType.REQUEST, source_string_id, dest_string_id, extra=json.dumps(extra))
+
     def to_csv(self, filename: str = "proc_model.csv", only_edge: bool = False):
         """
         Write the model state to a CSV

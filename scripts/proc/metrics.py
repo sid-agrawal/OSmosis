@@ -11,7 +11,7 @@ from collections import deque
 import logging, sys
 import re as re
 
-logging.basicConfig(stream=sys.stderr, level=logging.INFO)
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 # Files and PDs of interest for different configurations
 # Index is the 'configuration' argument
@@ -23,7 +23,8 @@ configurations = [
     {'file': 'kvstore_4_diff_fs.csv', 'pd1': 'PD_6.0.0', 'pd2': 'PD_7.0.0'},
     {'file': 'kvstore_5_diff_ads.csv', 'pd1': 'PD_5.0.0', 'pd2': 'PD_5.0.1'},
     {'file': 'kvstore_6_diff_threads.csv', 'pd1': 'PD_5.0.0', 'pd2': 'PD_5.1.0'},
-    {'file': 'kvstore_007.csv', 'pd1': 'PD_6.0', 'pd2': 'PD_7.0'}
+    {'file': 'kvstore_007.csv', 'pd1': 'PD_6.0', 'pd2': 'PD_7.0'},
+    {'file': 'outputs/cellulos/March_1_2025/GPITH003.csv', 'pd1': 'PD_3', 'pd2': 'PD_2'}
 ]
 
 parser = argparse.ArgumentParser("metrics")
@@ -263,5 +264,5 @@ if __name__ == "__main__":
     file = config['file']
     
     print(f"Calculating metrics for '{file}' ({pd1},{pd2})")
-    calc_rsi(pd1, pd2)
+    # calc_rsi(pd1, pd2)
     calc_fr(file, pd1, pd2)

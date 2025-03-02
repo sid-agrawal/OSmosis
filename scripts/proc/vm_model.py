@@ -240,18 +240,24 @@ def is_cellulos_aarch64_buildroot_osm_dir_updated() -> bool:
     inside buildroot are up to date.
     """
     dir1 = os.path.expanduser('~/OSmosis/scripts/proc')
-    dir2 = os.path.expanduser('~/buildroot/cellulos/qemu/buildroot-arm-cellulos-with-everything/output/target/root/proc')
+    dir2 = os.path.expanduser(
+        "~/buildroot/cellulos/qemu/buildroot-arm-cellulos-with-everything/output/target/root/proc"
+    )
 
     assert compare_directories(dir1, dir2, file_extension=".py", 
                                exceptions=["vm_model.py", "import_csv.py", "passthrough.py"])
-    
-    osm_rootfs = os.path.expanduser("~/OSmosis/projects/sel4-gpi/apps/vmm/board/qemu_arm_virt/rootfs.cpio.gz")
-    built_rootfs = os.path.expanduser('~/buildroot/cellulos/qemu/buildroot-arm-cellulos-with-everything/output/images/rootfs.cpio.gz')
+
+    osm_rootfs = os.path.expanduser(
+        "~/OSmosis/projects/sel4-gpi/apps/vmm/board/qemu_arm_virt/rootfs.cpio.gz"
+    )
+    built_rootfs = os.path.expanduser(
+        "~/buildroot/cellulos/qemu/buildroot-arm-cellulos-with-everything/output/images/rootfs.cpio.gz"
+    )
     if not filecmp.cmp(osm_rootfs, built_rootfs):
         print (f"CPI files {osm_rootfs} and {built_rootfs} are not the same")
         print (f"Copy from builtroot to cellulos dir")
         return False
-    
+
     return True
 
 
@@ -264,7 +270,7 @@ def is_qemu_x86_buildroot_updated() -> bool:
     dir2 = os.path.expanduser('~/buildroot/qemu/buildroot-x86/output/target/root/proc')
 
     return compare_directories(dir1, dir2, file_extension=".py", 
-                               exceptions=["vm_model.py", "import_csv.py"])
+                               exceptions=["vm_model.py", "import_csv.py", "queries.py"])
 
 
 def get_cellulos_vm_state(get_host: bool, guest_file: str, g2h_file: str, host_file: str):
@@ -274,34 +280,48 @@ def get_cellulos_vm_state(get_host: bool, guest_file: str, g2h_file: str, host_f
         - model state of the hello process inside the guest
         - mappings between gpa --> hpa, and gpa --> hva
     """
+    testname = "GPIKV009"
 
     original_dir = os.getcwd()
     try: 
         os.chdir("/home/" + os.getlogin() + "/OSmosis/qemu-build/")
         # Build the OSM VM Test
 
-        FIX
+        # Run cmake inside the container
+        # We invoke the container using 'make'
         run(
             [
-                "cmake",
-                ".",
-                "-DLibSel4TestPrinterRegex=GPIVM004",
-                "-DGPIExtractModel=ON",
-                "-DGPIVMMImplementation=osm-vmm",
+                "make",
+                "-C",
+                "/home/siagraw/sel4/seL4-CAmkES-L4v-dockerfiles",
+                "user_run_l4v",
+                "HOST_DIR=/home/siagraw/OSmosis",
+                f"EXEC=sh -c 'cd /host/qemu-build && cmake . " +
+                f"-DLibSel4TestPrinterRegex={testname} -DGPIExtractModel=ON'" +
+                f"-DGPIVMMImplementation=osm-vmm",
             ]
         )
-        run(["ninja"])
+        
+        # Make the image
+        run(
+            [
+                "make",
+                "-C",
+                "/home/siagraw/sel4/seL4-CAmkES-L4v-dockerfiles",
+                "user_run_l4v",
+                "HOST_DIR=/home/siagraw/OSmosis",
+                f"EXEC=sh -c 'cd /host/qemu-build && ninja'"
+            ]
+        )
 
         # Run the VMM004 test
         sim_cmd = ("./simulate")
         sim_phandle, host_csv = get_cellulos_phandle(sim_cmd)
 
         # Run the process, inside the guest.
-        FIX
-        FIX
-        sim_phandle.sendline("python proc_model.py --os linux --csv ./hello.csv -g")
+        sim_phandle.sendline("python proc_model.py --os linux --csv ./data.csv -g")
         sim_phandle.expect("#", timeout=120)
-        sim_phandle.sendline("cat ./hello.csv")
+        sim_phandle.sendline("cat ./data.csv")
         sim_phandle.expect("#")
         hello_csv = sim_phandle.before.decode()
 
@@ -330,7 +350,7 @@ def get_cellulos_vm_state(get_host: bool, guest_file: str, g2h_file: str, host_f
             row_id = split_row[1]
             extra_dict_str = split_row[-1]
 
-            # Only look at the rows where a MOD node is created
+            # Only look at the rows where a MO node is created
             if row_type == "RESOURCE" and \
                 row_id.startswith("MO_"):
                 # Parse the last part as a JSON dictionary
@@ -375,8 +395,9 @@ def get_cellulos_vm_state(get_host: bool, guest_file: str, g2h_file: str, host_f
                         raise KeyError(f"Key {hpa:x} already exists in hPA_to_MO")
                     hPA_to_MO[hpa] = row_id
 
-                # Super Hacky
-                elif row_id.startswith("VMR_9"):
+                # Super Hacky. 
+                # This is the prefix of the VM's pages
+                elif row_id.startswith("VMR_f"):
                     if extra_dict["num_pages"] == "0":
                         continue
 
@@ -400,7 +421,9 @@ def get_cellulos_vm_state(get_host: bool, guest_file: str, g2h_file: str, host_f
         hpa = get_cellulos_gpa_to_hpa(gpa)
         hva = get_cellulos_gpa_to_hva(gpa)
         host_vmr_id = hVA_to_VMR.get(hva)
+        assert (host_vmr_id)
         host_mo_id = hPA_to_MO.get(hpa)
+        assert (host_mo_id)
 
         # print(f"Adding Edges for 0x{gpa:<16x} || ", end = "")
         # print(f"\tHPA 0x{hpa:<16x} --> {host_mo_id} |||| ", end = "")
@@ -410,6 +433,9 @@ def get_cellulos_vm_state(get_host: bool, guest_file: str, g2h_file: str, host_f
     print("\033[91mXXX: Add Resource Space Map Edge\033[0m")
     print("\033[95mXXX: Add Request Edge from guest to host kernel\033[0m")
 
+
+    # Add a Request Fault edge Guest Linux to VMM
+    mapping_graph.add_request_edge_raw("PD_10001", "PD_1", "PD_1")
     mapping_graph.to_csv(g2h_file, only_edge=True)
 
 def main():

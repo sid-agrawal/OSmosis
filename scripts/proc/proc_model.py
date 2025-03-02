@@ -67,7 +67,8 @@ program_names: EasyDict = EasyDict(
     print_pid="hello_print_pid",
     hello_file = "hello_file",
     python_passthrough = "passthrough.py",
-    docker_ubuntu_bash = "ubuntu"
+    docker_ubuntu_bash = "ubuntu",
+    kv_app_in_vm = "kv_app_in_vm"
 )
 
 run_configs = [
@@ -115,9 +116,13 @@ run_configs = [
             ProcessStartType.DOCKER,
         ),
     ],
+    # 9: KV Store App in the VM
+    [
+        (program_names.kv_app_in_vm, ProcessStartType.NORMAL),
+    ],
 ]
 
-to_run = run_configs[8]
+to_run = run_configs[9]
 
 
 def log(msg):
@@ -467,7 +472,7 @@ def extract_memory_data(data: ProcFsData, pid: int, should_print=False):
 
     # Array where each element is a line in the /proc/[PID]/maps file
     maps = read_maps_file(pid, should_print)
-    pagemaps = read_pagemap_file(pid, should_print)
+    pagemaps = read_pagemap_file(pid, should_print=False)
     pagemap_iter = iter(pagemaps)
     next_pagemap = next(pagemap_iter, None)
 
@@ -823,7 +828,7 @@ if __name__ == "__main__":
         action="store_true",
         help="Import to the neo4j running on the same machine",
     )
-    parser.add_argument("--testname", type=str, help="CellulOS test to run")
+    parser.add_argument("--testname", type=str, help="CellulOS test to run. Doesn't apply to Linux")
 
     # Parse the arguments
     args = parser.parse_args()

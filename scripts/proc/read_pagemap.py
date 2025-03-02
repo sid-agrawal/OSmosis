@@ -443,6 +443,21 @@ def get_va_pa_mappings(pid, should_print = False):
     for (ln, vaddr, vaend) in areas:
         assert (vaddr % m.page_size) == 0 and (vaend % m.page_size) == 0, "not 0x%x-aligned:" % (m.page_size, ln)
 
+        split_line = ln.split()
+        name = split_line[-1]
+
+        # File offset is the PA
+        if name =="/dev/mem":
+            print ("Special handling for dev/mem in get_va_pa_mappings")
+            result_obj = PageMapObj()
+            result_obj.mapped = True
+            result_obj.paddr = int(split_line[-4],16)
+            result_obj.vaddr = vaddr
+            result_obj.size = vaend - vaddr
+            results.append(result_obj)
+            continue
+
+
         maps = m.pa_range(vaddr, vaend-vaddr)
         for mapping in maps:
             result_obj = PageMapObj()
@@ -456,6 +471,9 @@ def get_va_pa_mappings(pid, should_print = False):
             else:
                 result_obj.mapped = mapping.is_mapped()
                 result_obj.paddr = mapping.pa()
+                if result_obj.paddr == 0:
+                    print(f"Warning: NO PA for vaddr range [{vaddr:16x},{vaddr + mapping.size:16x}]")
+
                 result_obj.size = mapping.size
                 vaddr += mapping.size
                 
