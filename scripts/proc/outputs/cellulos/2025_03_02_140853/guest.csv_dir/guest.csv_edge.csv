@@ -1,0 +1,134 @@
+:START_ID,DATA,EXTRA,:END_ID,:TYPE
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",MO_SPACE_10001,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",MO_SPACE_10002,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",MO_SPACE_10003,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",MO_10003_1,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",MO_10003_2,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",MO_10003_3,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",MO_10003_4,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",MO_10003_5,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",MO_10003_6,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",MO_10003_7,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",MO_10003_8,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",MO_10003_9,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",MO_10003_10,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",MO_10003_11,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",MO_10003_12,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",MO_10003_13,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",MO_10003_14,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",MO_10003_15,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",MO_10003_16,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",MO_10003_17,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",MO_10003_18,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",MO_10003_19,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",MO_10003_20,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",MO_10003_21,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",MO_10003_22,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",MO_10003_23,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",MO_10003_24,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",MO_10003_25,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",MO_10003_26,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",MO_10002_1,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",VMR_SPACE_10004,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",VMR_10004_1,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",VMR_10004_2,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",VMR_10004_3,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",VMR_10004_4,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",VMR_10004_5,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",VMR_10004_6,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",VMR_10004_7,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",VMR_10004_8,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",VMR_10004_9,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",VMR_10004_10,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",VMR_10004_11,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",VMR_10004_12,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",VMR_10004_13,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",VMR_10004_14,HOLD
+PD_10001,RWX,"{""pd_incharge"": ""Guest Linux""}",VMR_10004_15,HOLD
+MO_10003_1,NONE,,MO_SPACE_10003,SUBSET
+MO_10003_2,NONE,,MO_SPACE_10003,SUBSET
+MO_10003_3,NONE,,MO_SPACE_10003,SUBSET
+MO_10003_4,NONE,,MO_SPACE_10003,SUBSET
+MO_10003_5,NONE,,MO_SPACE_10003,SUBSET
+MO_10003_6,NONE,,MO_SPACE_10003,SUBSET
+MO_10003_7,NONE,,MO_SPACE_10003,SUBSET
+MO_10003_8,NONE,,MO_SPACE_10003,SUBSET
+MO_10003_9,NONE,,MO_SPACE_10003,SUBSET
+MO_10003_10,NONE,,MO_SPACE_10003,SUBSET
+MO_10003_11,NONE,,MO_SPACE_10003,SUBSET
+MO_10003_12,NONE,,MO_SPACE_10003,SUBSET
+MO_10003_13,NONE,,MO_SPACE_10003,SUBSET
+MO_10003_14,NONE,,MO_SPACE_10003,SUBSET
+MO_10003_15,NONE,,MO_SPACE_10003,SUBSET
+MO_10003_16,NONE,,MO_SPACE_10003,SUBSET
+MO_10003_17,NONE,,MO_SPACE_10003,SUBSET
+MO_10003_18,NONE,,MO_SPACE_10003,SUBSET
+MO_10003_19,NONE,,MO_SPACE_10003,SUBSET
+MO_10003_20,NONE,,MO_SPACE_10003,SUBSET
+MO_10003_21,NONE,,MO_SPACE_10003,SUBSET
+MO_10003_22,NONE,,MO_SPACE_10003,SUBSET
+MO_10003_23,NONE,,MO_SPACE_10003,SUBSET
+MO_10003_24,NONE,,MO_SPACE_10003,SUBSET
+MO_10003_25,NONE,,MO_SPACE_10003,SUBSET
+MO_10003_26,NONE,,MO_SPACE_10003,SUBSET
+MO_10002_1,NONE,,MO_SPACE_10002,SUBSET
+PD_10002,VMR_SPACE_10004,"{""pd_incharge"": ""Guest Linux""}",PD_10001,REQUEST
+PD_10002,RXP,"{""pd_incharge"": ""Guest Linux""}",VMR_10004_1,HOLD
+PD_10002,RP,"{""pd_incharge"": ""Guest Linux""}",VMR_10004_2,HOLD
+PD_10002,RWP,"{""pd_incharge"": ""Guest Linux""}",VMR_10004_3,HOLD
+PD_10002,RWP,"{""pd_incharge"": ""Guest Linux""}",VMR_10004_4,HOLD
+PD_10002,RWS,"{""pd_incharge"": ""Guest Linux""}",VMR_10004_5,HOLD
+PD_10002,RXP,"{""pd_incharge"": ""Guest Linux""}",VMR_10004_6,HOLD
+PD_10002,RP,"{""pd_incharge"": ""Guest Linux""}",VMR_10004_7,HOLD
+PD_10002,RWP,"{""pd_incharge"": ""Guest Linux""}",VMR_10004_8,HOLD
+PD_10002,RWP,"{""pd_incharge"": ""Guest Linux""}",VMR_10004_9,HOLD
+PD_10002,RP,"{""pd_incharge"": ""Guest Linux""}",VMR_10004_10,HOLD
+PD_10002,RXP,"{""pd_incharge"": ""Guest Linux""}",VMR_10004_11,HOLD
+PD_10002,RXP,"{""pd_incharge"": ""Guest Linux""}",VMR_10004_12,HOLD
+PD_10002,RP,"{""pd_incharge"": ""Guest Linux""}",VMR_10004_13,HOLD
+PD_10002,RWP,"{""pd_incharge"": ""Guest Linux""}",VMR_10004_14,HOLD
+PD_10002,RWP,"{""pd_incharge"": ""Guest Linux""}",VMR_10004_15,HOLD
+VMR_SPACE_10004,,"{""pd_incharge"": ""Guest Linux""}",MO_SPACE_10002,MAP
+VMR_SPACE_10004,,"{""pd_incharge"": ""Guest Linux""}",MO_SPACE_10003,MAP
+VMR_10004_1,NONE,,VMR_SPACE_10004,SUBSET
+VMR_10004_1,,"{""pd_incharge"": ""Guest Linux""}",MO_10003_7,MAP
+VMR_10004_2,NONE,,VMR_SPACE_10004,SUBSET
+VMR_10004_2,,"{""pd_incharge"": ""Guest Linux""}",MO_10003_15,MAP
+VMR_10004_3,NONE,,VMR_SPACE_10004,SUBSET
+VMR_10004_3,,"{""pd_incharge"": ""Guest Linux""}",MO_10003_9,MAP
+VMR_10004_4,NONE,,VMR_SPACE_10004,SUBSET
+VMR_10004_4,,"{""pd_incharge"": ""Guest Linux""}",MO_10003_26,MAP
+VMR_10004_5,NONE,,VMR_SPACE_10004,SUBSET
+VMR_10004_5,,"{""pd_incharge"": ""Guest Linux""}",MO_10002_1,MAP
+VMR_10004_6,NONE,,VMR_SPACE_10004,SUBSET
+VMR_10004_6,,"{""pd_incharge"": ""Guest Linux""}",MO_10003_6,MAP
+VMR_10004_6,,"{""pd_incharge"": ""Guest Linux""}",MO_10003_2,MAP
+VMR_10004_6,,"{""pd_incharge"": ""Guest Linux""}",MO_10003_3,MAP
+VMR_10004_6,,"{""pd_incharge"": ""Guest Linux""}",MO_10003_4,MAP
+VMR_10004_7,NONE,,VMR_SPACE_10004,SUBSET
+VMR_10004_7,,"{""pd_incharge"": ""Guest Linux""}",MO_10003_20,MAP
+VMR_10004_7,,"{""pd_incharge"": ""Guest Linux""}",MO_10003_18,MAP
+VMR_10004_8,NONE,,VMR_SPACE_10004,SUBSET
+VMR_10004_8,,"{""pd_incharge"": ""Guest Linux""}",MO_10003_21,MAP
+VMR_10004_8,,"{""pd_incharge"": ""Guest Linux""}",MO_10003_17,MAP
+VMR_10004_9,NONE,,VMR_SPACE_10004,SUBSET
+VMR_10004_9,,"{""pd_incharge"": ""Guest Linux""}",MO_10003_25,MAP
+VMR_10004_9,,"{""pd_incharge"": ""Guest Linux""}",MO_10003_24,MAP
+VMR_10004_9,,"{""pd_incharge"": ""Guest Linux""}",MO_10003_23,MAP
+VMR_10004_9,,"{""pd_incharge"": ""Guest Linux""}",MO_10003_22,MAP
+VMR_10004_9,,"{""pd_incharge"": ""Guest Linux""}",MO_10003_16,MAP
+VMR_10004_9,,"{""pd_incharge"": ""Guest Linux""}",MO_10003_19,MAP
+VMR_10004_10,NONE,,VMR_SPACE_10004,SUBSET
+VMR_10004_11,NONE,,VMR_SPACE_10004,SUBSET
+VMR_10004_11,,"{""pd_incharge"": ""Guest Linux""}",MO_10003_1,MAP
+VMR_10004_12,NONE,,VMR_SPACE_10004,SUBSET
+VMR_10004_12,,"{""pd_incharge"": ""Guest Linux""}",MO_10003_5,MAP
+VMR_10004_13,NONE,,VMR_SPACE_10004,SUBSET
+VMR_10004_13,,"{""pd_incharge"": ""Guest Linux""}",MO_10003_13,MAP
+VMR_10004_13,,"{""pd_incharge"": ""Guest Linux""}",MO_10003_12,MAP
+VMR_10004_14,NONE,,VMR_SPACE_10004,SUBSET
+VMR_10004_14,,"{""pd_incharge"": ""Guest Linux""}",MO_10003_11,MAP
+VMR_10004_14,,"{""pd_incharge"": ""Guest Linux""}",MO_10003_10,MAP
+VMR_10004_15,NONE,,VMR_SPACE_10004,SUBSET
+VMR_10004_15,,"{""pd_incharge"": ""Guest Linux""}",MO_10003_14,MAP
+VMR_10004_15,,"{""pd_incharge"": ""Guest Linux""}",MO_10003_8,MAP
