@@ -1,0 +1,29 @@
+users:
+  - name: barfoo
+    gecos: Bar B. Foo
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    groups: users, admin, sudo
+    lock_passwd: true
+    ssh_authorized_keys:
+      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC/UgiyWUQvuEUsYpoYgYbFTUFckI4mhV2YWMRq8BGmvEDGW4l92lhWWUidHTbXV0JrHmFy0OfvhxWi9iZPltYc1StQZs+qfF8zX5FVRgIOiLH37JdFRwjd1/d4TtluL7ar3hnck+x6OncGr3BB5cScyw6klw9zdlQW4IAj7Wok7bWOt2TQL6IheZ9B9CvYY3jwPQpEgo87yUiZG3ckyHqG4NqGkmjcTVLQmBxXODRQDmrHKOEde2FTmyTzXdgYcRxSe44tfJcOKmxjxLjMEHvkrpLjVC+0Z+SfoWMoYrI4q5W+sgFmXVh4sGWf54u8NqJr2oTAEsWF6ZLwnEzgjmOc05nWMMd/QywGVvVSipUiq+P/ePIvdPQV1H7GwrftiQRg+uilpCHtE5L/0UdVfVEsFlCgeR+v4ixPUdsDzW3MsMeYoTv/6yaAko5cz6P7r4ZACBF+7uwjkPeciNRUsGCamA63HbNIN2mnvQmRFubgINfI36CKVYKD+6D+paMf+Ik= siagraw@lindt
+    sudo: ['ALL=(ALL) NOPASSWD:ALL']
+
+# runs apt-get update
+package_update: true
+
+# runs apt-get upgrade
+package_upgrade: true
+
+# installing additional packages
+packages:
+  - docker
+  - docker-compose
+
+# run some commands on first boot
+runcmd:
+  - systemctl daemon-reload
+  - systemctl enable docker
+  - systemctl start --no-block docker
+
+# after system comes up first time. 
+final_message: "The system is finally up, after $UPTIME seconds"
