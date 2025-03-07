@@ -22,6 +22,10 @@ This is the username password pairs.
 root password 
 ubuntu password
 
+
+This is not the right command. Look at command history on thinkpad.
+We should be running this without sudo.
+
 ```bash
 sudo virt-install \
   --name foo-tester \
