@@ -1,12 +1,9 @@
 users:
-  - name: barfoo
-    gecos: Bar B. Foo
-    sudo: ALL=(ALL) NOPASSWD:ALL
-    groups: users, admin, sudo
-    lock_passwd: true
+  - name: foobar
     ssh_authorized_keys:
-      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC/UgiyWUQvuEUsYpoYgYbFTUFckI4mhV2YWMRq8BGmvEDGW4l92lhWWUidHTbXV0JrHmFy0OfvhxWi9iZPltYc1StQZs+qfF8zX5FVRgIOiLH37JdFRwjd1/d4TtluL7ar3hnck+x6OncGr3BB5cScyw6klw9zdlQW4IAj7Wok7bWOt2TQL6IheZ9B9CvYY3jwPQpEgo87yUiZG3ckyHqG4NqGkmjcTVLQmBxXODRQDmrHKOEde2FTmyTzXdgYcRxSe44tfJcOKmxjxLjMEHvkrpLjVC+0Z+SfoWMoYrI4q5W+sgFmXVh4sGWf54u8NqJr2oTAEsWF6ZLwnEzgjmOc05nWMMd/QywGVvVSipUiq+P/ePIvdPQV1H7GwrftiQRg+uilpCHtE5L/0UdVfVEsFlCgeR+v4ixPUdsDzW3MsMeYoTv/6yaAko5cz6P7r4ZACBF+7uwjkPeciNRUsGCamA63HbNIN2mnvQmRFubgINfI36CKVYKD+6D+paMf+Ik= siagraw@lindt
+      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDSPViMszjUGV1DLIFhCFQN+9fJZPtQwq9tUgBbNuyDDe6OKMzIXMcQBV4hgEjXHe8JhaCBLpH7ErMCBx0o34O3P7Bpo48A1gxuychM4Z2nNK3lYCUxSrkvX/JS1f+MRSDxjzhEt5iSfaTHhnSwBpzKFfGz02/Ij2AS9Gb6lwgS4DB52FJJ7td3ILriAf15q4kAbgDP5Oudt4nVMb7wta3wH2I8M7UfDfmcMaZXWfByZ4IuCCXHZrHdrNpBxWmQ2ejIccmJDWD8MMhZCrCYcva6pxv/sJUAIq6xcBXu7+mjJm81OIOJ6vnKTRfodjaT0HqDbYOYRt8lI0CmH+oZ/Dx4Tg1vGrMEMxIzCktrUODH+8AtWzL8A+WOCfj+uU8r+/1j5JlwNuf9ITApWij/abPSX7jQIjiuNByEJKaFHBNxl5LdJjCyQlvrcIN2ek1oZe1xN0swdRxji6EFxJSF6J93WDfXCfEzO/MT20zUcvOGbEsn5+MT3IHAbJmuBQpTCA0= siagraw@lindt
     sudo: ['ALL=(ALL) NOPASSWD:ALL']
+    groups: sudo
 
 # runs apt-get update
 package_update: true
