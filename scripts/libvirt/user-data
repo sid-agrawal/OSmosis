@@ -1,9 +1,10 @@
 users:
-  - name: foobar
-    ssh_authorized_keys:
-      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDSPViMszjUGV1DLIFhCFQN+9fJZPtQwq9tUgBbNuyDDe6OKMzIXMcQBV4hgEjXHe8JhaCBLpH7ErMCBx0o34O3P7Bpo48A1gxuychM4Z2nNK3lYCUxSrkvX/JS1f+MRSDxjzhEt5iSfaTHhnSwBpzKFfGz02/Ij2AS9Gb6lwgS4DB52FJJ7td3ILriAf15q4kAbgDP5Oudt4nVMb7wta3wH2I8M7UfDfmcMaZXWfByZ4IuCCXHZrHdrNpBxWmQ2ejIccmJDWD8MMhZCrCYcva6pxv/sJUAIq6xcBXu7+mjJm81OIOJ6vnKTRfodjaT0HqDbYOYRt8lI0CmH+oZ/Dx4Tg1vGrMEMxIzCktrUODH+8AtWzL8A+WOCfj+uU8r+/1j5JlwNuf9ITApWij/abPSX7jQIjiuNByEJKaFHBNxl5LdJjCyQlvrcIN2ek1oZe1xN0swdRxji6EFxJSF6J93WDfXCfEzO/MT20zUcvOGbEsn5+MT3IHAbJmuBQpTCA0= siagraw@lindt
+  - name: siagraw
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    groups: users, admin, sudo
+    lock_passwd: true
+      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQD0nATWhOtX8Fwg3NLIwABh/YI1Ul8zylZkUwwfIaIaLcuSW6UsY8FGdSZSXmxjua3friyhmy6ffLEzQ7WxueMvS0Kbo2S0UWcJpsCWGrGvjeNUjM4vxKN+f8zaZi6y/a1y5j/XISymGg/C8awLGQC1r/5pd2OA1gLpSVDQPli/dot5Q+q5uCJLHCUS4moy+cu/zzb1gJOdcG63uuL4dHgW8otinHFu6mJB54Xx5XA5Y+1cDpUgrugVhT5RDQuq7RpaloaDVNPmQ4zx0TWl294qdAiCHwLxKCG7/dW3HwDZ+jDJjznFgWIrmptl9EXBg3ygDpNVs7VytdJwYcKb1CClQhNsZ8+GEPYmU1SyJkPbSKlZlZpE2nHgonaGK937yBFm1KuXQgr8Z02VKeYE5gvjevvcdIJ03D01Fj2tbiQp2CT1CEDPwscjHpaI9iD93O8r6HoQQuWFIobUa08Z2xaA1Or5RMF5PoWCoNFaw1U+T3TuuH/J8i77Qzruj/LTw38= siagraw@thinkpad
     sudo: ['ALL=(ALL) NOPASSWD:ALL']
-    groups: sudo
 
 # runs apt-get update
 package_update: true
