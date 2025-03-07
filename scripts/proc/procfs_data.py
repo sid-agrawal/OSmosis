@@ -129,6 +129,337 @@ class ProcAddressSpace:
     model_id: int = 0  # The ID of this node in the model state, once added
 
 
+
+    def get_processes_in_same_pid_namespace(pid: int) -> list[int]:
+        """
+        Get a list of process IDs in the same PID namespace as the given process ID
+
+        :param pid: Process ID
+        :return: List of process IDs in the same PID namespace
+        """
+        try:
+            with open(f"/proc/{pid}/ns/pid", "r") as ns_file:
+                pid_ns_inode = ns_file.read()
+            
+            processes_in_same_ns = []
+            for proc in os.listdir("/proc"):
+                if proc.isdigit():
+                    try:
+                        with open(f"/proc/{proc}/ns/pid", "r") as other_ns_file:
+                            if other_ns_file.read() == pid_ns_inode:
+                                processes_in_same_ns.append(int(proc))
+                    except FileNotFoundError:
+                        continue
+                    except Exception as e:
+                        print(f"Error reading namespace for PID {proc}: {e}")
+            
+            return processes_in_same_ns
+        except FileNotFoundError:
+            print(f"Process with PID {pid} not found.")
+        except Exception as e:
+            print(f"Error reading namespace for PID {pid}: {e}")
+        
+        return []
+
+
+class CGroupType(Enum):
+    CPU = 1
+    CPUACCT = 2
+    MEMORY = 4
+    DEVICES = 5
+    FREEZER = 6
+    NET_CLS = 7
+    PERF_EVENT = 8
+    NET_PRIO = 9
+    HUGETLB = 10
+    PIDS = 11
+    RDMA = 12
+    MISC = 13
+
+
+# Use to convert a namespace type as string to NamespaceType
+str_to_cgroup_type = {
+    "cpu": CGroupType.CPU,
+    "cpuacct": CGroupType.CPUACCT,
+    "memory": CGroupType.MEMORY,
+    "devices": CGroupType.DEVICES,
+    "freezer": CGroupType.FREEZER,
+    "net_cls": CGroupType.NET_CLS,
+    "perf_event": CGroupType.PERF_EVENT,
+    "net_prio": CGroupType.NET_PRIO,
+    "hugetlb": CGroupType.HUGETLB,
+    "pids": CGroupType.PIDS,
+    "rdma": CGroupType.RDMA,
+    "misc": CGroupType.MISC,
+}
+
+class CapabilityType(Enum):
+    CAP_CHOWN = 1
+    CAP_DAC_OVERRIDE = 2
+    CAP_DAC_READ_SEARCH = 3
+    CAP_FOWNER = 4
+    CAP_FSETID = 5
+    CAP_KILL = 6
+    CAP_SETGID = 7
+    CAP_SETUID = 8
+    CAP_SETPCAP = 9
+    CAP_LINUX_IMMUTABLE = 10
+    CAP_NET_BIND_SERVICE = 11
+    CAP_NET_BROADCAST = 12
+    CAP_NET_ADMIN = 13
+    CAP_NET_RAW = 14
+    CAP_IPC_LOCK = 15
+    CAP_IPC_OWNER = 16
+    CAP_SYS_MODULE = 17
+    CAP_SYS_RAWIO = 18
+    CAP_SYS_CHROOT = 19
+    CAP_SYS_PTRACE = 20
+    CAP_SYS_PACCT = 21
+    CAP_SYS_ADMIN = 22
+    CAP_SYS_BOOT = 23
+    CAP_SYS_NICE = 24
+    CAP_SYS_RESOURCE = 25
+    CAP_SYS_TIME = 26
+    CAP_SYS_TTY_CONFIG = 27
+    CAP_MKNOD = 28
+    CAP_LEASE = 29
+    CAP_AUDIT_WRITE = 30
+    CAP_AUDIT_CONTROL = 31
+    CAP_SETFCAP = 32
+    CAP_MAC_OVERRIDE = 33
+    CAP_MAC_ADMIN = 34
+    CAP_SYSLOG = 35
+    CAP_WAKE_ALARM = 36
+    CAP_BLOCK_SUSPEND = 37
+    CAP_AUDIT_READ = 38
+
+# Map of CapabilityType to system calls they control
+capability_to_syscalls = {
+    CapabilityType.CAP_CHOWN: ["chown", "fchown", "lchown"],
+    CapabilityType.CAP_DAC_OVERRIDE: ["open", "read", "write", "execve"],
+    CapabilityType.CAP_DAC_READ_SEARCH: ["open", "read", "execve"],
+    CapabilityType.CAP_FOWNER: ["chown", "chmod", "kill"],
+    CapabilityType.CAP_FSETID: ["setuid", "setgid"],
+    CapabilityType.CAP_KILL: ["kill"],
+    CapabilityType.CAP_SETGID: ["setgid", "setgroups"],
+    CapabilityType.CAP_SETUID: ["setuid", "setreuid", "setresuid"],
+    CapabilityType.CAP_SETPCAP: ["capset"],
+    CapabilityType.CAP_LINUX_IMMUTABLE: ["ioctl"],
+    CapabilityType.CAP_NET_BIND_SERVICE: ["bind"],
+    CapabilityType.CAP_NET_BROADCAST: ["setsockopt"],
+    CapabilityType.CAP_NET_ADMIN: ["setsockopt", "getsockopt", "ioctl"],
+    CapabilityType.CAP_NET_RAW: ["socket"],
+    CapabilityType.CAP_IPC_LOCK: ["mlock", "mlockall"],
+    CapabilityType.CAP_IPC_OWNER: ["msgctl", "semctl", "shmctl"],
+    CapabilityType.CAP_SYS_MODULE: ["init_module", "delete_module"],
+    CapabilityType.CAP_SYS_RAWIO: ["iopl", "ioperm"],
+    CapabilityType.CAP_SYS_CHROOT: ["chroot"],
+    CapabilityType.CAP_SYS_PTRACE: ["ptrace"],
+    CapabilityType.CAP_SYS_PACCT: ["acct"],
+    CapabilityType.CAP_SYS_ADMIN: ["mount", "umount", "swapon", "swapoff"],
+    CapabilityType.CAP_SYS_BOOT: ["reboot"],
+    CapabilityType.CAP_SYS_NICE: ["setpriority", "sched_setscheduler"],
+    CapabilityType.CAP_SYS_RESOURCE: ["setrlimit", "prlimit"],
+    CapabilityType.CAP_SYS_TIME: ["settimeofday", "stime", "adjtimex"],
+    CapabilityType.CAP_SYS_TTY_CONFIG: ["vhangup"],
+    CapabilityType.CAP_MKNOD: ["mknod"],
+    CapabilityType.CAP_LEASE: ["fcntl"],
+    CapabilityType.CAP_AUDIT_WRITE: ["audit_write"],
+    CapabilityType.CAP_AUDIT_CONTROL: ["audit_control"],
+    CapabilityType.CAP_SETFCAP: ["setxattr"],
+    CapabilityType.CAP_MAC_OVERRIDE: ["mac_override"],
+    CapabilityType.CAP_MAC_ADMIN: ["mac_admin"],
+    CapabilityType.CAP_SYSLOG: ["syslog"],
+    CapabilityType.CAP_WAKE_ALARM: ["alarm"],
+    CapabilityType.CAP_BLOCK_SUSPEND: ["block_suspend"],
+    CapabilityType.CAP_AUDIT_READ: ["audit_read"],
+}
+
+def get_cgroup_v2_path(pid: int) -> str:
+    """
+    Get the cgroup v2 path for a given process ID
+
+    :param pid: Process ID
+    :return: cgroup v2 path
+    """
+    try:
+        with open(f"/proc/{pid}/cgroup", "r") as cgroup_file:
+            for line in cgroup_file:
+                if line.startswith("0::"):
+                    return line.split(":")[2].strip()
+    except FileNotFoundError:
+        print(f"Process with PID {pid} not found.")
+    except Exception as e:
+        print(f"Error reading cgroup for PID {pid}: {e}")
+
+    return ""
+
+def get_parent_cgroup(cgroup_path: str) -> str:
+    """
+    Get the parent cgroup path for a given cgroup path
+
+    :param cgroup_path: cgroup path
+    :return: parent cgroup path
+    """
+    return "/".join(cgroup_path.strip("/").split("/")[:-1])
+
+def processes_share_parent_cgroup(pid1: int, pid2: int) -> bool:
+    """
+    Check if two processes share the same parent cgroup v2
+
+    :param pid1: First process ID
+    :param pid2: Second process ID
+    :return: True if both processes share the same parent cgroup v2, False otherwise
+    """
+    cgroup1 = get_cgroup_v2_path(pid1)
+    cgroup2 = get_cgroup_v2_path(pid2)
+
+    parent_cgroup1 = get_parent_cgroup(cgroup1)
+    parent_cgroup2 = get_parent_cgroup(cgroup2)
+
+    return parent_cgroup1 == parent_cgroup2
+
+
+
+    # List of syscalls blocked by Docker's default seccomp profile
+    docker_seccomp_blocked_syscalls = [
+        "acct",
+        "add_key",
+        "adjtimex",
+        "bpf",
+        "clock_adjtime",
+        "clock_settime",
+        "create_module",
+        "delete_module",
+        "finit_module",
+        "get_kernel_syms",
+        "get_mempolicy",
+        "init_module",
+        "ioperm",
+        "iopl",
+        "kcmp",
+        "kexec_file_load",
+        "kexec_load",
+        "keyctl",
+        "lookup_dcookie",
+        "mbind",
+        "mount",
+        "move_pages",
+        "name_to_handle_at",
+        "nfsservctl",
+        "open_by_handle_at",
+        "perf_event_open",
+        "personality",
+        "pivot_root",
+        "process_vm_readv",
+        "process_vm_writev",
+        "ptrace",
+        "query_module",
+        "quotactl",
+        "reboot",
+        "request_key",
+        "set_mempolicy",
+        "setns",
+        "settimeofday",
+        "stime",
+        "swapoff",
+        "swapon",
+        "sysfs",
+        "syslog",
+        "umount2",
+        "unshare",
+        "uselib",
+        "userfaultfd",
+        "ustat",
+        "vm86",
+        "vm86old",
+    ]
+
+
+def get_process_capabilities(pid: int) -> list[CapabilityType]:
+    """
+    Get the list of capabilities available to a process by reading /proc/pid/status
+
+    :param pid: Process ID
+    :return: List of capabilities available to the process
+    """
+    capabilities = []
+    try:
+        with open(f"/proc/{pid}/status", "r") as status_file:
+            for line in status_file:
+                if line.startswith("CapEff:"):
+                    cap_eff = int(line.split()[1], 16)
+                    for cap in CapabilityType:
+                        if cap_eff & (1 << (cap.value - 1)):
+                            capabilities.append(cap)
+                    break
+    except FileNotFoundError:
+        print(f"Process with PID {pid} not found.")
+    except Exception as e:
+        print(f"Error reading capabilities for PID {pid}: {e}")
+
+    return capabilities
+
+def get_disallowed_syscalls(capabilities: list[CapabilityType]) -> list[str]:
+    """
+    Get the list of system calls not allowed based on the given capabilities
+
+    :param capabilities: List of capabilities available to the process
+    :return: List of system calls not allowed
+    """
+    allowed_syscalls = set()
+    for cap in capabilities:
+        if cap in capability_to_syscalls:
+            allowed_syscalls.update(capability_to_syscalls[cap])
+
+    all_syscalls = set(syscall for syscalls in capability_to_syscalls.values() for syscall in syscalls)
+    disallowed_syscalls = all_syscalls - allowed_syscalls
+
+    return list(disallowed_syscalls)
+
+# Use to convert a capability type as string to CapabilityType
+str_to_capability_type = {
+    "CAP_CHOWN": CapabilityType.CAP_CHOWN,
+    "CAP_DAC_OVERRIDE": CapabilityType.CAP_DAC_OVERRIDE,
+    "CAP_DAC_READ_SEARCH": CapabilityType.CAP_DAC_READ_SEARCH,
+    "CAP_FOWNER": CapabilityType.CAP_FOWNER,
+    "CAP_FSETID": CapabilityType.CAP_FSETID,
+    "CAP_KILL": CapabilityType.CAP_KILL,
+    "CAP_SETGID": CapabilityType.CAP_SETGID,
+    "CAP_SETUID": CapabilityType.CAP_SETUID,
+    "CAP_SETPCAP": CapabilityType.CAP_SETPCAP,
+    "CAP_LINUX_IMMUTABLE": CapabilityType.CAP_LINUX_IMMUTABLE,
+    "CAP_NET_BIND_SERVICE": CapabilityType.CAP_NET_BIND_SERVICE,
+    "CAP_NET_BROADCAST": CapabilityType.CAP_NET_BROADCAST,
+    "CAP_NET_ADMIN": CapabilityType.CAP_NET_ADMIN,
+    "CAP_NET_RAW": CapabilityType.CAP_NET_RAW,
+    "CAP_IPC_LOCK": CapabilityType.CAP_IPC_LOCK,
+    "CAP_IPC_OWNER": CapabilityType.CAP_IPC_OWNER,
+    "CAP_SYS_MODULE": CapabilityType.CAP_SYS_MODULE,
+    "CAP_SYS_RAWIO": CapabilityType.CAP_SYS_RAWIO,
+    "CAP_SYS_CHROOT": CapabilityType.CAP_SYS_CHROOT,
+    "CAP_SYS_PTRACE": CapabilityType.CAP_SYS_PTRACE,
+    "CAP_SYS_PACCT": CapabilityType.CAP_SYS_PACCT,
+    "CAP_SYS_ADMIN": CapabilityType.CAP_SYS_ADMIN,
+    "CAP_SYS_BOOT": CapabilityType.CAP_SYS_BOOT,
+    "CAP_SYS_NICE": CapabilityType.CAP_SYS_NICE,
+    "CAP_SYS_RESOURCE": CapabilityType.CAP_SYS_RESOURCE,
+    "CAP_SYS_TIME": CapabilityType.CAP_SYS_TIME,
+    "CAP_SYS_TTY_CONFIG": CapabilityType.CAP_SYS_TTY_CONFIG,
+    "CAP_MKNOD": CapabilityType.CAP_MKNOD,
+    "CAP_LEASE": CapabilityType.CAP_LEASE,
+    "CAP_AUDIT_WRITE": CapabilityType.CAP_AUDIT_WRITE,
+    "CAP_AUDIT_CONTROL": CapabilityType.CAP_AUDIT_CONTROL,
+    "CAP_SETFCAP": CapabilityType.CAP_SETFCAP,
+    "CAP_MAC_OVERRIDE": CapabilityType.CAP_MAC_OVERRIDE,
+    "CAP_MAC_ADMIN": CapabilityType.CAP_MAC_ADMIN,
+    "CAP_SYSLOG": CapabilityType.CAP_SYSLOG,
+    "CAP_WAKE_ALARM": CapabilityType.CAP_WAKE_ALARM,
+    "CAP_BLOCK_SUSPEND": CapabilityType.CAP_BLOCK_SUSPEND,
+    "CAP_AUDIT_READ": CapabilityType.CAP_AUDIT_READ,
+}
+
+
 class NamespaceType(Enum):
     UTS = 1
     USER = 2
@@ -255,12 +586,24 @@ class Process:
     """Tracks a process"""
 
     name: str  # Name of the process
+
+    uid_effective: int = 0
+    gid_effective: int = 0
+
+    cap_inh: int = 0
+    cap_prm: int = 0
+    cap_eff: int = 0
+    cap_bnd: int = 0
+    cap_amb: int = 0
+
     ads: ProcAddressSpace = field(
         default_factory=lambda: ProcAddressSpace()
     )  # The process' address space
-    namespaces: list[Namespace] = field(default_factory=lambda: list())
+    namespaces = {} # Key: NS Type, Value: Namespace DS
+                                       # Assume that one PID can only be part of one NS of a type
     model_id: int = 0  # The ID of this node in the model state, once added
     pid_in_ns: int = 0  # PID of the process according to its own PID namespace
+    pid_in_host: int = 0  # PID of the process according to host (default) PID namespace
     # The PID (in global PID namespace) will be the key of the dict this is in
     pid_mounts: list[pypfs.mount] = field(default_factory=lambda: list())
 
@@ -306,6 +649,9 @@ class ProcFsData:
 
     def __init__(self):
         self.namespaces = {}  # dict from namespace handle to Namespace
+        self.users = {}  # dict from username to uid
+        self.groups = {}  # dict from groupname to gid
+        self.user_groups = {}  # dict from username to list of groups
         self.procs = {}  # dict from PID to Process
         self.pmrs = IntervalDict()  # list of PMR
         self.devices = IntervalDict()  # list of physical memory devices, ProcDev
@@ -345,6 +691,67 @@ class ProcFsData:
                 pd_incharge=self.os_name
             )
 
+    def __add_inter_process_hold_edges(self):
+        """
+        # For each process
+
+          - Find every process in the same PID NS and or child NS
+          
+          - Find every process that has same uid_eff
+            - Add hold edge to it
+            
+          - Find every process that has same gid_eff
+            - Add hold edge to it
+
+          - Find every process that has same uid_eff == 0
+             - Add hold edge to every PID
+        """
+
+        #    
+        default_pid_ns = self.procs[1].namespaces[NamespaceType.PID]
+
+        for from_node in self.procs.values():
+            uid_eff = from_node.uid_effective
+            gid_eff = from_node.gid_effective
+
+
+            # Check if the to_node is the same PID ns or a child NS
+            from_node_pid_ns = from_node.namespaces[NamespaceType.PID]
+
+            for to_node in self.procs.values():
+                add_edge = False
+                to_node_pid_ns = to_node.namespaces[NamespaceType.PID]
+
+
+                ## We are assuming only 1 level of PID NS
+                ## If we are in root PID NS, usual rules apply.
+                ## If we are in non-root PID NS, add edge to all others in the 
+                # same PID NS based on usual user based rules.
+
+                if to_node_pid_ns != from_node_pid_ns and \
+                     from_node_pid_ns != default_pid_ns :
+                    continue
+
+                if to_node.uid_effective == uid_eff \
+                     or to_node.gid_effective == gid_eff:
+                    add_edge = True
+                else:
+                    continue
+
+                if  from_node.uid_effective == 0:
+                    add_edge = True
+                else:
+                    continue
+
+                if add_edge:
+                    print(f"\033[92mAdding hold edge from {from_node.model_id} to {to_node.model_id}\033[0m")
+                    self.model.add_inter_pd_hold_edge(gm.perms_all, from_node.model_id,
+                                                      to_node.model_id)
+
+                            
+                   
+
+        pass
     # Add the devices
     def __add_devices(self, kernel_id: int ):
         for (start, end), device_info in self.devices.items():
@@ -397,7 +804,7 @@ class ProcFsData:
 
         for process_info in self.procs.values():
             # Add the PD
-            pd_id = self.model.add_pd_node(process_info.name)
+            pd_id = self.model.add_pd_node(process_info.name, process_info.pid_in_host)
             process_info.model_id = pd_id
 
             # Add the address space
@@ -632,7 +1039,7 @@ class ProcFsData:
 
         # Local function.
         def get_pid_ns_handle_for_proc(process_info: Process):
-            for ns_info in process_info.namespaces:
+            for ns_info in process_info.namespaces.values():
                 if ns_info.type == NamespaceType.PID:
                     return ns_info.handle
 
@@ -688,6 +1095,7 @@ class ProcFsData:
             vmr_mapping_type=vmr_mapping_type,
             kernel_id=kernel_id,
         )
+        self.__add_inter_process_hold_edges()
         # self.__add_pid_namespaces(kernel_id=kernel_id)
         # self.__add_mnt_namespaces(kernel_id=kernel_id)
 

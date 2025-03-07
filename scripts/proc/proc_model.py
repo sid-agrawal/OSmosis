@@ -122,7 +122,7 @@ run_configs = [
     ],
 ]
 
-to_run = run_configs[9]
+to_run = run_configs[0]
 
 
 def log(msg):
@@ -331,6 +331,14 @@ def extract_mountinfo_for_pid(data: ProcFsData, pid: int, should_print: bool = F
 
     data.procs[pid].pid_mounts = read_mountinfo_file(pid, True)
 
+def extract_cgroups_for_pid(data: ProcFsData, pid: int, should_print: bool = False):
+    
+    task = pfs_obj.get_task(pid)
+    x = task.get_cgroups()
+    for y in x:
+        print(f"{y.pathname} {y.hierarchy} . {y.controllers}")
+    pass
+
 # Unsused
 def extract_namespaces_for_pid(data: ProcFsData, pid: int, should_print: bool = False):
     """
@@ -348,7 +356,7 @@ def extract_namespaces_for_pid(data: ProcFsData, pid: int, should_print: bool = 
     # To find what the parent NS is, you can use ioctl, as shown in get_ns_info.c
     # I'm not sure if there is any other way to do this
 
-    namespaces = []
+    namespaces = {}
     for path, handle in task_ns_data.items():
         namespace_type = str_to_namespace_type[path]
 
@@ -360,15 +368,15 @@ def extract_namespaces_for_pid(data: ProcFsData, pid: int, should_print: bool = 
             assert (
                 data.namespaces[handle].type == namespace_type
             ), "duplicate handle for different ns"
-            namespaces.append(data.namespaces[handle])
+            namespaces[namespace_type] = data.namespaces[handle]
         else:
             namespace = Namespace(namespace_type, handle)
-            namespaces.append(namespace)
+            namespaces[namespace_type] = namespace
             data.namespaces[handle] = namespace
 
     if should_print:
         print("NAMESPACES")
-        for ns_info in namespaces:
+        for ns_info in namespaces.values():
             print(f"- NS: type {ns_info.type.name}, handle {ns_info.handle}")
         print("\n\n")
 
@@ -548,7 +556,80 @@ def extract_from_status(data: ProcFsData, pid: int, should_print=False):
     # Then ns_pid[0] is for the root PID NS
     # and  ns_pid[1] is for the child PID NS
     data.procs[pid].pid_in_ns = status.ns_pid[1] if len(status.ns_pid) == 2 else pid
+    data.procs[pid].pid_in_host = pid
 
+    data.procs[pid].uid_effective = status.uid.effective
+    data.procs[pid].gid_effective = status.gid.effective
+    
+    data.procs[pid].cap_eff = status.cap_eff.raw
+
+    print(data.procs[pid].pid_in_ns)
+    print(data.procs[pid].uid_effective)
+    print(data.procs[pid].gid_effective)
+    print(data.procs[pid].cap_inh)
+    print(data.procs[pid].cap_prm)
+    print(data.procs[pid].cap_eff)
+    print(data.procs[pid].cap_bnd)
+    print(data.procs[pid].cap_amb)
+
+def get_host_pid(task) -> int:
+    ns_pids = task.get_status(set()).ns_pid
+
+    host_pid = ns_pids[0]
+    # Out script only supports only 1 level of PID namespaces for now.
+    # So that is:
+    #     HOST: THE PID NS create by init
+    #     Docker: the PID NS created by docker
+    if len(ns_pids) == 2:
+        print(f"HOST PID = {ns_pids[0]} PID_NS PID = {ns_pids[1]}")
+
+    if len(ns_pids) > 2:
+        print(f"Error: ns_pids length is greater than 2. ns_pids: {ns_pids} for PID{host_pid}")
+        raise AssertionError("ns_pids length is greater than 2")
+    return host_pid
+
+ignore_process_names = {
+   "code": False,
+   "node": False,
+}
+
+def extract_all_process_data(data: ProcFsData, should_print=False):
+    processes = pfs_obj.get_processes()
+
+    for idx, task in enumerate(processes):
+        try:
+            host_pid = get_host_pid(task)
+        except Exception as e:
+            print(f"\033[91mError getting host PID: {e}\033[0m")
+            continue
+        p = psutil.Process(host_pid)
+        if p.name() in ignore_process_names:
+            print(f"\033[93mSkipping process {p.name()} with PID {host_pid}\033[0m")
+            continue
+
+        time_histogram = {}
+        start_time = time.time()
+        extract_process_data(data, host_pid, p.name(), should_print)
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+
+        if p.name() not in time_histogram:
+            time_histogram[p.name()] = []
+
+        time_histogram[p.name()].append(elapsed_time)
+        if should_print:
+            print(f"\033[92m---- Extracted process{idx} {host_pid}\033[0m")
+
+        # Print the time histogram
+        if should_print:
+            print("\nTime Histogram:")
+            for process_name, times in time_histogram.items():
+                print(f"{process_name}: {'#' * int(sum(times))} ({sum(times):.2f}s)")
+
+        if should_print:
+            print(f"\033[92m---- Extracted process{idx} {host_pid}\033[0m")
+    
+    
 
 def extract_process_data(data: ProcFsData, pid: int, name: str, should_print=False):
     """
@@ -565,11 +646,9 @@ def extract_process_data(data: ProcFsData, pid: int, name: str, should_print=Fal
 
     extract_from_status(data, pid, should_print)
     extract_memory_data(data, pid, should_print)
-    # extract_namespaces_for_pid(data, pid, should_print)
+    # extract_cgroups_for_pid(data, pid, should_print)
+    extract_namespaces_for_pid(data, pid, should_print)
     #extract_mountinfo_for_pid(data, pid, should_print)
-
-    if should_print:
-        print(f"Extracted process {pid}: {data.procs[pid].name}")
 
 
 def terminate_process(pid: int):
@@ -578,6 +657,74 @@ def terminate_process(pid: int):
     """
     os.kill(pid, signal.SIGTERM)  # or signal.SIGKILL
 
+def extract_all_users(data_main, should_print=False):
+    """
+    Extract all users and their UIDs from the system and add them to data_main.
+
+    :param data_main: The main data object to store the extracted information.
+    :param should_print: If true, prints the extracted information.
+    """
+    try:
+        with open("/etc/passwd", "r") as passwd_file:
+            for line in passwd_file:
+                parts = line.split(":")
+                if len(parts) > 2:
+                    username = parts[0]
+                    uid = int(parts[2])
+                    data_main.users[username] = uid
+                    if should_print:
+                        print(f"User: {username}, UID: {uid}")
+    except Exception as e:
+        print(f"Error extracting UIDs: {e}")
+
+def extract_all_groups(data_main, should_print=False):
+    """
+    Extract all groups and their GIDs from the system and add them to data_main.
+
+    :param data_main: The main data object to store the extracted information.
+    :param should_print: If true, prints the extracted information.
+    """
+    try:
+        with open("/etc/group", "r") as group_file:
+            for line in group_file:
+                parts = line.split(":")
+                if len(parts) > 2:
+                    groupname = parts[0]
+                    gid = int(parts[2])
+                    data_main.groups[groupname] = gid
+                    if should_print:
+                        print(f"Group: {groupname}, GID: {gid}")
+    except Exception as e:
+        print(f"Error extracting GIDs: {e}")
+
+def extract_all_user_groups(data_main, should_print=False):
+
+    for username in data_main.users:
+        extract_user_groups(data_main, username, True)
+        if should_print:
+           print(f"User: {username}, Group: {data_main.user_groups[username]}")
+
+def extract_user_groups(data_main, username, should_print=False):
+    """
+    Extract all groups to which a user belongs and add them to data_main.
+
+    :param data_main: The main data object to store the extracted information.
+    :param username: The username to find groups for.
+    :param should_print: If true, prints the extracted information.
+    """
+    try:
+        user_groups = []
+        with open("/etc/group", "r") as group_file:
+            for line in group_file:
+                parts = line.split(":")
+                if len(parts) > 3:
+                    groupname = parts[0]
+                    members = parts[3].strip().split(",")
+                    if username in members:
+                        user_groups.append(groupname)
+        data_main.user_groups[username] = user_groups
+    except Exception as e:
+        print(f"Error extracting groups for user {username}: {e}")
 
 # Get all namespaces in the systems YY
 def extract_all_namespaces(data_main, should_print=False):
@@ -632,7 +779,11 @@ def extract_all_namespaces(data_main, should_print=False):
 
         generic_ns_data = []
 
-        task_ns_data = task.get_ns()
+        try:
+            task_ns_data = task.get_ns()
+        except Exception as e:
+            print(f"\033[93mError getting namespace data for PID {host_pid}: {e}\033[0m")
+            continue
         for path, handle in task_ns_data.items():
             namespace_type = str_to_namespace_type[path]
             match namespace_type:
@@ -681,6 +832,12 @@ def do_proc_model(args):
     # PIDs when this script starts them
     pids = []
 
+    x = pfs_obj.get_cgroups()
+    for y in x:
+        print(f"{y.subsys_name} {y.hierarchy} . {y.num_cgroups}  {y.enabled}")
+
+
+    
     data_main = ProcFsData()
     if args.guest:
         data_main.os_name = "Guest Linux"
@@ -700,11 +857,18 @@ def do_proc_model(args):
     # Extract Info for all the PIDs
     #############################################
     # This is system Wide
-    # extract_all_namespaces(data_main, True)
+    extract_all_namespaces(data_main, True)
+    extract_all_users(data_main, True)
+    extract_all_groups(data_main, True)
+    extract_all_user_groups(data_main, True)
+    # exit(1)
 
     # This is for the processe of interest
     try:
-        if args.pid:
+        if args.pid == 0:
+            print ("Extracing info for all PIDs")
+            extract_all_process_data(data_main, False)
+        elif args.pid > 0:
             p = psutil.Process(args.pid)
             extract_process_data(data_main, args.pid, p.name(), False)
         else:

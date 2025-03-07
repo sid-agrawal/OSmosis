@@ -143,8 +143,48 @@ def common_ancestor(s: Session, pd1: str, pd2: str, shouldPrint: bool = False):
             pp.pprint(node)
 
     return nodes_dict
-    pass
 
+def find_all_killer_pds(s: Session, pd1: str, shouldPrint: bool = False):
+    """
+    This is Q5 from the paper
+    """
+
+    query = """
+    MATCH 
+        paths= ((killer_pd:PD) -[:HOLD]-> (:PD {ID: $pd1}))
+        RETURN killer_pd
+    """
+    result = s.run(query, pd1=pd1)
+    nodes = [record["killer_pd"] for record in result]
+    nodes_dict = {node.element_id: dict(node) for node in nodes}
+
+    if shouldPrint:
+        print(f"\nThe PDs that can kill {pd1}:")
+        for node in nodes_dict.values():
+            pp.pprint(node)
+
+    return nodes_dict
+
+def find_all_killable_pds(s: Session, pd1: str, shouldPrint: bool = False):
+    """
+    This is Q5 from the paper
+    """
+
+    query = """
+    MATCH 
+        paths= ((kill_able_pd:PD) <-[:HOLD]- (:PD {ID: $pd1}))
+        RETURN kill_able_pd
+    """
+    result = s.run(query, pd1=pd1)
+    nodes = [record["kill_able_pd"] for record in result]
+    nodes_dict = {node.element_id: dict(node) for node in nodes}
+
+    if shouldPrint:
+        print(f"\nThe PDs that {pd1} can kill:")
+        for node in nodes_dict.values():
+            pp.pprint(node)
+
+    return nodes_dict
 
 def collect_attrs(s: Session, pd1: str, res_type: str, shouldPrint: bool = False):
     """
@@ -156,7 +196,7 @@ def collect_attrs(s: Session, pd1: str, res_type: str, shouldPrint: bool = False
             CALL apoc.path.expandConfig(startNode, {
             relationshipFilter: "HOLD|MAP", // Replace RELATIONSHIP_TYPE with the type of relationships to traverse
             algorithm: "BFS", // Specifies breadth-first search
-            maxLevel: 5 // Optional: specify the maximum depth of traversal
+            maxLevel: 2 // Optional: specify the maximum depth of traversal
         })
         yield path as paths
         with relationships(paths) as rel_list
@@ -167,7 +207,7 @@ def collect_attrs(s: Session, pd1: str, res_type: str, shouldPrint: bool = False
     nodes = [record["TCB"] for record in result]
 
     if shouldPrint:
-        print(f"\nThe TCB attributes for {pd1} are as follows:")
+        print(f"\nThe TCB (based on edge attr) for {pd1} are as follows:")
         for node in nodes:
             pp.pprint(node)
 
@@ -207,8 +247,11 @@ if __name__ == "__main__":
     # for i, pd1 in enumerate(pd_ids):
     #     for pd2 in pd_ids[i + 1 :]:
     #         resources = shared_resources(s, pd1, pd2, "MO", True)
-    resources = shared_resources(s, "PD_6", "PD_4", "MO", True)
+    # resources = shared_resources(s, "PD_425", "PD_424", "MO", True)
 
-    tcb = collect_attrs(s, "PD_10002", "MO", True)
+    # tcb = collect_attrs(s, "PD_2422", "MO", True)
     
-    tcb = common_ancestor(s, "PD_10002", "PD_5", True)
+    # tcb = common_ancestor(s, "PD_2422", "PD_1", True)
+
+    find_all_killer_pds(s, "PD_749727", True)
+    find_all_killable_pds(s, "PD_749727", True)

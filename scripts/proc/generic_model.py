@@ -282,6 +282,30 @@ class ModelGraph:
         extra = { "pd_incharge" : pd_incharge}
 
         self.__add_edge(EdgeType.HOLD, pd_string_id, target_string_id, str(perms), json.dumps(extra))
+    
+    def add_inter_pd_hold_edge(
+        self,
+        perms: Permission,
+        from_pd_id: int,
+        to_pd_id: int,
+        pd_incharge: str | None = None,
+    ):
+        """
+        Add a hold edge from a PD to another PD 
+
+        :param Permission: Signals allowed
+        :param from_pd_id: The PD's unique ID
+        :param to_pd_id: The PD's unique ID
+        :param pd_incharge: The PD's unique ID
+
+        """
+        from_pd_string_id = self.__pd_string_id(from_pd_id)
+        to_pd_string_id = self.__pd_string_id(to_pd_id)
+
+        extra = { "pd_incharge" : pd_incharge}
+
+        self.__add_edge(EdgeType.HOLD, from_pd_string_id, to_pd_string_id, str(perms), json.dumps(extra))
+
 
     def add_map_edge(
         self,
