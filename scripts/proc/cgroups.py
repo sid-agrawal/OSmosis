@@ -21,7 +21,7 @@ def get_all_files_and_dirs(path):
                 try:
                     with open(os.path.join(root, name), 'r') as file:
                         dir_dict[name] = file.read().rstrip('\n')
-                        if dir_dict[name] not in ['0', 'max']:
+                        if dir_dict[name] not in ['0', 'max'] and name != "cgroup.procs":
                             print(f"\033[93mFile {os.path.join(root, name)} has value {dir_dict[name]}\033[0m")
                 except OSError as e:
                     if e.errno == 22:
@@ -40,6 +40,7 @@ interested_files = [
     "memory.min",
     "memory.high",
     "memory.low",
+    "cgroup.procs"
 ]
 
 # Example usage
@@ -47,14 +48,61 @@ all_files_dirs = get_all_files_and_dirs("/sys/fs/cgroup")
 # pp.pprint(all_files_dirs)
 
 memtotal = pfs_obj.get_meminfo()['MemTotal']
-pp.pprint(memtotal)
+# pp.pprint(memtotal)
+
+
+def human_readable_size(size:int):
+    for unit in ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB']:
+        if abs(size) < 1024.0:
+            return f"{size:3.1f} {unit}"
+        size /= 1024.0
+    return f"{size:.1f} YB"
 
 def print_dict(d, indent=0):
-    for key, value in d.items():
-        print(' ' * indent + str(key))
+    is_leaf: bool = True
+    for value in d.values():
         if isinstance(value, dict):
+            is_leaf = False
+            break
+
+    for key, value in d.items():
+        if is_leaf:
+            print(f"\033[92m{' ' * indent + str(key)}\033[0m", end ="")
+        else:
+            print(f"\033[91m{' ' * indent + str(key)}\033[0m", end ="")
+
+        if isinstance(value, dict):
+            print()
             print_dict(value, indent + 4)
         else:
-            print(' ' * (indent + 4) + str(value))
+            if is_leaf:
+                print(f"\033[92m{' ' * (indent + 4) + str(value)}\033[0m")
+            else:
+                print(f"\033[91m{' ' * (indent + 4) + str(value)}\033[0m")
+
+
+def find_max_depth(d, depth=0):
+    if not isinstance(d, dict) or not d:
+        return depth
+    return max(find_max_depth(v, depth + 1) for v in d.values())
+
+max_depth = find_max_depth(all_files_dirs)
+# print(f"Max depth of the dictionary: {max_depth}")
+
+def update_memory_max(d, memtotal:int):
+    for key, value in d.items():
+        if key == "memory.max":
+            if value != "max":
+                print(f"\033[93mUpdating memory.max from {human_readable_size(int(value))} to "
+                      f"{human_readable_size(memtotal)}\033[0m")
+                memtotal = min (int(value), memtotal)
+    for key, value in d.items():
+        if isinstance(value, dict):
+            update_memory_max(value, memtotal)
+
+# update_memory_max(all_files_dirs, memtotal)
+# pp.pprint(all_files_dirs)
+
 
 print_dict(all_files_dirs)
+# print(f"MemTotal in human readable format: {human_readable_size(memtotal)}")
