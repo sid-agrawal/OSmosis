@@ -1,0 +1,745 @@
+futex(0x5614c599ed58, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, NULL, FUTEX_BITSET_MATCH_ANY) = 0
+futex(0x5614c599ec68, FUTEX_WAIT_PRIVATE, 2, NULL) = -1 EAGAIN (Resource temporarily unavailable)
+futex(0x5614c599ec68, FUTEX_WAKE_PRIVATE, 1) = 0
+gettid()                                = 767216
+gettid()                                = 767216
+futex(0x5614c59b1290, FUTEX_WAIT_PRIVATE, 2, NULL) = 0
+futex(0x5614c59b1290, FUTEX_WAKE_PRIVATE, 1) = 0
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5614c59cb7f8, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0x5614c599ed5c, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, NULL, FUTEX_BITSET_MATCH_ANY) = 0
+futex(0x5614c599ec68, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0x5614c599ed58, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, NULL, FUTEX_BITSET_MATCH_ANY) = 0
+futex(0x5614c599ec68, FUTEX_WAKE_PRIVATE, 1) = 0
+gettid()                                = 767216
+uname({sysname="Linux", nodename="lindt", ...}) = 0
+openat(AT_FDCWD, "/proc/cpuinfo", O_RDONLY) = 24
+read(24, "processor\t: 0\nvendor_id\t: Genuin"..., 4096) = 3464
+read(24, "processor\t: 2\nvendor_id\t: Genuin"..., 632) = 632
+close(24)                               = 0
+access("/usr/lib/x86_64-linux-gnu/qemu", F_OK) = 0
+newfstatat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/qemu", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/bin/qemu-system-x86_64", {st_mode=S_IFREG|0755, st_size=26411272, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/dev/kvm", {st_mode=S_IFCHR|0666, st_rdev=makedev(0xa, 0xe8), ...}, 0) = 0
+geteuid()                               = 1000
+rt_sigprocmask(SIG_SETMASK, ~[RTMIN RT_1], [], 8) = 0
+clone(child_stack=NULL, flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD, child_tidptr=0x7f7f9a7fc990) = 771981
+rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
+wait4(771981, [{WIFEXITED(s) && WEXITSTATUS(s) == 0}], 0, NULL) = 771981
+--- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=771981, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+access("/sys/module/kvm_intel/parameters/nested", F_OK) = 0
+openat(AT_FDCWD, "/sys/module/kvm_intel/parameters/nested", O_RDONLY) = 24
+read(24, "Y\n", 4097)                   = 2
+read(24, "", 4095)                      = 0
+close(24)                               = 0
+uname({sysname="Linux", nodename="lindt", ...}) = 0
+access("/sys/module/kvm_amd/parameters/sev", F_OK) = -1 ENOENT (No such file or directory)
+gettid()                                = 767216
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5614c59b1290, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0x5614c599ed5c, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, NULL, FUTEX_BITSET_MATCH_ANY) = 0
+futex(0x5614c599ec68, FUTEX_WAKE_PRIVATE, 1) = 0
+gettid()                                = 767216
+gettid()                                = 767216
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5614c59b1290, FUTEX_WAIT_PRIVATE, 2, NULL) = 0
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5614c59b1290, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0x5614c59c27f8, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0x5614c599ed58, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, NULL, FUTEX_BITSET_MATCH_ANY) = 0
+futex(0x5614c599ec68, FUTEX_WAKE_PRIVATE, 1) = 0
+gettid()                                = 767216
+gettid()                                = 767216
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5614c59b1290, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0x5614c599ed5c, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, NULL, FUTEX_BITSET_MATCH_ANY) = 0
+futex(0x5614c599ec68, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0x5614c599ed58, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, NULL, FUTEX_BITSET_MATCH_ANY) = 0
+futex(0x5614c599ec68, FUTEX_WAKE_PRIVATE, 1) = 0
+gettid()                                = 767216
+gettid()                                = 767216
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5614c59b1290, FUTEX_WAIT_PRIVATE, 2, NULL) = 0
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5614c59b1290, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0x5614c59c27f8, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0x5614c599ed5c, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, NULL, FUTEX_BITSET_MATCH_ANY) = 0
+futex(0x5614c599ec68, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0x5614c599ed58, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, NULL, FUTEX_BITSET_MATCH_ANY) = 0
+futex(0x5614c599ec68, FUTEX_WAKE_PRIVATE, 1) = 0
+gettid()                                = 767216
+newfstatat(AT_FDCWD, "/home/siagraw/.local/share/libvirt/images/1f2222112112oo-tester60.qcow2", {st_mode=S_IFREG|0600, st_size=35258368, ...}, AT_SYMLINK_NOFOLLOW) = 0
+openat(AT_FDCWD, "/home/siagraw/.local/share/libvirt/images/1f2222112112oo-tester60.qcow2", O_RDONLY|O_NOCTTY|O_NONBLOCK) = 24
+fstat(24, {st_mode=S_IFREG|0600, st_size=35258368, ...}) = 0
+fcntl(24, F_GETFL)                      = 0x8800 (flags O_RDONLY|O_NONBLOCK|O_LARGEFILE)
+fcntl(24, F_SETFL, O_RDONLY|O_LARGEFILE) = 0
+fgetxattr(24, "security.selinux", 0x7f7f80005d10, 255) = -1 ENODATA (No data available)
+lseek(24, 0, SEEK_SET)                  = 0
+read(24, "QFI\373\0\0\0\3\0\0\0\0\0\0\2\20\0\0\0E\0\0\0\20\0\0\0\2\200\0\0\0"..., 8192) = 8192
+read(24, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., 8192) = 8192
+read(24, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., 8192) = 8192
+read(24, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., 8704) = 8704
+close(24)                               = 0
+newfstatat(AT_FDCWD, "/home/siagraw/OSmosis/scripts/libvirt/focal-server-cloudimg-amd64.img", {st_mode=S_IFREG|0664, st_size=641335296, ...}, AT_SYMLINK_NOFOLLOW) = 0
+openat(AT_FDCWD, "/home/siagraw/OSmosis/scripts/libvirt/focal-server-cloudimg-amd64.img", O_RDONLY|O_NOCTTY|O_NONBLOCK) = 24
+fstat(24, {st_mode=S_IFREG|0664, st_size=641335296, ...}) = 0
+fcntl(24, F_GETFL)                      = 0x8800 (flags O_RDONLY|O_NONBLOCK|O_LARGEFILE)
+fcntl(24, F_SETFL, O_RDONLY|O_LARGEFILE) = 0
+fgetxattr(24, "security.selinux", 0x7f7f80005a20, 255) = -1 ENODATA (No data available)
+lseek(24, 0, SEEK_SET)                  = 0
+read(24, "QFI\373\0\0\0\2\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\20\0\0\0\0\214\300\0\0"..., 8192) = 8192
+read(24, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., 8192) = 8192
+read(24, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., 8192) = 8192
+read(24, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., 8704) = 8704
+close(24)                               = 0
+gettid()                                = 767216
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5614c59b1290, FUTEX_WAIT_PRIVATE, 2, NULL) = 0
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5614c59b1290, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0x5614c59c27f8, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0x5614c599ed5c, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, NULL, FUTEX_BITSET_MATCH_ANY) = 0
+futex(0x5614c599ec68, FUTEX_WAIT_PRIVATE, 2, NULL) = -1 EAGAIN (Resource temporarily unavailable)
+futex(0x5614c599ec68, FUTEX_WAKE_PRIVATE, 1) = 0
+gettid()                                = 767216
+newfstatat(AT_FDCWD, "/home/siagraw/.local/share/libvirt/images/foo-tester30.qcow2", {st_mode=S_IFREG|0600, st_size=36175872, ...}, AT_SYMLINK_NOFOLLOW) = 0
+openat(AT_FDCWD, "/home/siagraw/.local/share/libvirt/images/foo-tester30.qcow2", O_RDONLY|O_NOCTTY|O_NONBLOCK) = 24
+fstat(24, {st_mode=S_IFREG|0600, st_size=36175872, ...}) = 0
+fcntl(24, F_GETFL)                      = 0x8800 (flags O_RDONLY|O_NONBLOCK|O_LARGEFILE)
+fcntl(24, F_SETFL, O_RDONLY|O_LARGEFILE) = 0
+fgetxattr(24, "security.selinux", 0x7f7f80005a20, 255) = -1 ENODATA (No data available)
+lseek(24, 0, SEEK_SET)                  = 0
+read(24, "QFI\373\0\0\0\3\0\0\0\0\0\0\2\20\0\0\0E\0\0\0\20\0\0\0\2\200\0\0\0"..., 8192) = 8192
+read(24, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., 8192) = 8192
+read(24, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., 8192) = 8192
+read(24, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., 8704) = 8704
+close(24)                               = 0
+newfstatat(AT_FDCWD, "/home/siagraw/OSmosis/scripts/libvirt/focal-server-cloudimg-amd64.img", {st_mode=S_IFREG|0664, st_size=641335296, ...}, AT_SYMLINK_NOFOLLOW) = 0
+openat(AT_FDCWD, "/home/siagraw/OSmosis/scripts/libvirt/focal-server-cloudimg-amd64.img", O_RDONLY|O_NOCTTY|O_NONBLOCK) = 24
+fstat(24, {st_mode=S_IFREG|0664, st_size=641335296, ...}) = 0
+fcntl(24, F_GETFL)                      = 0x8800 (flags O_RDONLY|O_NONBLOCK|O_LARGEFILE)
+fcntl(24, F_SETFL, O_RDONLY|O_LARGEFILE) = 0
+fgetxattr(24, "security.selinux", 0x7f7f80005a20, 255) = -1 ENODATA (No data available)
+lseek(24, 0, SEEK_SET)                  = 0
+read(24, "QFI\373\0\0\0\2\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\20\0\0\0\0\214\300\0\0"..., 8192) = 8192
+read(24, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., 8192) = 8192
+read(24, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., 8192) = 8192
+read(24, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., 8704) = 8704
+close(24)                               = 0
+gettid()                                = 767216
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5614c59b1290, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0x5614c599ed58, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, NULL, FUTEX_BITSET_MATCH_ANY) = 0
+futex(0x5614c599ec68, FUTEX_WAIT_PRIVATE, 2, NULL) = -1 EAGAIN (Resource temporarily unavailable)
+futex(0x5614c599ec68, FUTEX_WAKE_PRIVATE, 1) = 0
+gettid()                                = 767216
+gettid()                                = 767216
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5614c59b1290, FUTEX_WAKE_PRIVATE, 1) = 1
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5614c59b1290, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0x5614c599ed5c, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, NULL, FUTEX_BITSET_MATCH_ANY) = 0
+futex(0x5614c599ec68, FUTEX_WAIT_PRIVATE, 2, NULL) = -1 EAGAIN (Resource temporarily unavailable)
+futex(0x5614c599ec68, FUTEX_WAKE_PRIVATE, 1) = 0
+gettid()                                = 767216
+newfstatat(AT_FDCWD, "/home/siagraw/OSmosis/scripts/libvirt/nw.xml", {st_mode=S_IFREG|0664, st_size=245, ...}, AT_SYMLINK_NOFOLLOW) = 0
+openat(AT_FDCWD, "/home/siagraw/OSmosis/scripts/libvirt/nw.xml", O_RDONLY|O_NOCTTY|O_NONBLOCK) = 24
+fstat(24, {st_mode=S_IFREG|0664, st_size=245, ...}) = 0
+fcntl(24, F_GETFL)                      = 0x8800 (flags O_RDONLY|O_NONBLOCK|O_LARGEFILE)
+fcntl(24, F_SETFL, O_RDONLY|O_LARGEFILE) = 0
+fgetxattr(24, "security.selinux", 0x7f7f80005a20, 255) = -1 ENODATA (No data available)
+lseek(24, 0, SEEK_SET)                  = 0
+read(24, "<network>\n <name>vmbr0</name>\n <"..., 8192) = 245
+read(24, "", 7947)                      = 0
+close(24)                               = 0
+gettid()                                = 767216
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5614c59b1290, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0x5614c599ed58, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, NULL, FUTEX_BITSET_MATCH_ANY) = 0
+futex(0x5614c599ec68, FUTEX_WAIT_PRIVATE, 2, NULL) = -1 EAGAIN (Resource temporarily unavailable)
+futex(0x5614c599ec68, FUTEX_WAKE_PRIVATE, 1) = 0
+gettid()                                = 767216
+newfstatat(AT_FDCWD, "/home/siagraw/OSmosis/scripts/libvirt/.gitignore", {st_mode=S_IFREG|0664, st_size=32, ...}, AT_SYMLINK_NOFOLLOW) = 0
+openat(AT_FDCWD, "/home/siagraw/OSmosis/scripts/libvirt/.gitignore", O_RDONLY|O_NOCTTY|O_NONBLOCK) = 24
+fstat(24, {st_mode=S_IFREG|0664, st_size=32, ...}) = 0
+fcntl(24, F_GETFL)                      = 0x8800 (flags O_RDONLY|O_NONBLOCK|O_LARGEFILE)
+fcntl(24, F_SETFL, O_RDONLY|O_LARGEFILE) = 0
+fgetxattr(24, "security.selinux", 0x7f7f80005a20, 255) = -1 ENODATA (No data available)
+lseek(24, 0, SEEK_SET)                  = 0
+read(24, "focal-server-cloudimg-amd64.img\n", 8192) = 32
+read(24, "", 8160)                      = 0
+close(24)                               = 0
+gettid()                                = 767216
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5614c59b1290, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0x5614c599ed5c, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, NULL, FUTEX_BITSET_MATCH_ANY) = 0
+futex(0x5614c599ec68, FUTEX_WAIT_PRIVATE, 2, NULL) = -1 EAGAIN (Resource temporarily unavailable)
+futex(0x5614c599ec68, FUTEX_WAKE_PRIVATE, 1) = 0
+gettid()                                = 767216
+newfstatat(AT_FDCWD, "/home/siagraw/.cache/virt-manager/boot/virtinst-tczx2qkk-user-data", 0x7f7f9a7fb370, AT_SYMLINK_NOFOLLOW) = -1 ENOENT (No such file or directory)
+gettid()                                = 767216
+futex(0x5614c59b1290, FUTEX_WAIT_PRIVATE, 2, NULL) = -1 EAGAIN (Resource temporarily unavailable)
+futex(0x5614c59b1290, FUTEX_WAKE_PRIVATE, 1) = 0
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5614c59c27f8, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0x5614c599ed58, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, NULL, FUTEX_BITSET_MATCH_ANY) = 0
+futex(0x5614c599ec68, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0x5614c599ed5c, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, NULL, FUTEX_BITSET_MATCH_ANY) = 0
+futex(0x5614c599ec68, FUTEX_WAKE_PRIVATE, 1) = 0
+gettid()                                = 767216
+gettid()                                = 767216
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5614c59b1290, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0x5614c59b1290, FUTEX_WAIT_PRIVATE, 2, NULL) = 0
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5614c59b1290, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0x5614c59c27f8, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0x5614c599ed58, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, NULL, FUTEX_BITSET_MATCH_ANY) = 0
+futex(0x5614c599ec68, FUTEX_WAKE_PRIVATE, 1) = 0
+gettid()                                = 767216
+gettid()                                = 767216
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5614c59b1290, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0x5614c59b1290, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0x5614c59b1290, FUTEX_WAIT_PRIVATE, 2, NULL) = 0
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5614c59b1290, FUTEX_WAKE_PRIVATE, 1) = 0
+futex(0x5614c59c27f8, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0x5614c599ed5c, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, NULL, FUTEX_BITSET_MATCH_ANY) = 0
+futex(0x5614c599ec68, FUTEX_WAKE_PRIVATE, 1) = 1
+gettid()                                = 767216
+openat(AT_FDCWD, "/proc/cpuinfo", O_RDONLY) = 25
+read(25, "processor\t: 0\nvendor_id\t: Genuin"..., 4096) = 3464
+read(25, "processor\t: 2\nvendor_id\t: Genuin"..., 632) = 632
+close(25)                               = 0
+access("/usr/lib/x86_64-linux-gnu/qemu", F_OK) = 0
+newfstatat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/qemu", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/bin/qemu-system-x86_64", {st_mode=S_IFREG|0755, st_size=26411272, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/dev/kvm", {st_mode=S_IFCHR|0666, st_rdev=makedev(0xa, 0xe8), ...}, 0) = 0
+geteuid()                               = 1000
+rt_sigprocmask(SIG_SETMASK, ~[RTMIN RT_1], [], 8) = 0
+clone(child_stack=NULL, flags=CLONE_CHILD_CLEARTID|CLONE_CHILD_SETTID|SIGCHLD, child_tidptr=0x7f7f9a7fc990) = 772092
+rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
+wait4(772092, [{WIFEXITED(s) && WEXITSTATUS(s) == 0}], 0, NULL) = 772092
+--- SIGCHLD {si_signo=SIGCHLD, si_code=CLD_EXITED, si_pid=772092, si_uid=1000, si_status=0, si_utime=0, si_stime=0} ---
+access("/sys/module/kvm_intel/parameters/nested", F_OK) = 0
+openat(AT_FDCWD, "/sys/module/kvm_intel/parameters/nested", O_RDONLY) = 25
+read(25, "Y\n", 4097)                   = 2
+read(25, "", 4095)                      = 0
+close(25)                               = 0
+uname({sysname="Linux", nodename="lindt", ...}) = 0
+access("/sys/module/kvm_amd/parameters/sev", F_OK) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/proc/cpuinfo", O_RDONLY) = 25
+read(25, "processor\t: 0\nvendor_id\t: Genuin"..., 4096) = 3464
+read(25, "processor\t: 2\nvendor_id\t: Genuin"..., 632) = 632
+close(25)                               = 0
+access("/usr/lib/x86_64-linux-gnu/qemu", F_OK) = 0
+newfstatat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/qemu", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/bin/qemu-system-x86_64", {st_mode=S_IFREG|0755, st_size=26411272, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/dev/kvm", {st_mode=S_IFCHR|0666, st_rdev=makedev(0xa, 0xe8), ...}, 0) = 0
+access("/sys/module/kvm_intel/parameters/nested", F_OK) = 0
+openat(AT_FDCWD, "/sys/module/kvm_intel/parameters/nested", O_RDONLY) = 25
+read(25, "Y\n", 4097)                   = 2
+read(25, "", 4095)                      = 0
+close(25)                               = 0
+uname({sysname="Linux", nodename="lindt", ...}) = 0
+access("/sys/module/kvm_amd/parameters/sev", F_OK) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/proc/cpuinfo", O_RDONLY) = 25
+read(25, "processor\t: 0\nvendor_id\t: Genuin"..., 4096) = 3464
+read(25, "processor\t: 2\nvendor_id\t: Genuin"..., 632) = 632
+close(25)                               = 0
+access("/usr/lib/x86_64-linux-gnu/qemu", F_OK) = 0
+newfstatat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/qemu", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/bin/qemu-system-x86_64", {st_mode=S_IFREG|0755, st_size=26411272, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/dev/kvm", {st_mode=S_IFCHR|0666, st_rdev=makedev(0xa, 0xe8), ...}, 0) = 0
+access("/sys/module/kvm_intel/parameters/nested", F_OK) = 0
+openat(AT_FDCWD, "/sys/module/kvm_intel/parameters/nested", O_RDONLY) = 25
+read(25, "Y\n", 4097)                   = 2
+read(25, "", 4095)                      = 0
+close(25)                               = 0
+uname({sysname="Linux", nodename="lindt", ...}) = 0
+access("/sys/module/kvm_amd/parameters/sev", F_OK) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/proc/cpuinfo", O_RDONLY) = 25
+read(25, "processor\t: 0\nvendor_id\t: Genuin"..., 4096) = 3464
+read(25, "processor\t: 2\nvendor_id\t: Genuin"..., 632) = 632
+close(25)                               = 0
+access("/usr/lib/x86_64-linux-gnu/qemu", F_OK) = 0
+newfstatat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/qemu", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/bin/qemu-system-x86_64", {st_mode=S_IFREG|0755, st_size=26411272, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/dev/kvm", {st_mode=S_IFCHR|0666, st_rdev=makedev(0xa, 0xe8), ...}, 0) = 0
+access("/sys/module/kvm_intel/parameters/nested", F_OK) = 0
+openat(AT_FDCWD, "/sys/module/kvm_intel/parameters/nested", O_RDONLY) = 25
+read(25, "Y\n", 4097)                   = 2
+read(25, "", 4095)                      = 0
+close(25)                               = 0
+uname({sysname="Linux", nodename="lindt", ...}) = 0
+access("/sys/module/kvm_amd/parameters/sev", F_OK) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/proc/cpuinfo", O_RDONLY) = 25
+read(25, "processor\t: 0\nvendor_id\t: Genuin"..., 4096) = 3464
+read(25, "processor\t: 2\nvendor_id\t: Genuin"..., 632) = 632
+close(25)                               = 0
+access("/usr/lib/x86_64-linux-gnu/qemu", F_OK) = 0
+newfstatat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/qemu", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/bin/qemu-system-x86_64", {st_mode=S_IFREG|0755, st_size=26411272, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/dev/kvm", {st_mode=S_IFCHR|0666, st_rdev=makedev(0xa, 0xe8), ...}, 0) = 0
+access("/sys/module/kvm_intel/parameters/nested", F_OK) = 0
+openat(AT_FDCWD, "/sys/module/kvm_intel/parameters/nested", O_RDONLY) = 25
+read(25, "Y\n", 4097)                   = 2
+read(25, "", 4095)                      = 0
+close(25)                               = 0
+uname({sysname="Linux", nodename="lindt", ...}) = 0
+access("/sys/module/kvm_amd/parameters/sev", F_OK) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/proc/cpuinfo", O_RDONLY) = 25
+read(25, "processor\t: 0\nvendor_id\t: Genuin"..., 4096) = 3464
+read(25, "processor\t: 2\nvendor_id\t: Genuin"..., 632) = 632
+close(25)                               = 0
+access("/usr/lib/x86_64-linux-gnu/qemu", F_OK) = 0
+newfstatat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/qemu", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/bin/qemu-system-x86_64", {st_mode=S_IFREG|0755, st_size=26411272, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/dev/kvm", {st_mode=S_IFCHR|0666, st_rdev=makedev(0xa, 0xe8), ...}, 0) = 0
+access("/sys/module/kvm_intel/parameters/nested", F_OK) = 0
+openat(AT_FDCWD, "/sys/module/kvm_intel/parameters/nested", O_RDONLY) = 25
+read(25, "Y\n", 4097)                   = 2
+read(25, "", 4095)                      = 0
+close(25)                               = 0
+uname({sysname="Linux", nodename="lindt", ...}) = 0
+access("/sys/module/kvm_amd/parameters/sev", F_OK) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/proc/cpuinfo", O_RDONLY) = 25
+read(25, "processor\t: 0\nvendor_id\t: Genuin"..., 4096) = 3464
+read(25, "processor\t: 2\nvendor_id\t: Genuin"..., 632) = 632
+close(25)                               = 0
+access("/usr/lib/x86_64-linux-gnu/qemu", F_OK) = 0
+newfstatat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/qemu", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/bin/qemu-system-x86_64", {st_mode=S_IFREG|0755, st_size=26411272, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/dev/kvm", {st_mode=S_IFCHR|0666, st_rdev=makedev(0xa, 0xe8), ...}, 0) = 0
+access("/sys/module/kvm_intel/parameters/nested", F_OK) = 0
+openat(AT_FDCWD, "/sys/module/kvm_intel/parameters/nested", O_RDONLY) = 25
+read(25, "Y\n", 4097)                   = 2
+read(25, "", 4095)                      = 0
+close(25)                               = 0
+uname({sysname="Linux", nodename="lindt", ...}) = 0
+access("/sys/module/kvm_amd/parameters/sev", F_OK) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/proc/cpuinfo", O_RDONLY) = 25
+read(25, "processor\t: 0\nvendor_id\t: Genuin"..., 4096) = 3464
+read(25, "processor\t: 2\nvendor_id\t: Genuin"..., 632) = 632
+close(25)                               = 0
+access("/usr/lib/x86_64-linux-gnu/qemu", F_OK) = 0
+newfstatat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/qemu", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/bin/qemu-system-x86_64", {st_mode=S_IFREG|0755, st_size=26411272, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/dev/kvm", {st_mode=S_IFCHR|0666, st_rdev=makedev(0xa, 0xe8), ...}, 0) = 0
+access("/sys/module/kvm_intel/parameters/nested", F_OK) = 0
+openat(AT_FDCWD, "/sys/module/kvm_intel/parameters/nested", O_RDONLY) = 25
+read(25, "Y\n", 4097)                   = 2
+read(25, "", 4095)                      = 0
+close(25)                               = 0
+uname({sysname="Linux", nodename="lindt", ...}) = 0
+access("/sys/module/kvm_amd/parameters/sev", F_OK) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/proc/cpuinfo", O_RDONLY) = 25
+read(25, "processor\t: 0\nvendor_id\t: Genuin"..., 4096) = 3464
+read(25, "processor\t: 2\nvendor_id\t: Genuin"..., 632) = 632
+close(25)                               = 0
+access("/usr/lib/x86_64-linux-gnu/qemu", F_OK) = 0
+newfstatat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/qemu", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/bin/qemu-system-x86_64", {st_mode=S_IFREG|0755, st_size=26411272, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/dev/kvm", {st_mode=S_IFCHR|0666, st_rdev=makedev(0xa, 0xe8), ...}, 0) = 0
+access("/sys/module/kvm_intel/parameters/nested", F_OK) = 0
+openat(AT_FDCWD, "/sys/module/kvm_intel/parameters/nested", O_RDONLY) = 25
+read(25, "Y\n", 4097)                   = 2
+read(25, "", 4095)                      = 0
+close(25)                               = 0
+uname({sysname="Linux", nodename="lindt", ...}) = 0
+access("/sys/module/kvm_amd/parameters/sev", F_OK) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/proc/cpuinfo", O_RDONLY) = 25
+read(25, "processor\t: 0\nvendor_id\t: Genuin"..., 4096) = 3464
+read(25, "processor\t: 2\nvendor_id\t: Genuin"..., 632) = 632
+close(25)                               = 0
+access("/usr/lib/x86_64-linux-gnu/qemu", F_OK) = 0
+newfstatat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/qemu", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/bin/qemu-system-x86_64", {st_mode=S_IFREG|0755, st_size=26411272, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/dev/kvm", {st_mode=S_IFCHR|0666, st_rdev=makedev(0xa, 0xe8), ...}, 0) = 0
+access("/sys/module/kvm_intel/parameters/nested", F_OK) = 0
+openat(AT_FDCWD, "/sys/module/kvm_intel/parameters/nested", O_RDONLY) = 25
+read(25, "Y\n", 4097)                   = 2
+read(25, "", 4095)                      = 0
+close(25)                               = 0
+uname({sysname="Linux", nodename="lindt", ...}) = 0
+access("/sys/module/kvm_amd/parameters/sev", F_OK) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/proc/cpuinfo", O_RDONLY) = 25
+read(25, "processor\t: 0\nvendor_id\t: Genuin"..., 4096) = 3464
+read(25, "processor\t: 2\nvendor_id\t: Genuin"..., 632) = 632
+close(25)                               = 0
+access("/usr/lib/x86_64-linux-gnu/qemu", F_OK) = 0
+newfstatat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/qemu", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/bin/qemu-system-x86_64", {st_mode=S_IFREG|0755, st_size=26411272, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/dev/kvm", {st_mode=S_IFCHR|0666, st_rdev=makedev(0xa, 0xe8), ...}, 0) = 0
+access("/sys/module/kvm_intel/parameters/nested", F_OK) = 0
+openat(AT_FDCWD, "/sys/module/kvm_intel/parameters/nested", O_RDONLY) = 25
+read(25, "Y\n", 4097)                   = 2
+read(25, "", 4095)                      = 0
+close(25)                               = 0
+uname({sysname="Linux", nodename="lindt", ...}) = 0
+access("/sys/module/kvm_amd/parameters/sev", F_OK) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/proc/cpuinfo", O_RDONLY) = 25
+read(25, "processor\t: 0\nvendor_id\t: Genuin"..., 4096) = 3464
+read(25, "processor\t: 2\nvendor_id\t: Genuin"..., 632) = 632
+close(25)                               = 0
+access("/usr/lib/x86_64-linux-gnu/qemu", F_OK) = 0
+newfstatat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/qemu", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/bin/qemu-system-x86_64", {st_mode=S_IFREG|0755, st_size=26411272, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/dev/kvm", {st_mode=S_IFCHR|0666, st_rdev=makedev(0xa, 0xe8), ...}, 0) = 0
+access("/sys/module/kvm_intel/parameters/nested", F_OK) = 0
+openat(AT_FDCWD, "/sys/module/kvm_intel/parameters/nested", O_RDONLY) = 25
+read(25, "Y\n", 4097)                   = 2
+read(25, "", 4095)                      = 0
+close(25)                               = 0
+uname({sysname="Linux", nodename="lindt", ...}) = 0
+access("/sys/module/kvm_amd/parameters/sev", F_OK) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/proc/cpuinfo", O_RDONLY) = 25
+read(25, "processor\t: 0\nvendor_id\t: Genuin"..., 4096) = 3464
+read(25, "processor\t: 2\nvendor_id\t: Genuin"..., 632) = 632
+close(25)                               = 0
+access("/usr/lib/x86_64-linux-gnu/qemu", F_OK) = 0
+newfstatat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/qemu", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/bin/qemu-system-x86_64", {st_mode=S_IFREG|0755, st_size=26411272, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/dev/kvm", {st_mode=S_IFCHR|0666, st_rdev=makedev(0xa, 0xe8), ...}, 0) = 0
+access("/sys/module/kvm_intel/parameters/nested", F_OK) = 0
+openat(AT_FDCWD, "/sys/module/kvm_intel/parameters/nested", O_RDONLY) = 25
+read(25, "Y\n", 4097)                   = 2
+read(25, "", 4095)                      = 0
+close(25)                               = 0
+uname({sysname="Linux", nodename="lindt", ...}) = 0
+access("/sys/module/kvm_amd/parameters/sev", F_OK) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/proc/cpuinfo", O_RDONLY) = 25
+read(25, "processor\t: 0\nvendor_id\t: Genuin"..., 4096) = 3464
+read(25, "processor\t: 2\nvendor_id\t: Genuin"..., 632) = 632
+close(25)                               = 0
+access("/usr/lib/x86_64-linux-gnu/qemu", F_OK) = 0
+newfstatat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/qemu", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/bin/qemu-system-x86_64", {st_mode=S_IFREG|0755, st_size=26411272, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/dev/kvm", {st_mode=S_IFCHR|0666, st_rdev=makedev(0xa, 0xe8), ...}, 0) = 0
+access("/sys/module/kvm_intel/parameters/nested", F_OK) = 0
+openat(AT_FDCWD, "/sys/module/kvm_intel/parameters/nested", O_RDONLY) = 25
+read(25, "Y\n", 4097)                   = 2
+read(25, "", 4095)                      = 0
+close(25)                               = 0
+uname({sysname="Linux", nodename="lindt", ...}) = 0
+access("/sys/module/kvm_amd/parameters/sev", F_OK) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/proc/cpuinfo", O_RDONLY) = 25
+read(25, "processor\t: 0\nvendor_id\t: Genuin"..., 4096) = 3464
+read(25, "processor\t: 2\nvendor_id\t: Genuin"..., 632) = 632
+close(25)                               = 0
+access("/usr/lib/x86_64-linux-gnu/qemu", F_OK) = 0
+newfstatat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/qemu", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/bin/qemu-system-x86_64", {st_mode=S_IFREG|0755, st_size=26411272, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/dev/kvm", {st_mode=S_IFCHR|0666, st_rdev=makedev(0xa, 0xe8), ...}, 0) = 0
+access("/sys/module/kvm_intel/parameters/nested", F_OK) = 0
+openat(AT_FDCWD, "/sys/module/kvm_intel/parameters/nested", O_RDONLY) = 25
+read(25, "Y\n", 4097)                   = 2
+read(25, "", 4095)                      = 0
+close(25)                               = 0
+uname({sysname="Linux", nodename="lindt", ...}) = 0
+access("/sys/module/kvm_amd/parameters/sev", F_OK) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/proc/cpuinfo", O_RDONLY) = 25
+read(25, "processor\t: 0\nvendor_id\t: Genuin"..., 4096) = 3464
+read(25, "processor\t: 2\nvendor_id\t: Genuin"..., 632) = 632
+close(25)                               = 0
+access("/usr/lib/x86_64-linux-gnu/qemu", F_OK) = 0
+newfstatat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/qemu", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/bin/qemu-system-x86_64", {st_mode=S_IFREG|0755, st_size=26411272, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/dev/kvm", {st_mode=S_IFCHR|0666, st_rdev=makedev(0xa, 0xe8), ...}, 0) = 0
+access("/sys/module/kvm_intel/parameters/nested", F_OK) = 0
+openat(AT_FDCWD, "/sys/module/kvm_intel/parameters/nested", O_RDONLY) = 25
+read(25, "Y\n", 4097)                   = 2
+read(25, "", 4095)                      = 0
+close(25)                               = 0
+uname({sysname="Linux", nodename="lindt", ...}) = 0
+access("/sys/module/kvm_amd/parameters/sev", F_OK) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/proc/cpuinfo", O_RDONLY) = 25
+read(25, "processor\t: 0\nvendor_id\t: Genuin"..., 4096) = 3464
+read(25, "processor\t: 2\nvendor_id\t: Genuin"..., 632) = 632
+close(25)                               = 0
+access("/usr/lib/x86_64-linux-gnu/qemu", F_OK) = 0
+newfstatat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/qemu", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/bin/qemu-system-x86_64", {st_mode=S_IFREG|0755, st_size=26411272, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/dev/kvm", {st_mode=S_IFCHR|0666, st_rdev=makedev(0xa, 0xe8), ...}, 0) = 0
+access("/sys/module/kvm_intel/parameters/nested", F_OK) = 0
+openat(AT_FDCWD, "/sys/module/kvm_intel/parameters/nested", O_RDONLY) = 25
+read(25, "Y\n", 4097)                   = 2
+read(25, "", 4095)                      = 0
+close(25)                               = 0
+uname({sysname="Linux", nodename="lindt", ...}) = 0
+access("/sys/module/kvm_amd/parameters/sev", F_OK) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/proc/cpuinfo", O_RDONLY) = 25
+read(25, "processor\t: 0\nvendor_id\t: Genuin"..., 4096) = 3464
+read(25, "processor\t: 2\nvendor_id\t: Genuin"..., 632) = 632
+close(25)                               = 0
+access("/usr/lib/x86_64-linux-gnu/qemu", F_OK) = 0
+newfstatat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/qemu", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/bin/qemu-system-x86_64", {st_mode=S_IFREG|0755, st_size=26411272, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/dev/kvm", {st_mode=S_IFCHR|0666, st_rdev=makedev(0xa, 0xe8), ...}, 0) = 0
+access("/sys/module/kvm_intel/parameters/nested", F_OK) = 0
+openat(AT_FDCWD, "/sys/module/kvm_intel/parameters/nested", O_RDONLY) = 25
+read(25, "Y\n", 4097)                   = 2
+read(25, "", 4095)                      = 0
+close(25)                               = 0
+uname({sysname="Linux", nodename="lindt", ...}) = 0
+access("/sys/module/kvm_amd/parameters/sev", F_OK) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/proc/cpuinfo", O_RDONLY) = 25
+read(25, "processor\t: 0\nvendor_id\t: Genuin"..., 4096) = 3464
+read(25, "processor\t: 2\nvendor_id\t: Genuin"..., 632) = 632
+close(25)                               = 0
+access("/usr/lib/x86_64-linux-gnu/qemu", F_OK) = 0
+newfstatat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/qemu", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/bin/qemu-system-x86_64", {st_mode=S_IFREG|0755, st_size=26411272, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/dev/kvm", {st_mode=S_IFCHR|0666, st_rdev=makedev(0xa, 0xe8), ...}, 0) = 0
+access("/sys/module/kvm_intel/parameters/nested", F_OK) = 0
+openat(AT_FDCWD, "/sys/module/kvm_intel/parameters/nested", O_RDONLY) = 25
+read(25, "Y\n", 4097)                   = 2
+read(25, "", 4095)                      = 0
+close(25)                               = 0
+uname({sysname="Linux", nodename="lindt", ...}) = 0
+access("/sys/module/kvm_amd/parameters/sev", F_OK) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/proc/cpuinfo", O_RDONLY) = 25
+read(25, "processor\t: 0\nvendor_id\t: Genuin"..., 4096) = 3464
+read(25, "processor\t: 2\nvendor_id\t: Genuin"..., 632) = 632
+close(25)                               = 0
+access("/usr/lib/x86_64-linux-gnu/qemu", F_OK) = 0
+newfstatat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/qemu", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/bin/qemu-system-x86_64", {st_mode=S_IFREG|0755, st_size=26411272, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/dev/kvm", {st_mode=S_IFCHR|0666, st_rdev=makedev(0xa, 0xe8), ...}, 0) = 0
+access("/sys/module/kvm_intel/parameters/nested", F_OK) = 0
+openat(AT_FDCWD, "/sys/module/kvm_intel/parameters/nested", O_RDONLY) = 25
+read(25, "Y\n", 4097)                   = 2
+read(25, "", 4095)                      = 0
+close(25)                               = 0
+uname({sysname="Linux", nodename="lindt", ...}) = 0
+access("/sys/module/kvm_amd/parameters/sev", F_OK) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/proc/cpuinfo", O_RDONLY) = 25
+read(25, "processor\t: 0\nvendor_id\t: Genuin"..., 4096) = 3464
+read(25, "processor\t: 2\nvendor_id\t: Genuin"..., 632) = 632
+close(25)                               = 0
+access("/usr/lib/x86_64-linux-gnu/qemu", F_OK) = 0
+newfstatat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/qemu", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/bin/qemu-system-x86_64", {st_mode=S_IFREG|0755, st_size=26411272, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/dev/kvm", {st_mode=S_IFCHR|0666, st_rdev=makedev(0xa, 0xe8), ...}, 0) = 0
+access("/sys/module/kvm_intel/parameters/nested", F_OK) = 0
+openat(AT_FDCWD, "/sys/module/kvm_intel/parameters/nested", O_RDONLY) = 25
+read(25, "Y\n", 4097)                   = 2
+read(25, "", 4095)                      = 0
+close(25)                               = 0
+uname({sysname="Linux", nodename="lindt", ...}) = 0
+access("/sys/module/kvm_amd/parameters/sev", F_OK) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/proc/cpuinfo", O_RDONLY) = 25
+read(25, "processor\t: 0\nvendor_id\t: Genuin"..., 4096) = 3464
+read(25, "processor\t: 2\nvendor_id\t: Genuin"..., 632) = 632
+close(25)                               = 0
+access("/usr/lib/x86_64-linux-gnu/qemu", F_OK) = 0
+newfstatat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/qemu", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/bin/qemu-system-x86_64", {st_mode=S_IFREG|0755, st_size=26411272, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/dev/kvm", {st_mode=S_IFCHR|0666, st_rdev=makedev(0xa, 0xe8), ...}, 0) = 0
+access("/sys/module/kvm_intel/parameters/nested", F_OK) = 0
+openat(AT_FDCWD, "/sys/module/kvm_intel/parameters/nested", O_RDONLY) = 25
+read(25, "Y\n", 4097)                   = 2
+read(25, "", 4095)                      = 0
+close(25)                               = 0
+uname({sysname="Linux", nodename="lindt", ...}) = 0
+access("/sys/module/kvm_amd/parameters/sev", F_OK) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/proc/cpuinfo", O_RDONLY) = 25
+read(25, "processor\t: 0\nvendor_id\t: Genuin"..., 4096) = 3464
+read(25, "processor\t: 2\nvendor_id\t: Genuin"..., 632) = 632
+close(25)                               = 0
+access("/usr/lib/x86_64-linux-gnu/qemu", F_OK) = 0
+newfstatat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/qemu", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/bin/qemu-system-x86_64", {st_mode=S_IFREG|0755, st_size=26411272, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/dev/kvm", {st_mode=S_IFCHR|0666, st_rdev=makedev(0xa, 0xe8), ...}, 0) = 0
+access("/sys/module/kvm_intel/parameters/nested", F_OK) = 0
+openat(AT_FDCWD, "/sys/module/kvm_intel/parameters/nested", O_RDONLY) = 25
+read(25, "Y\n", 4097)                   = 2
+read(25, "", 4095)                      = 0
+close(25)                               = 0
+uname({sysname="Linux", nodename="lindt", ...}) = 0
+access("/sys/module/kvm_amd/parameters/sev", F_OK) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/proc/cpuinfo", O_RDONLY) = 25
+read(25, "processor\t: 0\nvendor_id\t: Genuin"..., 4096) = 3464
+read(25, "processor\t: 2\nvendor_id\t: Genuin"..., 632) = 632
+close(25)                               = 0
+access("/usr/lib/x86_64-linux-gnu/qemu", F_OK) = 0
+newfstatat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/qemu", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/bin/qemu-system-x86_64", {st_mode=S_IFREG|0755, st_size=26411272, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/dev/kvm", {st_mode=S_IFCHR|0666, st_rdev=makedev(0xa, 0xe8), ...}, 0) = 0
+access("/sys/module/kvm_intel/parameters/nested", F_OK) = 0
+openat(AT_FDCWD, "/sys/module/kvm_intel/parameters/nested", O_RDONLY) = 25
+read(25, "Y\n", 4097)                   = 2
+read(25, "", 4095)                      = 0
+close(25)                               = 0
+uname({sysname="Linux", nodename="lindt", ...}) = 0
+access("/sys/module/kvm_amd/parameters/sev", F_OK) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/proc/cpuinfo", O_RDONLY) = 25
+read(25, "processor\t: 0\nvendor_id\t: Genuin"..., 4096) = 3464
+read(25, "processor\t: 2\nvendor_id\t: Genuin"..., 632) = 632
+close(25)                               = 0
+access("/usr/lib/x86_64-linux-gnu/qemu", F_OK) = 0
+newfstatat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/qemu", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/bin/qemu-system-x86_64", {st_mode=S_IFREG|0755, st_size=26411272, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/dev/kvm", {st_mode=S_IFCHR|0666, st_rdev=makedev(0xa, 0xe8), ...}, 0) = 0
+access("/sys/module/kvm_intel/parameters/nested", F_OK) = 0
+openat(AT_FDCWD, "/sys/module/kvm_intel/parameters/nested", O_RDONLY) = 25
+read(25, "Y\n", 4097)                   = 2
+read(25, "", 4095)                      = 0
+close(25)                               = 0
+uname({sysname="Linux", nodename="lindt", ...}) = 0
+access("/sys/module/kvm_amd/parameters/sev", F_OK) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/proc/cpuinfo", O_RDONLY) = 25
+read(25, "processor\t: 0\nvendor_id\t: Genuin"..., 4096) = 3464
+read(25, "processor\t: 2\nvendor_id\t: Genuin"..., 632) = 632
+close(25)                               = 0
+access("/usr/lib/x86_64-linux-gnu/qemu", F_OK) = 0
+newfstatat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/qemu", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/bin/qemu-system-x86_64", {st_mode=S_IFREG|0755, st_size=26411272, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/dev/kvm", {st_mode=S_IFCHR|0666, st_rdev=makedev(0xa, 0xe8), ...}, 0) = 0
+access("/sys/module/kvm_intel/parameters/nested", F_OK) = 0
+openat(AT_FDCWD, "/sys/module/kvm_intel/parameters/nested", O_RDONLY) = 25
+read(25, "Y\n", 4097)                   = 2
+read(25, "", 4095)                      = 0
+close(25)                               = 0
+uname({sysname="Linux", nodename="lindt", ...}) = 0
+access("/sys/module/kvm_amd/parameters/sev", F_OK) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/proc/cpuinfo", O_RDONLY) = 25
+read(25, "processor\t: 0\nvendor_id\t: Genuin"..., 4096) = 3464
+read(25, "processor\t: 2\nvendor_id\t: Genuin"..., 632) = 632
+close(25)                               = 0
+access("/usr/lib/x86_64-linux-gnu/qemu", F_OK) = 0
+newfstatat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/qemu", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/bin/qemu-system-x86_64", {st_mode=S_IFREG|0755, st_size=26411272, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/dev/kvm", {st_mode=S_IFCHR|0666, st_rdev=makedev(0xa, 0xe8), ...}, 0) = 0
+access("/sys/module/kvm_intel/parameters/nested", F_OK) = 0
+openat(AT_FDCWD, "/sys/module/kvm_intel/parameters/nested", O_RDONLY) = 25
+read(25, "Y\n", 4097)                   = 2
+read(25, "", 4095)                      = 0
+close(25)                               = 0
+uname({sysname="Linux", nodename="lindt", ...}) = 0
+access("/sys/module/kvm_amd/parameters/sev", F_OK) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/proc/cpuinfo", O_RDONLY) = 25
+read(25, "processor\t: 0\nvendor_id\t: Genuin"..., 4096) = 3464
+read(25, "processor\t: 2\nvendor_id\t: Genuin"..., 632) = 632
+close(25)                               = 0
+access("/usr/lib/x86_64-linux-gnu/qemu", F_OK) = 0
+newfstatat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/qemu", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/bin/qemu-system-x86_64", {st_mode=S_IFREG|0755, st_size=26411272, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/dev/kvm", {st_mode=S_IFCHR|0666, st_rdev=makedev(0xa, 0xe8), ...}, 0) = 0
+access("/sys/module/kvm_intel/parameters/nested", F_OK) = 0
+openat(AT_FDCWD, "/sys/module/kvm_intel/parameters/nested", O_RDONLY) = 25
+read(25, "Y\n", 4097)                   = 2
+read(25, "", 4095)                      = 0
+close(25)                               = 0
+uname({sysname="Linux", nodename="lindt", ...}) = 0
+access("/sys/module/kvm_amd/parameters/sev", F_OK) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/proc/cpuinfo", O_RDONLY) = 25
+read(25, "processor\t: 0\nvendor_id\t: Genuin"..., 4096) = 3464
+read(25, "processor\t: 2\nvendor_id\t: Genuin"..., 632) = 632
+close(25)                               = 0
+access("/usr/lib/x86_64-linux-gnu/qemu", F_OK) = 0
+newfstatat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/qemu", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/bin/qemu-system-x86_64", {st_mode=S_IFREG|0755, st_size=26411272, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/dev/kvm", {st_mode=S_IFCHR|0666, st_rdev=makedev(0xa, 0xe8), ...}, 0) = 0
+access("/sys/module/kvm_intel/parameters/nested", F_OK) = 0
+openat(AT_FDCWD, "/sys/module/kvm_intel/parameters/nested", O_RDONLY) = 25
+read(25, "Y\n", 4097)                   = 2
+read(25, "", 4095)                      = 0
+close(25)                               = 0
+uname({sysname="Linux", nodename="lindt", ...}) = 0
+access("/sys/module/kvm_amd/parameters/sev", F_OK) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/proc/cpuinfo", O_RDONLY) = 25
+read(25, "processor\t: 0\nvendor_id\t: Genuin"..., 4096) = 3464
+read(25, "processor\t: 2\nvendor_id\t: Genuin"..., 632) = 632
+close(25)                               = 0
+access("/usr/lib/x86_64-linux-gnu/qemu", F_OK) = 0
+newfstatat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/qemu", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/bin/qemu-system-x86_64", {st_mode=S_IFREG|0755, st_size=26411272, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/dev/kvm", {st_mode=S_IFCHR|0666, st_rdev=makedev(0xa, 0xe8), ...}, 0) = 0
+access("/sys/module/kvm_intel/parameters/nested", F_OK) = 0
+openat(AT_FDCWD, "/sys/module/kvm_intel/parameters/nested", O_RDONLY) = 25
+read(25, "Y\n", 4097)                   = 2
+read(25, "", 4095)                      = 0
+close(25)                               = 0
+uname({sysname="Linux", nodename="lindt", ...}) = 0
+access("/sys/module/kvm_amd/parameters/sev", F_OK) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/proc/cpuinfo", O_RDONLY) = 25
+read(25, "processor\t: 0\nvendor_id\t: Genuin"..., 4096) = 3464
+read(25, "processor\t: 2\nvendor_id\t: Genuin"..., 632) = 632
+close(25)                               = 0
+access("/usr/lib/x86_64-linux-gnu/qemu", F_OK) = 0
+newfstatat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/qemu", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/bin/qemu-system-x86_64", {st_mode=S_IFREG|0755, st_size=26411272, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/dev/kvm", {st_mode=S_IFCHR|0666, st_rdev=makedev(0xa, 0xe8), ...}, 0) = 0
+access("/sys/module/kvm_intel/parameters/nested", F_OK) = 0
+openat(AT_FDCWD, "/sys/module/kvm_intel/parameters/nested", O_RDONLY) = 25
+read(25, "Y\n", 4097)                   = 2
+read(25, "", 4095)                      = 0
+close(25)                               = 0
+uname({sysname="Linux", nodename="lindt", ...}) = 0
+access("/sys/module/kvm_amd/parameters/sev", F_OK) = -1 ENOENT (No such file or directory)
+openat(AT_FDCWD, "/proc/cpuinfo", O_RDONLY) = 25
+read(25, "processor\t: 0\nvendor_id\t: Genuin"..., 4096) = 3464
+read(25, "processor\t: 2\nvendor_id\t: Genuin"..., 632) = 632
+close(25)                               = 0
+access("/usr/lib/x86_64-linux-gnu/qemu", F_OK) = 0
+newfstatat(AT_FDCWD, "/usr/lib/x86_64-linux-gnu/qemu", {st_mode=S_IFDIR|0755, st_size=4096, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/usr/bin/qemu-system-x86_64", {st_mode=S_IFREG|0755, st_size=26411272, ...}, 0) = 0
+newfstatat(AT_FDCWD, "/dev/kvm", {st_mode=S_IFCHR|0666, st_rdev=makedev(0xa, 0xe8), ...}, 0) = 0
+access("/sys/module/kvm_intel/parameters/nested", F_OK) = 0
+openat(AT_FDCWD, "/sys/module/kvm_intel/parameters/nested", O_RDONLY) = 25
+read(25, "Y\n", 4097)                   = 2
+read(25, "", 4095)                      = 0
+close(25)                               = 0
+uname({sysname="Linux", nodename="lindt", ...}) = 0
+access("/sys/module/kvm_amd/parameters/sev", F_OK) = -1 ENOENT (No such file or directory)
+access("/home/siagraw/.config/libvirt/qemu/1f2222112112oo-tester2260.xml", F_OK) = -1 ENOENT (No such file or directory)
+newfstatat(AT_FDCWD, "/home/siagraw/.config/libvirt/qemu/autostart/1f2222112112oo-tester2260.xml", 0x7f7f9a7fb780, AT_SYMLINK_NOFOLLOW) = -1 ENOENT (No such file or directory)
+newfstatat(AT_FDCWD, "/home/siagraw/.config/libvirt/qemu/snapshot/1f2222112112oo-tester2260", 0x7f7f9a7fb780, 0) = -1 ENOENT (No such file or directory)
+newfstatat(AT_FDCWD, "/home/siagraw/.config/libvirt/qemu/checkpoint/1f2222112112oo-tester2260", 0x7f7f9a7fb780, 0) = -1 ENOENT (No such file or directory)
+mkdir("/home/siagraw/.config/libvirt/qemu", 0777) = -1 EEXIST (File exists)
+newfstatat(AT_FDCWD, "/home/siagraw/.config/libvirt/qemu", {st_mode=S_IFDIR|0775, st_size=4096, ...}, 0) = 0
+geteuid()                               = 1000
+getegid()                               = 1000
+openat(AT_FDCWD, "/home/siagraw/.config/libvirt/qemu/1f2222112112oo-tester2260.xml.new", O_WRONLY|O_CREAT|O_TRUNC, 0600) = 25
+fstat(25, {st_mode=S_IFREG|0600, st_size=0, ...}) = 0
+write(25, "<!--\nWARNING: THIS IS AN AUTO-GE"..., 163) = 163
+write(25, "edit", 4)                    = 4
+write(25, " ", 1)                       = 1
+write(25, "1f2222112112oo-tester2260", 25) = 25
+write(25, "\nor other application using the "..., 50) = 50
+write(25, "<domain type='kvm'>\n  <name>1f22"..., 6537) = 6537
+fsync(25)                               = 0
+close(25)                               = 0
+rename("/home/siagraw/.config/libvirt/qemu/1f2222112112oo-tester2260.xml.new", "/home/siagraw/.config/libvirt/qemu/1f2222112112oo-tester2260.xml") = 0
+unlink("/home/siagraw/.config/libvirt/qemu/1f2222112112oo-tester2260.xml.new") = -1 ENOENT (No such file or directory)
+gettid()                                = 767216
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5614c59b1290, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0x5614c599ed58, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, NULL, FUTEX_BITSET_MATCH_ANY) = 0
+futex(0x5614c599ec68, FUTEX_WAIT_PRIVATE, 2, NULL) = -1 EAGAIN (Resource temporarily unavailable)
+futex(0x5614c599ec68, FUTEX_WAKE_PRIVATE, 1) = 0
+gettid()                                = 767216
+gettid()                                = 767216
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5614c59b1290, FUTEX_WAKE_PRIVATE, 1) = 1
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5614c59b1290, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0x5614c599ed5c, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, NULL, FUTEX_BITSET_MATCH_ANY <detached ...>

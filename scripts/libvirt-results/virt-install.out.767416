@@ -1,0 +1,119 @@
+futex(0x7f7f5006522c, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, NULL, FUTEX_BITSET_MATCH_ANY) = 0
+futex(0x7f7f500651d8, FUTEX_WAKE_PRIVATE, 1) = 0
+kill(770560, SIGTERM)                   = 0
+clock_nanosleep(CLOCK_REALTIME, 0, {tv_sec=0, tv_nsec=200000000}, 0x7f7f6b7fd8d0) = 0
+kill(770560, 0)                         = -1 ESRCH (No such process)
+gettid()                                = 767416
+mkdir("/run/user/1000/libvirt/qemu/run", 0777) = -1 EEXIST (File exists)
+newfstatat(AT_FDCWD, "/run/user/1000/libvirt/qemu/run", {st_mode=S_IFDIR|0775, st_size=200, ...}, 0) = 0
+geteuid()                               = 1000
+getegid()                               = 1000
+openat(AT_FDCWD, "/run/user/1000/libvirt/qemu/run/1f2222112112oo-tester60.xml.new", O_WRONLY|O_CREAT|O_TRUNC, 0600) = 25
+fstat(25, {st_mode=S_IFREG|0600, st_size=0, ...}) = 0
+write(25, "<!--\nWARNING: THIS IS AN AUTO-GE"..., 163) = 163
+write(25, "edit", 4)                    = 4
+write(25, " ", 1)                       = 1
+write(25, "1f2222112112oo-tester60", 23) = 23
+write(25, "\nor other application using the "..., 50) = 50
+write(25, "<domstatus state='shutdown' reas"..., 17765) = 17765
+fsync(25)                               = 0
+close(25)                               = 0
+rename("/run/user/1000/libvirt/qemu/run/1f2222112112oo-tester60.xml.new", "/run/user/1000/libvirt/qemu/run/1f2222112112oo-tester60.xml") = 0
+unlink("/run/user/1000/libvirt/qemu/run/1f2222112112oo-tester60.xml.new") = -1 ENOENT (No such file or directory)
+access("/home/siagraw/.config/libvirt/qemu/ram/6-1f2222112112oo-teste", F_OK) = -1 ENOENT (No such file or directory)
+close(24)                               = 0
+mkdir("/run/user/1000/libvirt", 0700)   = -1 EEXIST (File exists)
+newfstatat(AT_FDCWD, "/run/user/1000/libvirt", {st_mode=S_IFDIR|0700, st_size=320, ...}, 0) = 0
+openat(AT_FDCWD, "/run/user/1000/libvirt/virtlogd.lock", O_RDWR|O_CREAT, 0600) = 24
+fcntl(24, F_GETFD)                      = 0
+fcntl(24, F_SETFD, FD_CLOEXEC)          = 0
+fcntl(24, F_SETLKW, {l_type=F_WRLCK, l_whence=SEEK_SET, l_start=0, l_len=1}) = 0
+socket(AF_UNIX, SOCK_STREAM, 0)         = 25
+connect(25, {sa_family=AF_UNIX, sun_path="/run/user/1000/libvirt/virtlogd-sock"}, 110) = 0
+getsockname(25, {sa_family=AF_UNIX}, [128 => 2]) = 0
+fcntl(25, F_GETFD)                      = 0
+fcntl(25, F_SETFD, FD_CLOEXEC)          = 0
+fcntl(25, F_GETFL)                      = 0x2 (flags O_RDWR)
+fcntl(25, F_SETFL, O_RDWR|O_NONBLOCK)   = 0
+unlink("/run/user/1000/libvirt/virtlogd.lock") = 0
+close(24)                               = 0
+eventfd2(0, EFD_CLOEXEC|EFD_NONBLOCK)   = 24
+write(24, "\1\0\0\0\0\0\0\0", 8)        = 8
+rt_sigprocmask(SIG_BLOCK, [PIPE CHLD WINCH], [], 8) = 0
+poll([{fd=24, events=POLLIN}, {fd=25, events=POLLOUT}], 2, -1) = 2 ([{fd=24, revents=POLLIN}, {fd=25, revents=POLLOUT}])
+read(24, "\1\0\0\0\0\0\0\0", 8)         = 8
+write(24, "\1\0\0\0\0\0\0\0", 8)        = 8
+write(24, "\1\0\0\0\0\0\0\0", 8)        = 8
+futex(0x7f7f5000fd40, FUTEX_WAKE_PRIVATE, 2147483647) = 0
+write(24, "\1\0\0\0\0\0\0\0", 8)        = 8
+write(24, "\1\0\0\0\0\0\0\0", 8)        = 8
+rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
+write(25, "\0\0\0\340\207S\223\31\0\0\0\1\0\0\0\4\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\4"..., 224) = 224
+write(24, "\1\0\0\0\0\0\0\0", 8)        = 8
+rt_sigprocmask(SIG_BLOCK, [PIPE CHLD WINCH], [], 8) = 0
+poll([{fd=24, events=POLLIN}, {fd=25, events=POLLIN}], 2, -1) = 1 ([{fd=24, revents=POLLIN}])
+read(24, "\5\0\0\0\0\0\0\0", 8)         = 8
+poll([{fd=24, events=POLLIN}, {fd=25, events=POLLIN}], 2, -1) = 1 ([{fd=25, revents=POLLIN}])
+write(24, "\1\0\0\0\0\0\0\0", 8)        = 8
+write(24, "\1\0\0\0\0\0\0\0", 8)        = 8
+futex(0x7f7f5000fd40, FUTEX_WAKE_PRIVATE, 2147483647) = 0
+write(24, "\1\0\0\0\0\0\0\0", 8)        = 8
+write(24, "\1\0\0\0\0\0\0\0", 8)        = 8
+rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
+read(25, "\0\0\0 ", 4)                  = 4
+read(25, "\207S\223\31\0\0\0\1\0\0\0\4\0\0\0\1\0\0\0\0\0\0\0\0\0\0\0\0", 28) = 28
+close(25)                               = 0
+close(24)                               = 0
+close(28)                               = 0
+unlink("/home/siagraw/.config/libvirt/qemu/lib/domain-6-1f2222112112oo-teste/monitor.sock") = -1 ENOENT (No such file or directory)
+futex(0x7f7f8401f028, FUTEX_WAKE_PRIVATE, 1) = 1
+write(27, "\1\0\0\0\0\0\0\0", 8)        = 8
+futex(0x7f7f840549b0, FUTEX_WAKE_PRIVATE, 2147483647) = 0
+futex(0x7f7f840549a0, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0x7f7f6affd990, FUTEX_WAIT_BITSET|FUTEX_CLOCK_REALTIME, 770561, NULL, FUTEX_BITSET_MATCH_ANY) = 0
+close(27)                               = 0
+unlink("/home/siagraw/.config/libvirt/qemu/lib/domain-6-1f2222112112oo-teste/master-key.aes") = 0
+access("/run/user/1000/libvirt/qemu/run/6-1f2222112112oo-teste-pr-helper0.pid", F_OK) = -1 ENOENT (No such file or directory)
+access("/home/siagraw/.config/libvirt/qemu/lib/domain-6-1f2222112112oo-teste/pr-helper0.pid", F_OK) = -1 ENOENT (No such file or directory)
+unlink("/run/user/1000/libvirt/qemu/run/channel/6-1f2222112112oo-teste/org.qemu.guest_agent.0") = -1 ENOENT (No such file or directory)
+kill(770560, SIGTERM)                   = -1 ESRCH (No such process)
+access("/run/user/1000/libvirt/qemu/run/dbus/6-1f2222112112oo-teste-dbus.pid", F_OK) = -1 ENOENT (No such file or directory)
+access("/home/siagraw/.config/libvirt/qemu/lib/domain-6-1f2222112112oo-teste", F_OK) = 0
+openat(AT_FDCWD, "/home/siagraw/.config/libvirt/qemu/lib/domain-6-1f2222112112oo-teste", O_RDONLY|O_NONBLOCK|O_CLOEXEC|O_DIRECTORY) = 24
+fstat(24, {st_mode=S_IFDIR|0750, st_size=4096, ...}) = 0
+getdents64(24, 0x7f7f500471e0 /* 2 entries */, 32768) = 48
+getdents64(24, 0x7f7f500471e0 /* 0 entries */, 32768) = 0
+rmdir("/home/siagraw/.config/libvirt/qemu/lib/domain-6-1f2222112112oo-teste") = 0
+close(24)                               = 0
+access("/run/user/1000/libvirt/qemu/run/channel/6-1f2222112112oo-teste", F_OK) = 0
+openat(AT_FDCWD, "/run/user/1000/libvirt/qemu/run/channel/6-1f2222112112oo-teste", O_RDONLY|O_NONBLOCK|O_CLOEXEC|O_DIRECTORY) = 24
+fstat(24, {st_mode=S_IFDIR|0750, st_size=40, ...}) = 0
+getdents64(24, 0x7f7f500471e0 /* 2 entries */, 32768) = 48
+getdents64(24, 0x7f7f500471e0 /* 0 entries */, 32768) = 0
+rmdir("/run/user/1000/libvirt/qemu/run/channel/6-1f2222112112oo-teste") = 0
+close(24)                               = 0
+unlink("/run/user/1000/libvirt/qemu/run/1f2222112112oo-tester60.xml") = 0
+unlink("/run/user/1000/libvirt/qemu/run/1f2222112112oo-tester60.pid") = 0
+ioctl(0, TCGETS, 0x7f7f6b7fb0d0)        = -1 ENOTTY (Inappropriate ioctl for device)
+ioctl(1, TCGETS, 0x7f7f6b7fb0d0)        = -1 ENOTTY (Inappropriate ioctl for device)
+ioctl(2, TCGETS, 0x7f7f6b7fb0d0)        = -1 ENOTTY (Inappropriate ioctl for device)
+sendto(8, [{nlmsg_len=196, nlmsg_type=0x9c4 /* AUDIT_??? */, nlmsg_flags=NLM_F_REQUEST|NLM_F_ACK, nlmsg_seq=60, nlmsg_pid=0}, "\x76\x69\x72\x74\x3d\x6b\x76\x6d\x20\x6f\x70\x3d\x73\x74\x6f\x70\x20\x72\x65\x61\x73\x6f\x6e\x3d\x73\x68\x75\x74\x64\x6f\x77\x6e"...], 196, 0, {sa_family=AF_NETLINK, nl_pid=0, nl_groups=00000000}, 12) = 196
+poll([{fd=8, events=POLLIN}], 1, 500)   = 1 ([{fd=8, revents=POLLIN}])
+recvfrom(8, [{nlmsg_len=216, nlmsg_type=NLMSG_ERROR, nlmsg_flags=0, nlmsg_seq=60, nlmsg_pid=767206}, {error=-EPERM, msg=[{nlmsg_len=196, nlmsg_type=0x9c4 /* AUDIT_??? */, nlmsg_flags=NLM_F_REQUEST|NLM_F_ACK, nlmsg_seq=60, nlmsg_pid=0}, "\x76\x69\x72\x74\x3d\x6b\x76\x6d\x20\x6f\x70\x3d\x73\x74\x6f\x70\x20\x72\x65\x61\x73\x6f\x6e\x3d\x73\x68\x75\x74\x64\x6f\x77\x6e"...]}], 8988, MSG_PEEK|MSG_DONTWAIT, {sa_family=AF_NETLINK, nl_pid=0, nl_groups=00000000}, [12]) = 216
+recvfrom(8, [{nlmsg_len=216, nlmsg_type=NLMSG_ERROR, nlmsg_flags=0, nlmsg_seq=60, nlmsg_pid=767206}, {error=-EPERM, msg=[{nlmsg_len=196, nlmsg_type=0x9c4 /* AUDIT_??? */, nlmsg_flags=NLM_F_REQUEST|NLM_F_ACK, nlmsg_seq=60, nlmsg_pid=0}, "\x76\x69\x72\x74\x3d\x6b\x76\x6d\x20\x6f\x70\x3d\x73\x74\x6f\x70\x20\x72\x65\x61\x73\x6f\x6e\x3d\x73\x68\x75\x74\x64\x6f\x77\x6e"...]}], 8988, MSG_DONTWAIT, {sa_family=AF_NETLINK, nl_pid=0, nl_groups=00000000}, [12]) = 216
+capget({version=0 /* _LINUX_CAPABILITY_VERSION_??? */, pid=0}, NULL) = 0
+gettid()                                = 767416
+capget({version=_LINUX_CAPABILITY_VERSION_3, pid=767416}, {effective=0, permitted=0, inheritable=0}) = 0
+openat(AT_FDCWD, "/proc/767416/status", O_RDONLY|O_CLOEXEC) = 24
+fstat(24, {st_mode=S_IFREG|0444, st_size=0, ...}) = 0
+read(24, "Name:\tqemu-event\nUmask:\t0002\nSta"..., 1024) = 1024
+close(24)                               = 0
+openat(AT_FDCWD, "/proc/767416/status", O_RDONLY|O_CLOEXEC) = 24
+fstat(24, {st_mode=S_IFREG|0444, st_size=0, ...}) = 0
+read(24, "Name:\tqemu-event\nUmask:\t0002\nSta"..., 1024) = 1024
+close(24)                               = 0
+futex(0x7f7f8401f028, FUTEX_WAKE_PRIVATE, 1) = 1
+futex(0x7f7f50065228, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, NULL, FUTEX_BITSET_MATCH_ANY) = 0
+futex(0x7f7f500651d8, FUTEX_WAKE_PRIVATE, 1) = 0
+gettid()                                = 767416
+futex(0x7f7f5006522c, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, NULL, FUTEX_BITSET_MATCH_ANY <detached ...>

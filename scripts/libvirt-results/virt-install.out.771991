@@ -1,0 +1,132 @@
+rseq(0x7fc8bac70fe0, 0x20, 0, 0x53053053) = 0
+set_robust_list(0x7fc8bac709a0, 24)     = 0
+rt_sigprocmask(SIG_SETMASK, ~[ILL FPE KILL SEGV STOP RTMIN RT_1], NULL, 8) = 0
+mmap(NULL, 134217728, PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7fc8ac000000
+munmap(0x7fc8b0000000, 67108864)        = 0
+mprotect(0x7fc8ac000000, 135168, PROT_READ|PROT_WRITE) = 0
+pread64(4, "QFI\373\0\0\0\2\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\20\0\0\0\0\214\300\0\0"..., 112, 0) = 112
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5592f37757a0, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, {tv_sec=1741732255, tv_nsec=558576819}, FUTEX_BITSET_MATCH_ANY) = -1 EAGAIN (Resource temporarily unavailable)
+futex(0x5592f3775710, FUTEX_WAKE_PRIVATE, 1) = 0
+pread64(4, "\200\0\0\0\0\4\0\0\200\0\0\0\10\340\0\0\200\0\0\0\22S\0\0\200\0\0\0\37\254\0\0"..., 40, 196608) = 40
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5592f37757a4, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, {tv_sec=1741732255, tv_nsec=558688466}, FUTEX_BITSET_MATCH_ANY) = 0
+futex(0x5592f3775710, FUTEX_WAKE_PRIVATE, 1) = 0
+pread64(4, "\0\0\0\0\0\2\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., 65536, 65536) = 65536
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5592f37757a0, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, {tv_sec=1741732255, tv_nsec=558913665}, FUTEX_BITSET_MATCH_ANY) = -1 EAGAIN (Resource temporarily unavailable)
+futex(0x5592f3775710, FUTEX_WAKE_PRIVATE, 1) = 0
+pread64(4, "\0\0\0\0\0\0\0\0", 8, 72)   = 8
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5592f37757a4, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, {tv_sec=1741732255, tv_nsec=559019654}, FUTEX_BITSET_MATCH_ANY) = 0
+futex(0x5592f3775710, FUTEX_WAKE_PRIVATE, 1) = 0
+fstat(4, {st_mode=S_IFREG|0644, st_size=0, ...}) = 0
+ftruncate(4, 0)                         = 0
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5592f37757a0, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, {tv_sec=1741732255, tv_nsec=559937061}, FUTEX_BITSET_MATCH_ANY) = 0
+futex(0x5592f3775710, FUTEX_WAKE_PRIVATE, 1) = 0
+fstat(4, {st_mode=S_IFREG|0644, st_size=0, ...}) = 0
+ftruncate(4, 0)                         = 0
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5592f37757a4, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, {tv_sec=1741732255, tv_nsec=560122751}, FUTEX_BITSET_MATCH_ANY) = 0
+futex(0x5592f3775710, FUTEX_WAKE_PRIVATE, 1) = 0
+pwrite64(4, "QFI\373\0\0\0\3\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\20\0\0\0\0\0\0\0\0"..., 65536, 0) = 65536
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5592f37757a0, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, {tv_sec=1741732255, tv_nsec=561017524}, FUTEX_BITSET_MATCH_ANY) = 0
+futex(0x5592f3775710, FUTEX_WAKE_PRIVATE, 1) = 0
+pwrite64(4, "\0\0\0\0\0\2\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., 131072, 65536) = 131072
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5592f37757a4, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, {tv_sec=1741732255, tv_nsec=561309461}, FUTEX_BITSET_MATCH_ANY) = 0
+futex(0x5592f3775710, FUTEX_WAKE_PRIVATE, 1) = 0
+pread64(4, "QFI\373\0\0\0\3\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\20\0\0\0\0\0\0\0\0"..., 112, 0) = 112
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5592f37757a0, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, {tv_sec=1741732255, tv_nsec=561728418}, FUTEX_BITSET_MATCH_ANY) = 0
+futex(0x5592f3775710, FUTEX_WAKE_PRIVATE, 1) = 0
+pread64(4, "\0\0\0\0\0\2\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., 65536, 65536) = 65536
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5592f37757a4, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, {tv_sec=1741732255, tv_nsec=561863210}, FUTEX_BITSET_MATCH_ANY) = 0
+futex(0x5592f3775710, FUTEX_WAKE_PRIVATE, 1) = 0
+pread64(4, "\0\0\0\0\0\0\0\0", 8, 112)  = 8
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5592f37757a0, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, {tv_sec=1741732255, tv_nsec=561953302}, FUTEX_BITSET_MATCH_ANY) = 0
+futex(0x5592f3775710, FUTEX_WAKE_PRIVATE, 1) = 0
+pread64(4, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., 65536, 131072) = 65536
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5592f37757a4, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, {tv_sec=1741732255, tv_nsec=562158008}, FUTEX_BITSET_MATCH_ANY) = 0
+futex(0x5592f3775710, FUTEX_WAKE_PRIVATE, 1) = 0
+pwrite64(4, "QFI\373\0\0\0\3\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\20\0\0\0\0\0\0\0\0"..., 65536, 0) = 65536
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5592f37757a0, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, {tv_sec=1741732255, tv_nsec=562284946}, FUTEX_BITSET_MATCH_ANY) = -1 EAGAIN (Resource temporarily unavailable)
+futex(0x5592f3775710, FUTEX_WAKE_PRIVATE, 1) = 0
+pwrite64(4, "\0\1\0\1\0\1\0\1\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., 65536, 131072) = 65536
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5592f37757a4, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, {tv_sec=1741732255, tv_nsec=562368459}, FUTEX_BITSET_MATCH_ANY) = -1 EAGAIN (Resource temporarily unavailable)
+futex(0x5592f3775710, FUTEX_WAKE_PRIVATE, 1) = 0
+fdatasync(4)                            = 0
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5592f37757a0, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, {tv_sec=1741732255, tv_nsec=565671032}, FUTEX_BITSET_MATCH_ANY) = -1 EAGAIN (Resource temporarily unavailable)
+futex(0x5592f3775710, FUTEX_WAKE_PRIVATE, 1) = 0
+pwrite64(4, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., 160, 196608) = 160
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5592f37757a4, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, {tv_sec=1741732255, tv_nsec=565759309}, FUTEX_BITSET_MATCH_ANY) = -1 EAGAIN (Resource temporarily unavailable)
+futex(0x5592f3775710, FUTEX_WAKE_PRIVATE, 1) = 0
+fdatasync(4)                            = 0
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5592f37757a0, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, {tv_sec=1741732255, tv_nsec=567041096}, FUTEX_BITSET_MATCH_ANY) = -1 EAGAIN (Resource temporarily unavailable)
+futex(0x5592f3775710, FUTEX_WAKE_PRIVATE, 1) = 0
+pwrite64(4, "\0\0\0\24\0\0\0\0\0\3\0\0", 12, 36) = 12
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5592f37757a4, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, {tv_sec=1741732255, tv_nsec=567103988}, FUTEX_BITSET_MATCH_ANY) = -1 EAGAIN (Resource temporarily unavailable)
+futex(0x5592f3775710, FUTEX_WAKE_PRIVATE, 1) = 0
+fdatasync(4)                            = 0
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5592f37757a0, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, {tv_sec=1741732255, tv_nsec=567750367}, FUTEX_BITSET_MATCH_ANY) = -1 EAGAIN (Resource temporarily unavailable)
+futex(0x5592f3775710, FUTEX_WAKE_PRIVATE, 1) = 0
+pwrite64(4, "\0\0\0\2\200\0\0\0", 8, 24) = 8
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5592f37757a4, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, {tv_sec=1741732255, tv_nsec=567812494}, FUTEX_BITSET_MATCH_ANY) = -1 EAGAIN (Resource temporarily unavailable)
+futex(0x5592f3775710, FUTEX_WAKE_PRIVATE, 1) = 0
+fdatasync(4)                            = 0
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5592f37757a0, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, {tv_sec=1741732255, tv_nsec=568445200}, FUTEX_BITSET_MATCH_ANY) = 0
+futex(0x5592f3775710, FUTEX_WAKE_PRIVATE, 1) = 0
+pwrite64(4, "QFI\373\0\0\0\3\0\0\0\0\0\0\2\20\0\0\0E\0\0\0\20\0\0\0\2\200\0\0\0"..., 65536, 0) = 65536
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5592f37757a4, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, {tv_sec=1741732255, tv_nsec=568589480}, FUTEX_BITSET_MATCH_ANY) = 0
+futex(0x5592f3775710, FUTEX_WAKE_PRIVATE, 1) = 0
+fdatasync(4)                            = 0
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5592f37757a0, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, {tv_sec=1741732255, tv_nsec=570591328}, FUTEX_BITSET_MATCH_ANY) = 0
+futex(0x5592f3775710, FUTEX_WAKE_PRIVATE, 1) = 0
+pread64(4, "QFI\373\0\0\0\3\0\0\0\0\0\0\2\20\0\0\0E\0\0\0\20\0\0\0\2\200\0\0\0"..., 112, 0) = 112
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5592f37757a4, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, {tv_sec=1741732255, tv_nsec=571174537}, FUTEX_BITSET_MATCH_ANY) = -1 EAGAIN (Resource temporarily unavailable)
+futex(0x5592f3775710, FUTEX_WAKE_PRIVATE, 1) = 0
+pread64(4, "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., 160, 196608) = 160
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5592f37757a0, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, {tv_sec=1741732255, tv_nsec=571242206}, FUTEX_BITSET_MATCH_ANY) = 0
+futex(0x5592f3775710, FUTEX_WAKE_PRIVATE, 1) = 0
+pread64(4, "\0\0\0\0\0\2\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"..., 65536, 65536) = 65536
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5592f37757a4, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, {tv_sec=1741732255, tv_nsec=571363381}, FUTEX_BITSET_MATCH_ANY) = 0
+futex(0x5592f3775710, FUTEX_WAKE_PRIVATE, 1) = 0
+pread64(4, "\342y*\312\0\0\0\5", 8, 112) = 8
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5592f37757a0, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, {tv_sec=1741732255, tv_nsec=571444764}, FUTEX_BITSET_MATCH_ANY) = -1 EAGAIN (Resource temporarily unavailable)
+futex(0x5592f3775710, FUTEX_WAKE_PRIVATE, 1) = 0
+pread64(4, "qcow2", 5, 120)             = 5
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5592f37757a4, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, {tv_sec=1741732255, tv_nsec=571513332}, FUTEX_BITSET_MATCH_ANY) = -1 EAGAIN (Resource temporarily unavailable)
+futex(0x5592f3775710, FUTEX_WAKE_PRIVATE, 1) = 0
+pread64(4, "h\3\370W\0\0\1\200", 8, 128) = 8
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5592f37757a0, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, {tv_sec=1741732255, tv_nsec=571576012}, FUTEX_BITSET_MATCH_ANY) = -1 EAGAIN (Resource temporarily unavailable)
+futex(0x5592f3775710, FUTEX_WAKE_PRIVATE, 1) = 0
+pread64(4, "\0\0\0\0\0\0\0\0", 8, 520)  = 8
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5592f37757a4, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, {tv_sec=1741732255, tv_nsec=571637711}, FUTEX_BITSET_MATCH_ANY) = 0
+futex(0x5592f3775710, FUTEX_WAKE_PRIVATE, 1) = 0
+pread64(4, "/home/siagraw/OSmosis/scripts/li"..., 69, 528) = 69
+write(7, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x5592f37757a0, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, {tv_sec=1741732255, tv_nsec=571725578}, FUTEX_BITSET_MATCH_ANY) = ?
++++ exited with 0 +++

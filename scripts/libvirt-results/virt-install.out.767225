@@ -1,0 +1,20 @@
+restart_syscall(<... resuming interrupted read ...>) = 1
+read(15, "\1\0\0\0\0\0\0\0", 8)         = 8
+sendmsg(14, {msg_name=NULL, msg_namelen=0, msg_iov=[{iov_base="l\1\0\1N\0\0\0\22\0\0\0\210\0\0\0\1\1o\0\27\0\0\0/org/fre"..., iov_len=230}], msg_iovlen=1, msg_controllen=0, msg_flags=0}, MSG_NOSIGNAL) = 230
+poll([{fd=14, events=POLLIN}, {fd=15, events=POLLIN}], 2, 0) = 0 (Timeout)
+poll([{fd=14, events=POLLIN}, {fd=15, events=POLLIN}], 2, -1) = 1 ([{fd=14, revents=POLLIN}])
+write(15, "\1\0\0\0\0\0\0\0", 8)        = 8
+recvmsg(14, {msg_name=NULL, msg_namelen=0, msg_iov=[{iov_base="l\2\1\1\4\0\0\0\304\7\0\0006\0\0\0", iov_len=16}], msg_iovlen=1, msg_control=[{cmsg_len=20, cmsg_level=SOL_SOCKET, cmsg_type=SCM_RIGHTS, cmsg_data=[25]}], msg_controllen=24, msg_flags=MSG_CMSG_CLOEXEC}, MSG_CMSG_CLOEXEC) = 16
+fcntl(25, F_SETFD, FD_CLOEXEC)          = 0
+poll([{fd=14, events=POLLIN}], 1, 0)    = 1 ([{fd=14, revents=POLLIN}])
+recvmsg(14, {msg_name=NULL, msg_namelen=0, msg_iov=[{iov_base="\5\1u\0\22\0\0\0\6\1s\0\6\0\0\0:1.692\0\0\10\1g\0\1h\0\0"..., iov_len=60}], msg_iovlen=1, msg_controllen=0, msg_flags=MSG_CMSG_CLOEXEC}, MSG_CMSG_CLOEXEC) = 60
+write(15, "\1\0\0\0\0\0\0\0", 8)        = 8
+write(15, "\1\0\0\0\0\0\0\0", 8)        = 8
+poll([{fd=15, events=POLLIN}], 1, 0)    = 1 ([{fd=15, revents=POLLIN}])
+read(15, "\3\0\0\0\0\0\0\0", 8)         = 8
+write(24, "\1\0\0\0\0\0\0\0", 8)        = 8
+poll([{fd=14, events=POLLIN}], 1, 0)    = 0 (Timeout)
+write(15, "\1\0\0\0\0\0\0\0", 8)        = 8
+poll([{fd=14, events=POLLIN}, {fd=15, events=POLLIN}], 2, -1) = 1 ([{fd=15, revents=POLLIN}])
+read(15, "\1\0\0\0\0\0\0\0", 8)         = 8
+poll([{fd=14, events=POLLIN}, {fd=15, events=POLLIN}], 2, -1 <detached ...>

@@ -1,0 +1,2 @@
+openat(AT_FDCWD, "/home/siagraw/.cache/virt-manager/boot/virtinst-q0a5zi7d-cloudinit.iso", O_RDWR|O_CREAT, 0666) = 4
++++ exited with 0 +++

@@ -1,0 +1,40 @@
+restart_syscall(<... resuming interrupted read ...>) = 1
+write(27, "\1\0\0\0\0\0\0\0", 8)        = 8
+read(28, "{\"timestamp\": {\"seconds\": 174173"..., 1023) = 136
+read(28, 0x7f7f3801bf98, 887)           = -1 EAGAIN (Resource temporarily unavailable)
+mkdir("/run/user/1000/libvirt/qemu/run", 0777) = -1 EEXIST (File exists)
+newfstatat(AT_FDCWD, "/run/user/1000/libvirt/qemu/run", {st_mode=S_IFDIR|0775, st_size=200, ...}, 0) = 0
+geteuid()                               = 1000
+getegid()                               = 1000
+openat(AT_FDCWD, "/run/user/1000/libvirt/qemu/run/1f2222112112oo-tester60.xml.new", O_WRONLY|O_CREAT|O_TRUNC, 0600) = 29
+fstat(29, {st_mode=S_IFREG|0600, st_size=0, ...}) = 0
+write(29, "<!--\nWARNING: THIS IS AN AUTO-GE"..., 163) = 163
+write(29, "edit", 4)                    = 4
+write(29, " ", 1)                       = 1
+write(29, "1f2222112112oo-tester60", 23) = 23
+write(29, "\nor other application using the "..., 50) = 50
+write(29, "<domstatus state='shutdown' reas"..., 17728) = 17728
+fsync(29)                               = 0
+close(29)                               = 0
+rename("/run/user/1000/libvirt/qemu/run/1f2222112112oo-tester60.xml.new", "/run/user/1000/libvirt/qemu/run/1f2222112112oo-tester60.xml") = 0
+unlink("/run/user/1000/libvirt/qemu/run/1f2222112112oo-tester60.xml.new") = -1 ENOENT (No such file or directory)
+kill(770560, SIGTERM)                   = 0
+write(27, "\1\0\0\0\0\0\0\0", 8)        = 8
+poll([{fd=27, events=POLLIN}, {fd=28, events=POLLIN}], 2, -1) = 1 ([{fd=27, revents=POLLIN}])
+read(27, "\2\0\0\0\0\0\0\0", 8)         = 8
+poll([{fd=27, events=POLLIN}, {fd=28, events=POLLIN}], 2, -1) = 1 ([{fd=28, revents=POLLIN|POLLHUP}])
+write(27, "\1\0\0\0\0\0\0\0", 8)        = 8
+read(28, "", 1023)                      = 0
+write(27, "\1\0\0\0\0\0\0\0", 8)        = 8
+futex(0x7f7f5006522c, FUTEX_WAKE_PRIVATE, 1) = 1
+write(27, "\1\0\0\0\0\0\0\0", 8)        = 8
+poll([{fd=27, events=POLLIN}], 1, -1)   = 1 ([{fd=27, revents=POLLIN}])
+read(27, "\3\0\0\0\0\0\0\0", 8)         = 8
+poll([{fd=27, events=POLLIN}], 1, -1)   = 1 ([{fd=27, revents=POLLIN}])
+futex(0x7f7f840549a0, FUTEX_WAIT_PRIVATE, 2, NULL) = 0
+read(27, "\1\0\0\0\0\0\0\0", 8)         = 8
+futex(0x7f7f840549a0, FUTEX_WAKE_PRIVATE, 1) = 0
+rt_sigprocmask(SIG_BLOCK, ~[RT_1], NULL, 8) = 0
+madvise(0x7f7f6a7fd000, 8368128, MADV_DONTNEED) = 0
+exit(0)                                 = ?
++++ exited with 0 +++

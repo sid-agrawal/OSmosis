@@ -1,0 +1,12 @@
+0x00000000800405fb
+cap_chown
+cap_dac_override
+cap_fowner
+cap_fsetid
+cap_kill
+cap_setgid
+cap_setuid
+cap_setpcap
+cap_net_bind_service
+cap_sys_chroot
+cap_setfcap

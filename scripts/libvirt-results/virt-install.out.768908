@@ -1,0 +1,3 @@
+openat(AT_FDCWD, "/home/siagraw/.cache/virt-manager/boot/tmpd16i47oe/meta-data", O_RDONLY) = 4
+openat(AT_FDCWD, "/home/siagraw/.cache/virt-manager/boot/tmpd16i47oe/user-data", O_RDONLY) = 4
++++ exited with 0 +++

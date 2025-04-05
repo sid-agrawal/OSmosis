@@ -1,0 +1,2 @@
+--- SIGTERM {si_signo=SIGTERM, si_code=SI_USER, si_pid=768464, si_uid=1000} ---
++++ killed by SIGTERM +++

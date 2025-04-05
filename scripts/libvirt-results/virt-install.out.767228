@@ -1,0 +1,15 @@
+futex(0x7f7f50028274, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, NULL, FUTEX_BITSET_MATCH_ANY) = 0
+recvfrom(22, NULL, 0, MSG_PEEK|MSG_TRUNC, NULL, NULL) = 323
+recvmsg(22, {msg_name={sa_family=AF_NETLINK, nl_pid=824, nl_groups=0x000002}, msg_namelen=128 => 12, msg_iov=[{iov_base=[{prefix="libudev", magic=htonl(0xfeedcafe), header_size=40, properties_off=40, properties_len=283, filter_subsystem_hash=htonl(0x4b1a4e75), filter_devtype_hash=htonl(0), filter_tag_bloom_hi=htonl(0x2082008), filter_tag_bloom_lo=htonl(0x401009)}, "UDEV_DATABASE_VERSION=1\0ACTION=c"...], iov_len=323}], msg_iovlen=1, msg_control=[{cmsg_len=28, cmsg_level=SOL_SOCKET, cmsg_type=SCM_CREDENTIALS, cmsg_data={pid=771830, uid=0, gid=0}}], msg_controllen=32, msg_flags=0}, 0) = 323
+getrandom("\xed\xb5\x24\xbd\x48\xcd\x61\x1b\x37\x8f\x01\x53\xdd\x5e\xa3\xad", 16, GRND_INSECURE) = 16
+getrandom("\x4b\x20\xca\x09\x91\x69\x4b\x6d\x36\x41\xba\x78\x01\xcb\x22\x21", 16, GRND_INSECURE) = 16
+futex(0x7f7f50028208, FUTEX_WAKE_PRIVATE, 1) = 1
+recvfrom(22, NULL, 0, MSG_PEEK|MSG_TRUNC, NULL, NULL) = -1 EAGAIN (Resource temporarily unavailable)
+futex(0x7f7f50028270, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, NULL, FUTEX_BITSET_MATCH_ANY) = 0
+recvfrom(22, NULL, 0, MSG_PEEK|MSG_TRUNC, NULL, NULL) = 322
+recvmsg(22, {msg_name={sa_family=AF_NETLINK, nl_pid=824, nl_groups=0x000002}, msg_namelen=128 => 12, msg_iov=[{iov_base=[{prefix="libudev", magic=htonl(0xfeedcafe), header_size=40, properties_off=40, properties_len=282, filter_subsystem_hash=htonl(0x4b1a4e75), filter_devtype_hash=htonl(0), filter_tag_bloom_hi=htonl(0x2082008), filter_tag_bloom_lo=htonl(0x401009)}, "UDEV_DATABASE_VERSION=1\0ACTION=c"...], iov_len=322}], msg_iovlen=1, msg_control=[{cmsg_len=28, cmsg_level=SOL_SOCKET, cmsg_type=SCM_CREDENTIALS, cmsg_data={pid=772001, uid=0, gid=0}}], msg_controllen=32, msg_flags=0}, 0) = 322
+getrandom("\x40\x4b\x58\xe3\x96\x3f\xcd\xab\x4a\x04\x97\x23\x21\xcd\x06\x5a", 16, GRND_INSECURE) = 16
+getrandom("\xe1\x17\x97\x6a\xfb\x8c\xed\xd5\x5a\x4d\x34\xe4\xe3\x63\x68\x89", 16, GRND_INSECURE) = 16
+futex(0x7f7f50028208, FUTEX_WAKE_PRIVATE, 1) = 1
+recvfrom(22, NULL, 0, MSG_PEEK|MSG_TRUNC, NULL, NULL) = -1 EAGAIN (Resource temporarily unavailable)
+futex(0x7f7f50028274, FUTEX_WAIT_BITSET_PRIVATE|FUTEX_CLOCK_REALTIME, 0, NULL, FUTEX_BITSET_MATCH_ANY <detached ...>
