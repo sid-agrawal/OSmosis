@@ -1,0 +1,4 @@
+ID:ID,NODE_TYPE,DATA,EXTRA,:LABEL
+PD_1,PD,Host Linux,,PD
+PD_187032,PD,hello_static_1,,PD
+PD_187070,PD,hello_static_2,,PD

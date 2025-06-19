@@ -1,0 +1,83 @@
+ID:ID,NODE_TYPE,DATA,EXTRA,:LABEL
+MO_10001_1,RESOURCE,MO,"{""pa"": ""0x40f8a000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_2,RESOURCE,MO,"{""pa"": ""0x42300000"", ""num_pages"": ""37"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_3,RESOURCE,MO,"{""pa"": ""0x42325000"", ""num_pages"": ""16"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_4,RESOURCE,MO,"{""pa"": ""0x42335000"", ""num_pages"": ""27"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_5,RESOURCE,MO,"{""pa"": ""0x42350000"", ""num_pages"": ""5"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_6,RESOURCE,MO,"{""pa"": ""0x42375000"", ""num_pages"": ""11"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_7,RESOURCE,MO,"{""pa"": ""0x42380000"", ""num_pages"": ""5"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_8,RESOURCE,MO,"{""pa"": ""0x42385000"", ""num_pages"": ""16"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_9,RESOURCE,MO,"{""pa"": ""0x42395000"", ""num_pages"": ""16"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_10,RESOURCE,MO,"{""pa"": ""0x423a5000"", ""num_pages"": ""11"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_11,RESOURCE,MO,"{""pa"": ""0x4d04a000"", ""num_pages"": ""37"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_12,RESOURCE,MO,"{""pa"": ""0x4d084000"", ""num_pages"": ""60"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_13,RESOURCE,MO,"{""pa"": ""0x4d0c0000"", ""num_pages"": ""5"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_14,RESOURCE,MO,"{""pa"": ""0x4d0d0000"", ""num_pages"": ""5"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_15,RESOURCE,MO,"{""pa"": ""0x4d0d5000"", ""num_pages"": ""43"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_16,RESOURCE,MO,"{""pa"": ""0x4d198000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_17,RESOURCE,MO,"{""pa"": ""0x50ae1000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_18,RESOURCE,MO,"{""pa"": ""0x50ae3000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_19,RESOURCE,MO,"{""pa"": ""0x50ae4000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_20,RESOURCE,MO,"{""pa"": ""0x50ae5000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_21,RESOURCE,MO,"{""pa"": ""0x50ae6000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_22,RESOURCE,MO,"{""pa"": ""0x50ae7000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_23,RESOURCE,MO,"{""pa"": ""0x50ae8000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_24,RESOURCE,MO,"{""pa"": ""0x50ae9000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_25,RESOURCE,MO,"{""pa"": ""0x50aea000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_26,RESOURCE,MO,"{""pa"": ""0x50aeb000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_27,RESOURCE,MO,"{""pa"": ""0x50aec000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_28,RESOURCE,MO,"{""pa"": ""0x50aed000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_29,RESOURCE,MO,"{""pa"": ""0x50aee000"", ""num_pages"": ""3"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_30,RESOURCE,MO,"{""pa"": ""0x50af1000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_31,RESOURCE,MO,"{""pa"": ""0x50af2000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_32,RESOURCE,MO,"{""pa"": ""0x50af3000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_33,RESOURCE,MO,"{""pa"": ""0x50af4000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_34,RESOURCE,MO,"{""pa"": ""0x50af5000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_35,RESOURCE,MO,"{""pa"": ""0x50af6000"", ""num_pages"": ""2"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_36,RESOURCE,MO,"{""pa"": ""0x50af8000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_37,RESOURCE,MO,"{""pa"": ""0x50af9000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_38,RESOURCE,MO,"{""pa"": ""0x50afa000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_39,RESOURCE,MO,"{""pa"": ""0x50afb000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_40,RESOURCE,MO,"{""pa"": ""0x50afc000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_41,RESOURCE,MO,"{""pa"": ""0x50afd000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_42,RESOURCE,MO,"{""pa"": ""0x50afe000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_43,RESOURCE,MO,"{""pa"": ""0x50aff000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_44,RESOURCE,MO,"{""pa"": ""0x50b00000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_45,RESOURCE,MO,"{""pa"": ""0x50b01000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_46,RESOURCE,MO,"{""pa"": ""0x50b02000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_47,RESOURCE,MO,"{""pa"": ""0x50b03000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_48,RESOURCE,MO,"{""pa"": ""0x50b04000"", ""num_pages"": ""3"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_49,RESOURCE,MO,"{""pa"": ""0x50b07000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_50,RESOURCE,MO,"{""pa"": ""0x50b08000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_51,RESOURCE,MO,"{""pa"": ""0x50b09000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_52,RESOURCE,MO,"{""pa"": ""0x50b0a000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_53,RESOURCE,MO,"{""pa"": ""0x50b0b000"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+MO_10001_54,RESOURCE,MO,"{""pa"": ""0x50b0c000"", ""num_pages"": ""2"", ""page_size"": ""4096""}",RESOURCE
+VMR_10002_1,RESOURCE,VMR,"{""va"": ""0xaaaad09f3000"", ""vmr_type"": ""PROGRAM"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+VMR_10002_2,RESOURCE,VMR,"{""va"": ""0xaaaad09f4000"", ""vmr_type"": ""PROGRAM"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+VMR_10002_3,RESOURCE,VMR,"{""va"": ""0xaaaad09f5000"", ""vmr_type"": ""PROGRAM"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+VMR_10002_4,RESOURCE,VMR,"{""va"": ""0xaaaae5cc5000"", ""vmr_type"": ""HEAP"", ""num_pages"": ""33"", ""page_size"": ""4096""}",RESOURCE
+VMR_10002_5,RESOURCE,VMR,"{""va"": ""0xffff91f64000"", ""vmr_type"": ""LIB"", ""num_pages"": ""333"", ""page_size"": ""4096""}",RESOURCE
+VMR_10002_6,RESOURCE,VMR,"{""va"": ""0xffff920b1000"", ""vmr_type"": ""LIB"", ""num_pages"": ""4"", ""page_size"": ""4096""}",RESOURCE
+VMR_10002_7,RESOURCE,VMR,"{""va"": ""0xffff920b5000"", ""vmr_type"": ""LIB"", ""num_pages"": ""2"", ""page_size"": ""4096""}",RESOURCE
+VMR_10002_8,RESOURCE,VMR,"{""va"": ""0xffff920b7000"", ""vmr_type"": ""NONE"", ""num_pages"": ""14"", ""page_size"": ""4096""}",RESOURCE
+VMR_10002_9,RESOURCE,VMR,"{""va"": ""0xffff920c5000"", ""vmr_type"": ""VVAR"", ""num_pages"": ""2"", ""page_size"": ""4096""}",RESOURCE
+VMR_10002_10,RESOURCE,VMR,"{""va"": ""0xffff920c7000"", ""vmr_type"": ""VDSO"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+VMR_10002_11,RESOURCE,VMR,"{""va"": ""0xffff920c8000"", ""vmr_type"": ""LIB"", ""num_pages"": ""37"", ""page_size"": ""4096""}",RESOURCE
+VMR_10002_12,RESOURCE,VMR,"{""va"": ""0xffff920ed000"", ""vmr_type"": ""LIB"", ""num_pages"": ""2"", ""page_size"": ""4096""}",RESOURCE
+VMR_10002_13,RESOURCE,VMR,"{""va"": ""0xffff920ef000"", ""vmr_type"": ""LIB"", ""num_pages"": ""2"", ""page_size"": ""4096""}",RESOURCE
+VMR_10002_14,RESOURCE,VMR,"{""va"": ""0xffffc4ab6000"", ""vmr_type"": ""STACK"", ""num_pages"": ""33"", ""page_size"": ""4096""}",RESOURCE
+VMR_10003_1,RESOURCE,VMR,"{""va"": ""0xaaaaafa5e000"", ""vmr_type"": ""PROGRAM"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+VMR_10003_2,RESOURCE,VMR,"{""va"": ""0xaaaaafa5f000"", ""vmr_type"": ""PROGRAM"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+VMR_10003_3,RESOURCE,VMR,"{""va"": ""0xaaaaafa60000"", ""vmr_type"": ""PROGRAM"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+VMR_10003_4,RESOURCE,VMR,"{""va"": ""0xaaaae4107000"", ""vmr_type"": ""HEAP"", ""num_pages"": ""33"", ""page_size"": ""4096""}",RESOURCE
+VMR_10003_5,RESOURCE,VMR,"{""va"": ""0xffff83cbf000"", ""vmr_type"": ""LIB"", ""num_pages"": ""333"", ""page_size"": ""4096""}",RESOURCE
+VMR_10003_6,RESOURCE,VMR,"{""va"": ""0xffff83e0c000"", ""vmr_type"": ""LIB"", ""num_pages"": ""4"", ""page_size"": ""4096""}",RESOURCE
+VMR_10003_7,RESOURCE,VMR,"{""va"": ""0xffff83e10000"", ""vmr_type"": ""LIB"", ""num_pages"": ""2"", ""page_size"": ""4096""}",RESOURCE
+VMR_10003_8,RESOURCE,VMR,"{""va"": ""0xffff83e12000"", ""vmr_type"": ""NONE"", ""num_pages"": ""14"", ""page_size"": ""4096""}",RESOURCE
+VMR_10003_9,RESOURCE,VMR,"{""va"": ""0xffff83e20000"", ""vmr_type"": ""VVAR"", ""num_pages"": ""2"", ""page_size"": ""4096""}",RESOURCE
+VMR_10003_10,RESOURCE,VMR,"{""va"": ""0xffff83e22000"", ""vmr_type"": ""VDSO"", ""num_pages"": ""1"", ""page_size"": ""4096""}",RESOURCE
+VMR_10003_11,RESOURCE,VMR,"{""va"": ""0xffff83e23000"", ""vmr_type"": ""LIB"", ""num_pages"": ""37"", ""page_size"": ""4096""}",RESOURCE
+VMR_10003_12,RESOURCE,VMR,"{""va"": ""0xffff83e48000"", ""vmr_type"": ""LIB"", ""num_pages"": ""2"", ""page_size"": ""4096""}",RESOURCE
+VMR_10003_13,RESOURCE,VMR,"{""va"": ""0xffff83e4a000"", ""vmr_type"": ""LIB"", ""num_pages"": ""2"", ""page_size"": ""4096""}",RESOURCE
+VMR_10003_14,RESOURCE,VMR,"{""va"": ""0xffffc3ff0000"", ""vmr_type"": ""STACK"", ""num_pages"": ""33"", ""page_size"": ""4096""}",RESOURCE
