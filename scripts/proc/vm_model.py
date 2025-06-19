@@ -245,7 +245,7 @@ def is_cellulos_aarch64_buildroot_osm_dir_updated() -> bool:
     )
 
     assert compare_directories(dir1, dir2, file_extension=".py", 
-                               exceptions=["vm_model.py", "import_csv.py", "passthrough.py"])
+                               exceptions=["vm_model.py", "import_csv.py", "passthrough.py", "cgroups.py"])
 
     osm_rootfs = os.path.expanduser(
         "~/OSmosis/projects/sel4-gpi/apps/vmm/board/qemu_arm_virt/rootfs.cpio.gz"

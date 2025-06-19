@@ -247,11 +247,11 @@ if __name__ == "__main__":
     # for i, pd1 in enumerate(pd_ids):
     #     for pd2 in pd_ids[i + 1 :]:
     #         resources = shared_resources(s, pd1, pd2, "MO", True)
-    # resources = shared_resources(s, "PD_425", "PD_424", "MO", True)
+    resources = shared_resources(s, "PD_187032", "PD_187070", "MO", True)
 
     # tcb = collect_attrs(s, "PD_2422", "MO", True)
-    
+
     # tcb = common_ancestor(s, "PD_2422", "PD_1", True)
 
-    find_all_killer_pds(s, "PD_749727", True)
-    find_all_killable_pds(s, "PD_749727", True)
+    # find_all_killer_pds(s, "PD_749727", True)
+    # find_all_killable_pds(s, "PD_749727", True)

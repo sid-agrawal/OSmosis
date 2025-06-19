@@ -115,6 +115,10 @@ run_configs = [
             program_names.docker_ubuntu_bash + " test-docker " + "bash",
             ProcessStartType.DOCKER,
         ),
+        (
+            program_names.docker_ubuntu_bash + " test-docker2 " + "bash",
+            ProcessStartType.DOCKER,
+        ),
     ],
     # 9: KV Store App in the VM
     [
@@ -122,7 +126,7 @@ run_configs = [
     ],
 ]
 
-to_run = run_configs[0]
+to_run = run_configs[3]
 
 
 def log(msg):
@@ -647,7 +651,7 @@ def extract_process_data(data: ProcFsData, pid: int, name: str, should_print=Fal
     extract_from_status(data, pid, should_print)
     extract_memory_data(data, pid, should_print)
     # extract_cgroups_for_pid(data, pid, should_print)
-    extract_namespaces_for_pid(data, pid, should_print)
+    # extract_namespaces_for_pid(data, pid, should_print)
     #extract_mountinfo_for_pid(data, pid, should_print)
 
 
@@ -868,7 +872,7 @@ def do_proc_model(args):
         if args.pid == 0:
             print ("Extracing info for all PIDs")
             extract_all_process_data(data_main, False)
-        elif args.pid > 0:
+        elif args.pid is not None and args.pid > 0:
             p = psutil.Process(args.pid)
             extract_process_data(data_main, args.pid, p.name(), False)
         else:

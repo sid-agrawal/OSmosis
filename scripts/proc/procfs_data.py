@@ -1095,7 +1095,7 @@ class ProcFsData:
             vmr_mapping_type=vmr_mapping_type,
             kernel_id=kernel_id,
         )
-        self.__add_inter_process_hold_edges()
+        # self.__add_inter_process_hold_edges()
         # self.__add_pid_namespaces(kernel_id=kernel_id)
         # self.__add_mnt_namespaces(kernel_id=kernel_id)
 
