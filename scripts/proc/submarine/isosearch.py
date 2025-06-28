@@ -76,7 +76,12 @@ def DesignSpaceExploration():
         # Step 3: Generate candidate (from pseudocode line 9-10)
         candidate = GenerateCandidate(curGraph, constraints, transitions, goals)
         
-        # TODO: Add break condition, goal checking, etc.
+        # Step 4: Break if no candidate found (from pseudocode line 12-13)
+        if candidate is None:
+            print("  No valid candidate found, stopping exploration")
+            break
+        
+        # TODO: Add metric computation, goal checking, etc.
         
     print("Exploration complete!")
     return explored_mechanisms
