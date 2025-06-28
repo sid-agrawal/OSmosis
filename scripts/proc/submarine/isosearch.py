@@ -4,7 +4,7 @@ IsoSearch Algorithm Implementation - Baby Steps
 
 # Import our graph transformation capabilities
 from graph_transformations import NodeTransformations, EdgeTransformations
-from generic_model import ModelGraph, ResourceType, VmrType, Permission
+from generic_model import ModelGraph, ResourceType, VmrType, Permission, EdgeType
 
 class Goal:
     """
@@ -49,9 +49,115 @@ def ComputeMetrics(candidate):
     Compute metrics for a candidate graph (RSI, FR, TCB, IB)
     Returns: dictionary of metric values
     """
-    # TODO: Implement actual metric calculations
-    print("  Computing metrics... (stub)")
-    return {"RSI": 0.5, "FR": 3, "TCB": 2, "IB": 1}  # Dummy values
+    print("  Computing metrics...")
+    
+    # Find all PDs in the graph
+    pd_nodes = [node for node, data in candidate.g.nodes(data=True) 
+                if data.get('type') == 'PD']
+    
+    metrics = {}
+    
+    # Calculate RSI (Resource Sharing Index) between all PD pairs
+    if len(pd_nodes) >= 2:
+        rsi_values = []
+        for i in range(len(pd_nodes)):
+            for j in range(i + 1, len(pd_nodes)):
+                pd1_id = int(pd_nodes[i].split('_')[1])
+                pd2_id = int(pd_nodes[j].split('_')[1])
+                rsi = _calculate_rsi(candidate, pd1_id, pd2_id)
+                rsi_values.append(rsi)
+        
+        # Use average RSI as overall metric
+        metrics['RSI'] = sum(rsi_values) / len(rsi_values) if rsi_values else 0.0
+    else:
+        metrics['RSI'] = 0.0
+    
+    # Calculate FR (Fault Ratio) - simplified version
+    metrics['FR'] = _calculate_fr(candidate, pd_nodes)
+    
+    # Calculate TCB (Trusted Computing Base) size
+    metrics['TCB'] = _calculate_tcb(candidate, pd_nodes)
+    
+    # Calculate IB (Information Boundary) violations
+    metrics['IB'] = _calculate_ib(candidate, pd_nodes)
+    
+    print(f"    RSI: {metrics['RSI']:.3f}, FR: {metrics['FR']}, TCB: {metrics['TCB']}, IB: {metrics['IB']}")
+    return metrics
+
+
+def _calculate_rsi(graph, pd1_id, pd2_id):
+    """Calculate RSI (Resource Sharing Index) between two PDs"""
+    pd1_node = f"PD_{pd1_id}"
+    pd2_node = f"PD_{pd2_id}"
+    
+    # Find resources held by each PD
+    pd1_resources = set()
+    pd2_resources = set()
+    
+    for from_node, to_node, edge_data in graph.g.edges(data=True):
+        if edge_data.get('type') == 'HOLD':
+            if from_node == pd1_node:
+                pd1_resources.add(to_node)
+            elif from_node == pd2_node:
+                pd2_resources.add(to_node)
+    
+    # Calculate sharing ratio
+    if not pd1_resources and not pd2_resources:
+        return 0.0
+    
+    shared_resources = pd1_resources.intersection(pd2_resources)
+    total_resources = pd1_resources.union(pd2_resources)
+    
+    return len(shared_resources) / len(total_resources) if total_resources else 0.0
+
+
+def _calculate_fr(graph, pd_nodes):
+    """Calculate FR (Fault Ratio) - number of fault propagation paths"""
+    # Count edges that could propagate faults (HOLD, REQUEST, MAP edges)
+    fault_edges = 0
+    
+    for from_node, to_node, edge_data in graph.g.edges(data=True):
+        edge_type = edge_data.get('type')
+        if edge_type in ['HOLD', 'REQUEST', 'MAP']:
+            fault_edges += 1
+    
+    # Normalize by number of PDs
+    return fault_edges / len(pd_nodes) if pd_nodes else 0
+
+
+def _calculate_tcb(graph, pd_nodes):
+    """Calculate TCB (Trusted Computing Base) size - count of privileged components"""
+    # Count PDs with privileged access (multiple resource holdings)
+    tcb_size = 0
+    
+    for pd_node in pd_nodes:
+        # Count resources held by this PD
+        resource_count = 0
+        for from_node, to_node, edge_data in graph.g.edges(data=True):
+            if from_node == pd_node and edge_data.get('type') == 'HOLD':
+                resource_count += 1
+        
+        # PDs holding multiple resources are considered part of TCB
+        if resource_count > 1:
+            tcb_size += 1
+    
+    return tcb_size
+
+
+def _calculate_ib(graph, pd_nodes):
+    """Calculate IB (Information Boundary) violations - shared resource access"""
+    # Count resources accessed by multiple PDs (boundary violations)
+    resource_access_count = {}
+    
+    for from_node, to_node, edge_data in graph.g.edges(data=True):
+        if edge_data.get('type') == 'HOLD' and from_node.startswith('PD_'):
+            if to_node not in resource_access_count:
+                resource_access_count[to_node] = 0
+            resource_access_count[to_node] += 1
+    
+    # Count resources accessed by more than one PD
+    violations = sum(1 for count in resource_access_count.values() if count > 1)
+    return violations
 
 
 def GoalsMet(metrics, goals):
@@ -83,10 +189,186 @@ def GenerateCandidate(graph, constraints, transitions, goals):
     Generate a new candidate graph by applying a transition
     Returns: new graph or None if no valid transition found
     """
-    # TODO: Implement candidate generation logic
-    print("  Generating candidate... (stub)")
-    # Return the same graph for now (will test metric computation)
-    return graph
+    import copy
+    
+    # Try each transition type until we find one that applies
+    for transition in transitions:
+        candidate = copy.deepcopy(graph)
+        success = False
+        
+        print(f"  Trying transition: {transition.transition_type}")
+        
+        if transition.transition_type == "privatize_resource":
+            success = _apply_privatize_resource(candidate, constraints)
+        elif transition.transition_type == "add_mediator_pd":
+            success = _apply_add_mediator_pd(candidate, constraints)
+        elif transition.transition_type == "remove_hold_edge":
+            success = _apply_remove_hold_edge(candidate, constraints)
+        
+        if success:
+            print(f"    ✅ Applied {transition.transition_type}")
+            return candidate
+        else:
+            print(f"    ❌ Failed to apply {transition.transition_type}")
+    
+    print("  No valid transitions found")
+    return None
+
+
+def _apply_privatize_resource(graph, constraints):
+    """
+    Apply privatize_resource transformation: duplicate shared resources
+    Returns: True if transformation was applied successfully
+    """
+    # Find shared resources (resources held by multiple PDs)
+    resource_holders = {}
+    
+    for from_node, to_node, edge_data in graph.g.edges(data=True):
+        if edge_data.get('type') == 'HOLD' and to_node.startswith('VMR_'):
+            if to_node not in resource_holders:
+                resource_holders[to_node] = []
+            resource_holders[to_node].append(from_node)
+    
+    # Find a resource shared by multiple PDs
+    for resource, holders in resource_holders.items():
+        if len(holders) > 1:
+            # Check constraints - make sure we can still satisfy them
+            if _check_privatization_constraints(resource, holders, constraints):
+                # Privatize by creating separate resources for each PD
+                _privatize_shared_resource(graph, resource, holders)
+                return True
+    
+    return False
+
+
+def _apply_add_mediator_pd(graph, constraints):
+    """
+    Apply add_mediator_pd transformation: add PD between communicating PDs
+    Returns: True if transformation was applied successfully
+    """
+    # Find PDs that hold the same resource (communication through shared resource)
+    resource_sharers = {}
+    
+    for from_node, to_node, edge_data in graph.g.edges(data=True):
+        if edge_data.get('type') == 'HOLD' and from_node.startswith('PD_'):
+            if to_node not in resource_sharers:
+                resource_sharers[to_node] = []
+            resource_sharers[to_node].append(from_node)
+    
+    # Find resources shared by exactly 2 PDs (good candidates for mediation)
+    for resource, sharers in resource_sharers.items():
+        if len(sharers) == 2:
+            if _check_mediation_constraints(resource, sharers, constraints):
+                _add_mediator_between_pds(graph, resource, sharers)
+                return True
+    
+    return False
+
+
+def _apply_remove_hold_edge(graph, constraints):
+    """
+    Apply remove_hold_edge transformation: remove unnecessary hold relationships
+    Returns: True if transformation was applied successfully
+    """
+    # Find HOLD edges that can be safely removed without violating constraints
+    hold_edges = [(f, t, d) for f, t, d in graph.g.edges(data=True) 
+                  if d.get('type') == 'HOLD']
+    
+    for from_node, to_node, edge_data in hold_edges:
+        if _can_remove_hold_edge(from_node, to_node, constraints):
+            # Remove the edge
+            EdgeTransformations.remove_edge(graph, from_node, to_node, EdgeType.HOLD)
+            return True
+    
+    return False
+
+
+def _check_privatization_constraints(resource, holders, constraints):
+    """Check if privatizing a resource violates any constraints"""
+    for constraint in constraints:
+        if constraint.constraint_type == "requires_resource":
+            pd_string = f"PD_{constraint.pd_id}"
+            if pd_string in holders and constraint.resource_info == "VMR":
+                # PD still needs access to some VMR resource, privatization is OK
+                return True
+    return True  # No blocking constraints found
+
+
+def _check_mediation_constraints(resource, sharers, constraints):
+    """Check if adding mediation violates any constraints"""
+    # Generally safe as long as PDs can still access resources through mediator
+    return True
+
+
+def _can_remove_hold_edge(from_node, to_node, constraints):
+    """Check if removing a HOLD edge violates constraints"""
+    for constraint in constraints:
+        if constraint.constraint_type == "requires_resource":
+            pd_string = f"PD_{constraint.pd_id}"
+            if pd_string == from_node and constraint.resource_info == "VMR" and to_node.startswith('VMR_'):
+                # This edge is required by constraint, cannot remove
+                return False
+    return True
+
+
+def _privatize_shared_resource(graph, shared_resource, holders):
+    """Create private copies of a shared resource for each holder"""
+    # Get the original resource's properties
+    original_data = graph.g.nodes[shared_resource]
+    
+    # Find which space this resource belongs to
+    resource_space = None
+    for from_node, to_node, edge_data in graph.g.edges(data=True):
+        if from_node == shared_resource and edge_data.get('type') == 'SUBSET':
+            resource_space = to_node
+            break
+    
+    if resource_space:
+        space_id = int(resource_space.split('_')[-1])
+        
+        # Create private resource for each holder (except the first, reuse original)
+        for i, holder in enumerate(holders[1:], 1):
+            # Create new private resource
+            import json
+            extra_data = json.loads(original_data.get('extra', '{}'))
+            new_vmr = NodeTransformations.add_vmr_resource(
+                graph, space_id, VmrType.HEAP, 
+                int(extra_data.get('num_pages', 10)), 
+                int(extra_data.get('va', '0x1000'), 16) + i * 0x1000
+            )
+            
+            # Find the holder's hold edge and redirect it to new resource
+            new_resource_id = f"VMR_{space_id}_{new_vmr}"
+            
+            # Remove old hold edge
+            EdgeTransformations.remove_edge(graph, holder, shared_resource, EdgeType.HOLD)
+            
+            # Add new hold edge to private resource
+            EdgeTransformations.add_hold_edge(graph, Permission.R, 
+                                            int(holder.split('_')[1]), ResourceType.VMR, 
+                                            space_id, new_vmr)
+
+
+def _add_mediator_between_pds(graph, shared_resource, sharers):
+    """Add a mediator PD between two PDs sharing a resource"""
+    # Create mediator PD
+    mediator_id = NodeTransformations.add_pd_node(graph, "mediator")
+    
+    # Remove direct access from both sharers
+    for sharer in sharers:
+        EdgeTransformations.remove_edge(graph, sharer, shared_resource, EdgeType.HOLD)
+    
+    # Add mediator access to resource
+    space_id = 1  # Assume VMR_SPACE_1 for now
+    resource_num = int(shared_resource.split('_')[-1])
+    EdgeTransformations.add_hold_edge(graph, Permission.R | Permission.W, 
+                                    mediator_id, ResourceType.VMR, space_id, resource_num)
+    
+    # Add REQUEST edges from original sharers to mediator
+    for sharer in sharers:
+        sharer_id = int(sharer.split('_')[1])
+        EdgeTransformations.add_request_edge(graph, sharer_id, mediator_id, 
+                                           ResourceType.VMR, space_id)
 
 
 def DesignSpaceExploration():
