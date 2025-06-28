@@ -44,6 +44,16 @@ class Transition:
         return f"Transition({self.transition_type}: {self.description})"
 
 
+def ComputeMetrics(candidate):
+    """
+    Compute metrics for a candidate graph (RSI, FR, TCB, IB)
+    Returns: dictionary of metric values
+    """
+    # TODO: Implement actual metric calculations
+    print("  Computing metrics... (stub)")
+    return {"RSI": 0.5, "FR": 3, "TCB": 2, "IB": 1}  # Dummy values
+
+
 def GenerateCandidate(graph, constraints, transitions, goals):
     """
     Generate a new candidate graph by applying a transition
@@ -51,7 +61,8 @@ def GenerateCandidate(graph, constraints, transitions, goals):
     """
     # TODO: Implement candidate generation logic
     print("  Generating candidate... (stub)")
-    return None  # Return None for now (will cause early termination)
+    # Return the same graph for now (will test metric computation)
+    return graph
 
 
 def DesignSpaceExploration():
@@ -81,7 +92,11 @@ def DesignSpaceExploration():
             print("  No valid candidate found, stopping exploration")
             break
         
-        # TODO: Add metric computation, goal checking, etc.
+        # Step 5: Compute metrics (from pseudocode line 15)
+        metrics = ComputeMetrics(candidate)
+        print(f"  Metrics: {metrics}")
+        
+        # TODO: Add goal checking, mechanism saving, etc.
         
     print("Exploration complete!")
     return explored_mechanisms
