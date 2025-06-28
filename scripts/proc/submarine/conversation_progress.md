@@ -21,10 +21,15 @@ Working on implementing the IsoSearch algorithm from the PLOS paper in baby step
 11. ✅ Add break condition when candidate is None
 12. ✅ Add metric computation to main loop (ComputeMetrics stub)
 
+### Phase 2: DesignSpaceExploration Function (COMPLETED)
+13. ✅ Add goal checking (GoalsMet function and logic)
+14. ✅ Add mechanism saving when goals are met
+15. ✅ Update current graph for next iteration
+
 ### Next Steps (TODO)
-13. 🔄 **NEXT**: Add goal checking (GoalsMet function and logic)
-14. Add mechanism saving when goals are met
-15. Update current graph for next iteration
+16. 🔄 **NEXT**: Implement GenerateCandidate function with actual graph transformations
+17. Implement ComputeMetrics function with real metric calculations
+18. Test with actual mechanism discovery
 
 ## Current Implementation Details
 
@@ -52,8 +57,10 @@ Iteration 1/5
   Generating candidate... (stub)
   Computing metrics... (stub)
   Metrics: {'RSI': 0.5, 'FR': 3, 'TCB': 2, 'IB': 1}
+    Goal not met: RSI=0.5 > 0.3
 [continues for 5 iterations]
 Exploration complete!
+Exploration result: []
 ```
 
 ## Git Commits Made

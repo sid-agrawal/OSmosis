@@ -54,6 +54,30 @@ def ComputeMetrics(candidate):
     return {"RSI": 0.5, "FR": 3, "TCB": 2, "IB": 1}  # Dummy values
 
 
+def GoalsMet(metrics, goals):
+    """
+    Check if the computed metrics meet the specified goals
+    Returns: boolean indicating if all goals are satisfied
+    """
+    for goal in goals:
+        metric_value = metrics.get(goal.metric_name)
+        if metric_value is None:
+            print(f"    Warning: Metric {goal.metric_name} not found in results")
+            return False
+            
+        if goal.direction == "minimize":
+            if metric_value > goal.target_value:
+                print(f"    Goal not met: {goal.metric_name}={metric_value} > {goal.target_value}")
+                return False
+        elif goal.direction == "maximize":
+            if metric_value < goal.target_value:
+                print(f"    Goal not met: {goal.metric_name}={metric_value} < {goal.target_value}")
+                return False
+                
+    print(f"    All {len(goals)} goals met!")
+    return True
+
+
 def GenerateCandidate(graph, constraints, transitions, goals):
     """
     Generate a new candidate graph by applying a transition
@@ -96,7 +120,15 @@ def DesignSpaceExploration():
         metrics = ComputeMetrics(candidate)
         print(f"  Metrics: {metrics}")
         
-        # TODO: Add goal checking, mechanism saving, etc.
+        # Step 6: Check if goals are met (from pseudocode line 16)
+        if GoalsMet(metrics, goals):
+            # Step 7: Save the mechanism (from pseudocode line 17-18)
+            new_mechanism = (candidate, metrics)
+            explored_mechanisms.append(new_mechanism)
+            print(f"  ✅ Mechanism saved! Total mechanisms found: {len(explored_mechanisms)}")
+        
+        # Step 8: Update current graph for next iteration (from pseudocode line 19)
+        curGraph = candidate
         
     print("Exploration complete!")
     return explored_mechanisms
