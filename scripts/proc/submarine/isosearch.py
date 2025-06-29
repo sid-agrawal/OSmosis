@@ -501,6 +501,10 @@ def DesignSpaceExploration():
             new_mechanism = (candidate, metrics)
             explored_mechanisms.append(new_mechanism)
             print(f"  ✅ Mechanism saved! Total mechanisms found: {len(explored_mechanisms)}")
+        else:
+            # Explain why goals were not met
+            print(f"  ❌ Goals not met - continuing search")
+            _explain_goal_failures(candidate, metrics, goals)
         
         # Step 8: Update current graph for next iteration (from pseudocode line 19)
         curGraph = candidate
@@ -619,6 +623,84 @@ def _find_shared_resources(graph):
             resource_access[to_node].append(from_node)
     
     return resource_access
+
+
+def _explain_goal_failures(graph, metrics, goals):
+    """Explain why goals were not met by analyzing the current graph state"""
+    
+    print("    📋 Goal Analysis:")
+    
+    for goal in goals:
+        metric_value = metrics.get(goal.metric_name, 'N/A')
+        target = goal.target_value
+        direction = goal.direction
+        
+        if direction == "minimize":
+            if metric_value > target:
+                print(f"    • {goal.metric_name}: {metric_value:.3f} > {target} (need to reduce by {metric_value - target:.3f})")
+                _suggest_improvements(graph, goal.metric_name, metric_value, target)
+            else:
+                print(f"    • {goal.metric_name}: {metric_value:.3f} ≤ {target} ✅")
+        elif direction == "maximize":
+            if metric_value < target:
+                print(f"    • {goal.metric_name}: {metric_value:.3f} < {target} (need to increase by {target - metric_value:.3f})")
+                _suggest_improvements(graph, goal.metric_name, metric_value, target)
+            else:
+                print(f"    • {goal.metric_name}: {metric_value:.3f} ≥ {target} ✅")
+    
+    print("    📊 Current graph:")
+    _print_graph_arrows(graph)
+
+
+def _suggest_improvements(graph, metric_name, current_value, target_value):
+    """Suggest what transformations might improve the metric"""
+    
+    if metric_name == "RSI":
+        # Analyze resource sharing for RSI improvements
+        shared_resources = _find_shared_resources(graph)
+        sharing_count = sum(1 for resource, sharers in shared_resources.items() if len(sharers) > 1)
+        
+        if sharing_count > 0:
+            print(f"      → {sharing_count} shared resource(s) detected - consider privatization")
+        else:
+            print(f"      → No shared resources found - RSI should be 0.0")
+    
+    elif metric_name == "FR":
+        # Analyze fault propagation paths
+        hold_edges = sum(1 for _, _, d in graph.g.edges(data=True) if d.get('type') == 'HOLD')
+        request_edges = sum(1 for _, _, d in graph.g.edges(data=True) if d.get('type') == 'REQUEST')
+        total_fault_edges = hold_edges + request_edges
+        
+        if total_fault_edges > 0:
+            print(f"      → {total_fault_edges} fault propagation edge(s) - consider edge removal or mediation")
+        else:
+            print(f"      → No fault propagation edges found")
+    
+    elif metric_name == "TCB":
+        # Analyze trusted computing base size
+        pd_nodes = [node for node, data in graph.g.nodes(data=True) if data.get('type') == 'PD']
+        privileged_pds = 0
+        
+        for pd_node in pd_nodes:
+            resource_count = sum(1 for f, t, d in graph.g.edges(data=True) 
+                               if f == pd_node and d.get('type') == 'HOLD')
+            if resource_count > 1:
+                privileged_pds += 1
+        
+        if privileged_pds > 0:
+            print(f"      → {privileged_pds} PD(s) with multiple resources - consider capability isolation")
+        else:
+            print(f"      → No overprivileged PDs found")
+    
+    elif metric_name == "IB":
+        # Analyze information boundary violations
+        shared_resources = _find_shared_resources(graph)
+        violations = sum(1 for resource, sharers in shared_resources.items() if len(sharers) > 1)
+        
+        if violations > 0:
+            print(f"      → {violations} information boundary violation(s) - consider access control")
+        else:
+            print(f"      → No information boundary violations found")
 
 
 def Init():
