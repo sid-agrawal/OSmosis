@@ -57,20 +57,8 @@ def ComputeMetrics(candidate):
     
     metrics = {}
     
-    # Calculate RSI (Resource Sharing Index) between all PD pairs
-    if len(pd_nodes) >= 2:
-        rsi_values = []
-        for i in range(len(pd_nodes)):
-            for j in range(i + 1, len(pd_nodes)):
-                pd1_id = int(pd_nodes[i].split('_')[1])
-                pd2_id = int(pd_nodes[j].split('_')[1])
-                rsi = _calculate_rsi(candidate, pd1_id, pd2_id)
-                rsi_values.append(rsi)
-        
-        # Use average RSI as overall metric
-        metrics['RSI'] = sum(rsi_values) / len(rsi_values) if rsi_values else 0.0
-    else:
-        metrics['RSI'] = 0.0
+    # Calculate RSI (Resource Sharing Index) by resource type
+    metrics['RSI'] = _calculate_rsi_by_type(candidate, pd_nodes)
     
     # Calculate FR (Fault Ratio) - simplified version
     metrics['FR'] = _calculate_fr(candidate, pd_nodes)
@@ -81,34 +69,71 @@ def ComputeMetrics(candidate):
     # Calculate IB (Information Boundary) violations
     metrics['IB'] = _calculate_ib(candidate, pd_nodes)
     
-    print(f"    RSI: {metrics['RSI']:.3f}, FR: {metrics['FR']}, TCB: {metrics['TCB']}, IB: {metrics['IB']}")
+    print(f"    RSI: {metrics['RSI']}, FR: {metrics['FR']}, TCB: {metrics['TCB']}, IB: {metrics['IB']}")
     return metrics
 
 
-def _calculate_rsi(graph, pd1_id, pd2_id):
-    """Calculate RSI (Resource Sharing Index) between two PDs"""
-    pd1_node = f"PD_{pd1_id}"
-    pd2_node = f"PD_{pd2_id}"
+def _calculate_rsi_by_type(graph, pd_nodes):
+    """Calculate RSI (Resource Sharing Index) by resource type"""
     
-    # Find resources held by each PD
-    pd1_resources = set()
-    pd2_resources = set()
+    # Group resources by type and track which PDs access them
+    resource_type_access = {}
     
     for from_node, to_node, edge_data in graph.g.edges(data=True):
-        if edge_data.get('type') == 'HOLD':
-            if from_node == pd1_node:
-                pd1_resources.add(to_node)
-            elif from_node == pd2_node:
-                pd2_resources.add(to_node)
+        if edge_data.get('type') == 'HOLD' and from_node.startswith('PD_'):
+            # Determine resource type from the target node
+            resource_type = _get_resource_type(graph, to_node)
+            
+            if resource_type not in resource_type_access:
+                resource_type_access[resource_type] = {}
+            
+            if to_node not in resource_type_access[resource_type]:
+                resource_type_access[resource_type][to_node] = set()
+            
+            resource_type_access[resource_type][to_node].add(from_node)
     
-    # Calculate sharing ratio
-    if not pd1_resources and not pd2_resources:
-        return 0.0
+    # Calculate RSI for each resource type
+    rsi_by_type = {}
     
-    shared_resources = pd1_resources.intersection(pd2_resources)
-    total_resources = pd1_resources.union(pd2_resources)
+    for resource_type, resources in resource_type_access.items():
+        shared_count = 0
+        total_count = len(resources)
+        
+        # Count how many resources of this type are shared
+        for resource_id, accessing_pds in resources.items():
+            if len(accessing_pds) > 1:
+                shared_count += 1
+        
+        # RSI = shared_resources / total_resources for this type
+        rsi_by_type[resource_type] = shared_count / total_count if total_count > 0 else 0.0
     
-    return len(shared_resources) / len(total_resources) if total_resources else 0.0
+    return rsi_by_type
+
+
+def _get_resource_type(graph, resource_node):
+    """Get the resource type from a resource node"""
+    # Check if it's a resource space
+    node_data = graph.g.nodes.get(resource_node, {})
+    node_type = node_data.get('type', '')
+    
+    if node_type == 'RESOURCE_SPACE':
+        return node_data.get('data', 'UNKNOWN')
+    elif node_type == 'RESOURCE':
+        return node_data.get('data', 'UNKNOWN')
+    else:
+        # Try to infer from node name
+        if 'VMR' in resource_node:
+            return 'VMR'
+        elif 'MO' in resource_node:
+            return 'MO'
+        elif 'FILE' in resource_node:
+            return 'FILE'
+        elif 'VCPU' in resource_node:
+            return 'VCPU'
+        elif 'PCPU' in resource_node:
+            return 'PCPU'
+        else:
+            return 'UNKNOWN'
 
 
 def _calculate_fr(graph, pd_nodes):
@@ -170,15 +195,33 @@ def GoalsMet(metrics, goals):
         if metric_value is None:
             print(f"    Warning: Metric {goal.metric_name} not found in results")
             return False
+        
+        # Handle RSI map format
+        if goal.metric_name == "RSI" and isinstance(metric_value, dict):
+            # For RSI map, check if any resource type violates the goal
+            goal_violated = False
+            for resource_type, rsi_value in metric_value.items():
+                if goal.direction == "minimize":
+                    if rsi_value > goal.target_value:
+                        print(f"    Goal not met: RSI[{resource_type}]={rsi_value:.3f} > {goal.target_value}")
+                        goal_violated = True
+                elif goal.direction == "maximize":
+                    if rsi_value < goal.target_value:
+                        print(f"    Goal not met: RSI[{resource_type}]={rsi_value:.3f} < {goal.target_value}")
+                        goal_violated = True
             
-        if goal.direction == "minimize":
-            if metric_value > goal.target_value:
-                print(f"    Goal not met: {goal.metric_name}={metric_value} > {goal.target_value}")
+            if goal_violated:
                 return False
-        elif goal.direction == "maximize":
-            if metric_value < goal.target_value:
-                print(f"    Goal not met: {goal.metric_name}={metric_value} < {goal.target_value}")
-                return False
+        else:
+            # Handle scalar metrics (FR, TCB, IB)
+            if goal.direction == "minimize":
+                if metric_value > goal.target_value:
+                    print(f"    Goal not met: {goal.metric_name}={metric_value} > {goal.target_value}")
+                    return False
+            elif goal.direction == "maximize":
+                if metric_value < goal.target_value:
+                    print(f"    Goal not met: {goal.metric_name}={metric_value} < {goal.target_value}")
+                    return False
                 
     print(f"    All {len(goals)} goals met!")
     return True
@@ -635,18 +678,40 @@ def _explain_goal_failures(graph, metrics, goals):
         target = goal.target_value
         direction = goal.direction
         
-        if direction == "minimize":
-            if metric_value > target:
-                print(f"    • {goal.metric_name}: {metric_value:.3f} > {target} (need to reduce by {metric_value - target:.3f})")
+        # Handle RSI map format
+        if goal.metric_name == "RSI" and isinstance(metric_value, dict):
+            print(f"    • RSI by resource type:")
+            any_failed = False
+            for resource_type, rsi_value in metric_value.items():
+                if direction == "minimize":
+                    if rsi_value > target:
+                        print(f"      - {resource_type}: {rsi_value:.3f} > {target} ❌ (need to reduce by {rsi_value - target:.3f})")
+                        any_failed = True
+                    else:
+                        print(f"      - {resource_type}: {rsi_value:.3f} ≤ {target} ✅")
+                elif direction == "maximize":
+                    if rsi_value < target:
+                        print(f"      - {resource_type}: {rsi_value:.3f} < {target} ❌ (need to increase by {target - rsi_value:.3f})")
+                        any_failed = True
+                    else:
+                        print(f"      - {resource_type}: {rsi_value:.3f} ≥ {target} ✅")
+            
+            if any_failed:
                 _suggest_improvements(graph, goal.metric_name, metric_value, target)
-            else:
-                print(f"    • {goal.metric_name}: {metric_value:.3f} ≤ {target} ✅")
-        elif direction == "maximize":
-            if metric_value < target:
-                print(f"    • {goal.metric_name}: {metric_value:.3f} < {target} (need to increase by {target - metric_value:.3f})")
-                _suggest_improvements(graph, goal.metric_name, metric_value, target)
-            else:
-                print(f"    • {goal.metric_name}: {metric_value:.3f} ≥ {target} ✅")
+        else:
+            # Handle scalar metrics
+            if direction == "minimize":
+                if metric_value > target:
+                    print(f"    • {goal.metric_name}: {metric_value:.3f} > {target} (need to reduce by {metric_value - target:.3f})")
+                    _suggest_improvements(graph, goal.metric_name, metric_value, target)
+                else:
+                    print(f"    • {goal.metric_name}: {metric_value:.3f} ≤ {target} ✅")
+            elif direction == "maximize":
+                if metric_value < target:
+                    print(f"    • {goal.metric_name}: {metric_value:.3f} < {target} (need to increase by {target - metric_value:.3f})")
+                    _suggest_improvements(graph, goal.metric_name, metric_value, target)
+                else:
+                    print(f"    • {goal.metric_name}: {metric_value:.3f} ≥ {target} ✅")
     
     print("    📊 Current graph:")
     _print_graph_arrows(graph)
