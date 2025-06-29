@@ -66,7 +66,10 @@ def ComputeMetrics(candidate):
     # Calculate TCB (Trusted Computing Base) size
     metrics['TCB'] = _calculate_tcb(candidate, pd_nodes)
     
-    print(f"    RSI: {metrics['RSI']}, ASR: {metrics['ASR']}, TCB: {metrics['TCB']}")
+    # Calculate FR (Fault Radius) - distance to common ancestor via REQUEST edges
+    metrics['FR'] = _calculate_fr(candidate, pd_nodes)
+    
+    print(f"    RSI: {metrics['RSI']}, ASR: {metrics['ASR']}, TCB: {metrics['TCB']}, FR: {metrics['FR']}")
     return metrics
 
 
@@ -221,6 +224,78 @@ def _calculate_tcb(graph, pd_nodes):
     return tcb_by_pd
 
 
+def _calculate_fr(graph, pd_nodes):
+    """Calculate FR (Fault Radius) - distance to common ancestor for PD pairs via REQUEST edges"""
+    
+    # Build REQUEST edge graph (authority relationships)
+    request_graph = {}
+    for from_node, to_node, edge_data in graph.g.edges(data=True):
+        if edge_data.get('type') == 'REQUEST' and from_node.startswith('PD_') and to_node.startswith('PD_'):
+            if from_node not in request_graph:
+                request_graph[from_node] = []
+            request_graph[from_node].append(to_node)
+    
+    # Calculate fault radius for each PD pair
+    fr_by_pair = {}
+    
+    for i in range(len(pd_nodes)):
+        for j in range(i + 1, len(pd_nodes)):
+            pd1 = pd_nodes[i]
+            pd2 = pd_nodes[j]
+            pair_key = f"{pd1},{pd2}"
+            
+            # Find common ancestor and calculate distance
+            distance = _find_common_ancestor_distance(pd1, pd2, request_graph)
+            fr_by_pair[pair_key] = distance
+    
+    return fr_by_pair
+
+
+def _find_common_ancestor_distance(pd1, pd2, request_graph):
+    """Find distance to common ancestor between two PDs via REQUEST edges"""
+    
+    # Get all ancestors for each PD with their distances
+    ancestors1 = _get_ancestors_with_distance(pd1, request_graph)
+    ancestors2 = _get_ancestors_with_distance(pd2, request_graph)
+    
+    # Find common ancestors and their total distances
+    min_distance = float('inf')
+    
+    for ancestor in ancestors1:
+        if ancestor in ancestors2:
+            # Total distance = distance from pd1 to ancestor + distance from pd2 to ancestor
+            total_distance = ancestors1[ancestor] + ancestors2[ancestor]
+            min_distance = min(min_distance, total_distance)
+    
+    return min_distance
+
+
+def _get_ancestors_with_distance(pd, request_graph):
+    """Get all ancestors of a PD with their distances via REQUEST edges"""
+    ancestors = {}
+    visited = set()
+    queue = [(pd, 0)]  # (node, distance)
+    
+    while queue:
+        current_pd, distance = queue.pop(0)
+        
+        if current_pd in visited:
+            continue
+        visited.add(current_pd)
+        
+        # Add current node as ancestor (except for the starting PD itself)
+        if distance > 0:
+            ancestors[current_pd] = distance
+        
+        # Follow REQUEST edges to find more ancestors
+        if current_pd in request_graph:
+            for parent in request_graph[current_pd]:
+                if parent not in visited:
+                    queue.append((parent, distance + 1))
+    
+    return ancestors
+
+
 
 
 def GoalsMet(metrics, goals):
@@ -265,6 +340,24 @@ def GoalsMet(metrics, goals):
                     if tcb_count < goal.target_value:
                         dependencies = ", ".join(tcb_list) if tcb_list else "none"
                         print(f"    Goal not met: TCB[{pd}]={tcb_count} < {goal.target_value} (dependencies: {dependencies})")
+                        goal_violated = True
+            
+            if goal_violated:
+                return False
+        
+        # Handle FR map format (distance between PD pairs)
+        elif goal.metric_name == "FR" and isinstance(metric_value, dict):
+            goal_violated = False
+            for pair, fr_distance in metric_value.items():
+                if goal.direction == "minimize":
+                    if fr_distance > goal.target_value:
+                        distance_str = "infinity" if fr_distance == float('inf') else f"{fr_distance:.1f}"
+                        print(f"    Goal not met: FR[{pair}]={distance_str} > {goal.target_value}")
+                        goal_violated = True
+                elif goal.direction == "maximize":
+                    if fr_distance < goal.target_value:
+                        distance_str = "infinity" if fr_distance == float('inf') else f"{fr_distance:.1f}"
+                        print(f"    Goal not met: FR[{pair}]={distance_str} < {goal.target_value}")
                         goal_violated = True
             
             if goal_violated:
@@ -779,6 +872,29 @@ def _explain_goal_failures(graph, metrics, goals):
             
             if any_failed:
                 _suggest_improvements(graph, goal.metric_name, metric_value, target)
+        
+        # Handle FR map format (distance between PD pairs)
+        elif goal.metric_name == "FR" and isinstance(metric_value, dict):
+            print(f"    • FR by PD pair (fault radius via REQUEST edges):")
+            any_failed = False
+            for pair, fr_distance in metric_value.items():
+                distance_str = "infinity" if fr_distance == float('inf') else f"{fr_distance:.1f}"
+                
+                if direction == "minimize":
+                    if fr_distance > target:
+                        print(f"      - {pair}: {distance_str} > {target} ❌")
+                        any_failed = True
+                    else:
+                        print(f"      - {pair}: {distance_str} ≤ {target} ✅")
+                elif direction == "maximize":
+                    if fr_distance < target:
+                        print(f"      - {pair}: {distance_str} < {target} ❌")
+                        any_failed = True
+                    else:
+                        print(f"      - {pair}: {distance_str} ≥ {target} ✅")
+            
+            if any_failed:
+                _suggest_improvements(graph, goal.metric_name, metric_value, target)
         else:
             # Handle scalar metrics
             if direction == "minimize":
@@ -851,6 +967,15 @@ def _suggest_improvements(graph, metric_name, current_value, target_value):
         else:
             print(f"      → No authority relationships found")
     
+    elif metric_name == "FR":
+        # Analyze fault radius improvements
+        request_edges = sum(1 for _, _, d in graph.g.edges(data=True) if d.get('type') == 'REQUEST')
+        
+        if request_edges > 0:
+            print(f"      → {request_edges} REQUEST edge(s) found - consider adding REQUEST edges for shorter fault radius")
+        else:
+            print(f"      → No REQUEST edges found - consider adding authority relationships for fault isolation")
+    
 
 
 def Init():
@@ -861,7 +986,8 @@ def Init():
     # Create multiple goals including per-PD authority-based TCB
     goals = [
         Goal("RSI", 0.3, "minimize"),
-        Goal("TCB", 0, "minimize")  # Per-PD TCB: minimize authority over each PD
+        Goal("TCB", 0, "minimize"),  # Per-PD TCB: minimize authority over each PD
+        Goal("FR", 5, "minimize")   # FR: minimize fault radius between PD pairs
     ]
     
     # Create a simple example constraint: PD1 must have access to VMR
