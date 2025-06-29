@@ -151,15 +151,15 @@ def _calculate_fr(graph, pd_nodes):
 
 
 def _calculate_tcb(graph, pd_nodes):
-    """Calculate TCB (Trusted Computing Base) - for each PD, list of PDs that have authority over it"""
-    # For each PD, find which PDs have authority over it
+    """Calculate TCB (Trusted Computing Base) - for each PD, list of PDs that have authority over it OR share resources with it"""
+    # For each PD, find which PDs have authority over it OR share resources with it
     tcb_by_pd = {}
     
-    # Initialize empty authority lists for all PDs
+    # Initialize empty TCB lists for all PDs
     for pd_node in pd_nodes:
         tcb_by_pd[pd_node] = []
     
-    # Find authority relationships
+    # 1. Find authority relationships
     for from_node, to_node, edge_data in graph.g.edges(data=True):
         edge_type = edge_data.get('type', '')
         
@@ -200,6 +200,26 @@ def _calculate_tcb(graph, pd_nodes):
                     tcb_by_pd[affected_pd].append(controller_pd)
         except:
             pass
+    
+    # 2. Find resource sharing relationships
+    resource_holders = {}
+    
+    # Build map of which PDs hold which resources
+    for from_node, to_node, edge_data in graph.g.edges(data=True):
+        if edge_data.get('type') == 'HOLD' and from_node.startswith('PD_'):
+            if to_node not in resource_holders:
+                resource_holders[to_node] = []
+            resource_holders[to_node].append(from_node)
+    
+    # For each shared resource, add sharing PDs to each other's TCB
+    for resource, holders in resource_holders.items():
+        if len(holders) > 1:  # Shared resource
+            for pd in holders:
+                for other_pd in holders:
+                    if (pd != other_pd and 
+                        pd in tcb_by_pd and 
+                        other_pd not in tcb_by_pd[pd]):
+                        tcb_by_pd[pd].append(other_pd)
     
     return tcb_by_pd
 
@@ -248,20 +268,20 @@ def GoalsMet(metrics, goals):
             if goal_violated:
                 return False
         
-        # Handle TCB map format (per-PD authority lists)
+        # Handle TCB map format (per-PD authority and sharing lists)
         elif goal.metric_name == "TCB" and isinstance(metric_value, dict):
             goal_violated = False
-            for pd, authority_list in metric_value.items():
-                authority_count = len(authority_list)
+            for pd, tcb_list in metric_value.items():
+                tcb_count = len(tcb_list)
                 if goal.direction == "minimize":
-                    if authority_count > goal.target_value:
-                        authorities = ", ".join(authority_list) if authority_list else "none"
-                        print(f"    Goal not met: TCB[{pd}]={authority_count} > {goal.target_value} (authorities: {authorities})")
+                    if tcb_count > goal.target_value:
+                        dependencies = ", ".join(tcb_list) if tcb_list else "none"
+                        print(f"    Goal not met: TCB[{pd}]={tcb_count} > {goal.target_value} (dependencies: {dependencies})")
                         goal_violated = True
                 elif goal.direction == "maximize":
-                    if authority_count < goal.target_value:
-                        authorities = ", ".join(authority_list) if authority_list else "none"
-                        print(f"    Goal not met: TCB[{pd}]={authority_count} < {goal.target_value} (authorities: {authorities})")
+                    if tcb_count < goal.target_value:
+                        dependencies = ", ".join(tcb_list) if tcb_list else "none"
+                        print(f"    Goal not met: TCB[{pd}]={tcb_count} < {goal.target_value} (dependencies: {dependencies})")
                         goal_violated = True
             
             if goal_violated:
@@ -753,26 +773,26 @@ def _explain_goal_failures(graph, metrics, goals):
             if any_failed:
                 _suggest_improvements(graph, goal.metric_name, metric_value, target)
         
-        # Handle TCB map format (per-PD authority lists)
+        # Handle TCB map format (per-PD authority and sharing lists)
         elif goal.metric_name == "TCB" and isinstance(metric_value, dict):
-            print(f"    • TCB by PD (authority over each):")
+            print(f"    • TCB by PD (authority + resource sharing dependencies):")
             any_failed = False
-            for pd, authority_list in metric_value.items():
-                authority_count = len(authority_list)
-                authorities = ", ".join(authority_list) if authority_list else "none"
+            for pd, tcb_list in metric_value.items():
+                tcb_count = len(tcb_list)
+                dependencies = ", ".join(tcb_list) if tcb_list else "none"
                 
                 if direction == "minimize":
-                    if authority_count > target:
-                        print(f"      - {pd}: {authority_count} > {target} ❌ (authorities: {authorities})")
+                    if tcb_count > target:
+                        print(f"      - {pd}: {tcb_count} > {target} ❌ (dependencies: {dependencies})")
                         any_failed = True
                     else:
-                        print(f"      - {pd}: {authority_count} ≤ {target} ✅ (authorities: {authorities})")
+                        print(f"      - {pd}: {tcb_count} ≤ {target} ✅ (dependencies: {dependencies})")
                 elif direction == "maximize":
-                    if authority_count < target:
-                        print(f"      - {pd}: {authority_count} < {target} ❌ (authorities: {authorities})")
+                    if tcb_count < target:
+                        print(f"      - {pd}: {tcb_count} < {target} ❌ (dependencies: {dependencies})")
                         any_failed = True
                     else:
-                        print(f"      - {pd}: {authority_count} ≥ {target} ✅ (authorities: {authorities})")
+                        print(f"      - {pd}: {tcb_count} ≥ {target} ✅ (dependencies: {dependencies})")
             
             if any_failed:
                 _suggest_improvements(graph, goal.metric_name, metric_value, target)
@@ -890,15 +910,23 @@ def Init():
     vmr_space = NodeTransformations.add_resource_space(curGraph, ResourceType.VMR)
     vmr_resource = NodeTransformations.add_vmr_resource(curGraph, vmr_space, VmrType.HEAP, 10, 0x1000)
     
-    # Add a mediator PD to create authority relationships for TCB testing
+    # Create scenario with both authority and resource sharing for comprehensive TCB testing
+    
+    # Add another VMR resource that will be shared
+    shared_vmr = NodeTransformations.add_vmr_resource(curGraph, vmr_space, VmrType.STACK, 5, 0x2000)
+    
+    # PD1 and PD2 both hold the shared resource (resource sharing dependency)
+    EdgeTransformations.add_hold_edge(curGraph, Permission.R, pd1, ResourceType.VMR, vmr_space, shared_vmr)
+    EdgeTransformations.add_hold_edge(curGraph, Permission.R, pd2, ResourceType.VMR, vmr_space, shared_vmr)
+    
+    # Add a mediator PD to create authority relationships
     mediator_pd = NodeTransformations.add_pd_node(curGraph, "mediator")
     
-    # Mediator holds the resource
+    # Mediator holds the first resource
     EdgeTransformations.add_hold_edge(curGraph, Permission.R, mediator_pd, ResourceType.VMR, vmr_space, vmr_resource)
     
-    # Other PDs request access through mediator (authority relationship)
+    # PD1 requests access through mediator (authority relationship)
     EdgeTransformations.add_request_edge(curGraph, pd1, mediator_pd, ResourceType.VMR, vmr_space)
-    EdgeTransformations.add_request_edge(curGraph, pd2, mediator_pd, ResourceType.VMR, vmr_space)
     
     return goals, constraints, transitions, curGraph
 
