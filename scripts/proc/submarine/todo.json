@@ -1,0 +1,44 @@
+[
+  {
+    "id": "7",
+    "content": "Implement smart node/edge selection for transformations",
+    "status": "completed",
+    "priority": "high"
+  },
+  {
+    "id": "8", 
+    "content": "Add transformation ranking based on metric impact potential",
+    "status": "completed",
+    "priority": "medium"
+  },
+  {
+    "id": "9",
+    "content": "Test smart selection vs first-fit selection", 
+    "status": "completed",
+    "priority": "medium"
+  },
+  {
+    "id": "10",
+    "content": "Enhance mechanism discovery with better goal targets",
+    "status": "pending",
+    "priority": "medium"
+  },
+  {
+    "id": "11",
+    "content": "Add more sophisticated graph transformations (capability isolation, access control)",
+    "status": "pending", 
+    "priority": "medium"
+  },
+  {
+    "id": "12",
+    "content": "Implement mechanism comparison and ranking",
+    "status": "pending",
+    "priority": "medium"
+  },
+  {
+    "id": "13",
+    "content": "Add multi-objective optimization (RSI + TCB + FR simultaneously)",
+    "status": "pending",
+    "priority": "high"
+  }
+]

@@ -37,10 +37,23 @@ Working on implementing the IsoSearch algorithm from the PLOS paper in baby step
 - Real transformations: privatize_resource, remove_hold_edge
 - Real metrics: RSI, FR, TCB, IB calculated from graph structure
 
+### Phase 4: Smart Selection Algorithm (COMPLETED)
+19. ✅ Implement smart node/edge selection for transformations
+20. ✅ Add transformation ranking based on metric impact potential
+21. ✅ Test smart selection vs first-fit selection
+
+### 🎯 Smart Selection Algorithm Features
+- **Discovery Phase**: Scans ALL possible transformation candidates
+- **Impact Prediction**: Scores each candidate by expected metric improvement
+- **Intelligent Ranking**: Sorts by predicted benefit (privatization=1.0, mediation=0.5, removal=0.3)
+- **Transparent Decisions**: Algorithm explains reasoning ("Target: resource VMR_1_1 shared by 2 PDs")
+- **Principled Selection**: Always applies highest-impact transformation first
+
 ### Next Steps (TODO)
-19. 🔄 **NEXT**: Enhance mechanism discovery with better goal targets
-20. Add more sophisticated graph transformations 
-21. Implement mechanism comparison and ranking
+22. 🔄 **NEXT**: Enhance mechanism discovery with better goal targets
+23. Add more sophisticated graph transformations (capability isolation, access control)
+24. Implement mechanism comparison and ranking
+25. Add multi-objective optimization (RSI + TCB + FR simultaneously)
 
 ## Current Implementation Details
 
@@ -86,6 +99,9 @@ Exploration result: [2 security mechanisms discovered]
 - `5425125`: Implement IsoSearch algorithm foundation with Init() and main loop
 - `52ef5ce`: Add break condition to IsoSearch main loop  
 - `c936f82`: Add metric computation to IsoSearch main loop
+- `605b504`: Add goal checking and mechanism saving to IsoSearch algorithm
+- `b5c7cf4`: Complete IsoSearch algorithm with real transformations and metrics
+- `c7adc24`: Implement smart node/edge selection for graph transformations
 
 ## Pseudocode Reference (from PLOS paper)
 ```python
