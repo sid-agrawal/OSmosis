@@ -187,100 +187,189 @@ def GoalsMet(metrics, goals):
 def GenerateCandidate(graph, constraints, transitions, goals):
     """
     Generate a new candidate graph by applying a transition
+    Uses smart selection to choose the best node/edge for transformation
     Returns: new graph or None if no valid transition found
     """
     import copy
     
-    # Try each transition type until we find one that applies
-    for transition in transitions:
-        candidate = copy.deepcopy(graph)
-        success = False
-        
-        print(f"  Trying transition: {transition.transition_type}")
-        
-        if transition.transition_type == "privatize_resource":
-            success = _apply_privatize_resource(candidate, constraints)
-        elif transition.transition_type == "add_mediator_pd":
-            success = _apply_add_mediator_pd(candidate, constraints)
-        elif transition.transition_type == "remove_hold_edge":
-            success = _apply_remove_hold_edge(candidate, constraints)
-        
-        if success:
-            print(f"    ✅ Applied {transition.transition_type}")
-            return candidate
-        else:
-            print(f"    ❌ Failed to apply {transition.transition_type}")
+    # Get all possible transformations with their predicted impact
+    transformation_candidates = []
     
-    print("  No valid transitions found")
-    return None
+    for transition in transitions:
+        candidates = _find_transformation_candidates(graph, transition, constraints, goals)
+        transformation_candidates.extend(candidates)
+    
+    if not transformation_candidates:
+        print("  No valid transitions found")
+        return None
+    
+    # Sort by predicted metric improvement (best first)
+    transformation_candidates.sort(key=lambda x: x['predicted_improvement'], reverse=True)
+    
+    # Try the best transformation candidate
+    best_candidate = transformation_candidates[0]
+    candidate_graph = copy.deepcopy(graph)
+    
+    print(f"  Trying best transition: {best_candidate['transition_type']}")
+    print(f"    Target: {best_candidate['target_description']}")
+    print(f"    Predicted improvement: {best_candidate['predicted_improvement']:.3f}")
+    
+    success = _apply_specific_transformation(candidate_graph, best_candidate)
+    
+    if success:
+        print(f"    ✅ Applied {best_candidate['transition_type']}")
+        return candidate_graph
+    else:
+        print(f"    ❌ Failed to apply {best_candidate['transition_type']}")
+        return None
 
 
-def _apply_privatize_resource(graph, constraints):
+def _find_transformation_candidates(graph, transition, constraints, goals):
     """
-    Apply privatize_resource transformation: duplicate shared resources
-    Returns: True if transformation was applied successfully
+    Find all possible applications of a transformation and estimate their impact
+    Returns: list of transformation candidates with predicted improvements
     """
-    # Find shared resources (resources held by multiple PDs)
+    candidates = []
+    
+    if transition.transition_type == "privatize_resource":
+        candidates.extend(_find_privatization_candidates(graph, constraints, goals))
+    elif transition.transition_type == "add_mediator_pd":
+        candidates.extend(_find_mediation_candidates(graph, constraints, goals))
+    elif transition.transition_type == "remove_hold_edge":
+        candidates.extend(_find_edge_removal_candidates(graph, constraints, goals))
+    
+    return candidates
+
+
+def _find_privatization_candidates(graph, constraints, goals):
+    """Find all shared resources that could be privatized and estimate RSI improvement"""
+    candidates = []
     resource_holders = {}
     
+    # Find all shared resources
     for from_node, to_node, edge_data in graph.g.edges(data=True):
         if edge_data.get('type') == 'HOLD' and to_node.startswith('VMR_'):
             if to_node not in resource_holders:
                 resource_holders[to_node] = []
             resource_holders[to_node].append(from_node)
     
-    # Find a resource shared by multiple PDs
+    # Evaluate each shared resource
     for resource, holders in resource_holders.items():
         if len(holders) > 1:
-            # Check constraints - make sure we can still satisfy them
             if _check_privatization_constraints(resource, holders, constraints):
-                # Privatize by creating separate resources for each PD
-                _privatize_shared_resource(graph, resource, holders)
-                return True
+                # Predict RSI improvement: privatization reduces sharing significantly
+                current_rsi = len(holders) / len(holders)  # Full sharing
+                predicted_rsi = 0.0  # No sharing after privatization
+                improvement = current_rsi - predicted_rsi
+                
+                candidates.append({
+                    'transition_type': 'privatize_resource',
+                    'target_resource': resource,
+                    'target_holders': holders,
+                    'target_description': f"resource {resource} (shared by {len(holders)} PDs)",
+                    'predicted_improvement': improvement,
+                    'constraint_violations': 0
+                })
     
-    return False
+    return candidates
 
 
-def _apply_add_mediator_pd(graph, constraints):
-    """
-    Apply add_mediator_pd transformation: add PD between communicating PDs
-    Returns: True if transformation was applied successfully
-    """
-    # Find PDs that hold the same resource (communication through shared resource)
+def _find_mediation_candidates(graph, constraints, goals):
+    """Find PD pairs that could benefit from mediation"""
+    candidates = []
     resource_sharers = {}
     
+    # Find resources shared by exactly 2 PDs
     for from_node, to_node, edge_data in graph.g.edges(data=True):
         if edge_data.get('type') == 'HOLD' and from_node.startswith('PD_'):
             if to_node not in resource_sharers:
                 resource_sharers[to_node] = []
             resource_sharers[to_node].append(from_node)
     
-    # Find resources shared by exactly 2 PDs (good candidates for mediation)
     for resource, sharers in resource_sharers.items():
         if len(sharers) == 2:
             if _check_mediation_constraints(resource, sharers, constraints):
-                _add_mediator_between_pds(graph, resource, sharers)
-                return True
+                # Predict metric improvement: mediation can reduce TCB size
+                improvement = 0.5  # Moderate improvement for access control
+                
+                candidates.append({
+                    'transition_type': 'add_mediator_pd',
+                    'target_resource': resource,
+                    'target_sharers': sharers,
+                    'target_description': f"mediate access to {resource} between {sharers}",
+                    'predicted_improvement': improvement,
+                    'constraint_violations': 0
+                })
     
-    return False
+    return candidates
 
 
-def _apply_remove_hold_edge(graph, constraints):
-    """
-    Apply remove_hold_edge transformation: remove unnecessary hold relationships
-    Returns: True if transformation was applied successfully
-    """
-    # Find HOLD edges that can be safely removed without violating constraints
+def _find_edge_removal_candidates(graph, constraints, goals):
+    """Find HOLD edges that could be safely removed"""
+    candidates = []
+    
     hold_edges = [(f, t, d) for f, t, d in graph.g.edges(data=True) 
                   if d.get('type') == 'HOLD']
     
     for from_node, to_node, edge_data in hold_edges:
         if _can_remove_hold_edge(from_node, to_node, constraints):
-            # Remove the edge
-            EdgeTransformations.remove_edge(graph, from_node, to_node, EdgeType.HOLD)
-            return True
+            # Predict improvement: removing edges reduces fault ratio
+            improvement = 0.3  # Small but positive improvement
+            
+            candidates.append({
+                'transition_type': 'remove_hold_edge',
+                'target_from': from_node,
+                'target_to': to_node,
+                'target_description': f"remove {from_node} -> {to_node} HOLD edge",
+                'predicted_improvement': improvement,
+                'constraint_violations': 0
+            })
+    
+    return candidates
+
+
+def _apply_specific_transformation(graph, transformation_candidate):
+    """Apply a specific transformation candidate"""
+    trans_type = transformation_candidate['transition_type']
+    
+    if trans_type == 'privatize_resource':
+        return _privatize_specific_resource(
+            graph, 
+            transformation_candidate['target_resource'],
+            transformation_candidate['target_holders']
+        )
+    elif trans_type == 'add_mediator_pd':
+        return _mediate_specific_resource(
+            graph,
+            transformation_candidate['target_resource'],
+            transformation_candidate['target_sharers']
+        )
+    elif trans_type == 'remove_hold_edge':
+        EdgeTransformations.remove_edge(
+            graph, 
+            transformation_candidate['target_from'],
+            transformation_candidate['target_to'],
+            EdgeType.HOLD
+        )
+        return True
     
     return False
+
+
+def _privatize_specific_resource(graph, resource, holders):
+    """Privatize a specific resource for specific holders"""
+    _privatize_shared_resource(graph, resource, holders)
+    return True
+
+
+def _mediate_specific_resource(graph, resource, sharers):
+    """Add mediation for a specific resource and sharers"""
+    _add_mediator_between_pds(graph, resource, sharers)
+    return True
+
+
+# Legacy functions (replaced by smart selection) - kept for reference
+# These are now replaced by the _find_*_candidates and _apply_specific_transformation functions
 
 
 def _check_privatization_constraints(resource, holders, constraints):
