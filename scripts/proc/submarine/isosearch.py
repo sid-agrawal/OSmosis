@@ -1185,28 +1185,163 @@ def run_multiple_scenarios(scenario_names=None):
     return results
 
 
+def create_cli_parser():
+    """Create and configure the command-line argument parser"""
+    import argparse
+    
+    parser = argparse.ArgumentParser(
+        prog='isosearch',
+        description='IsoSearch Algorithm for Automated Security Mechanism Discovery',
+        epilog='''
+Examples:
+  %(prog)s                                    # Run default scenario (basic_sharing)
+  %(prog)s --list                             # List all available scenarios
+  %(prog)s basic_sharing                      # Run single scenario
+  %(prog)s rsi_focused authority_chain        # Run multiple scenarios
+  %(prog)s --all                              # Run all scenarios
+  %(prog)s --verbose rsi_focused              # Run with detailed output
+        ''',
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    
+    # Positional arguments
+    parser.add_argument(
+        'scenarios',
+        nargs='*',
+        help='Names of scenarios to run. If none specified, runs default scenario.'
+    )
+    
+    # Optional arguments
+    parser.add_argument(
+        '--list', '-l',
+        action='store_true',
+        help='List all available scenarios and exit'
+    )
+    
+    parser.add_argument(
+        '--all', '-a',
+        action='store_true',
+        help='Run all available scenarios'
+    )
+    
+    parser.add_argument(
+        '--verbose', '-v',
+        action='store_true',
+        help='Enable verbose output with detailed exploration tracking'
+    )
+    
+    parser.add_argument(
+        '--quiet', '-q',
+        action='store_true',
+        help='Suppress detailed output, show only final results'
+    )
+    
+    parser.add_argument(
+        '--max-iterations',
+        type=int,
+        default=5,
+        help='Maximum number of iterations per scenario (default: 5)'
+    )
+    
+    parser.add_argument(
+        '--version',
+        action='version',
+        version='IsoSearch v1.0 - Automated Security Mechanism Discovery'
+    )
+    
+    return parser
+
+
+def validate_scenarios(scenario_names):
+    """Validate that all requested scenarios exist"""
+    available = set(SCENARIOS.keys())
+    requested = set(scenario_names)
+    invalid = requested - available
+    
+    if invalid:
+        print(f"❌ Error: Unknown scenario(s): {', '.join(sorted(invalid))}")
+        print(f"\nAvailable scenarios:")
+        list_scenarios()
+        return False
+    
+    return True
+
+
+def print_detailed_scenario_info():
+    """Print detailed information about all scenarios"""
+    print("📋 AVAILABLE SCENARIOS")
+    print("=" * 60)
+    
+    for name, scenario in SCENARIOS.items():
+        print(f"\n🎯 {name}")
+        print(f"   Description: {scenario.description}")
+        print(f"   Goals ({len(scenario.goals)}):")
+        for goal in scenario.goals:
+            print(f"     • {goal}")
+        print(f"   Constraints ({len(scenario.constraints)}):")
+        if scenario.constraints:
+            for constraint in scenario.constraints:
+                print(f"     • {constraint}")
+        else:
+            print(f"     • None")
+        print(f"   Transitions ({len(scenario.transitions)}):")
+        for transition in scenario.transitions:
+            print(f"     • {transition.transition_type}: {transition.description}")
+
+
 if __name__ == "__main__":
-    import sys
+    parser = create_cli_parser()
+    args = parser.parse_args()
     
-    if len(sys.argv) > 1:
-        # Run specific scenarios from command line arguments
-        scenario_names = sys.argv[1:]
-        print("Available scenarios:")
-        list_scenarios()
-        print(f"\nRunning specified scenarios: {', '.join(scenario_names)}")
-        results = run_multiple_scenarios(scenario_names)
-        
-    elif len(sys.argv) == 1:
-        # Default: run a single basic scenario for quick testing
-        print("Available scenarios:")
-        list_scenarios()
-        print(f"\n🎯 Running default scenario: basic_sharing")
-        result = run_scenario("basic_sharing")
-        
-        print(f"\n💡 To run multiple scenarios, use: python isosearch.py scenario1 scenario2 ...")
-        print(f"💡 To run all scenarios, use: python isosearch.py {' '.join(SCENARIOS.keys())}")
+    # Handle list scenarios option
+    if args.list:
+        print_detailed_scenario_info()
+        exit(0)
     
+    # Determine which scenarios to run
+    if args.all:
+        if args.scenarios:
+            print("⚠️  Warning: --all flag specified, ignoring individual scenario arguments")
+        scenario_names = list(SCENARIOS.keys())
+    elif args.scenarios:
+        scenario_names = args.scenarios
+        # Validate scenarios exist
+        if not validate_scenarios(scenario_names):
+            exit(1)
     else:
-        print("Usage: python isosearch.py [scenario_names...]")
-        print("Available scenarios:")
-        list_scenarios()
+        # Default behavior
+        scenario_names = ['basic_sharing']
+        if not args.quiet:
+            print("No scenarios specified, running default scenario: basic_sharing")
+            print("Use --help for more options or --list to see all scenarios")
+    
+    # Configure verbosity (placeholder for future implementation)
+    if args.verbose:
+        print("🔍 Verbose mode enabled - detailed exploration tracking")
+    elif args.quiet:
+        print("🔇 Quiet mode enabled - minimal output")
+    
+    # Set max iterations (placeholder for future implementation) 
+    if args.max_iterations != 5:
+        print(f"📊 Using {args.max_iterations} maximum iterations per scenario")
+    
+    try:
+        # Run the scenarios
+        if len(scenario_names) == 1:
+            print(f"\n🎯 Running scenario: {scenario_names[0]}")
+            result = run_scenario(scenario_names[0])
+        else:
+            print(f"\n🚀 Running {len(scenario_names)} scenarios: {', '.join(scenario_names)}")
+            results = run_multiple_scenarios(scenario_names)
+            
+    except KeyboardInterrupt:
+        print(f"\n\n⚠️  Exploration interrupted by user")
+        exit(1)
+    except Exception as e:
+        print(f"\n❌ Error during exploration: {e}")
+        if args.verbose:
+            import traceback
+            traceback.print_exc()
+        exit(1)
+    
+    print(f"\n✅ Exploration complete!")
