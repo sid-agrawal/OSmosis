@@ -151,22 +151,57 @@ def _calculate_fr(graph, pd_nodes):
 
 
 def _calculate_tcb(graph, pd_nodes):
-    """Calculate TCB (Trusted Computing Base) size - count of privileged components"""
-    # Count PDs with privileged access (multiple resource holdings)
-    tcb_size = 0
+    """Calculate TCB (Trusted Computing Base) - for each PD, list of PDs that have authority over it"""
+    # For each PD, find which PDs have authority over it
+    tcb_by_pd = {}
     
+    # Initialize empty authority lists for all PDs
     for pd_node in pd_nodes:
-        # Count resources held by this PD
-        resource_count = 0
-        for from_node, to_node, edge_data in graph.g.edges(data=True):
-            if from_node == pd_node and edge_data.get('type') == 'HOLD':
-                resource_count += 1
-        
-        # PDs holding multiple resources are considered part of TCB
-        if resource_count > 1:
-            tcb_size += 1
+        tcb_by_pd[pd_node] = []
     
-    return tcb_size
+    # Find authority relationships
+    for from_node, to_node, edge_data in graph.g.edges(data=True):
+        edge_type = edge_data.get('type', '')
+        
+        # Direct authority: REQUEST edges show authority relationship
+        if edge_type == 'REQUEST' and from_node.startswith('PD_') and to_node.startswith('PD_'):
+            # from_node requests from to_node, so to_node has authority over from_node
+            if from_node in tcb_by_pd and to_node not in tcb_by_pd[from_node]:
+                tcb_by_pd[from_node].append(to_node)
+        
+        # Other direct authority relationships
+        elif edge_type in ['AUTHORITY', 'CONTROL'] and from_node.startswith('PD_') and to_node.startswith('PD_'):
+            # from_node has authority over to_node
+            if to_node in tcb_by_pd and from_node not in tcb_by_pd[to_node]:
+                tcb_by_pd[to_node].append(from_node)
+    
+    # Check for authority through resource control (pd_incharge fields)
+    for from_node, to_node, edge_data in graph.g.edges(data=True):
+        extra = edge_data.get('extra', '{}')
+        try:
+            import json
+            extra_dict = json.loads(extra) if extra else {}
+            pd_incharge = extra_dict.get('pd_incharge', '')
+            
+            # Find which PD is in charge
+            controller_pd = None
+            for pd_node in pd_nodes:
+                if (pd_incharge == pd_node.replace('PD_', '').lower() or 
+                    pd_incharge == pd_node):
+                    controller_pd = pd_node
+                    break
+            
+            # If a PD controls this edge and it affects another PD, that's authority
+            if controller_pd and edge_data.get('type') == 'HOLD':
+                affected_pd = from_node if from_node.startswith('PD_') else None
+                if (affected_pd and affected_pd != controller_pd and 
+                    affected_pd in tcb_by_pd and 
+                    controller_pd not in tcb_by_pd[affected_pd]):
+                    tcb_by_pd[affected_pd].append(controller_pd)
+        except:
+            pass
+    
+    return tcb_by_pd
 
 
 def _calculate_ib(graph, pd_nodes):
@@ -208,6 +243,25 @@ def GoalsMet(metrics, goals):
                 elif goal.direction == "maximize":
                     if rsi_value < goal.target_value:
                         print(f"    Goal not met: RSI[{resource_type}]={rsi_value:.3f} < {goal.target_value}")
+                        goal_violated = True
+            
+            if goal_violated:
+                return False
+        
+        # Handle TCB map format (per-PD authority lists)
+        elif goal.metric_name == "TCB" and isinstance(metric_value, dict):
+            goal_violated = False
+            for pd, authority_list in metric_value.items():
+                authority_count = len(authority_list)
+                if goal.direction == "minimize":
+                    if authority_count > goal.target_value:
+                        authorities = ", ".join(authority_list) if authority_list else "none"
+                        print(f"    Goal not met: TCB[{pd}]={authority_count} > {goal.target_value} (authorities: {authorities})")
+                        goal_violated = True
+                elif goal.direction == "maximize":
+                    if authority_count < goal.target_value:
+                        authorities = ", ".join(authority_list) if authority_list else "none"
+                        print(f"    Goal not met: TCB[{pd}]={authority_count} < {goal.target_value} (authorities: {authorities})")
                         goal_violated = True
             
             if goal_violated:
@@ -698,6 +752,30 @@ def _explain_goal_failures(graph, metrics, goals):
             
             if any_failed:
                 _suggest_improvements(graph, goal.metric_name, metric_value, target)
+        
+        # Handle TCB map format (per-PD authority lists)
+        elif goal.metric_name == "TCB" and isinstance(metric_value, dict):
+            print(f"    • TCB by PD (authority over each):")
+            any_failed = False
+            for pd, authority_list in metric_value.items():
+                authority_count = len(authority_list)
+                authorities = ", ".join(authority_list) if authority_list else "none"
+                
+                if direction == "minimize":
+                    if authority_count > target:
+                        print(f"      - {pd}: {authority_count} > {target} ❌ (authorities: {authorities})")
+                        any_failed = True
+                    else:
+                        print(f"      - {pd}: {authority_count} ≤ {target} ✅ (authorities: {authorities})")
+                elif direction == "maximize":
+                    if authority_count < target:
+                        print(f"      - {pd}: {authority_count} < {target} ❌ (authorities: {authorities})")
+                        any_failed = True
+                    else:
+                        print(f"      - {pd}: {authority_count} ≥ {target} ✅ (authorities: {authorities})")
+            
+            if any_failed:
+                _suggest_improvements(graph, goal.metric_name, metric_value, target)
         else:
             # Handle scalar metrics
             if direction == "minimize":
@@ -742,20 +820,32 @@ def _suggest_improvements(graph, metric_name, current_value, target_value):
             print(f"      → No fault propagation edges found")
     
     elif metric_name == "TCB":
-        # Analyze trusted computing base size
+        # Analyze trusted computing base size (authority-based)
         pd_nodes = [node for node, data in graph.g.nodes(data=True) if data.get('type') == 'PD']
-        privileged_pds = 0
+        authority_pds = 0
         
         for pd_node in pd_nodes:
-            resource_count = sum(1 for f, t, d in graph.g.edges(data=True) 
-                               if f == pd_node and d.get('type') == 'HOLD')
-            if resource_count > 1:
-                privileged_pds += 1
+            has_authority = False
+            
+            # Check for direct authority relationships
+            for f, t, d in graph.g.edges(data=True):
+                if f == pd_node and t.startswith('PD_'):
+                    if d.get('type') in ['REQUEST', 'AUTHORITY', 'CONTROL']:
+                        has_authority = True
+                        break
+                
+                # Check for indirect authority via REQUEST edges targeting this PD
+                if d.get('type') == 'REQUEST' and t == pd_node and f.startswith('PD_'):
+                    has_authority = True
+                    break
+            
+            if has_authority:
+                authority_pds += 1
         
-        if privileged_pds > 0:
-            print(f"      → {privileged_pds} PD(s) with multiple resources - consider capability isolation")
+        if authority_pds > 0:
+            print(f"      → {authority_pds} PD(s) with authority relationships - consider authority delegation")
         else:
-            print(f"      → No overprivileged PDs found")
+            print(f"      → No authority relationships found")
     
     elif metric_name == "IB":
         # Analyze information boundary violations
@@ -773,10 +863,10 @@ def Init():
     Initialize the design space exploration components
     Returns: goals, constraints, transitions, curGraph
     """
-    # Create multiple goals including a harder FR goal
+    # Create multiple goals including per-PD authority-based TCB
     goals = [
         Goal("RSI", 0.3, "minimize"),
-        Goal("FR", 0.2, "minimize")  # Hard to achieve - will trigger failure explanations
+        Goal("TCB", 0, "minimize")  # Per-PD TCB: minimize authority over each PD
     ]
     
     # Create a simple example constraint: PD1 must have access to VMR
@@ -800,9 +890,15 @@ def Init():
     vmr_space = NodeTransformations.add_resource_space(curGraph, ResourceType.VMR)
     vmr_resource = NodeTransformations.add_vmr_resource(curGraph, vmr_space, VmrType.HEAP, 10, 0x1000)
     
-    # Both PDs hold the same resource (shared)
-    EdgeTransformations.add_hold_edge(curGraph, Permission.R, pd1, ResourceType.VMR, vmr_space, vmr_resource)
-    EdgeTransformations.add_hold_edge(curGraph, Permission.R, pd2, ResourceType.VMR, vmr_space, vmr_resource)
+    # Add a mediator PD to create authority relationships for TCB testing
+    mediator_pd = NodeTransformations.add_pd_node(curGraph, "mediator")
+    
+    # Mediator holds the resource
+    EdgeTransformations.add_hold_edge(curGraph, Permission.R, mediator_pd, ResourceType.VMR, vmr_space, vmr_resource)
+    
+    # Other PDs request access through mediator (authority relationship)
+    EdgeTransformations.add_request_edge(curGraph, pd1, mediator_pd, ResourceType.VMR, vmr_space)
+    EdgeTransformations.add_request_edge(curGraph, pd2, mediator_pd, ResourceType.VMR, vmr_space)
     
     return goals, constraints, transitions, curGraph
 
