@@ -473,6 +473,10 @@ def DesignSpaceExploration():
     
     print(f"Starting exploration with {len(goals)} goals, {len(constraints)} constraints, {len(transitions)} transitions")
     
+    # Show initial graph structure
+    print(f"\n📊 Initial graph:")
+    _print_graph_arrows(curGraph)
+    
     # Step 2: Main exploration loop (from pseudocode line 8)
     maxIterations = 5  # Keep it small for testing
     
@@ -501,8 +505,120 @@ def DesignSpaceExploration():
         # Step 8: Update current graph for next iteration (from pseudocode line 19)
         curGraph = candidate
         
+        # Step 9: Show graph structure after this iteration
+        print(f"\n📊 Graph after iteration {i}:")
+        _print_graph_arrows(curGraph)
+        
     print("Exploration complete!")
+    print(f"\n🏁 Final graph:")
+    _print_graph_arrows(curGraph)
     return explored_mechanisms
+
+
+def _print_graph_arrows(graph):
+    """Print ASCII art using arrow notation like PD_1 -> VMR_SPACE_1 -> VMR_1_1"""
+    
+    # Build paths from PDs through their relationships
+    pd_nodes = [node for node, data in graph.g.nodes(data=True) 
+                if data.get('type') == 'PD']
+    pd_nodes.sort()
+    
+    print("        # Graph structure:")
+    
+    if not pd_nodes:
+        print("        # (no PDs)")
+        return
+    
+    for pd_node in pd_nodes:
+        paths = _build_paths_from_pd(graph, pd_node)
+        if paths:
+            for path in paths:
+                print(f"        # {path}")
+        else:
+            print(f"        # {pd_node} (isolated)")
+    
+    # Show shared resources if any
+    shared_resources = _find_shared_resources(graph)
+    if shared_resources:
+        print("        #")
+        for resource, sharers in shared_resources.items():
+            if len(sharers) > 1:
+                sharer_list = ", ".join(sharers)
+                print(f"        # {resource} shared by: {sharer_list}")
+    
+    print()
+
+
+def _build_paths_from_pd(graph, pd_node):
+    """Build all paths starting from a PD node"""
+    paths = []
+    
+    # Find all outgoing edges from this PD
+    outgoing_edges = [(to_node, edge_data) for from_node, to_node, edge_data 
+                      in graph.g.edges(data=True) if from_node == pd_node]
+    
+    if not outgoing_edges:
+        return [pd_node]
+    
+    for to_node, edge_data in outgoing_edges:
+        edge_type = edge_data.get('type', 'UNKNOWN')
+        
+        if edge_type == 'HOLD':
+            # Follow HOLD edges to resources
+            path = f"{pd_node} --HOLD--> {to_node}"
+            
+            # Continue following edges from the resource
+            extended_path = _extend_path_from_resource(graph, to_node, path)
+            paths.append(extended_path)
+            
+        elif edge_type == 'REQUEST':
+            # Show REQUEST edges to other PDs
+            path = f"{pd_node} --REQUEST--> {to_node}"
+            paths.append(path)
+            
+        else:
+            # Other edge types
+            path = f"{pd_node} --{edge_type}--> {to_node}"
+            paths.append(path)
+    
+    return paths
+
+
+def _extend_path_from_resource(graph, resource_node, current_path):
+    """Extend path by following edges from a resource"""
+    
+    # Find outgoing edges from this resource
+    outgoing_edges = [(to_node, edge_data) for from_node, to_node, edge_data 
+                      in graph.g.edges(data=True) if from_node == resource_node]
+    
+    if not outgoing_edges:
+        return current_path
+    
+    # Follow the first meaningful edge (SUBSET to space, MAP to other resources)
+    for to_node, edge_data in outgoing_edges:
+        edge_type = edge_data.get('type', 'UNKNOWN')
+        
+        if edge_type == 'SUBSET':
+            # Resource belongs to a space
+            return f"{current_path} -> {to_node}"
+        elif edge_type == 'MAP':
+            # Resource maps to another resource
+            return f"{current_path} -> {to_node}"
+    
+    return current_path
+
+
+def _find_shared_resources(graph):
+    """Find resources that are accessed by multiple PDs"""
+    resource_access = {}
+    
+    for from_node, to_node, edge_data in graph.g.edges(data=True):
+        if edge_data.get('type') == 'HOLD' and from_node.startswith('PD_'):
+            if to_node not in resource_access:
+                resource_access[to_node] = []
+            resource_access[to_node].append(from_node)
+    
+    return resource_access
 
 
 def Init():
