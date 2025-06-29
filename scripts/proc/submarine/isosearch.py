@@ -5,43 +5,9 @@ IsoSearch Algorithm Implementation - Baby Steps
 # Import our graph transformation capabilities
 from graph_transformations import NodeTransformations, EdgeTransformations
 from generic_model import ModelGraph, ResourceType, VmrType, Permission, EdgeType
+from scenarios import get_scenario, list_scenarios, SCENARIOS, Goal, Constraint, Transition
 
-class Goal:
-    """
-    Simple goal structure for design space exploration
-    """
-    def __init__(self, metric_name, target_value, direction="minimize"):
-        self.metric_name = metric_name  # e.g., "RSI", "TCB", "FR", "IB"
-        self.target_value = target_value  # e.g., 0.5, 10, etc.
-        self.direction = direction  # "minimize" or "maximize"
-    
-    def __str__(self):
-        return f"Goal({self.direction} {self.metric_name} to {self.target_value})"
-
-
-class Constraint:
-    """
-    Simple constraint structure for functional requirements
-    """
-    def __init__(self, constraint_type, pd_id, resource_info=None):
-        self.constraint_type = constraint_type  # e.g., "requires_resource", "must_communicate"
-        self.pd_id = pd_id  # The PD this constraint applies to
-        self.resource_info = resource_info  # Additional info (resource type, target PD, etc.)
-    
-    def __str__(self):
-        return f"Constraint({self.constraint_type} for PD{self.pd_id}: {self.resource_info})"
-
-
-class Transition:
-    """
-    Simple transition structure for allowed graph modifications
-    """
-    def __init__(self, transition_type, description=""):
-        self.transition_type = transition_type  # e.g., "privatize_resource", "add_mediator_pd"
-        self.description = description  # Human-readable description
-    
-    def __str__(self):
-        return f"Transition({self.transition_type}: {self.description})"
+# Goal, Constraint, and Transition classes are now imported from scenarios.py
 
 
 def ComputeMetrics(candidate):
@@ -653,13 +619,17 @@ def _add_mediator_between_pds(graph, shared_resource, sharers):
                                            ResourceType.VMR, space_id)
 
 
-def DesignSpaceExploration():
+def DesignSpaceExploration(scenario):
     """
     Main IsoSearch algorithm for exploring design space
+    Args: scenario - Scenario object with goals, constraints, transitions, and graph builder
     Returns: list of explored mechanisms
     """
-    # Step 1: Initialize components (from pseudocode line 2)
-    goals, constraints, transitions, curGraph = Init()
+    # Step 1: Initialize components from scenario (from pseudocode line 2)
+    goals = scenario.goals
+    constraints = scenario.constraints
+    transitions = scenario.transitions
+    curGraph = scenario.build_graph()
     
     # Initialize the list to store discovered mechanisms
     explored_mechanisms = []
@@ -978,77 +948,108 @@ def _suggest_improvements(graph, metric_name, current_value, target_value):
     
 
 
-def Init():
+def run_scenario(scenario_name):
     """
-    Initialize the design space exploration components
-    Returns: goals, constraints, transitions, curGraph
+    Run IsoSearch exploration on a specific scenario
+    Args: scenario_name - name of the scenario to run
+    Returns: list of discovered mechanisms
     """
-    # Create multiple goals including per-PD authority-based TCB
-    goals = [
-        Goal("RSI", 0.3, "minimize"),
-        Goal("TCB", 0, "minimize"),  # Per-PD TCB: minimize authority over each PD
-        Goal("FR", 5, "minimize")   # FR: minimize fault radius between PD pairs
-    ]
+    try:
+        scenario = get_scenario(scenario_name)
+        print(f"🎯 Running scenario: {scenario.name}")
+        print(f"   Description: {scenario.description}")
+        print(f"   Goals ({len(scenario.goals)}): {[str(g) for g in scenario.goals]}")
+        print(f"   Constraints ({len(scenario.constraints)}): {[str(c) for c in scenario.constraints]}")
+        print(f"   Transitions ({len(scenario.transitions)}): {[str(t) for t in scenario.transitions]}")
+        
+        # Build the graph and show details
+        graph = scenario.build_graph()
+        print(f"   Starting Graph: {graph.g.number_of_nodes()} nodes, {graph.g.number_of_edges()} edges")
+        
+        print("\n=== Graph Details ===")
+        for node, data in graph.g.nodes(data=True):
+            print(f"Node: {node} -> {data}")
+        
+        print("\n=== Ready for IsoSearch! ===")
+        
+        # Run the exploration
+        print(f"\n=== Exploring {scenario.name} ===")
+        result = DesignSpaceExploration(scenario)
+        
+        print(f"\n✅ Scenario '{scenario.name}' complete!")
+        print(f"   Mechanisms discovered: {len(result)}")
+        
+        return result
+        
+    except ValueError as e:
+        print(f"❌ Error: {e}")
+        return []
+
+
+def run_multiple_scenarios(scenario_names=None):
+    """
+    Run IsoSearch exploration on multiple scenarios
+    Args: scenario_names - list of scenario names to run (default: all scenarios)
+    Returns: dict mapping scenario names to their results
+    """
+    if scenario_names is None:
+        scenario_names = list(SCENARIOS.keys())
     
-    # Create a simple example constraint: PD1 must have access to VMR
-    constraints = [Constraint("requires_resource", 1, "VMR")] 
+    results = {}
     
-    # Create a simple list of allowed transitions
-    transitions = [
-        Transition("privatize_resource", "Make a shared resource private"),
-        Transition("add_mediator_pd", "Add a PD between two communicating PDs"),
-        Transition("remove_hold_edge", "Remove a hold relationship")
-    ]
+    print("🚀 Starting multi-scenario IsoSearch exploration")
+    print(f"Scenarios to explore: {', '.join(scenario_names)}")
     
-    # Create a basic starting graph with 2 PDs and some resources
-    curGraph = ModelGraph()
+    for i, scenario_name in enumerate(scenario_names, 1):
+        print(f"\n{'='*80}")
+        print(f"SCENARIO {i}/{len(scenario_names)}: {scenario_name.upper()}")
+        print(f"{'='*80}")
+        
+        result = run_scenario(scenario_name)
+        results[scenario_name] = result
+        
+        if i < len(scenario_names):
+            print(f"\n⏳ Moving to next scenario...")
     
-    # Add two protection domains
-    pd1 = NodeTransformations.add_pd_node(curGraph, "user_process")
-    pd2 = NodeTransformations.add_pd_node(curGraph, "database_server")
+    # Summary
+    print(f"\n{'='*80}")
+    print("📊 EXPLORATION SUMMARY")
+    print(f"{'='*80}")
     
-    # Add a VMR space and resource
-    vmr_space = NodeTransformations.add_resource_space(curGraph, ResourceType.VMR)
-    vmr_resource = NodeTransformations.add_vmr_resource(curGraph, vmr_space, VmrType.HEAP, 10, 0x1000)
+    total_mechanisms = 0
+    for scenario_name, result in results.items():
+        mechanism_count = len(result)
+        total_mechanisms += mechanism_count
+        status = "✅ SUCCESS" if mechanism_count > 0 else "❌ NO MECHANISMS"
+        print(f"{scenario_name:20} | {mechanism_count:2} mechanisms | {status}")
     
-    # Create scenario with both authority and resource sharing for comprehensive TCB testing
+    print(f"\nTotal mechanisms discovered: {total_mechanisms}")
     
-    # Add another VMR resource that will be shared
-    shared_vmr = NodeTransformations.add_vmr_resource(curGraph, vmr_space, VmrType.STACK, 5, 0x2000)
-    
-    # PD1 and PD2 both hold the shared resource (resource sharing dependency)
-    EdgeTransformations.add_hold_edge(curGraph, Permission.R, pd1, ResourceType.VMR, vmr_space, shared_vmr)
-    EdgeTransformations.add_hold_edge(curGraph, Permission.R, pd2, ResourceType.VMR, vmr_space, shared_vmr)
-    
-    # Add a mediator PD to create authority relationships
-    mediator_pd = NodeTransformations.add_pd_node(curGraph, "mediator")
-    
-    # Mediator holds the first resource
-    EdgeTransformations.add_hold_edge(curGraph, Permission.R, mediator_pd, ResourceType.VMR, vmr_space, vmr_resource)
-    
-    # PD1 requests access through mediator (authority relationship)
-    EdgeTransformations.add_request_edge(curGraph, pd1, mediator_pd, ResourceType.VMR, vmr_space)
-    
-    return goals, constraints, transitions, curGraph
+    return results
 
 
 if __name__ == "__main__":
-    # Test the complete Init() function
-    goals, constraints, transitions, curGraph = Init()
+    import sys
     
-    print("=== Initialization Complete ===")
-    print(f"Goals ({len(goals)}): {[str(g) for g in goals]}")
-    print(f"Constraints ({len(constraints)}): {[str(c) for c in constraints]}")
-    print(f"Transitions ({len(transitions)}): {[str(t) for t in transitions]}")
-    print(f"Current Graph: {curGraph.g.number_of_nodes()} nodes, {curGraph.g.number_of_edges()} edges")
+    if len(sys.argv) > 1:
+        # Run specific scenarios from command line arguments
+        scenario_names = sys.argv[1:]
+        print("Available scenarios:")
+        list_scenarios()
+        print(f"\nRunning specified scenarios: {', '.join(scenario_names)}")
+        results = run_multiple_scenarios(scenario_names)
+        
+    elif len(sys.argv) == 1:
+        # Default: run a single basic scenario for quick testing
+        print("Available scenarios:")
+        list_scenarios()
+        print(f"\n🎯 Running default scenario: basic_sharing")
+        result = run_scenario("basic_sharing")
+        
+        print(f"\n💡 To run multiple scenarios, use: python isosearch.py scenario1 scenario2 ...")
+        print(f"💡 To run all scenarios, use: python isosearch.py {' '.join(SCENARIOS.keys())}")
     
-    print("\n=== Graph Details ===")
-    for node, data in curGraph.g.nodes(data=True):
-        print(f"Node: {node} -> {data}")
-    
-    print("\n=== Ready for IsoSearch! ===")
-    
-    # Test the DesignSpaceExploration skeleton
-    print("\n=== Testing DesignSpaceExploration() ===")
-    result = DesignSpaceExploration()
-    print(f"Exploration result: {result}")
+    else:
+        print("Usage: python isosearch.py [scenario_names...]")
+        print("Available scenarios:")
+        list_scenarios()
