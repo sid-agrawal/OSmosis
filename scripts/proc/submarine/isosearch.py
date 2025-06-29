@@ -60,13 +60,13 @@ def ComputeMetrics(candidate):
     # Calculate RSI (Resource Sharing Index) by resource type
     metrics['RSI'] = _calculate_rsi_by_type(candidate, pd_nodes)
     
-    # Calculate FR (Fault Ratio) - simplified version
-    metrics['FR'] = _calculate_fr(candidate, pd_nodes)
+    # Calculate ASR (Attack Surface Ratio) - attack paths per PD
+    metrics['ASR'] = _calculate_asr(candidate, pd_nodes)
     
     # Calculate TCB (Trusted Computing Base) size
     metrics['TCB'] = _calculate_tcb(candidate, pd_nodes)
     
-    print(f"    RSI: {metrics['RSI']}, FR: {metrics['FR']}, TCB: {metrics['TCB']}")
+    print(f"    RSI: {metrics['RSI']}, ASR: {metrics['ASR']}, TCB: {metrics['TCB']}")
     return metrics
 
 
@@ -133,18 +133,18 @@ def _get_resource_type(graph, resource_node):
             return 'UNKNOWN'
 
 
-def _calculate_fr(graph, pd_nodes):
-    """Calculate FR (Fault Ratio) - number of fault propagation paths"""
-    # Count edges that could propagate faults (HOLD, REQUEST, MAP edges)
-    fault_edges = 0
+def _calculate_asr(graph, pd_nodes):
+    """Calculate ASR (Attack Surface Ratio) - potential attack paths per PD"""
+    # Count edges that could be attack paths (HOLD, REQUEST, MAP edges)
+    attack_edges = 0
     
     for from_node, to_node, edge_data in graph.g.edges(data=True):
         edge_type = edge_data.get('type')
         if edge_type in ['HOLD', 'REQUEST', 'MAP']:
-            fault_edges += 1
+            attack_edges += 1
     
     # Normalize by number of PDs
-    return fault_edges / len(pd_nodes) if pd_nodes else 0
+    return attack_edges / len(pd_nodes) if pd_nodes else 0
 
 
 def _calculate_tcb(graph, pd_nodes):
@@ -270,7 +270,7 @@ def GoalsMet(metrics, goals):
             if goal_violated:
                 return False
         else:
-            # Handle scalar metrics (FR)
+            # Handle scalar metrics (ASR)
             if goal.direction == "minimize":
                 if metric_value > goal.target_value:
                     print(f"    Goal not met: {goal.metric_name}={metric_value} > {goal.target_value}")
@@ -811,16 +811,17 @@ def _suggest_improvements(graph, metric_name, current_value, target_value):
         else:
             print(f"      → No shared resources found - RSI should be 0.0")
     
-    elif metric_name == "FR":
-        # Analyze fault propagation paths
+    elif metric_name == "ASR":
+        # Analyze attack surface paths
         hold_edges = sum(1 for _, _, d in graph.g.edges(data=True) if d.get('type') == 'HOLD')
         request_edges = sum(1 for _, _, d in graph.g.edges(data=True) if d.get('type') == 'REQUEST')
-        total_fault_edges = hold_edges + request_edges
+        map_edges = sum(1 for _, _, d in graph.g.edges(data=True) if d.get('type') == 'MAP')
+        total_attack_edges = hold_edges + request_edges + map_edges
         
-        if total_fault_edges > 0:
-            print(f"      → {total_fault_edges} fault propagation edge(s) - consider edge removal or mediation")
+        if total_attack_edges > 0:
+            print(f"      → {total_attack_edges} attack surface edge(s) - consider edge removal or isolation")
         else:
-            print(f"      → No fault propagation edges found")
+            print(f"      → No attack surface edges found")
     
     elif metric_name == "TCB":
         # Analyze trusted computing base size (authority-based)
