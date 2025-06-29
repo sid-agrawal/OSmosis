@@ -708,8 +708,11 @@ def Init():
     Initialize the design space exploration components
     Returns: goals, constraints, transitions, curGraph
     """
-    # Create a simple example goal: minimize RSI to 0.3
-    goals = [Goal("RSI", 0.3, "minimize")]
+    # Create multiple goals including a harder FR goal
+    goals = [
+        Goal("RSI", 0.3, "minimize"),
+        Goal("FR", 0.2, "minimize")  # Hard to achieve - will trigger failure explanations
+    ]
     
     # Create a simple example constraint: PD1 must have access to VMR
     constraints = [Constraint("requires_resource", 1, "VMR")] 
