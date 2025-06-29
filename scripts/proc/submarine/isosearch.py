@@ -347,7 +347,7 @@ def GenerateCandidate(graph, constraints, transitions, goals):
     """
     Generate a new candidate graph by applying a transition
     Uses smart selection to choose the best node/edge for transformation
-    Returns: new graph or None if no valid transition found
+    Returns: tuple of (new graph or None, candidate_info dict)
     """
     import copy
     
@@ -358,29 +358,49 @@ def GenerateCandidate(graph, constraints, transitions, goals):
         candidates = _find_transformation_candidates(graph, transition, constraints, goals)
         transformation_candidates.extend(candidates)
     
+    # Prepare candidate info for tracking
+    candidate_info = {
+        'all_candidates': transformation_candidates.copy(),
+        'selected_candidate': None,
+        'discarded_candidates': [],
+        'success': False
+    }
+    
     if not transformation_candidates:
         print("  No valid transitions found")
-        return None
+        return None, candidate_info
     
     # Sort by predicted metric improvement (best first)
     transformation_candidates.sort(key=lambda x: x['predicted_improvement'], reverse=True)
     
     # Try the best transformation candidate
     best_candidate = transformation_candidates[0]
+    candidate_info['selected_candidate'] = best_candidate
+    candidate_info['discarded_candidates'] = transformation_candidates[1:]  # All except the best
+    
     candidate_graph = copy.deepcopy(graph)
     
     print(f"  Trying best transition: {best_candidate['transition_type']}")
     print(f"    Target: {best_candidate['target_description']}")
     print(f"    Predicted improvement: {best_candidate['predicted_improvement']:.3f}")
     
+    # Show discarded options if there are any
+    if len(candidate_info['discarded_candidates']) > 0:
+        print(f"    Considered {len(candidate_info['discarded_candidates'])} other option(s):")
+        for i, discarded in enumerate(candidate_info['discarded_candidates'][:3], 1):  # Show top 3 discarded
+            print(f"      {i}. {discarded['transition_type']}: {discarded['target_description']} (improvement: {discarded['predicted_improvement']:.3f})")
+        if len(candidate_info['discarded_candidates']) > 3:
+            print(f"      ... and {len(candidate_info['discarded_candidates']) - 3} more")
+    
     success = _apply_specific_transformation(candidate_graph, best_candidate)
+    candidate_info['success'] = success
     
     if success:
         print(f"    ✅ Applied {best_candidate['transition_type']}")
-        return candidate_graph
+        return candidate_graph, candidate_info
     else:
         print(f"    ❌ Failed to apply {best_candidate['transition_type']}")
-        return None
+        return None, candidate_info
 
 
 def _find_transformation_candidates(graph, transition, constraints, goals):
@@ -634,6 +654,15 @@ def DesignSpaceExploration(scenario):
     # Initialize the list to store discovered mechanisms
     explored_mechanisms = []
     
+    # Track all exploration decisions for summary
+    exploration_summary = {
+        'iterations': [],
+        'total_candidates_considered': 0,
+        'total_candidates_discarded': 0,
+        'transformation_types_tried': set(),
+        'transformation_types_discarded': set()
+    }
+    
     print(f"Starting exploration with {len(goals)} goals, {len(constraints)} constraints, {len(transitions)} transitions")
     
     # Show initial graph structure
@@ -647,11 +676,30 @@ def DesignSpaceExploration(scenario):
         print(f"Iteration {i}/{maxIterations}")
         
         # Step 3: Generate candidate (from pseudocode line 9-10)
-        candidate = GenerateCandidate(curGraph, constraints, transitions, goals)
+        candidate, candidate_info = GenerateCandidate(curGraph, constraints, transitions, goals)
+        
+        # Track exploration decisions
+        iteration_info = {
+            'iteration': i,
+            'candidate_info': candidate_info,
+            'goals_met': False,
+            'mechanism_saved': False
+        }
+        
+        # Update summary statistics
+        exploration_summary['total_candidates_considered'] += len(candidate_info['all_candidates'])
+        exploration_summary['total_candidates_discarded'] += len(candidate_info['discarded_candidates'])
+        
+        if candidate_info['selected_candidate']:
+            exploration_summary['transformation_types_tried'].add(candidate_info['selected_candidate']['transition_type'])
+        
+        for discarded in candidate_info['discarded_candidates']:
+            exploration_summary['transformation_types_discarded'].add(discarded['transition_type'])
         
         # Step 4: Break if no candidate found (from pseudocode line 12-13)
         if candidate is None:
             print("  No valid candidate found, stopping exploration")
+            exploration_summary['iterations'].append(iteration_info)
             break
         
         # Step 5: Compute metrics (from pseudocode line 15)
@@ -659,10 +707,14 @@ def DesignSpaceExploration(scenario):
         print(f"  Metrics: {metrics}")
         
         # Step 6: Check if goals are met (from pseudocode line 16)
-        if GoalsMet(metrics, goals):
+        goals_met = GoalsMet(metrics, goals)
+        iteration_info['goals_met'] = goals_met
+        
+        if goals_met:
             # Step 7: Save the mechanism (from pseudocode line 17-18)
             new_mechanism = (candidate, metrics)
             explored_mechanisms.append(new_mechanism)
+            iteration_info['mechanism_saved'] = True
             print(f"  ✅ Mechanism saved! Total mechanisms found: {len(explored_mechanisms)}")
         else:
             # Explain why goals were not met
@@ -672,6 +724,9 @@ def DesignSpaceExploration(scenario):
         # Step 8: Update current graph for next iteration (from pseudocode line 19)
         curGraph = candidate
         
+        # Add iteration info to summary
+        exploration_summary['iterations'].append(iteration_info)
+        
         # Step 9: Show graph structure after this iteration
         print(f"\n📊 Graph after iteration {i}:")
         _print_graph_arrows(curGraph)
@@ -679,7 +734,109 @@ def DesignSpaceExploration(scenario):
     print("Exploration complete!")
     print(f"\n🏁 Final graph:")
     _print_graph_arrows(curGraph)
+    
+    # Print exploration summary
+    _print_exploration_summary(exploration_summary)
+    
     return explored_mechanisms
+
+
+def _print_exploration_summary(summary):
+    """Print a comprehensive summary of all options considered during exploration"""
+    
+    print(f"\n{'='*60}")
+    print("📊 EXPLORATION DECISION SUMMARY")
+    print(f"{'='*60}")
+    
+    # Overall statistics
+    total_iterations = len(summary['iterations'])
+    mechanisms_found = sum(1 for iter_info in summary['iterations'] if iter_info['mechanism_saved'])
+    
+    print(f"Total iterations completed: {total_iterations}")
+    print(f"Total transformation candidates considered: {summary['total_candidates_considered']}")
+    print(f"Total transformation candidates discarded: {summary['total_candidates_discarded']}")
+    print(f"Mechanisms discovered: {mechanisms_found}")
+    print(f"Success rate: {mechanisms_found / max(total_iterations, 1) * 100:.1f}%")
+    
+    # Transformation type analysis
+    print(f"\n🔧 Transformation Types:")
+    print(f"   Tried: {', '.join(sorted(summary['transformation_types_tried'])) if summary['transformation_types_tried'] else 'None'}")
+    print(f"   Available but never selected: {', '.join(sorted(summary['transformation_types_discarded'] - summary['transformation_types_tried'])) if summary['transformation_types_discarded'] - summary['transformation_types_tried'] else 'None'}")
+    
+    # Detailed per-iteration breakdown
+    print(f"\n📋 Per-Iteration Decision Breakdown:")
+    
+    for iter_info in summary['iterations']:
+        iteration = iter_info['iteration']
+        candidate_info = iter_info['candidate_info']
+        goals_met = iter_info['goals_met']
+        mechanism_saved = iter_info['mechanism_saved']
+        
+        print(f"\n  Iteration {iteration}:")
+        
+        if not candidate_info['all_candidates']:
+            print(f"    ❌ No transformation candidates found")
+            continue
+            
+        selected = candidate_info['selected_candidate']
+        discarded = candidate_info['discarded_candidates']
+        
+        if selected:
+            status = "✅ SUCCESS" if candidate_info['success'] else "❌ FAILED"
+            goal_status = "🎯 GOALS MET" if goals_met else "🔄 CONTINUING"
+            print(f"    {status} Selected: {selected['transition_type']}")
+            print(f"      Target: {selected['target_description']}")
+            print(f"      Predicted improvement: {selected['predicted_improvement']:.3f}")
+            print(f"      Result: {goal_status}")
+        
+        if discarded:
+            print(f"    🗂️  Discarded {len(discarded)} alternatives:")
+            for i, option in enumerate(discarded[:5], 1):  # Show top 5 discarded
+                print(f"      {i}. {option['transition_type']}: {option['target_description']} (improvement: {option['predicted_improvement']:.3f})")
+            if len(discarded) > 5:
+                print(f"      ... and {len(discarded) - 5} more")
+    
+    # Analysis of decision patterns
+    print(f"\n🔍 Decision Pattern Analysis:")
+    
+    # Most frequently selected transformation types
+    selected_types = []
+    for iter_info in summary['iterations']:
+        if iter_info['candidate_info']['selected_candidate']:
+            selected_types.append(iter_info['candidate_info']['selected_candidate']['transition_type'])
+    
+    if selected_types:
+        from collections import Counter
+        type_counts = Counter(selected_types)
+        print(f"   Most frequently selected:")
+        for trans_type, count in type_counts.most_common():
+            print(f"     - {trans_type}: {count} time(s)")
+    
+    # Average improvement scores
+    all_improvements = []
+    selected_improvements = []
+    discarded_improvements = []
+    
+    for iter_info in summary['iterations']:
+        candidate_info = iter_info['candidate_info']
+        for candidate in candidate_info['all_candidates']:
+            all_improvements.append(candidate['predicted_improvement'])
+        
+        if candidate_info['selected_candidate']:
+            selected_improvements.append(candidate_info['selected_candidate']['predicted_improvement'])
+        
+        for discarded in candidate_info['discarded_candidates']:
+            discarded_improvements.append(discarded['predicted_improvement'])
+    
+    if all_improvements:
+        print(f"   Average predicted improvement:")
+        print(f"     - All candidates: {sum(all_improvements) / len(all_improvements):.3f}")
+        if selected_improvements:
+            print(f"     - Selected candidates: {sum(selected_improvements) / len(selected_improvements):.3f}")
+        if discarded_improvements:
+            print(f"     - Discarded candidates: {sum(discarded_improvements) / len(discarded_improvements):.3f}")
+    
+    print(f"\n{'='*60}")
 
 
 def _print_graph_arrows(graph):
