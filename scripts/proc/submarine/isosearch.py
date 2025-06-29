@@ -473,10 +473,6 @@ def DesignSpaceExploration():
     
     print(f"Starting exploration with {len(goals)} goals, {len(constraints)} constraints, {len(transitions)} transitions")
     
-    # Show initial graph state
-    print(f"\n📊 Initial graph state:")
-    _print_graph_ascii(curGraph)
-    
     # Step 2: Main exploration loop (from pseudocode line 8)
     maxIterations = 5  # Keep it small for testing
     
@@ -505,129 +501,8 @@ def DesignSpaceExploration():
         # Step 8: Update current graph for next iteration (from pseudocode line 19)
         curGraph = candidate
         
-        # Step 9: Visualize the current graph state
-        print(f"\n📊 Graph after iteration {i}:")
-        _print_graph_ascii(curGraph)
-        
     print("Exploration complete!")
-    print(f"\n🏁 Final graph state:")
-    _print_graph_ascii(curGraph)
     return explored_mechanisms
-
-
-def _print_graph_ascii(graph):
-    """Print ASCII art representation of the graph structure"""
-    
-    # Get all nodes by type
-    pd_nodes = [node for node, data in graph.g.nodes(data=True) 
-                if data.get('type') == 'PD']
-    resource_spaces = [node for node, data in graph.g.nodes(data=True) 
-                      if data.get('type') == 'RESOURCE_SPACE']
-    resources = [node for node, data in graph.g.nodes(data=True) 
-                if data.get('type') == 'RESOURCE']
-    
-    # Sort for consistent display
-    pd_nodes.sort()
-    resource_spaces.sort()
-    resources.sort()
-    
-    print("┌─────────────────────────────────────────────────────┐")
-    print("│                    Graph Structure                  │")
-    print("├─────────────────────────────────────────────────────┤")
-    
-    # Print PDs
-    print("│ Protection Domains (PDs):                          │")
-    for pd_node in pd_nodes:
-        pd_data = graph.g.nodes[pd_node]
-        name = pd_data.get('data', 'unknown')
-        print(f"│   🛡️  {pd_node}: {name:<30} │")
-    
-    if not pd_nodes:
-        print("│   (no PDs)                                         │")
-    
-    print("│                                                     │")
-    
-    # Print Resource Spaces
-    print("│ Resource Spaces:                                   │")
-    for space_node in resource_spaces:
-        space_data = graph.g.nodes[space_node]
-        space_type = space_data.get('data', 'unknown')
-        print(f"│   📦 {space_node}: {space_type:<25} │")
-    
-    if not resource_spaces:
-        print("│   (no resource spaces)                             │")
-    
-    print("│                                                     │")
-    
-    # Print Resources
-    print("│ Resources:                                         │")
-    for res_node in resources:
-        res_data = graph.g.nodes[res_node]
-        res_type = res_data.get('data', 'unknown')
-        print(f"│   💾 {res_node}: {res_type:<28} │")
-    
-    if not resources:
-        print("│   (no resources)                                   │")
-    
-    print("│                                                     │")
-    
-    # Print relationships
-    print("│ Relationships:                                     │")
-    
-    # Group edges by type
-    hold_edges = []
-    request_edges = []
-    map_edges = []
-    subset_edges = []
-    
-    for from_node, to_node, edge_data in graph.g.edges(data=True):
-        edge_type = edge_data.get('type', 'UNKNOWN')
-        edge_info = {
-            'from': from_node,
-            'to': to_node,
-            'type': edge_type,
-            'data': edge_data.get('data', '')
-        }
-        
-        if edge_type == 'HOLD':
-            hold_edges.append(edge_info)
-        elif edge_type == 'REQUEST':
-            request_edges.append(edge_info)
-        elif edge_type == 'MAP':
-            map_edges.append(edge_info)
-        elif edge_type == 'SUBSET':
-            subset_edges.append(edge_info)
-    
-    # Print HOLD edges (most important for security)
-    if hold_edges:
-        print("│   🔗 HOLD edges (resource access):                │")
-        for edge in hold_edges:
-            perms = edge['data']
-            from_short = edge['from'].replace('_', '')
-            to_short = edge['to'].replace('_', '')
-            print(f"│     {from_short:<8} --({perms})-> {to_short:<15} │")
-    
-    # Print REQUEST edges
-    if request_edges:
-        print("│   📨 REQUEST edges (mediated access):             │")
-        for edge in request_edges:
-            from_short = edge['from'].replace('_', '')
-            to_short = edge['to'].replace('_', '')
-            print(f"│     {from_short:<8} --req--> {to_short:<15} │")
-    
-    # Print SUBSET edges (containment)
-    if subset_edges:
-        print("│   📂 SUBSET edges (containment):                  │")
-        for edge in subset_edges:
-            from_short = edge['from'].replace('_', '')
-            to_short = edge['to'].replace('_', '')
-            print(f"│     {from_short:<8} ⊆ {to_short:<19} │")
-    
-    if not (hold_edges or request_edges or subset_edges):
-        print("│   (no edges)                                       │")
-    
-    print("└─────────────────────────────────────────────────────┘")
-    print()
 
 
 def Init():
