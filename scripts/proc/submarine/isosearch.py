@@ -66,10 +66,7 @@ def ComputeMetrics(candidate):
     # Calculate TCB (Trusted Computing Base) size
     metrics['TCB'] = _calculate_tcb(candidate, pd_nodes)
     
-    # Calculate IB (Information Boundary) violations
-    metrics['IB'] = _calculate_ib(candidate, pd_nodes)
-    
-    print(f"    RSI: {metrics['RSI']}, FR: {metrics['FR']}, TCB: {metrics['TCB']}, IB: {metrics['IB']}")
+    print(f"    RSI: {metrics['RSI']}, FR: {metrics['FR']}, TCB: {metrics['TCB']}")
     return metrics
 
 
@@ -224,20 +221,6 @@ def _calculate_tcb(graph, pd_nodes):
     return tcb_by_pd
 
 
-def _calculate_ib(graph, pd_nodes):
-    """Calculate IB (Information Boundary) violations - shared resource access"""
-    # Count resources accessed by multiple PDs (boundary violations)
-    resource_access_count = {}
-    
-    for from_node, to_node, edge_data in graph.g.edges(data=True):
-        if edge_data.get('type') == 'HOLD' and from_node.startswith('PD_'):
-            if to_node not in resource_access_count:
-                resource_access_count[to_node] = 0
-            resource_access_count[to_node] += 1
-    
-    # Count resources accessed by more than one PD
-    violations = sum(1 for count in resource_access_count.values() if count > 1)
-    return violations
 
 
 def GoalsMet(metrics, goals):
@@ -287,7 +270,7 @@ def GoalsMet(metrics, goals):
             if goal_violated:
                 return False
         else:
-            # Handle scalar metrics (FR, TCB, IB)
+            # Handle scalar metrics (FR)
             if goal.direction == "minimize":
                 if metric_value > goal.target_value:
                     print(f"    Goal not met: {goal.metric_name}={metric_value} > {goal.target_value}")
@@ -867,15 +850,6 @@ def _suggest_improvements(graph, metric_name, current_value, target_value):
         else:
             print(f"      → No authority relationships found")
     
-    elif metric_name == "IB":
-        # Analyze information boundary violations
-        shared_resources = _find_shared_resources(graph)
-        violations = sum(1 for resource, sharers in shared_resources.items() if len(sharers) > 1)
-        
-        if violations > 0:
-            print(f"      → {violations} information boundary violation(s) - consider access control")
-        else:
-            print(f"      → No information boundary violations found")
 
 
 def Init():
