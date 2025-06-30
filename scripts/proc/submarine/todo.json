@@ -1,44 +1,101 @@
 [
   {
+    "id": "foundation_1",
+    "content": "Create basic Init() function skeleton",
+    "status": "completed",
+    "priority": "high",
+    "category": "foundation"
+  },
+  {
+    "id": "foundation_2", 
+    "content": "Define goal, constraint, and transition structures",
+    "status": "completed",
+    "priority": "high",
+    "category": "foundation"
+  },
+  {
+    "id": "foundation_3",
+    "content": "Create basic starting graph and wire components in Init()",
+    "status": "completed",
+    "priority": "high",
+    "category": "foundation"
+  },
+  {
+    "id": "foundation_4",
+    "content": "Create DesignSpaceExploration() function with main loop",
+    "status": "completed", 
+    "priority": "high",
+    "category": "foundation"
+  },
+  {
+    "id": "foundation_5",
+    "content": "Add candidate generation and metric computation to main loop",
+    "status": "completed",
+    "priority": "high",
+    "category": "foundation"
+  },
+  {
+    "id": "foundation_6",
+    "content": "Add goal checking (GoalsMet function and logic)",
+    "status": "completed",
+    "priority": "high",
+    "category": "foundation",
+    "note": "Originally next step, now completed"
+  },
+  {
+    "id": "foundation_7",
+    "content": "Add mechanism saving and graph updating for iterations",
+    "status": "completed",
+    "priority": "high",
+    "category": "foundation"
+  },
+  {
     "id": "7",
     "content": "Implement smart node/edge selection for transformations",
     "status": "completed",
-    "priority": "high"
+    "priority": "high",
+    "category": "enhancement"
   },
   {
     "id": "8", 
     "content": "Add transformation ranking based on metric impact potential",
     "status": "completed",
-    "priority": "medium"
+    "priority": "medium",
+    "category": "enhancement"
   },
   {
     "id": "9",
     "content": "Test smart selection vs first-fit selection", 
     "status": "completed",
-    "priority": "medium"
+    "priority": "medium",
+    "category": "enhancement"
   },
   {
     "id": "10",
     "content": "Enhance mechanism discovery with better goal targets",
     "status": "pending",
-    "priority": "medium"
+    "priority": "medium",
+    "category": "enhancement"
   },
   {
     "id": "11",
     "content": "Add more sophisticated graph transformations (capability isolation, access control)",
     "status": "pending", 
-    "priority": "medium"
+    "priority": "medium",
+    "category": "enhancement"
   },
   {
     "id": "12",
     "content": "Implement mechanism comparison and ranking",
     "status": "pending",
-    "priority": "medium"
+    "priority": "medium",
+    "category": "enhancement"
   },
   {
     "id": "13",
     "content": "Add multi-objective optimization (RSI + TCB + FR simultaneously)",
     "status": "pending",
-    "priority": "high"
+    "priority": "high",
+    "category": "enhancement"
   }
 ]
