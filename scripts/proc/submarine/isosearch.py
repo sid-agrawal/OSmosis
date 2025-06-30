@@ -600,27 +600,63 @@ def _mediate_specific_resource(graph, resource, sharers):
 def _check_privatization_constraints(resource, holders, constraints):
     """Check if privatizing a resource violates any constraints"""
     for constraint in constraints:
-        if constraint.constraint_type == "requires_resource":
+        if constraint.constraint_type == "requires_vmr_access":
             pd_string = f"PD_{constraint.pd_id}"
-            if pd_string in holders and constraint.resource_info == "VMR":
-                # PD still needs access to some VMR resource, privatization is OK
-                return True
+            if pd_string in holders and resource.startswith('VMR_'):
+                # Check if the PD's VMR access requirements are still met after privatization
+                vmr_type = constraint.properties.get('vmr_type', 'any')
+                if vmr_type == 'any' or vmr_type.upper() in resource:
+                    continue  # Requirement is satisfied
+                else:
+                    return False  # VMR type requirement not met
+        elif constraint.constraint_type == "requires_communication":
+            # Communication constraints are not affected by resource privatization
+            continue
     return True  # No blocking constraints found
 
 
 def _check_mediation_constraints(resource, sharers, constraints):
     """Check if adding mediation violates any constraints"""
-    # Generally safe as long as PDs can still access resources through mediator
-    return True
+    for constraint in constraints:
+        if constraint.constraint_type == "requires_vmr_access":
+            pd_string = f"PD_{constraint.pd_id}"
+            if pd_string in sharers and resource.startswith('VMR_'):
+                # Check if mediated access still meets VMR requirements
+                vmr_type = constraint.properties.get('vmr_type', 'any')
+                permissions = constraint.properties.get('permissions', 'R')
+                # Mediation might restrict permissions, check if still compatible
+                if 'W' in permissions and resource.startswith('VMR_'):
+                    # Write access through mediator might be problematic for some VMR types
+                    if vmr_type == 'STACK':
+                        return False  # Stack VMRs need direct write access
+        elif constraint.constraint_type == "requires_communication":
+            # Communication constraints not directly affected by resource mediation
+            continue
+    return True  # Mediation is acceptable
 
 
 def _can_remove_hold_edge(from_node, to_node, constraints):
     """Check if removing a HOLD edge violates constraints"""
     for constraint in constraints:
-        if constraint.constraint_type == "requires_resource":
+        if constraint.constraint_type == "requires_vmr_access":
             pd_string = f"PD_{constraint.pd_id}"
-            if pd_string == from_node and constraint.resource_info == "VMR" and to_node.startswith('VMR_'):
-                # This edge is required by constraint, cannot remove
+            if pd_string == from_node and to_node.startswith('VMR_'):
+                # Check if this specific VMR is required by the constraint
+                vmr_type = constraint.properties.get('vmr_type', 'any')
+                if vmr_type == 'any' or vmr_type.upper() in to_node:
+                    # This edge is required by constraint, cannot remove
+                    return False
+        elif constraint.constraint_type == "requires_communication":
+            # Check if removing this edge affects required communication paths
+            pd_string = f"PD_{constraint.pd_id}"
+            target_pd_string = f"PD_{constraint.target_pd}"
+            if pd_string == from_node and to_node == target_pd_string:
+                # This is a direct communication edge required by constraint
+                return False
+            # Could also check for indirect communication paths through shared resources
+            if (pd_string == from_node and to_node.startswith('VMR_') and 
+                constraint.resource_info in ['REQUEST', 'REPLY']):
+                # Removing access to communication VMR might break required communication
                 return False
     return True
 

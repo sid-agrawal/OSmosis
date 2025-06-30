@@ -25,14 +25,21 @@ class Goal:
 
 
 class Constraint:
-    """Simple constraint structure for functional requirements"""
-    def __init__(self, constraint_type, pd_id, resource_info=None):
-        self.constraint_type = constraint_type  # e.g., "requires_resource", "must_communicate"
+    """Enhanced constraint structure for functional requirements"""
+    def __init__(self, constraint_type, pd_id, resource_info=None, target_pd=None, properties=None):
+        self.constraint_type = constraint_type  # e.g., "requires_vmr_access", "requires_communication"
         self.pd_id = pd_id  # The PD this constraint applies to
-        self.resource_info = resource_info  # Additional info (resource type, target PD, etc.)
+        self.resource_info = resource_info  # Resource specifications (type, properties, etc.)
+        self.target_pd = target_pd  # For authority/communication constraints
+        self.properties = properties or {}  # Additional constraint properties
     
     def __str__(self):
-        return f"Constraint({self.constraint_type} for PD{self.pd_id}: {self.resource_info})"
+        if self.target_pd:
+            return f"Constraint({self.constraint_type} for PD_{self.pd_id} -> PD_{self.target_pd}: {self.resource_info})"
+        elif self.properties:
+            return f"Constraint({self.constraint_type} for PD_{self.pd_id}: {self.resource_info}, {self.properties})"
+        else:
+            return f"Constraint({self.constraint_type} for PD_{self.pd_id}: {self.resource_info})"
 
 
 class Transition:
@@ -245,7 +252,11 @@ SCENARIOS = {
             Goal("ASR", 1.0, "minimize")                # System-wide goal
         ],
         constraints=[
-            Constraint("requires_resource", 1, "VMR")
+            # Specific VMR access requirements
+            Constraint("requires_vmr_access", 1, "VMR", properties={"vmr_type": "STACK", "min_pages": 1}),
+            Constraint("requires_vmr_access", 2, "VMR", properties={"vmr_type": "any", "min_pages": 1}),
+            # Communication requirements  
+            Constraint("requires_communication", 1, "REQUEST", target_pd=3),  # PD_1 must communicate with PD_3
         ],
         transitions=BASIC_TRANSITIONS,
         graph_builder=build_basic_shared_resource_graph
@@ -260,8 +271,10 @@ SCENARIOS = {
             Goal("TCB", 1, "minimize", "PD_1")          # Target specific PD
         ],
         constraints=[
-            Constraint("requires_resource", 1, "VMR"),
-            Constraint("requires_resource", 2, "VMR")
+            # Specific resource access requirements
+            Constraint("requires_vmr_access", 1, "VMR", properties={"vmr_type": "HEAP", "min_pages": 5}),
+            Constraint("requires_vmr_access", 2, "VMR", properties={"vmr_type": "any", "min_pages": 3}),
+            Constraint("requires_vmr_access", 3, "VMR", properties={"vmr_type": "LIB", "min_pages": 1}),
         ],
         transitions=BASIC_TRANSITIONS,
         graph_builder=build_high_sharing_graph
@@ -276,7 +289,12 @@ SCENARIOS = {
             Goal("ASR", 1.5, "minimize")                # System-wide goal
         ],
         constraints=[
-            Constraint("requires_resource", 1, "VMR")
+            # VMR access requirements
+            Constraint("requires_vmr_access", 1, "VMR", properties={"vmr_type": "HEAP", "min_pages": 1}),
+            # Authority chain requirements (user_app -> service_manager -> kernel_module -> root_authority)
+            Constraint("requires_communication", 1, "REQUEST", target_pd=2),  # PD_1 -> PD_2
+            Constraint("requires_communication", 2, "REQUEST", target_pd=3),  # PD_2 -> PD_3  
+            Constraint("requires_communication", 3, "REQUEST", target_pd=4),  # PD_3 -> PD_4
         ],
         transitions=BASIC_TRANSITIONS,
         graph_builder=build_authority_chain_graph
@@ -288,7 +306,11 @@ SCENARIOS = {
         goals=[
             Goal("RSI", 0.1, "minimize", "PD_1,PD_2")   # Target the sharing pair
         ],
-        constraints=[],
+        constraints=[
+            # Minimal constraints - allow maximum optimization freedom
+            Constraint("requires_vmr_access", 1, "VMR", properties={"vmr_type": "any", "min_pages": 1}),
+            Constraint("requires_vmr_access", 2, "VMR", properties={"vmr_type": "any", "min_pages": 1}),
+        ],
         transitions=BASIC_TRANSITIONS,
         graph_builder=build_basic_shared_resource_graph
     ),
@@ -303,7 +325,11 @@ SCENARIOS = {
             Goal("FR", 4, "minimize", "PD_1,PD_3")      # Target specific PD pair
         ],
         constraints=[
-            Constraint("requires_resource", 1, "VMR")
+            # Balanced constraints for multi-objective optimization
+            Constraint("requires_vmr_access", 1, "VMR", properties={"vmr_type": "STACK", "min_pages": 2}),
+            Constraint("requires_vmr_access", 2, "VMR", properties={"vmr_type": "any", "min_pages": 1}),
+            # Communication constraint that creates the TCB challenge
+            Constraint("requires_communication", 1, "REQUEST", target_pd=3),
         ],
         transitions=BASIC_TRANSITIONS,
         graph_builder=build_basic_shared_resource_graph
@@ -316,8 +342,16 @@ SCENARIOS = {
             Goal("ASR", 2.5, "minimize")   # System-wide ASR goal
         ],
         constraints=[
-            Constraint("requires_resource", 1, "VMR"),  # Web frontend needs access
-            Constraint("requires_resource", 2, "VMR")   # API server needs access
+            # Service-specific resource requirements
+            Constraint("requires_vmr_access", 1, "VMR", properties={"vmr_type": "HEAP", "min_pages": 10}),  # Web frontend
+            Constraint("requires_vmr_access", 2, "VMR", properties={"vmr_type": "any", "min_pages": 15}),   # API server
+            Constraint("requires_vmr_access", 3, "VMR", properties={"vmr_type": "any", "min_pages": 5}),    # Database
+            Constraint("requires_vmr_access", 4, "VMR", properties={"vmr_type": "LIB", "min_pages": 5}),    # Admin panel
+            # Service communication requirements
+            Constraint("requires_communication", 1, "REQUEST", target_pd=2),  # Web -> API
+            Constraint("requires_communication", 2, "REQUEST", target_pd=3),  # API -> DB
+            Constraint("requires_communication", 4, "REQUEST", target_pd=1),  # Admin -> Web
+            Constraint("requires_communication", 4, "REQUEST", target_pd=2),  # Admin -> API
         ],
         transitions=BASIC_TRANSITIONS,
         graph_builder=build_high_attack_surface_graph
@@ -325,12 +359,53 @@ SCENARIOS = {
 }
 
 
+# Helper functions for common constraint patterns
+
+def create_vmr_access_constraint(pd_id, vmr_type="any", min_pages=1, permissions="R"):
+    """Create a specific VMR access requirement constraint"""
+    return Constraint(
+        "requires_vmr_access", 
+        pd_id, 
+        "VMR", 
+        properties={
+            "vmr_type": vmr_type, 
+            "min_pages": min_pages,
+            "permissions": permissions
+        }
+    )
+
+def create_communication_constraint(source_pd, target_pd, communication_type="REQUEST"):
+    """Create a communication requirement constraint"""
+    return Constraint(
+        "requires_communication",
+        source_pd,
+        communication_type,
+        target_pd=target_pd
+    )
+
+
+
 def get_scenario(name):
     """Get a scenario by name"""
     if name not in SCENARIOS:
         available = ", ".join(SCENARIOS.keys())
         raise ValueError(f"Scenario '{name}' not found. Available scenarios: {available}")
-    return SCENARIOS[name]
+    
+    scenario = SCENARIOS[name]
+    _validate_scenario_constraints(scenario)
+    return scenario
+
+
+def _validate_scenario_constraints(scenario):
+    """Validate that all constraint types in a scenario are supported by the implementation"""
+    supported_constraint_types = {"requires_vmr_access", "requires_communication"}
+    
+    for constraint in scenario.constraints:
+        if constraint.constraint_type not in supported_constraint_types:
+            raise ValueError(f"Unsupported constraint type '{constraint.constraint_type}' in scenario '{scenario.name}'. "
+                           f"Supported types: {supported_constraint_types}")
+    
+    print(f"✓ Validated {len(scenario.constraints)} constraints in scenario '{scenario.name}'")
 
 
 def list_scenarios():
