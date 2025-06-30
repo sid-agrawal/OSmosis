@@ -6,6 +6,8 @@ IsoSearch Algorithm Implementation - Baby Steps
 from graph_transformations import NodeTransformations, EdgeTransformations
 from generic_model import ModelGraph, ResourceType, VmrType, Permission, EdgeType
 from scenarios import get_scenario, list_scenarios, SCENARIOS, Goal, Constraint, Transition
+from visualization import IsoSearchVisualizer
+from decision_tree_viz import DecisionTreeVisualizer
 
 # Goal, Constraint, and Transition classes are now imported from scenarios.py
 
@@ -639,6 +641,163 @@ def _add_mediator_between_pds(graph, shared_resource, sharers):
                                            ResourceType.VMR, space_id)
 
 
+def DesignSpaceExplorationWithVisualization(scenario, visualizer=None, tree_visualizer=None):
+    """
+    Main IsoSearch algorithm for exploring design space with optional visualization
+    Args: 
+        scenario - Scenario object with goals, constraints, transitions, and graph builder
+        visualizer - Optional IsoSearchVisualizer object for HTML generation
+    Returns: list of explored mechanisms
+    """
+    # Step 1: Initialize components from scenario (from pseudocode line 2)
+    goals = scenario.goals
+    constraints = scenario.constraints
+    transitions = scenario.transitions
+    curGraph = scenario.build_graph()
+    
+    # Initialize the list to store discovered mechanisms
+    explored_mechanisms = []
+    
+    # Track all exploration decisions for summary
+    exploration_summary = {
+        'iterations': [],
+        'total_candidates_considered': 0,
+        'total_candidates_discarded': 0,
+        'transformation_types_tried': set(),
+        'transformation_types_discarded': set()
+    }
+    
+    print(f"Starting exploration with {len(goals)} goals, {len(constraints)} constraints, {len(transitions)} transitions")
+    
+    # Show initial graph structure
+    print(f"\n📊 Initial graph:")
+    _print_graph_arrows(curGraph)
+    
+    # Add initial state to visualization
+    if visualizer:
+        initial_metrics = ComputeMetrics(curGraph)
+        visualizer.add_iteration(0, curGraph, initial_metrics, [], None)
+    
+    if tree_visualizer:
+        initial_metrics = ComputeMetrics(curGraph)
+        tree_visualizer.add_decision_node(0, curGraph, initial_metrics, [])
+    
+    # Step 2: Main exploration loop (from pseudocode line 8)
+    maxIterations = 5  # Keep it small for testing
+    
+    for i in range(1, maxIterations + 1):
+        print(f"Iteration {i}/{maxIterations}")
+        
+        # Step 3: Generate candidate (from pseudocode line 9-10)
+        candidate, candidate_info = GenerateCandidate(curGraph, constraints, transitions, goals)
+        
+        # Track exploration decisions
+        iteration_info = {
+            'iteration': i,
+            'candidate_info': candidate_info,
+            'goals_met': False,
+            'mechanism_saved': False
+        }
+        
+        # Update exploration statistics
+        exploration_summary['total_candidates_considered'] += len(candidate_info['all_candidates'])
+        exploration_summary['total_candidates_discarded'] += len(candidate_info['discarded_candidates'])
+        
+        # Track transformation types
+        for candidate_data in candidate_info['all_candidates']:
+            exploration_summary['transformation_types_discarded'].add(candidate_data['transition_type'])
+        
+        if candidate_info['selected_candidate']:
+            exploration_summary['transformation_types_tried'].add(candidate_info['selected_candidate']['transition_type'])
+        
+        # Check if any valid candidate was found
+        if candidate is None:
+            print("  No valid candidate found, stopping exploration")
+            iteration_info['candidate_info']['success'] = False
+            exploration_summary['iterations'].append(iteration_info)
+            break
+        
+        # Step 4: Compute metrics for the candidate (from pseudocode line 11)
+        metrics = ComputeMetrics(candidate)
+        
+        # Step 5: Check if goals are met (from pseudocode line 12-16)
+        goals_met = GoalsMet(metrics, goals)
+        iteration_info['goals_met'] = goals_met
+        
+        if goals_met:
+            print("    All {} goal(s) met!".format(len(goals)))
+        else:
+            print("    Goals not yet satisfied, continuing exploration")
+        
+        # Step 6: Save the mechanism (from pseudocode line 17)
+        print("  ✅ Mechanism saved! Total mechanisms found: {}".format(len(explored_mechanisms) + 1))
+        explored_mechanisms.append({
+            'iteration': i,
+            'graph': candidate,
+            'metrics': metrics,
+            'transformation': candidate_info['selected_candidate']['transition_type'] if candidate_info['selected_candidate'] else None,
+            'goals_met': goals_met
+        })
+        iteration_info['mechanism_saved'] = True
+        iteration_info['candidate_info']['success'] = True
+        
+        # Add iteration data to visualization
+        if visualizer:
+            visualizer.add_iteration(
+                i, candidate, metrics, 
+                candidate_info['all_candidates'], 
+                candidate_info['selected_candidate']
+            )
+            
+            # Add decision data
+            if candidate_info['selected_candidate'] and candidate_info['discarded_candidates']:
+                visualizer.add_decision(
+                    i,
+                    candidate_info['selected_candidate']['target_description'],
+                    [c['target_description'] for c in candidate_info['discarded_candidates']],
+                    f"Selected based on predicted improvement: {candidate_info['selected_candidate']['predicted_improvement']:.3f}"
+                )
+        
+        # Add tree visualization data
+        if tree_visualizer:
+            # Add selected path
+            tree_visualizer.add_decision_node(
+                i, candidate, metrics, 
+                candidate_info['all_candidates'],
+                candidate_info['selected_candidate'],
+                parent_id=f"iter_{i-1}_selected" if i > 1 else "root",
+                is_selected=True
+            )
+            
+            # Add discarded paths
+            if candidate_info['discarded_candidates']:
+                tree_visualizer.add_discarded_paths(
+                    i, curGraph, candidate_info['discarded_candidates']
+                )
+        
+        # Step 7: Update current graph (from pseudocode line 18)
+        curGraph = candidate
+        
+        # Show graph structure after this iteration
+        print(f"\n📊 Graph after iteration {i}:")
+        _print_graph_arrows(curGraph)
+        
+        exploration_summary['iterations'].append(iteration_info)
+        
+        print()  # Add spacing between iterations
+    
+    print("Exploration complete!")
+    
+    # Show final graph structure
+    print(f"\n🏁 Final graph:")
+    _print_graph_arrows(curGraph)
+    
+    # Print comprehensive decision summary
+    _print_exploration_summary(exploration_summary)
+    
+    return explored_mechanisms
+
+
 def DesignSpaceExploration(scenario):
     """
     Main IsoSearch algorithm for exploring design space
@@ -1105,10 +1264,12 @@ def _suggest_improvements(graph, metric_name, current_value, target_value):
     
 
 
-def run_scenario(scenario_name):
+def run_scenario(scenario_name, enable_visualization=False):
     """
     Run IsoSearch exploration on a specific scenario
-    Args: scenario_name - name of the scenario to run
+    Args: 
+        scenario_name - name of the scenario to run
+        enable_visualization - if True, generates HTML visualization
     Returns: list of discovered mechanisms
     """
     try:
@@ -1129,9 +1290,26 @@ def run_scenario(scenario_name):
         
         print("\n=== Ready for IsoSearch! ===")
         
+        # Initialize visualization if enabled
+        visualizer = None
+        tree_visualizer = None
+        if enable_visualization:
+            visualizer = IsoSearchVisualizer(scenario_name)
+            tree_visualizer = DecisionTreeVisualizer(scenario_name)
+            print("🎨 Visualization enabled - HTML reports will be generated")
+        
         # Run the exploration
         print(f"\n=== Exploring {scenario.name} ===")
-        result = DesignSpaceExploration(scenario)
+        result = DesignSpaceExplorationWithVisualization(scenario, visualizer, tree_visualizer)
+        
+        # Generate visualization if enabled
+        if enable_visualization:
+            if visualizer:
+                viz_file = visualizer.generate_html()
+                print(f"📊 Timeline visualization saved: {viz_file}")
+            if tree_visualizer:
+                tree_file = tree_visualizer.generate_html()
+                print(f"🌳 Decision tree visualization saved: {tree_file}")
         
         print(f"\n✅ Scenario '{scenario.name}' complete!")
         print(f"   Mechanisms discovered: {len(result)}")
@@ -1244,6 +1422,12 @@ Examples:
     )
     
     parser.add_argument(
+        '--visualize', '-z',
+        action='store_true',
+        help='Generate HTML visualizations: timeline view and decision tree showing OSmosis graph states'
+    )
+    
+    parser.add_argument(
         '--version',
         action='version',
         version='IsoSearch v1.0 - Automated Security Mechanism Discovery'
@@ -1325,11 +1509,15 @@ if __name__ == "__main__":
     if args.max_iterations != 5:
         print(f"📊 Using {args.max_iterations} maximum iterations per scenario")
     
+    # Configure visualization
+    if args.visualize:
+        print("🎨 HTML visualization enabled")
+    
     try:
         # Run the scenarios
         if len(scenario_names) == 1:
             print(f"\n🎯 Running scenario: {scenario_names[0]}")
-            result = run_scenario(scenario_names[0])
+            result = run_scenario(scenario_names[0], enable_visualization=args.visualize)
         else:
             print(f"\n🚀 Running {len(scenario_names)} scenarios: {', '.join(scenario_names)}")
             results = run_multiple_scenarios(scenario_names)
