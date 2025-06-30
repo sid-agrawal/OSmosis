@@ -42,33 +42,403 @@ class Constraint:
             return f"Constraint({self.constraint_type} for PD_{self.pd_id}: {self.resource_info})"
 
 
-class Transition:
-    """Simple transition structure for allowed graph modifications"""
-    def __init__(self, transition_type, description=""):
-        self.transition_type = transition_type  # e.g., "privatize_resource", "add_mediator_pd"
-        self.description = description  # Human-readable description
+class Primitive:
+    """Single primitive operation for graph modification"""
+    def __init__(self, operation, **params):
+        self.operation = operation  # e.g., "add_pd", "remove_hold_edge"
+        self.params = params  # Parameters with $ placeholders for binding
+    
+    def bind_parameters(self, param_values):
+        """Replace $ placeholders with actual values"""
+        bound_params = {}
+        for key, value in self.params.items():
+            if isinstance(value, str) and value.startswith('$'):
+                param_name = value[1:]  # Remove $
+                if param_name in param_values:
+                    bound_params[key] = param_values[param_name]
+                else:
+                    raise ValueError(f"Missing parameter value for {param_name}")
+            else:
+                bound_params[key] = value
+        return bound_params
     
     def __str__(self):
-        return f"Transition({self.transition_type}: {self.description})"
+        return f"Primitive({self.operation}, {self.params})"
+
+
+class Transition:
+    """Unified transition structure for both primitive and multi-step operations"""
+    def __init__(self, name, description, transition_type, primitives=None, parameters=None):
+        self.name = name
+        self.description = description
+        self.transition_type = transition_type  # "primitive" or "multistep"
+        self.primitives = primitives or []  # List of Primitive objects for multistep
+        self.parameters = parameters or []  # Required parameters for multistep
+    
+    def find_candidates(self, graph, constraints):
+        """Find all valid parameter bindings for this transition"""
+        if self.transition_type == "primitive":
+            return self._find_primitive_candidates(graph, constraints)
+        else:
+            return self._find_multistep_candidates(graph, constraints)
+    
+    def _find_primitive_candidates(self, graph, constraints):
+        """Find candidates for primitive operations"""
+        if self.name == "remove_hold_edge":
+            return self._find_remove_hold_edge_candidates(graph, constraints)
+        elif self.name == "add_pd":
+            return self._find_add_pd_candidates(graph, constraints)
+        # Add other primitives as needed
+        return []
+    
+    def _find_multistep_candidates(self, graph, constraints):
+        """Find candidates for multi-step operations"""
+        if self.name == "privatize_resource":
+            return self._find_privatize_resource_candidates(graph, constraints)
+        elif self.name == "add_mediator":
+            return self._find_add_mediator_candidates(graph, constraints)
+        return []
+    
+    def _find_remove_hold_edge_candidates(self, graph, constraints):
+        """Find HOLD edges that can be safely removed"""
+        candidates = []
+        for from_node, to_node, edge_data in graph.g.edges(data=True):
+            if edge_data.get('type') == 'HOLD':
+                # Check if removal violates constraints
+                can_remove = True
+                for constraint in constraints:
+                    if constraint.constraint_type == "requires_vmr_access":
+                        pd_string = f"PD_{constraint.pd_id}"
+                        if pd_string == from_node and to_node.startswith('VMR_'):
+                            can_remove = False
+                            break
+                
+                if can_remove:
+                    candidates.append({
+                        'param_values': {'from_node': from_node, 'to_node': to_node},
+                        'target_description': f"remove {from_node} -> {to_node} HOLD edge"
+                    })
+        return candidates
+    
+    def _find_add_pd_candidates(self, graph, constraints):
+        """Find opportunities to add new PDs"""
+        # Simple implementation - always allow adding one PD
+        return [{
+            'param_values': {'pd_type': 'new_component'},
+            'target_description': "add new protection domain"
+        }]
+    
+    def _find_privatize_resource_candidates(self, graph, constraints):
+        """Find shared resources that can be privatized"""
+        candidates = []
+        resource_holders = {}
+        
+        # Find shared resources
+        for from_node, to_node, edge_data in graph.g.edges(data=True):
+            if edge_data.get('type') == 'HOLD' and to_node.startswith('VMR_'):
+                if to_node not in resource_holders:
+                    resource_holders[to_node] = []
+                resource_holders[to_node].append(from_node)
+        
+        # Find resources shared by exactly 2 PDs
+        for resource, holders in resource_holders.items():
+            if len(holders) == 2:
+                candidates.append({
+                    'param_values': {
+                        'resource': resource,
+                        'pd1': holders[0], 
+                        'pd2': holders[1],
+                        'resource_space': 'VMR_SPACE_1'  # Simplified
+                    },
+                    'target_description': f"privatize {resource} shared by {holders[0]}, {holders[1]}"
+                })
+        
+        return candidates
+    
+    def _find_add_mediator_candidates(self, graph, constraints):
+        """Find resources that could benefit from mediation"""
+        candidates = []
+        resource_holders = {}
+        
+        # Find shared resources
+        for from_node, to_node, edge_data in graph.g.edges(data=True):
+            if edge_data.get('type') == 'HOLD' and to_node.startswith('VMR_'):
+                if to_node not in resource_holders:
+                    resource_holders[to_node] = []
+                resource_holders[to_node].append(from_node)
+        
+        # Find resources shared by exactly 2 PDs
+        for resource, holders in resource_holders.items():
+            if len(holders) == 2:
+                candidates.append({
+                    'param_values': {
+                        'resource': resource,
+                        'pd1': holders[0],
+                        'pd2': holders[1],
+                        'mediator_pd': f"PD_{len([n for n in graph.g.nodes() if n.startswith('PD_')]) + 1}"
+                    },
+                    'target_description': f"add mediator for {resource} between {holders[0]}, {holders[1]}"
+                })
+        
+        return candidates
+    
+    def apply(self, graph, param_values):
+        """Apply the transition with given parameter values"""
+        if self.transition_type == "primitive":
+            return self._apply_primitive(graph, param_values)
+        else:
+            return self._apply_multistep(graph, param_values)
+    
+    def _apply_primitive(self, graph, param_values):
+        """Apply primitive operation"""
+        try:
+            if self.name == "remove_hold_edge":
+                from graph_transformations import EdgeTransformations
+                from generic_model import EdgeType
+                EdgeTransformations.remove_edge(
+                    graph,
+                    param_values['from_node'],
+                    param_values['to_node'], 
+                    EdgeType.HOLD
+                )
+                return True
+            elif self.name == "add_pd":
+                from graph_transformations import NodeTransformations
+                NodeTransformations.add_pd_node(graph, param_values.get('pd_type', 'new_component'))
+                return True
+            # Add other primitive implementations as needed
+            else:
+                print(f"Primitive {self.name} not yet implemented")
+                return False
+        except Exception as e:
+            print(f"Error applying primitive {self.name}: {e}")
+            return False
+    
+    def _apply_multistep(self, graph, param_values):
+        """Apply sequence of primitives"""
+        try:
+            if self.name == "privatize_resource":
+                return self._apply_privatize_resource(graph, param_values)
+            elif self.name == "add_mediator":
+                return self._apply_add_mediator(graph, param_values)
+            else:
+                print(f"Multi-step {self.name} not yet implemented")
+                return False
+        except Exception as e:
+            print(f"Error applying multi-step {self.name}: {e}")
+            return False
+    
+    def _apply_privatize_resource(self, graph, param_values):
+        """Apply privatize_resource transformation"""
+        from graph_transformations import NodeTransformations, EdgeTransformations
+        from generic_model import EdgeType, ResourceType, VmrType, Permission
+        
+        try:
+            resource = param_values['resource']
+            pd1 = param_values['pd1'] 
+            pd2 = param_values['pd2']
+            
+            # Get original resource properties (simplified)
+            original_data = graph.g.nodes[resource]
+            
+            # Remove existing HOLD edges
+            EdgeTransformations.remove_edge(graph, pd1, resource, EdgeType.HOLD)
+            EdgeTransformations.remove_edge(graph, pd2, resource, EdgeType.HOLD)
+            
+            # Find existing VMR space or create one
+            vmr_spaces = [node for node, data in graph.g.nodes(data=True) 
+                         if data.get('type') == 'RESOURCE_SPACE' and data.get('data') == 'VMR']
+            
+            if vmr_spaces:
+                # Extract space ID from node name (e.g., "VMR_SPACE_1" -> 1)
+                space_id = int(vmr_spaces[0].split('_')[-1])
+            else:
+                # Create new VMR space if none exists
+                space_id = NodeTransformations.add_resource_space(graph, ResourceType.VMR)
+            
+            # Create new private resources
+            new_resource1 = NodeTransformations.add_vmr_resource(graph, space_id, VmrType.HEAP, 10, 0x3000)
+            new_resource2 = NodeTransformations.add_vmr_resource(graph, space_id, VmrType.HEAP, 10, 0x4000)
+            
+            # Add new HOLD edges
+            pd1_id = int(pd1.split('_')[1])
+            pd2_id = int(pd2.split('_')[1])
+            EdgeTransformations.add_hold_edge(graph, Permission.R, pd1_id, ResourceType.VMR, space_id, new_resource1)
+            EdgeTransformations.add_hold_edge(graph, Permission.R, pd2_id, ResourceType.VMR, space_id, new_resource2)
+            
+            return True
+        except Exception as e:
+            print(f"Error in privatize_resource: {e}")
+            return False
+    
+    def _apply_add_mediator(self, graph, param_values):
+        """Apply add_mediator transformation"""
+        from graph_transformations import NodeTransformations, EdgeTransformations
+        from generic_model import EdgeType, ResourceType, Permission
+        
+        try:
+            resource = param_values['resource']
+            pd1 = param_values['pd1']
+            pd2 = param_values['pd2']
+            
+            # Create mediator PD
+            mediator_pd = NodeTransformations.add_pd_node(graph, "mediator")
+            
+            # Remove direct access
+            EdgeTransformations.remove_edge(graph, pd1, resource, EdgeType.HOLD)
+            EdgeTransformations.remove_edge(graph, pd2, resource, EdgeType.HOLD)
+            
+            # Find existing VMR space
+            vmr_spaces = [node for node, data in graph.g.nodes(data=True) 
+                         if data.get('type') == 'RESOURCE_SPACE' and data.get('data') == 'VMR']
+            
+            if vmr_spaces:
+                space_id = int(vmr_spaces[0].split('_')[-1])
+            else:
+                space_id = NodeTransformations.add_resource_space(graph, ResourceType.VMR)
+            
+            # Add mediator access to resource
+            resource_num = int(resource.split('_')[-1])
+            EdgeTransformations.add_hold_edge(graph, Permission.R, mediator_pd, ResourceType.VMR, space_id, resource_num)
+            
+            # Add REQUEST edges
+            pd1_id = int(pd1.split('_')[1])
+            pd2_id = int(pd2.split('_')[1])
+            EdgeTransformations.add_request_edge(graph, pd1_id, mediator_pd, ResourceType.VMR, space_id)
+            EdgeTransformations.add_request_edge(graph, pd2_id, mediator_pd, ResourceType.VMR, space_id)
+            
+            return True
+        except Exception as e:
+            print(f"Error in add_mediator: {e}")
+            return False
+    
+    def __str__(self):
+        if self.transition_type == "primitive":
+            return f"Transition({self.name}: {self.description})"
+        else:
+            return f"MultiStepTransition({self.name}: {len(self.primitives)} steps)"
 
 
 class Scenario:
     """Complete scenario definition for IsoSearch exploration"""
-    def __init__(self, name, description, goals, constraints, transitions, graph_builder):
+    def __init__(self, name, description, goals, constraints, allowed_primitives=None, allowed_multistep=None, graph_builder=None):
         self.name = name
         self.description = description
         self.goals = goals
         self.constraints = constraints
-        self.transitions = transitions
+        self.allowed_primitives = allowed_primitives or []
+        self.allowed_multistep = allowed_multistep or []
         self.graph_builder = graph_builder  # Function that builds the starting graph
     
     def build_graph(self):
         """Build and return the starting graph for this scenario"""
         return self.graph_builder()
     
+    def get_allowed_transitions(self):
+        """Get all allowed transitions for this scenario"""
+        transitions = []
+        
+        # Add allowed primitives
+        for primitive_name in self.allowed_primitives:
+            if primitive_name in PRIMITIVE_TRANSITIONS:
+                transitions.append(PRIMITIVE_TRANSITIONS[primitive_name])
+        
+        # Add allowed multi-step
+        for multistep_name in self.allowed_multistep:
+            if multistep_name in MULTISTEP_TRANSITIONS:
+                transitions.append(MULTISTEP_TRANSITIONS[multistep_name])
+        
+        return transitions
+    
     def __str__(self):
-        return f"Scenario({self.name}: {len(self.goals)} goals, {len(self.constraints)} constraints, {len(self.transitions)} transitions)"
+        total_transitions = len(self.allowed_primitives) + len(self.allowed_multistep)
+        return f"Scenario({self.name}: {len(self.goals)} goals, {len(self.constraints)} constraints, {total_transitions} transitions)"
 
+
+# Primitive Transition Definitions
+PRIMITIVE_TRANSITIONS = {
+    # Node Operations
+    "add_pd": Transition(
+        name="add_pd",
+        description="Create new Protection Domain",
+        transition_type="primitive"
+    ),
+    "remove_pd": Transition(
+        name="remove_pd", 
+        description="Remove existing Protection Domain",
+        transition_type="primitive"
+    ),
+    "add_vmr_resource": Transition(
+        name="add_vmr_resource",
+        description="Create new VMR resource", 
+        transition_type="primitive"
+    ),
+    "remove_vmr_resource": Transition(
+        name="remove_vmr_resource",
+        description="Remove VMR resource",
+        transition_type="primitive"
+    ),
+    "add_resource_space": Transition(
+        name="add_resource_space",
+        description="Create new resource space",
+        transition_type="primitive"
+    ),
+    
+    # Edge Operations
+    "add_hold_edge": Transition(
+        name="add_hold_edge",
+        description="Create PD → Resource relationship",
+        transition_type="primitive"
+    ),
+    "remove_hold_edge": Transition(
+        name="remove_hold_edge",
+        description="Remove PD → Resource relationship", 
+        transition_type="primitive"
+    ),
+    "add_request_edge": Transition(
+        name="add_request_edge",
+        description="Create PD → PD authority relationship",
+        transition_type="primitive"
+    ),
+    "remove_request_edge": Transition(
+        name="remove_request_edge",
+        description="Remove PD → PD authority relationship",
+        transition_type="primitive"
+    )
+}
+
+# Multi-Step Transition Definitions
+MULTISTEP_TRANSITIONS = {
+    "privatize_resource": Transition(
+        name="privatize_resource",
+        description="Remove shared access and create private copies",
+        transition_type="multistep",
+        primitives=[
+            Primitive("remove_hold_edge", source="$pd1", target="$resource"),
+            Primitive("remove_hold_edge", source="$pd2", target="$resource"),
+            Primitive("add_vmr_resource", space="$resource_space", vmr_type="$vmr_type", pages="$pages", va="$va1"),
+            Primitive("add_vmr_resource", space="$resource_space", vmr_type="$vmr_type", pages="$pages", va="$va2"),
+            Primitive("add_hold_edge", source="$pd1", target="$new_resource1"),
+            Primitive("add_hold_edge", source="$pd2", target="$new_resource2")
+        ],
+        parameters=["pd1", "pd2", "resource", "resource_space", "vmr_type", "pages", "va1", "va2", "new_resource1", "new_resource2"]
+    ),
+    
+    "add_mediator": Transition(
+        name="add_mediator", 
+        description="Insert mediator PD between sharers",
+        transition_type="multistep",
+        primitives=[
+            Primitive("add_pd", pd_type="mediator"),
+            Primitive("remove_hold_edge", source="$pd1", target="$resource"),
+            Primitive("remove_hold_edge", source="$pd2", target="$resource"),
+            Primitive("add_hold_edge", source="$mediator_pd", target="$resource"),
+            Primitive("add_request_edge", source="$pd1", target="$mediator_pd"),
+            Primitive("add_request_edge", source="$pd2", target="$mediator_pd")
+        ],
+        parameters=["pd1", "pd2", "resource", "mediator_pd"]
+    )
+}
 
 # Graph builder functions for different scenarios
 
@@ -224,20 +594,11 @@ def build_high_attack_surface_graph():
     return graph
 
 
-# Standard transition sets
-
-BASIC_TRANSITIONS = [
-    Transition("privatize_resource", "Make a shared resource private"),
-    Transition("add_mediator_pd", "Add a PD between two communicating PDs"),
-    Transition("remove_hold_edge", "Remove a hold relationship")
-]
-
-EXTENDED_TRANSITIONS = [
-    Transition("privatize_resource", "Make a shared resource private"),
-    Transition("add_mediator_pd", "Add a PD between two communicating PDs"),
-    Transition("remove_hold_edge", "Remove a hold relationship"),
-    # Future: could add more sophisticated transitions
-]
+# Standard transition sets for easy reuse
+BASIC_PRIMITIVES = ["add_pd", "remove_pd", "add_hold_edge", "remove_hold_edge", "add_request_edge", "remove_request_edge"]
+BASIC_MULTISTEP = ["privatize_resource", "add_mediator"]
+EXTENDED_PRIMITIVES = BASIC_PRIMITIVES + ["add_vmr_resource", "remove_vmr_resource", "add_resource_space"]
+EXTENDED_MULTISTEP = BASIC_MULTISTEP
 
 
 # Scenario definitions
@@ -258,7 +619,8 @@ SCENARIOS = {
             # Communication requirements  
             Constraint("requires_communication", 1, "REQUEST", target_pd=3),  # PD_1 must communicate with PD_3
         ],
-        transitions=BASIC_TRANSITIONS,
+        allowed_primitives=[],  # No primitives allowed
+        allowed_multistep=["privatize_resource", "add_mediator"],  # Only multi-step transformations
         graph_builder=build_basic_shared_resource_graph
     ),
     
@@ -276,7 +638,8 @@ SCENARIOS = {
             Constraint("requires_vmr_access", 2, "VMR", properties={"vmr_type": "any", "min_pages": 3}),
             Constraint("requires_vmr_access", 3, "VMR", properties={"vmr_type": "LIB", "min_pages": 1}),
         ],
-        transitions=BASIC_TRANSITIONS,
+        allowed_primitives=BASIC_PRIMITIVES,  # Only primitive operations
+        allowed_multistep=[],  # No multi-step allowed
         graph_builder=build_high_sharing_graph
     ),
     
@@ -296,7 +659,8 @@ SCENARIOS = {
             Constraint("requires_communication", 2, "REQUEST", target_pd=3),  # PD_2 -> PD_3  
             Constraint("requires_communication", 3, "REQUEST", target_pd=4),  # PD_3 -> PD_4
         ],
-        transitions=BASIC_TRANSITIONS,
+        allowed_primitives=BASIC_PRIMITIVES,  # Only primitive operations
+        allowed_multistep=[],  # No multi-step allowed
         graph_builder=build_authority_chain_graph
     ),
     
@@ -311,7 +675,23 @@ SCENARIOS = {
             Constraint("requires_vmr_access", 1, "VMR", properties={"vmr_type": "any", "min_pages": 1}),
             Constraint("requires_vmr_access", 2, "VMR", properties={"vmr_type": "any", "min_pages": 1}),
         ],
-        transitions=BASIC_TRANSITIONS,
+        allowed_primitives=[],  # No primitives allowed
+        allowed_multistep=["privatize_resource"],  # Only privatization for RSI focus
+        graph_builder=build_basic_shared_resource_graph
+    ),
+    
+    "mediator_test": Scenario(
+        name="Mediator Test",
+        description="Test add_mediator functionality specifically",
+        goals=[
+            Goal("RSI", 0.8, "minimize", "PD_1,PD_2")   # High threshold to allow mediator
+        ],
+        constraints=[
+            Constraint("requires_vmr_access", 1, "VMR", properties={"vmr_type": "any", "min_pages": 1}),
+            Constraint("requires_vmr_access", 2, "VMR", properties={"vmr_type": "any", "min_pages": 1}),
+        ],
+        allowed_primitives=[],  # No primitives allowed
+        allowed_multistep=["add_mediator"],  # Only mediator
         graph_builder=build_basic_shared_resource_graph
     ),
     
@@ -331,7 +711,8 @@ SCENARIOS = {
             # Communication constraint that creates the TCB challenge
             Constraint("requires_communication", 1, "REQUEST", target_pd=3),
         ],
-        transitions=BASIC_TRANSITIONS,
+        allowed_primitives=BASIC_PRIMITIVES,  # Both primitive and multi-step allowed
+        allowed_multistep=BASIC_MULTISTEP,    # Full flexibility for multi-objective
         graph_builder=build_basic_shared_resource_graph
     ),
     
@@ -353,7 +734,8 @@ SCENARIOS = {
             Constraint("requires_communication", 4, "REQUEST", target_pd=1),  # Admin -> Web
             Constraint("requires_communication", 4, "REQUEST", target_pd=2),  # Admin -> API
         ],
-        transitions=BASIC_TRANSITIONS,
+        allowed_primitives=["remove_hold_edge"],  # Only edge removal for ASR reduction
+        allowed_multistep=[],  # No multi-step allowed
         graph_builder=build_high_attack_surface_graph
     )
 }

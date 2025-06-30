@@ -401,7 +401,13 @@ def GenerateCandidate(graph, constraints, transitions, goals):
     transformation_candidates = []
     
     for transition in transitions:
-        candidates = _find_transformation_candidates(graph, transition, constraints, goals)
+        # Use new transition system's find_candidates method
+        candidates = transition.find_candidates(graph, constraints)
+        # Add predicted improvement and other metadata
+        for candidate in candidates:
+            candidate['transition_name'] = transition.name
+            candidate['transition_type'] = transition.transition_type
+            candidate['predicted_improvement'] = _predict_improvement(transition, candidate, graph, goals)
         transformation_candidates.extend(candidates)
     
     # Prepare candidate info for tracking
@@ -438,32 +444,68 @@ def GenerateCandidate(graph, constraints, transitions, goals):
         if len(candidate_info['discarded_candidates']) > 3:
             print(f"      ... and {len(candidate_info['discarded_candidates']) - 3} more")
     
-    success = _apply_specific_transformation(candidate_graph, best_candidate)
-    candidate_info['success'] = success
-    
-    if success:
-        print(f"    ✅ Applied {best_candidate['transition_type']}")
-        return candidate_graph, candidate_info
-    else:
-        print(f"    ❌ Failed to apply {best_candidate['transition_type']}")
+    # Apply transformation using new transition system
+    try:
+        # Find the transition object
+        transition = None
+        for t in transitions:
+            if t.name == best_candidate['transition_name']:
+                transition = t
+                break
+        
+        if transition is None:
+            print(f"    ❌ Transition {best_candidate['transition_name']} not found")
+            return None, candidate_info
+        
+        # Apply the transition with the candidate's parameter values
+        success = transition.apply(candidate_graph, best_candidate.get('param_values', {}))
+        candidate_info['success'] = success
+        
+        if success:
+            print(f"    ✅ Applied {best_candidate['transition_name']}")
+            return candidate_graph, candidate_info
+        else:
+            print(f"    ❌ Failed to apply {best_candidate['transition_name']}")
+            return None, candidate_info
+    except Exception as e:
+        print(f"    ❌ Error applying {best_candidate.get('transition_name', 'unknown')}: {e}")
+        candidate_info['success'] = False
         return None, candidate_info
+
+
+def _predict_improvement(transition, candidate, graph, goals):
+    """
+    Predict the improvement a transformation will have on the goals
+    Returns: float representing predicted improvement (higher = better)
+    """
+    # Basic improvement prediction based on transition type
+    improvement_map = {
+        "privatize_resource": 1.0,  # High impact on RSI
+        "add_mediator": 0.5,        # Medium impact on security
+        "add_pd": 0.3,
+        "remove_pd": 0.4,
+        "add_vmr_resource": 0.2,
+        "remove_vmr_resource": 0.3,
+        "add_resource_space": 0.1,
+        "add_hold_edge": 0.2,
+        "remove_hold_edge": 0.3,
+        "add_request_edge": 0.2,
+        "remove_request_edge": 0.3
+    }
+    
+    base_improvement = improvement_map.get(transition.name, 0.3)
+    
+    # Could add goal-specific adjustments here
+    # For now, return base improvement
+    return base_improvement
 
 
 def _find_transformation_candidates(graph, transition, constraints, goals):
     """
-    Find all possible applications of a transformation and estimate their impact
-    Returns: list of transformation candidates with predicted improvements
+    Legacy function - replaced by new transition system
     """
-    candidates = []
-    
-    if transition.transition_type == "privatize_resource":
-        candidates.extend(_find_privatization_candidates(graph, constraints, goals))
-    elif transition.transition_type == "add_mediator_pd":
-        candidates.extend(_find_mediation_candidates(graph, constraints, goals))
-    elif transition.transition_type == "remove_hold_edge":
-        candidates.extend(_find_edge_removal_candidates(graph, constraints, goals))
-    
-    return candidates
+    # This function is no longer used with the new transition system
+    return []
 
 
 def _find_privatization_candidates(graph, constraints, goals):
@@ -732,7 +774,7 @@ def DesignSpaceExplorationWithVisualization(scenario, visualizer=None, tree_visu
     # Step 1: Initialize components from scenario (from pseudocode line 2)
     goals = scenario.goals
     constraints = scenario.constraints
-    transitions = scenario.transitions
+    transitions = scenario.get_allowed_transitions()  # Use new transition system
     curGraph = scenario.build_graph()
     
     # Initialize the list to store discovered mechanisms
@@ -887,7 +929,7 @@ def DesignSpaceExploration(scenario):
     # Step 1: Initialize components from scenario (from pseudocode line 2)
     goals = scenario.goals
     constraints = scenario.constraints
-    transitions = scenario.transitions
+    transitions = scenario.get_allowed_transitions()  # Use new transition system
     curGraph = scenario.build_graph()
     
     # Initialize the list to store discovered mechanisms
@@ -1358,7 +1400,8 @@ def run_scenario(scenario_name, enable_visualization=False):
         print(f"   Description: {scenario.description}")
         print(f"   Goals ({len(scenario.goals)}): {[str(g) for g in scenario.goals]}")
         print(f"   Constraints ({len(scenario.constraints)}): {[str(c) for c in scenario.constraints]}")
-        print(f"   Transitions ({len(scenario.transitions)}): {[str(t) for t in scenario.transitions]}")
+        transitions = scenario.get_allowed_transitions()
+        print(f"   Transitions ({len(transitions)}): {[str(t) for t in transitions]}")
         
         # Build the graph and show details
         graph = scenario.build_graph()
@@ -1548,8 +1591,9 @@ def print_detailed_scenario_info():
                 print(f"     • {constraint}")
         else:
             print(f"     • None")
-        print(f"   Transitions ({len(scenario.transitions)}):")
-        for transition in scenario.transitions:
+        transitions = scenario.get_allowed_transitions()
+        print(f"   Transitions ({len(transitions)}):")
+        for transition in transitions:
             print(f"     • {transition.transition_type}: {transition.description}")
 
 
