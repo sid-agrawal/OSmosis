@@ -10,14 +10,18 @@ from generic_model import ModelGraph, ResourceType, VmrType, Permission
 
 
 class Goal:
-    """Simple goal structure for design space exploration"""
-    def __init__(self, metric_name, target_value, direction="minimize"):
+    """Goal structure for design space exploration with targeted metrics"""
+    def __init__(self, metric_name, target_value, direction="minimize", target_spec=None):
         self.metric_name = metric_name  # e.g., "RSI", "TCB", "FR", "ASR"
         self.target_value = target_value  # e.g., 0.5, 10, etc.
         self.direction = direction  # "minimize" or "maximize"
+        self.target_spec = target_spec  # For targeted goals: PD for TCB, PD pair for RSI/FR, None for ASR
     
     def __str__(self):
-        return f"Goal({self.direction} {self.metric_name} to {self.target_value})"
+        if self.target_spec:
+            return f"Goal({self.direction} {self.metric_name}[{self.target_spec}] to {self.target_value})"
+        else:
+            return f"Goal({self.direction} {self.metric_name} to {self.target_value})"
 
 
 class Constraint:
@@ -236,9 +240,9 @@ SCENARIOS = {
         name="Basic Resource Sharing",
         description="2 PDs sharing 1 VMR resource with 1 mediator PD",
         goals=[
-            Goal("RSI", 0.3, "minimize"),
-            Goal("TCB", 0, "minimize"),
-            Goal("FR", 5, "minimize")
+            Goal("RSI", 0.3, "minimize", "PD_1,PD_2"),  # Target specific PD pair
+            Goal("TCB", 0, "minimize", "PD_1"),         # Target specific PD
+            Goal("ASR", 1.0, "minimize")                # System-wide goal
         ],
         constraints=[
             Constraint("requires_resource", 1, "VMR")
@@ -251,9 +255,9 @@ SCENARIOS = {
         name="High Resource Sharing",
         description="3 PDs sharing multiple VMR resources with complex sharing patterns",
         goals=[
-            Goal("RSI", 0.2, "minimize"),
-            Goal("ASR", 2.0, "minimize"),
-            Goal("TCB", 1, "minimize")
+            Goal("RSI", 0.2, "minimize", "PD_1,PD_2"),  # Target specific high-sharing pair
+            Goal("ASR", 2.0, "minimize"),               # System-wide goal
+            Goal("TCB", 1, "minimize", "PD_1")          # Target specific PD
         ],
         constraints=[
             Constraint("requires_resource", 1, "VMR"),
@@ -267,9 +271,9 @@ SCENARIOS = {
         name="Authority Chain",
         description="4 PDs in authority hierarchy to test fault radius optimization",
         goals=[
-            Goal("FR", 3, "minimize"),
-            Goal("TCB", 2, "minimize"),
-            Goal("ASR", 1.5, "minimize")
+            Goal("FR", 3, "minimize", "PD_1,PD_4"),     # Target specific PD pair with long chain
+            Goal("TCB", 2, "minimize", "PD_1"),         # Target leaf PD
+            Goal("ASR", 1.5, "minimize")                # System-wide goal
         ],
         constraints=[
             Constraint("requires_resource", 1, "VMR")
@@ -282,7 +286,7 @@ SCENARIOS = {
         name="RSI Optimization",
         description="Focus on minimizing resource sharing index",
         goals=[
-            Goal("RSI", 0.1, "minimize")
+            Goal("RSI", 0.1, "minimize", "PD_1,PD_2")   # Target the sharing pair
         ],
         constraints=[],
         transitions=BASIC_TRANSITIONS,
@@ -293,10 +297,10 @@ SCENARIOS = {
         name="Multi-Objective Optimization",
         description="Simultaneously optimize all metrics",
         goals=[
-            Goal("RSI", 0.3, "minimize"),
-            Goal("ASR", 1.0, "minimize"),
-            Goal("TCB", 1, "minimize"),
-            Goal("FR", 4, "minimize")
+            Goal("RSI", 0.3, "minimize", "PD_1,PD_2"),  # Target sharing pair
+            Goal("ASR", 1.0, "minimize"),               # System-wide
+            Goal("TCB", 1, "minimize", "PD_1"),         # Target specific PD
+            Goal("FR", 4, "minimize", "PD_1,PD_3")      # Target specific PD pair
         ],
         constraints=[
             Constraint("requires_resource", 1, "VMR")
@@ -309,7 +313,7 @@ SCENARIOS = {
         name="Attack Surface Reduction",
         description="Demonstrate systematic reduction of attack surface (ASR) in a complex multi-service system",
         goals=[
-            Goal("ASR", 2.5, "minimize")
+            Goal("ASR", 2.5, "minimize")   # System-wide ASR goal
         ],
         constraints=[
             Constraint("requires_resource", 1, "VMR"),  # Web frontend needs access

@@ -25,8 +25,8 @@ def ComputeMetrics(candidate):
     
     metrics = {}
     
-    # Calculate RSI (Resource Sharing Index) by resource type
-    metrics['RSI'] = _calculate_rsi_by_type(candidate, pd_nodes)
+    # Calculate RSI (Resource Sharing Index) as per PD pair metric
+    metrics['RSI'] = _calculate_rsi_per_pd_pair(candidate, pd_nodes)
     
     # Calculate ASR (Attack Surface Ratio) - attack paths per PD
     metrics['ASR'] = _calculate_asr(candidate, pd_nodes)
@@ -41,41 +41,48 @@ def ComputeMetrics(candidate):
     return metrics
 
 
-def _calculate_rsi_by_type(graph, pd_nodes):
-    """Calculate RSI (Resource Sharing Index) by resource type"""
+def _calculate_rsi_per_pd_pair(graph, pd_nodes):
+    """Calculate RSI (Resource Sharing Index) as per PD pair metric
     
-    # Group resources by type and track which PDs access them
-    resource_type_access = {}
+    RSI[PD_i, PD_j] = (Resources shared by PD_i and PD_j) / (Total resources accessed by either PD_i or PD_j)
     
+    Returns a dictionary mapping PD pairs to their RSI values
+    """
+    # Build resource access map: PD -> set of resources
+    pd_resources = {}
+    for pd in pd_nodes:
+        pd_resources[pd] = set()
+    
+    # Find all HOLD edges from PDs to resources
     for from_node, to_node, edge_data in graph.g.edges(data=True):
         if edge_data.get('type') == 'HOLD' and from_node.startswith('PD_'):
-            # Determine resource type from the target node
-            resource_type = _get_resource_type(graph, to_node)
-            
-            if resource_type not in resource_type_access:
-                resource_type_access[resource_type] = {}
-            
-            if to_node not in resource_type_access[resource_type]:
-                resource_type_access[resource_type][to_node] = set()
-            
-            resource_type_access[resource_type][to_node].add(from_node)
+            if from_node in pd_resources:
+                pd_resources[from_node].add(to_node)
     
-    # Calculate RSI for each resource type
-    rsi_by_type = {}
+    # Calculate RSI for each PD pair
+    rsi_pairs = {}
     
-    for resource_type, resources in resource_type_access.items():
-        shared_count = 0
-        total_count = len(resources)
-        
-        # Count how many resources of this type are shared
-        for resource_id, accessing_pds in resources.items():
-            if len(accessing_pds) > 1:
-                shared_count += 1
-        
-        # RSI = shared_resources / total_resources for this type
-        rsi_by_type[resource_type] = shared_count / total_count if total_count > 0 else 0.0
+    for i, pd_i in enumerate(pd_nodes):
+        for j, pd_j in enumerate(pd_nodes):
+            if i < j:  # Only calculate for unique pairs (avoid duplicates)
+                pair_key = f"{pd_i},{pd_j}"
+                
+                resources_i = pd_resources[pd_i]
+                resources_j = pd_resources[pd_j]
+                
+                # Resources shared by both PDs
+                shared_resources = resources_i.intersection(resources_j)
+                
+                # Total resources accessed by either PD
+                total_resources = resources_i.union(resources_j)
+                
+                # Calculate RSI for this pair
+                if len(total_resources) > 0:
+                    rsi_pairs[pair_key] = len(shared_resources) / len(total_resources)
+                else:
+                    rsi_pairs[pair_key] = 0.0
     
-    return rsi_by_type
+    return rsi_pairs
 
 
 def _get_resource_type(graph, resource_node):
@@ -269,6 +276,7 @@ def _get_ancestors_with_distance(pd, request_graph):
 def GoalsMet(metrics, goals):
     """
     Check if the computed metrics meet the specified goals
+    Supports targeted goals: TCB for specific PD, RSI/FR for specific PD pairs, ASR system-wide
     Returns: boolean indicating if all goals are satisfied
     """
     for goal in goals:
@@ -277,69 +285,105 @@ def GoalsMet(metrics, goals):
             print(f"    Warning: Metric {goal.metric_name} not found in results")
             return False
         
-        # Handle RSI map format
-        if goal.metric_name == "RSI" and isinstance(metric_value, dict):
-            # For RSI map, check if any resource type violates the goal
-            goal_violated = False
-            for resource_type, rsi_value in metric_value.items():
-                if goal.direction == "minimize":
-                    if rsi_value > goal.target_value:
-                        print(f"    Goal not met: RSI[{resource_type}]={rsi_value:.3f} > {goal.target_value}")
-                        goal_violated = True
-                elif goal.direction == "maximize":
-                    if rsi_value < goal.target_value:
-                        print(f"    Goal not met: RSI[{resource_type}]={rsi_value:.3f} < {goal.target_value}")
-                        goal_violated = True
-            
-            if goal_violated:
-                return False
-        
-        # Handle TCB map format (per-PD authority and sharing lists)
-        elif goal.metric_name == "TCB" and isinstance(metric_value, dict):
-            goal_violated = False
-            for pd, tcb_list in metric_value.items():
+        # Handle targeted goals
+        if goal.target_spec:
+            if goal.metric_name == "TCB" and isinstance(metric_value, dict):
+                # TCB goal for specific PD
+                target_pd = goal.target_spec
+                if target_pd not in metric_value:
+                    print(f"    Warning: PD {target_pd} not found in TCB metrics")
+                    return False
+                
+                tcb_list = metric_value[target_pd]
                 tcb_count = len(tcb_list)
+                
                 if goal.direction == "minimize":
                     if tcb_count > goal.target_value:
                         dependencies = ", ".join(tcb_list) if tcb_list else "none"
-                        print(f"    Goal not met: TCB[{pd}]={tcb_count} > {goal.target_value} (dependencies: {dependencies})")
-                        goal_violated = True
+                        print(f"    Goal not met: TCB[{target_pd}]={tcb_count} > {goal.target_value} (dependencies: {dependencies})")
+                        return False
                 elif goal.direction == "maximize":
                     if tcb_count < goal.target_value:
                         dependencies = ", ".join(tcb_list) if tcb_list else "none"
-                        print(f"    Goal not met: TCB[{pd}]={tcb_count} < {goal.target_value} (dependencies: {dependencies})")
-                        goal_violated = True
-            
-            if goal_violated:
+                        print(f"    Goal not met: TCB[{target_pd}]={tcb_count} < {goal.target_value} (dependencies: {dependencies})")
+                        return False
+                        
+            elif goal.metric_name in ["RSI", "FR"] and isinstance(metric_value, dict):
+                # RSI or FR goal for specific PD pair
+                target_pair = goal.target_spec
+                if target_pair not in metric_value:
+                    print(f"    Warning: PD pair {target_pair} not found in {goal.metric_name} metrics")
+                    return False
+                
+                pair_value = metric_value[target_pair]
+                
+                if goal.direction == "minimize":
+                    if pair_value > goal.target_value:
+                        value_str = "infinity" if pair_value == float('inf') else f"{pair_value:.3f}"
+                        print(f"    Goal not met: {goal.metric_name}[{target_pair}]={value_str} > {goal.target_value}")
+                        return False
+                elif goal.direction == "maximize":
+                    if pair_value < goal.target_value:
+                        value_str = "infinity" if pair_value == float('inf') else f"{pair_value:.3f}"
+                        print(f"    Goal not met: {goal.metric_name}[{target_pair}]={value_str} < {goal.target_value}")
+                        return False
+            else:
+                print(f"    Warning: Targeted goal for {goal.metric_name} not supported or metric format unexpected")
                 return False
         
-        # Handle FR map format (distance between PD pairs)
-        elif goal.metric_name == "FR" and isinstance(metric_value, dict):
-            goal_violated = False
-            for pair, fr_distance in metric_value.items():
-                if goal.direction == "minimize":
-                    if fr_distance > goal.target_value:
-                        distance_str = "infinity" if fr_distance == float('inf') else f"{fr_distance:.1f}"
-                        print(f"    Goal not met: FR[{pair}]={distance_str} > {goal.target_value}")
-                        goal_violated = True
-                elif goal.direction == "maximize":
-                    if fr_distance < goal.target_value:
-                        distance_str = "infinity" if fr_distance == float('inf') else f"{fr_distance:.1f}"
-                        print(f"    Goal not met: FR[{pair}]={distance_str} < {goal.target_value}")
-                        goal_violated = True
-            
-            if goal_violated:
-                return False
+        # Handle non-targeted goals (system-wide)
         else:
-            # Handle scalar metrics (ASR)
-            if goal.direction == "minimize":
-                if metric_value > goal.target_value:
-                    print(f"    Goal not met: {goal.metric_name}={metric_value} > {goal.target_value}")
+            if goal.metric_name == "ASR":
+                # ASR is system-wide scalar metric
+                if goal.direction == "minimize":
+                    if metric_value > goal.target_value:
+                        print(f"    Goal not met: {goal.metric_name}={metric_value:.3f} > {goal.target_value}")
+                        return False
+                elif goal.direction == "maximize":
+                    if metric_value < goal.target_value:
+                        print(f"    Goal not met: {goal.metric_name}={metric_value:.3f} < {goal.target_value}")
+                        return False
+            
+            elif goal.metric_name in ["RSI", "TCB", "FR"] and isinstance(metric_value, dict):
+                # Non-targeted goals for dictionary metrics check all entries
+                goal_violated = False
+                for key, value in metric_value.items():
+                    if goal.metric_name == "TCB":
+                        check_value = len(value)  # TCB uses length of dependency list
+                    else:
+                        check_value = value  # RSI and FR use the value directly
+                    
+                    if goal.direction == "minimize":
+                        if check_value > goal.target_value:
+                            if goal.metric_name == "TCB":
+                                dependencies = ", ".join(value) if value else "none"
+                                print(f"    Goal not met: {goal.metric_name}[{key}]={check_value} > {goal.target_value} (dependencies: {dependencies})")
+                            else:
+                                value_str = "infinity" if check_value == float('inf') else f"{check_value:.3f}"
+                                print(f"    Goal not met: {goal.metric_name}[{key}]={value_str} > {goal.target_value}")
+                            goal_violated = True
+                    elif goal.direction == "maximize":
+                        if check_value < goal.target_value:
+                            if goal.metric_name == "TCB":
+                                dependencies = ", ".join(value) if value else "none"
+                                print(f"    Goal not met: {goal.metric_name}[{key}]={check_value} < {goal.target_value} (dependencies: {dependencies})")
+                            else:
+                                value_str = "infinity" if check_value == float('inf') else f"{check_value:.3f}"
+                                print(f"    Goal not met: {goal.metric_name}[{key}]={value_str} < {goal.target_value}")
+                            goal_violated = True
+                
+                if goal_violated:
                     return False
-            elif goal.direction == "maximize":
-                if metric_value < goal.target_value:
-                    print(f"    Goal not met: {goal.metric_name}={metric_value} < {goal.target_value}")
-                    return False
+            else:
+                # Handle other scalar metrics
+                if goal.direction == "minimize":
+                    if metric_value > goal.target_value:
+                        print(f"    Goal not met: {goal.metric_name}={metric_value} > {goal.target_value}")
+                        return False
+                elif goal.direction == "maximize":
+                    if metric_value < goal.target_value:
+                        print(f"    Goal not met: {goal.metric_name}={metric_value} < {goal.target_value}")
+                        return False
                 
     print(f"    All {len(goals)} goals met!")
     return True
