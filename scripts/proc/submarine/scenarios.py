@@ -152,6 +152,67 @@ def build_authority_chain_graph():
     return graph
 
 
+def build_high_attack_surface_graph():
+    """Build a graph with many attack paths (high ASR) that can be systematically reduced"""
+    graph = ModelGraph()
+    
+    # Add 4 protection domains representing different system components
+    web_pd = NodeTransformations.add_pd_node(graph, "web_frontend")
+    api_pd = NodeTransformations.add_pd_node(graph, "api_server") 
+    db_pd = NodeTransformations.add_pd_node(graph, "database")
+    admin_pd = NodeTransformations.add_pd_node(graph, "admin_panel")
+    
+    # Add VMR space and multiple shared resources (creates many HOLD edges = attack paths)
+    vmr_space = NodeTransformations.add_resource_space(graph, ResourceType.VMR)
+    
+    # Shared memory for inter-service communication (high attack surface)
+    shared_memory = NodeTransformations.add_vmr_resource(graph, vmr_space, VmrType.HEAP, 30, 0x1000)
+    
+    # Shared configuration space
+    config_space = NodeTransformations.add_vmr_resource(graph, vmr_space, VmrType.LIB, 20, 0x2000)
+    
+    # Shared log buffer
+    log_buffer = NodeTransformations.add_vmr_resource(graph, vmr_space, VmrType.STACK, 15, 0x3000)
+    
+    # Database connection pool (shared by multiple services)
+    db_pool = NodeTransformations.add_vmr_resource(graph, vmr_space, VmrType.HEAP, 25, 0x4000)
+    
+    # Session store (shared by web and admin)
+    session_store = NodeTransformations.add_vmr_resource(graph, vmr_space, VmrType.LIB, 10, 0x5000)
+    
+    # Create many HOLD edges (attack paths) - all services access shared resources
+    # Web frontend accesses: shared memory, config, log buffer, session store
+    EdgeTransformations.add_hold_edge(graph, Permission.R, web_pd, ResourceType.VMR, vmr_space, shared_memory)
+    EdgeTransformations.add_hold_edge(graph, Permission.R, web_pd, ResourceType.VMR, vmr_space, config_space)
+    EdgeTransformations.add_hold_edge(graph, Permission.R, web_pd, ResourceType.VMR, vmr_space, log_buffer)
+    EdgeTransformations.add_hold_edge(graph, Permission.R, web_pd, ResourceType.VMR, vmr_space, session_store)
+    
+    # API server accesses: shared memory, config, log buffer, db pool
+    EdgeTransformations.add_hold_edge(graph, Permission.R, api_pd, ResourceType.VMR, vmr_space, shared_memory)
+    EdgeTransformations.add_hold_edge(graph, Permission.R, api_pd, ResourceType.VMR, vmr_space, config_space)
+    EdgeTransformations.add_hold_edge(graph, Permission.R, api_pd, ResourceType.VMR, vmr_space, log_buffer)
+    EdgeTransformations.add_hold_edge(graph, Permission.R, api_pd, ResourceType.VMR, vmr_space, db_pool)
+    
+    # Database accesses: config, log buffer, db pool
+    EdgeTransformations.add_hold_edge(graph, Permission.R, db_pd, ResourceType.VMR, vmr_space, config_space)
+    EdgeTransformations.add_hold_edge(graph, Permission.R, db_pd, ResourceType.VMR, vmr_space, log_buffer)
+    EdgeTransformations.add_hold_edge(graph, Permission.R, db_pd, ResourceType.VMR, vmr_space, db_pool)
+    
+    # Admin panel accesses: config, session store, shared memory
+    EdgeTransformations.add_hold_edge(graph, Permission.R, admin_pd, ResourceType.VMR, vmr_space, config_space)
+    EdgeTransformations.add_hold_edge(graph, Permission.R, admin_pd, ResourceType.VMR, vmr_space, session_store)
+    EdgeTransformations.add_hold_edge(graph, Permission.R, admin_pd, ResourceType.VMR, vmr_space, shared_memory)
+    
+    # Add some REQUEST edges (authority relationships) for additional attack paths
+    # Web requests from API, API requests from DB, Admin has authority over all
+    EdgeTransformations.add_request_edge(graph, web_pd, api_pd, ResourceType.VMR, vmr_space)
+    EdgeTransformations.add_request_edge(graph, api_pd, db_pd, ResourceType.VMR, vmr_space)
+    EdgeTransformations.add_request_edge(graph, admin_pd, web_pd, ResourceType.VMR, vmr_space)
+    EdgeTransformations.add_request_edge(graph, admin_pd, api_pd, ResourceType.VMR, vmr_space)
+    
+    return graph
+
+
 # Standard transition sets
 
 BASIC_TRANSITIONS = [
@@ -242,6 +303,20 @@ SCENARIOS = {
         ],
         transitions=BASIC_TRANSITIONS,
         graph_builder=build_basic_shared_resource_graph
+    ),
+    
+    "attack_surface_reduction": Scenario(
+        name="Attack Surface Reduction",
+        description="Demonstrate systematic reduction of attack surface (ASR) in a complex multi-service system",
+        goals=[
+            Goal("ASR", 2.5, "minimize")
+        ],
+        constraints=[
+            Constraint("requires_resource", 1, "VMR"),  # Web frontend needs access
+            Constraint("requires_resource", 2, "VMR")   # API server needs access
+        ],
+        transitions=BASIC_TRANSITIONS,
+        graph_builder=build_high_attack_surface_graph
     )
 }
 
