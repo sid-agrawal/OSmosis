@@ -422,8 +422,18 @@ def GenerateCandidate(graph, constraints, transitions, goals):
         print("  No valid transitions found")
         return None, candidate_info
     
-    # Sort by predicted metric improvement (best first)
-    transformation_candidates.sort(key=lambda x: x['predicted_improvement'], reverse=True)
+    # Enhanced sorting: prioritize constraint-relevant candidates (Strategy 3)
+    def candidate_priority(candidate):
+        base_improvement = candidate['predicted_improvement']
+        constraint_relevance = candidate.get('constraint_relevance', 0.1)
+        addresses_violation = candidate.get('addresses_violation', False)
+        
+        # Boost priority for constraint-addressing candidates
+        if addresses_violation:
+            return base_improvement + constraint_relevance + 0.5
+        return base_improvement
+    
+    transformation_candidates.sort(key=candidate_priority, reverse=True)
     
     # Try the best transformation candidate
     best_candidate = transformation_candidates[0]
@@ -480,8 +490,16 @@ def _predict_improvement(transition, candidate, graph, goals):
     """
     # Basic improvement prediction based on transition type
     improvement_map = {
+        # Multi-step transitions
         "privatize_resource": 1.0,  # High impact on RSI
         "add_mediator": 0.5,        # Medium impact on security
+        
+        # Enhanced primitives (Strategy 1) - higher scores for targeted operations
+        "create_private_copy": 0.95,    # Directly addresses sharing - almost as good as multi-step
+        "clone_vmr_resource": 0.7,      # Creates private resources
+        "replace_hold_edge": 0.6,       # Redirects access to private resources
+        
+        # Basic primitives
         "add_pd": 0.3,
         "remove_pd": 0.4,
         "add_vmr_resource": 0.2,

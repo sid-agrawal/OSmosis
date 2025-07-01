@@ -40,6 +40,16 @@ class Constraint:
             return f"Constraint({self.constraint_type} for PD_{self.pd_id}: {self.resource_info}, {self.properties})"
         else:
             return f"Constraint({self.constraint_type} for PD_{self.pd_id}: {self.resource_info})"
+    
+    def to_dict(self):
+        """Convert constraint to dictionary for JSON serialization"""
+        return {
+            'constraint_type': self.constraint_type,
+            'pd_id': self.pd_id,
+            'resource_info': self.resource_info,
+            'target_pd': self.target_pd,
+            'properties': self.properties
+        }
 
 
 class Primitive:
@@ -88,6 +98,12 @@ class Transition:
             return self._find_remove_hold_edge_candidates(graph, constraints)
         elif self.name == "add_pd":
             return self._find_add_pd_candidates(graph, constraints)
+        elif self.name == "clone_vmr_resource":
+            return self._find_clone_vmr_resource_candidates(graph, constraints)
+        elif self.name == "replace_hold_edge":
+            return self._find_replace_hold_edge_candidates(graph, constraints)
+        elif self.name == "create_private_copy":
+            return self._find_create_private_copy_candidates(graph, constraints)
         # Add other primitives as needed
         return []
     
@@ -182,6 +198,171 @@ class Transition:
         
         return candidates
     
+    def _find_clone_vmr_resource_candidates(self, graph, constraints):
+        """Find shared VMR resources that can be cloned for privatization (Strategy 3: Constraint-Guided)"""
+        candidates = []
+        
+        # Analyze constraint violations to guide candidate discovery
+        violations = self._analyze_sharing_violations(graph, constraints)
+        
+        for violation in violations:
+            resource = violation['resource']
+            sharers = violation['sharers']
+            constraint = violation['constraint']
+            
+            # Suggest cloning for each sharer
+            for i, sharer in enumerate(sharers):
+                new_va = hex(0x8000 + i * 0x1000)  # Generate unique VAs
+                candidates.append({
+                    'param_values': {
+                        'source_resource': resource,
+                        'new_va': new_va,
+                        'target_pd': sharer
+                    },
+                    'target_description': f"clone {resource} as private copy for {sharer}",
+                    'constraint_relevance': 0.9,  # High relevance for constraint violations
+                    'addresses_violation': True
+                })
+        
+        return candidates
+    
+    def _find_replace_hold_edge_candidates(self, graph, constraints):
+        """Find HOLD edges that can be replaced to resolve sharing violations"""
+        candidates = []
+        
+        # Find sharing violations
+        violations = self._analyze_sharing_violations(graph, constraints)
+        
+        for violation in violations:
+            resource = violation['resource']
+            sharers = violation['sharers']
+            
+            for sharer in sharers:
+                # Look for potential private replacement resources
+                potential_replacements = self._find_potential_private_resources(graph, resource, sharer)
+                
+                for replacement in potential_replacements:
+                    candidates.append({
+                        'param_values': {
+                            'pd': sharer,
+                            'old_resource': resource,
+                            'new_resource': replacement
+                        },
+                        'target_description': f"redirect {sharer} from {resource} to private {replacement}",
+                        'constraint_relevance': 0.8,
+                        'addresses_violation': True
+                    })
+        
+        return candidates
+    
+    def _find_create_private_copy_candidates(self, graph, constraints):
+        """Find opportunities to create private copies (combines clone + replace)"""
+        candidates = []
+        
+        violations = self._analyze_sharing_violations(graph, constraints)
+        
+        for violation in violations:
+            resource = violation['resource']
+            sharers = violation['sharers']
+            
+            for sharer in sharers:
+                candidates.append({
+                    'param_values': {
+                        'source_resource': resource,
+                        'target_pd': sharer
+                    },
+                    'target_description': f"create private copy of {resource} for {sharer}",
+                    'constraint_relevance': 1.0,  # Highest relevance - directly solves sharing
+                    'addresses_violation': True
+                })
+        
+        return candidates
+    
+    def _analyze_sharing_violations(self, graph, constraints):
+        """Strategy 3: Analyze constraints to identify sharing violations"""
+        violations = []
+        
+        for constraint in constraints:
+            if constraint.constraint_type == "requires_vmr_access":
+                pd_id = constraint.pd_id
+                vmr_type = constraint.properties.get('vmr_type', 'any')
+                pd_string = f"PD_{pd_id}"
+                
+                # Find resources this PD accesses
+                pd_resources = []
+                for from_node, to_node, edge_data in graph.g.edges(data=True):
+                    if from_node == pd_string and edge_data.get('type') == 'HOLD' and to_node.startswith('VMR_'):
+                        if self._matches_vmr_type(graph, to_node, vmr_type):
+                            pd_resources.append(to_node)
+                
+                # Check for sharing violations
+                for resource in pd_resources:
+                    sharers = []
+                    for from_node, to_node, edge_data in graph.g.edges(data=True):
+                        if to_node == resource and edge_data.get('type') == 'HOLD':
+                            sharers.append(from_node)
+                    
+                    if len(sharers) > 1:  # Shared resource found
+                        violations.append({
+                            'type': 'unwanted_sharing',
+                            'constraint': constraint,
+                            'resource': resource,
+                            'sharers': sharers,
+                            'severity': len(sharers) - 1,
+                            'vmr_type': vmr_type
+                        })
+        
+        # Sort by severity (most shared resources first)
+        return sorted(violations, key=lambda x: x['severity'], reverse=True)
+    
+    def _matches_vmr_type(self, graph, resource, required_type):
+        """Check if resource matches required VMR type"""
+        if required_type == 'any':
+            return True
+        
+        try:
+            resource_data = graph.g.nodes[resource]
+            if resource_data.get('type') == 'RESOURCE' and resource_data.get('data') == 'VMR':
+                import json
+                extra = json.loads(resource_data.get('extra', '{}'))
+                actual_type = extra.get('vmr_type', '').upper()
+                return actual_type == required_type.upper()
+        except:
+            pass
+        
+        return False
+    
+    def _find_potential_private_resources(self, graph, shared_resource, pd):
+        """Find existing private resources that could replace shared access"""
+        potential = []
+        
+        # Look for private VMR resources of same type that this PD could use
+        try:
+            shared_data = graph.g.nodes[shared_resource]
+            import json
+            shared_extra = json.loads(shared_data.get('extra', '{}'))
+            shared_type = shared_extra.get('vmr_type')
+            
+            for node, data in graph.g.nodes(data=True):
+                if (node.startswith('VMR_') and node != shared_resource and 
+                    data.get('type') == 'RESOURCE' and data.get('data') == 'VMR'):
+                    
+                    node_extra = json.loads(data.get('extra', '{}'))
+                    if node_extra.get('vmr_type') == shared_type:
+                        # Check if this resource is private or could be made available
+                        current_holders = []
+                        for from_node, to_node, edge_data in graph.g.edges(data=True):
+                            if to_node == node and edge_data.get('type') == 'HOLD':
+                                current_holders.append(from_node)
+                        
+                        # If no holders or could be shared, it's a potential replacement
+                        if len(current_holders) == 0:
+                            potential.append(node)
+        except:
+            pass
+        
+        return potential
+    
     def apply(self, graph, param_values):
         """Apply the transition with given parameter values"""
         if self.transition_type == "primitive":
@@ -206,6 +387,12 @@ class Transition:
                 from graph_transformations import NodeTransformations
                 NodeTransformations.add_pd_node(graph, param_values.get('pd_type', 'new_component'))
                 return True
+            elif self.name == "clone_vmr_resource":
+                return self._apply_clone_vmr_resource(graph, param_values)
+            elif self.name == "replace_hold_edge":
+                return self._apply_replace_hold_edge(graph, param_values)
+            elif self.name == "create_private_copy":
+                return self._apply_create_private_copy(graph, param_values)
             # Add other primitive implementations as needed
             else:
                 print(f"Primitive {self.name} not yet implemented")
@@ -312,6 +499,147 @@ class Transition:
             print(f"Error in add_mediator: {e}")
             return False
     
+    def _apply_clone_vmr_resource(self, graph, param_values):
+        """Apply clone_vmr_resource primitive - create private copy of VMR resource"""
+        from graph_transformations import NodeTransformations
+        from generic_model import VmrType
+        import json
+        
+        try:
+            source_resource = param_values['source_resource']
+            new_va = param_values['new_va'] 
+            target_pd = param_values['target_pd']
+            
+            # Get source resource properties
+            source_data = graph.g.nodes[source_resource]
+            source_extra = json.loads(source_data.get('extra', '{}'))
+            
+            # Find VMR space
+            vmr_space_id = self._find_vmr_space_for_resource(graph, source_resource)
+            
+            # Create new private resource with same properties but different VA
+            vmr_type = VmrType[source_extra['vmr_type']]
+            num_pages = int(source_extra['num_pages'])
+            va_int = int(new_va, 16) if isinstance(new_va, str) else new_va
+            
+            new_resource_id = NodeTransformations.add_vmr_resource(
+                graph, vmr_space_id, vmr_type, num_pages, va_int
+            )
+            
+            print(f"  🔧 Cloned {source_resource} → VMR_{vmr_space_id}_{new_resource_id} for {target_pd}")
+            return True
+            
+        except Exception as e:
+            print(f"Error in clone_vmr_resource: {e}")
+            return False
+    
+    def _apply_replace_hold_edge(self, graph, param_values):
+        """Apply replace_hold_edge primitive - atomically replace HOLD edge target"""
+        from graph_transformations import EdgeTransformations
+        from generic_model import EdgeType, ResourceType, Permission
+        
+        try:
+            pd = param_values['pd']
+            old_resource = param_values['old_resource']
+            new_resource = param_values['new_resource']
+            
+            # Find existing edge properties
+            edge_data = None
+            for from_node, to_node, data in graph.g.edges(data=True):
+                if from_node == pd and to_node == old_resource and data.get('type') == 'HOLD':
+                    edge_data = data
+                    break
+            
+            if not edge_data:
+                print(f"No HOLD edge found from {pd} to {old_resource}")
+                return False
+            
+            permission = edge_data.get('permission', Permission.R)
+            
+            # Atomic replacement: remove old, add new
+            EdgeTransformations.remove_edge(graph, pd, old_resource, EdgeType.HOLD)
+            
+            # Extract IDs for new edge
+            pd_id = int(pd.split('_')[1])
+            resource_id = int(new_resource.split('_')[-1])
+            vmr_space_id = self._find_vmr_space_for_resource(graph, new_resource)
+            
+            EdgeTransformations.add_hold_edge(
+                graph, permission, pd_id, ResourceType.VMR, vmr_space_id, resource_id
+            )
+            
+            print(f"  🔧 Redirected {pd}: {old_resource} → {new_resource}")
+            return True
+            
+        except Exception as e:
+            print(f"Error in replace_hold_edge: {e}")
+            return False
+    
+    def _apply_create_private_copy(self, graph, param_values):
+        """Apply create_private_copy primitive - combines clone + replace"""
+        try:
+            source_resource = param_values['source_resource']
+            target_pd = param_values['target_pd']
+            
+            # Generate unique VA for private copy
+            import random
+            new_va = hex(0x8000 + random.randint(0, 0x1000))
+            
+            # Step 1: Clone the resource
+            clone_params = {
+                'source_resource': source_resource,
+                'new_va': new_va,
+                'target_pd': target_pd
+            }
+            
+            if not self._apply_clone_vmr_resource(graph, clone_params):
+                return False
+            
+            # Find the newly created resource
+            new_resource = self._find_latest_resource(graph, source_resource)
+            
+            # Step 2: Replace the HOLD edge
+            replace_params = {
+                'pd': target_pd,
+                'old_resource': source_resource,
+                'new_resource': new_resource
+            }
+            
+            if not self._apply_replace_hold_edge(graph, replace_params):
+                return False
+            
+            print(f"  🎯 Created private copy: {source_resource} → {new_resource} for {target_pd}")
+            return True
+            
+        except Exception as e:
+            print(f"Error in create_private_copy: {e}")
+            return False
+    
+    def _find_vmr_space_for_resource(self, graph, resource):
+        """Find the VMR space ID for a given resource"""
+        for from_node, to_node, edge_data in graph.g.edges(data=True):
+            if from_node == resource and edge_data.get('type') == 'SUBSET':
+                # Extract space ID from node name
+                return int(to_node.split('_')[-1])
+        return 1  # Default to space 1
+    
+    def _find_latest_resource(self, graph, base_resource):
+        """Find the most recently created resource similar to base_resource"""
+        max_id = 0
+        latest_resource = None
+        
+        for node in graph.g.nodes():
+            if node.startswith('VMR_') and node != base_resource:
+                try:
+                    resource_id = int(node.split('_')[-1])
+                    if resource_id > max_id:
+                        max_id = resource_id
+                        latest_resource = node
+                except:
+                    continue
+        
+        return latest_resource or base_resource
+    
     def __str__(self):
         if self.transition_type == "primitive":
             return f"Transition({self.name}: {self.description})"
@@ -404,6 +732,23 @@ PRIMITIVE_TRANSITIONS = {
         name="remove_request_edge",
         description="Remove PD → PD authority relationship",
         transition_type="primitive"
+    ),
+    
+    # Enhanced Resource Management Primitives (Strategy 1)
+    "clone_vmr_resource": Transition(
+        name="clone_vmr_resource",
+        description="Create private copy of existing VMR resource",
+        transition_type="primitive"
+    ),
+    "replace_hold_edge": Transition(
+        name="replace_hold_edge", 
+        description="Atomically replace HOLD edge target resource",
+        transition_type="primitive"
+    ),
+    "create_private_copy": Transition(
+        name="create_private_copy",
+        description="Create private VMR copy for specific PD",
+        transition_type="primitive"
     )
 }
 
@@ -443,32 +788,42 @@ MULTISTEP_TRANSITIONS = {
 # Graph builder functions for different scenarios
 
 def build_basic_shared_resource_graph():
-    """Build a basic graph with 2 PDs sharing 1 VMR resource + mediator"""
+    """Build a basic graph with 2 PDs each having 3 private VMR resources + 1 shared VMR resource"""
     graph = ModelGraph()
     
     # Add two protection domains
     pd1 = NodeTransformations.add_pd_node(graph, "user_process")
     pd2 = NodeTransformations.add_pd_node(graph, "database_server")
     
-    # Add a VMR space and resource
+    # Add a VMR space
     vmr_space = NodeTransformations.add_resource_space(graph, ResourceType.VMR)
-    vmr_resource = NodeTransformations.add_vmr_resource(graph, vmr_space, VmrType.HEAP, 10, 0x1000)
     
-    # Add another VMR resource that will be shared
-    shared_vmr = NodeTransformations.add_vmr_resource(graph, vmr_space, VmrType.STACK, 5, 0x2000)
+    # Create 3 private resources for PD1
+    pd1_heap = NodeTransformations.add_vmr_resource(graph, vmr_space, VmrType.HEAP, 10, 0x1000)
+    pd1_stack = NodeTransformations.add_vmr_resource(graph, vmr_space, VmrType.STACK, 5, 0x2000)
+    pd1_lib = NodeTransformations.add_vmr_resource(graph, vmr_space, VmrType.LIB, 8, 0x3000)
     
-    # PD1 and PD2 both hold the shared resource (resource sharing dependency)
-    EdgeTransformations.add_hold_edge(graph, Permission.R, pd1, ResourceType.VMR, vmr_space, shared_vmr)
-    EdgeTransformations.add_hold_edge(graph, Permission.R, pd2, ResourceType.VMR, vmr_space, shared_vmr)
+    # Create 3 private resources for PD2  
+    pd2_heap = NodeTransformations.add_vmr_resource(graph, vmr_space, VmrType.HEAP, 15, 0x4000)
+    pd2_stack = NodeTransformations.add_vmr_resource(graph, vmr_space, VmrType.STACK, 6, 0x5000)
+    pd2_lib = NodeTransformations.add_vmr_resource(graph, vmr_space, VmrType.LIB, 12, 0x6000)
     
-    # Add a mediator PD to create authority relationships
-    mediator_pd = NodeTransformations.add_pd_node(graph, "mediator")
+    # Create 1 shared resource that both PDs access
+    shared_buffer = NodeTransformations.add_vmr_resource(graph, vmr_space, VmrType.HEAP, 20, 0x7000)
     
-    # Mediator holds the first resource
-    EdgeTransformations.add_hold_edge(graph, Permission.R, mediator_pd, ResourceType.VMR, vmr_space, vmr_resource)
+    # PD1 holds its 3 private resources
+    EdgeTransformations.add_hold_edge(graph, Permission.R, pd1, ResourceType.VMR, vmr_space, pd1_heap)
+    EdgeTransformations.add_hold_edge(graph, Permission.R, pd1, ResourceType.VMR, vmr_space, pd1_stack)
+    EdgeTransformations.add_hold_edge(graph, Permission.R, pd1, ResourceType.VMR, vmr_space, pd1_lib)
     
-    # PD1 requests access through mediator (authority relationship)
-    EdgeTransformations.add_request_edge(graph, pd1, mediator_pd, ResourceType.VMR, vmr_space)
+    # PD2 holds its 3 private resources
+    EdgeTransformations.add_hold_edge(graph, Permission.R, pd2, ResourceType.VMR, vmr_space, pd2_heap)
+    EdgeTransformations.add_hold_edge(graph, Permission.R, pd2, ResourceType.VMR, vmr_space, pd2_stack)
+    EdgeTransformations.add_hold_edge(graph, Permission.R, pd2, ResourceType.VMR, vmr_space, pd2_lib)
+    
+    # Both PD1 and PD2 hold the shared resource (the security problem to solve)
+    EdgeTransformations.add_hold_edge(graph, Permission.W, pd1, ResourceType.VMR, vmr_space, shared_buffer)
+    EdgeTransformations.add_hold_edge(graph, Permission.W, pd2, ResourceType.VMR, vmr_space, shared_buffer)
     
     return graph
 
@@ -598,6 +953,7 @@ def build_high_attack_surface_graph():
 BASIC_PRIMITIVES = ["add_pd", "remove_pd", "add_hold_edge", "remove_hold_edge", "add_request_edge", "remove_request_edge"]
 BASIC_MULTISTEP = ["privatize_resource", "add_mediator"]
 EXTENDED_PRIMITIVES = BASIC_PRIMITIVES + ["add_vmr_resource", "remove_vmr_resource", "add_resource_space"]
+ENHANCED_PRIMITIVES = BASIC_PRIMITIVES + ["clone_vmr_resource", "replace_hold_edge", "create_private_copy"]
 EXTENDED_MULTISTEP = BASIC_MULTISTEP
 
 
@@ -606,7 +962,7 @@ EXTENDED_MULTISTEP = BASIC_MULTISTEP
 SCENARIOS = {
     "basic_sharing": Scenario(
         name="Basic Resource Sharing",
-        description="2 PDs sharing 1 VMR resource with 1 mediator PD",
+        description="2 PDs each with 3 private VMR resources + 1 shared VMR resource",
         goals=[
             Goal("RSI", 0.3, "minimize", "PD_1,PD_2"),  # Target specific PD pair
             Goal("TCB", 0, "minimize", "PD_1"),         # Target specific PD
@@ -614,13 +970,29 @@ SCENARIOS = {
         ],
         constraints=[
             # Specific VMR access requirements
-            Constraint("requires_vmr_access", 1, "VMR", properties={"vmr_type": "STACK", "min_pages": 1}),
-            Constraint("requires_vmr_access", 2, "VMR", properties={"vmr_type": "any", "min_pages": 1}),
-            # Communication requirements  
-            Constraint("requires_communication", 1, "REQUEST", target_pd=3),  # PD_1 must communicate with PD_3
+            Constraint("requires_vmr_access", 1, "VMR", properties={"vmr_type": "HEAP", "min_pages": 3}),
+            Constraint("requires_vmr_access", 2, "VMR", properties={"vmr_type": "HEAP", "min_pages": 3}),
         ],
         allowed_primitives=[],  # No primitives allowed
         allowed_multistep=["privatize_resource", "add_mediator"],  # Only multi-step transformations
+        graph_builder=build_basic_shared_resource_graph
+    ),
+    
+    "basic_sharing_primitive": Scenario(
+        name="Basic Resource Sharing (Primitive Only)",
+        description="Same as basic_sharing but using only primitive transitions to see if same outcome can be achieved",
+        goals=[
+            Goal("RSI", 0.3, "minimize", "PD_1,PD_2"),  # Target specific PD pair
+            Goal("TCB", 0, "minimize", "PD_1"),         # Target specific PD
+            Goal("ASR", 1.0, "minimize")                # System-wide goal
+        ],
+        constraints=[
+            # Specific VMR access requirements (same as basic_sharing)
+            Constraint("requires_vmr_access", 1, "VMR", properties={"vmr_type": "HEAP", "min_pages": 3}),
+            Constraint("requires_vmr_access", 2, "VMR", properties={"vmr_type": "HEAP", "min_pages": 3}),
+        ],
+        allowed_primitives=ENHANCED_PRIMITIVES,  # Enhanced primitive operations
+        allowed_multistep=[],  # No multi-step allowed
         graph_builder=build_basic_shared_resource_graph
     ),
     
