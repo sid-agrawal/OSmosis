@@ -363,11 +363,21 @@ class Transition:
             
             for resource in resources:
                 if resource not in current_resources:
-                    # Check if adding this connection would make sense
-                    candidates.append({
-                        'param_values': {'pd': pd, 'resource': resource, 'permission': 'R'},
-                        'target_description': f"connect {pd} to {resource}"
-                    })
+                    # Check prohibit_direct_hold constraints
+                    prohibited = False
+                    for constraint in constraints:
+                        if constraint.constraint_type == "prohibit_direct_hold":
+                            pd_string = f"PD_{constraint.pd_id}"
+                            prohibited_resource = constraint.resource_info
+                            if pd == pd_string and resource == prohibited_resource:
+                                prohibited = True
+                                break
+                    
+                    if not prohibited:
+                        candidates.append({
+                            'param_values': {'pd': pd, 'resource': resource, 'permission': 'R'},
+                            'target_description': f"connect {pd} to {resource}"
+                        })
         
         return candidates
     
@@ -1280,6 +1290,42 @@ SCENARIOS = {
         graph_builder=build_basic_shared_resource_graph
     ),
     
+    "mediator_test_constrained": Scenario(
+        name="Mediator Test Constrained",
+        description="Test if no-direct-hold constraint leads to mediation discovery",
+        goals=[
+            Goal("RSI", 0.8, "minimize", "PD_1,PD_2")   # Same goal as mediator_test
+        ],
+        constraints=[
+            Constraint("requires_file_access", 1, "FILE", properties={"file_type": "any", "min_size_kb": 1}),
+            Constraint("requires_file_access", 2, "FILE", properties={"file_type": "any", "min_size_kb": 1}),
+            # New constraint: PD_1 and PD_2 should NOT directly hold FILE_1_3
+            Constraint("prohibit_direct_hold", 1, "FILE_1_3", properties={"constraint_type": "negative"}),
+            Constraint("prohibit_direct_hold", 2, "FILE_1_3", properties={"constraint_type": "negative"}),
+        ],
+        allowed_primitives=PRIMITIVES,  # All primitives allowed
+        allowed_multistep=[],  # No multi-step transitions
+        graph_builder=build_basic_shared_resource_graph
+    ),
+    
+    "mediator_test_indirect": Scenario(
+        name="Mediator Test Indirect Access",
+        description="Test if requiring indirect access forces mediation discovery",
+        goals=[
+            Goal("RSI", 0.8, "minimize", "PD_1,PD_2")   # Same goal as mediator_test
+        ],
+        constraints=[
+            Constraint("requires_file_access", 1, "FILE", properties={"file_type": "any", "min_size_kb": 1}),
+            Constraint("requires_file_access", 2, "FILE", properties={"file_type": "any", "min_size_kb": 1}),
+            # For now, let's just use prohibit_direct_hold to see if it helps mediation discovery
+            Constraint("prohibit_direct_hold", 1, "FILE_1_3", properties={"constraint_type": "negative"}),
+            Constraint("prohibit_direct_hold", 2, "FILE_1_3", properties={"constraint_type": "negative"}),
+        ],
+        allowed_primitives=PRIMITIVES,  # All primitives allowed
+        allowed_multistep=[],  # No multi-step transitions
+        graph_builder=build_basic_shared_resource_graph
+    ),
+    
     
     "attack_surface_reduction": Scenario(
         name="Attack Surface Reduction",
@@ -1345,7 +1391,7 @@ def get_scenario(name):
 
 def _validate_scenario_constraints(scenario):
     """Validate that all constraint types in a scenario are supported by the implementation"""
-    supported_constraint_types = {"requires_file_access", "requires_communication"}
+    supported_constraint_types = {"requires_file_access", "requires_communication", "prohibit_direct_hold", "requires_indirect_access"}
     
     for constraint in scenario.constraints:
         if constraint.constraint_type not in supported_constraint_types:

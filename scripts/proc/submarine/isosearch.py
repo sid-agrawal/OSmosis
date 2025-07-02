@@ -472,8 +472,22 @@ def GenerateCandidate(graph, constraints, transitions, goals):
         candidate_info['success'] = success
         
         if success:
-            print(f"    ✅ Applied {best_candidate['transition_name']}")
-            return candidate_graph, candidate_info
+            # Validate constraints after transformation
+            try:
+                from constraint_validation import validate_all_constraints
+                constraints_valid, violations = validate_all_constraints(candidate_graph, constraints)
+                
+                if constraints_valid:
+                    print(f"    ✅ Applied {best_candidate['transition_name']}")
+                    return candidate_graph, candidate_info
+                else:
+                    print(f"    ❌ Transformation violates constraints: {'; '.join(violations[:2])}")
+                    candidate_info['constraint_violations'] = violations
+                    return None, candidate_info
+            except ImportError:
+                # Fallback if constraint_validation module not available
+                print(f"    ✅ Applied {best_candidate['transition_name']} (no constraint validation)")
+                return candidate_graph, candidate_info
         else:
             print(f"    ❌ Failed to apply {best_candidate['transition_name']}")
             return None, candidate_info
@@ -549,12 +563,86 @@ def _apply_context_adjustments(transition, candidate, graph, goals, base_score):
         # Apply goal-specific adjustments
         score = _apply_goal_adjustments(score, goals, transition, param_values)
         
+        # Apply constraint-aware adjustments
+        score = _apply_constraint_adjustments(score, transition, param_values, graph)
+        
     except Exception as e:
         print(f"Warning: Context adjustment failed for {transition.name}: {e}")
         # Return base score if adjustment fails
         score = base_score
     
     return score
+
+
+def _apply_constraint_adjustments(score, transition, param_values, graph):
+    """Apply constraint-aware scoring adjustments"""
+    try:
+        # Boost operations that help with mediation discovery
+        if transition.name == "add_pd":
+            # Creating a PD is often first step of mediation
+            shared_resources = _find_shared_resources(graph)
+            if shared_resources:
+                score += 0.5  # Significant boost when sharing exists
+        
+        elif transition.name == "add_request_edge":
+            # REQUEST edges are essential for mediation
+            from_pd = param_values.get('from_pd', '')
+            to_pd = param_values.get('to_pd', '')
+            
+            # Check if to_pd holds resources that from_pd might need indirect access to
+            if _pd_could_be_mediator(graph, from_pd, to_pd):
+                score += 0.4  # Boost REQUEST edges to potential mediators
+        
+        elif transition.name == "remove_hold_edge":
+            # Removing prohibited edges should be highly scored
+            from_pd = param_values.get('from_pd', param_values.get('pd', ''))
+            to_resource = param_values.get('to_resource', param_values.get('resource', ''))
+            
+            # Check if this might help solve sharing problems
+            holders = _get_resource_holders(graph, to_resource)
+            if len(holders) > 1:  # This is a shared resource
+                score += 0.3  # Boost removing shared access
+        
+    except Exception as e:
+        # Silently continue if constraint adjustment fails
+        pass
+    
+    return score
+
+
+def _find_shared_resources(graph):
+    """Find resources that are shared between multiple PDs"""
+    resource_holders = {}
+    
+    for from_node, to_node, edge_data in graph.g.edges(data=True):
+        if edge_data.get('type') == 'HOLD' and from_node.startswith('PD_'):
+            if to_node not in resource_holders:
+                resource_holders[to_node] = []
+            resource_holders[to_node].append(from_node)
+    
+    shared = []
+    for resource, holders in resource_holders.items():
+        if len(holders) > 1:
+            shared.append(resource)
+    
+    return shared
+
+
+def _pd_could_be_mediator(graph, requesting_pd, potential_mediator):
+    """Check if potential_mediator PD could mediate access for requesting_pd"""
+    # Simple heuristic: if potential_mediator holds resources that requesting_pd doesn't
+    mediator_resources = _get_pd_resources(graph, potential_mediator, 'FILE')
+    requester_resources = _get_pd_resources(graph, requesting_pd, 'FILE')
+    
+    # Check for resources mediator has that requester doesn't
+    for resource in mediator_resources:
+        if resource not in requester_resources:
+            # Check if this resource is shared (potential mediation opportunity)
+            holders = _get_resource_holders(graph, resource)
+            if len(holders) > 1:
+                return True
+    
+    return False
 
 
 def _adjust_add_file_resource_score(param_values, graph, base_score):
@@ -1076,6 +1164,13 @@ def _can_remove_hold_edge(from_node, to_node, constraints):
                 constraint.resource_info in ['REQUEST', 'REPLY']):
                 # Removing access to communication FILE might break required communication
                 return False
+        elif constraint.constraint_type == "prohibit_direct_hold":
+            # This constraint actually ENCOURAGES removing the edge
+            pd_string = f"PD_{constraint.pd_id}"
+            prohibited_resource = constraint.resource_info
+            if pd_string == from_node and to_node == prohibited_resource:
+                # This edge is prohibited, so we WANT to remove it
+                return True  # Override other constraints - this removal is encouraged
     return True
 
 
