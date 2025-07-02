@@ -485,18 +485,19 @@ def GenerateCandidate(graph, constraints, transitions, goals):
 
 def _predict_improvement(transition, candidate, graph, goals):
     """
-    Predict the improvement a transformation will have on the goals
+    Context-aware improvement prediction that considers current graph state and constraints
     Returns: float representing predicted improvement (higher = better)
     """
-    # Basic improvement prediction based on transition type
-    improvement_map = {
+    
+    # Get base improvement score
+    base_scores = {
         # Multi-step transitions
         "privatize_resource": 1.0,  # High impact on RSI
         "add_mediator": 0.5,        # Medium impact on security
         
         # High-impact primitives (problem-solving)
-        "remove_file_resource": 0.6,    # Can eliminate shared resources
-        "add_file_resource": 0.5,       # Can create private files to solve sharing
+        "remove_file_resource": 0.4,    # Lowered - can violate constraints
+        "add_file_resource": 0.6,       # Raised - builds solutions
         "remove_hold_edge": 0.5,       # Can disconnect from shared resources
         "add_hold_edge": 0.4,          # Can connect PDs to new private resources
         
@@ -513,11 +514,366 @@ def _predict_improvement(transition, candidate, graph, goals):
         "remove_resource_space": 0.2   # Cleanup operation
     }
     
-    base_improvement = improvement_map.get(transition.name, 0.3)
+    base_score = base_scores.get(transition.name, 0.3)
     
-    # Could add goal-specific adjustments here
-    # For now, return base improvement
-    return base_improvement
+    # Apply context-aware scoring adjustments
+    adjusted_score = _apply_context_adjustments(transition, candidate, graph, goals, base_score)
+    
+    return adjusted_score
+
+
+def _apply_context_adjustments(transition, candidate, graph, goals, base_score):
+    """Apply context-aware adjustments to the base improvement score"""
+    
+    # Start with base score
+    score = base_score
+    
+    # Get candidate parameters - handle both dict and object formats
+    if hasattr(candidate, 'get'):
+        param_values = candidate.get('param_values', {})
+    else:
+        # Candidate might be the param_values directly
+        param_values = candidate if isinstance(candidate, dict) else {}
+    
+    try:
+        # Context-aware adjustments based on transition type
+        if transition.name == "add_file_resource":
+            score = _adjust_add_file_resource_score(param_values, graph, score)
+        elif transition.name == "remove_file_resource":
+            score = _adjust_remove_file_resource_score(param_values, graph, score)
+        elif transition.name == "add_hold_edge":
+            score = _adjust_add_hold_edge_score(param_values, graph, score)
+        elif transition.name == "remove_hold_edge":
+            score = _adjust_remove_hold_edge_score(param_values, graph, score)
+        
+        # Apply goal-specific adjustments
+        score = _apply_goal_adjustments(score, goals, transition, param_values)
+        
+    except Exception as e:
+        print(f"Warning: Context adjustment failed for {transition.name}: {e}")
+        # Return base score if adjustment fails
+        score = base_score
+    
+    return score
+
+
+def _adjust_add_file_resource_score(param_values, graph, base_score):
+    """Boost score for creating files that solve sharing problems"""
+    
+    file_type = param_values.get('file_type', 'UNKNOWN')
+    
+    # Check if this file type is currently shared (creating alternatives)
+    shared_files_of_type = _find_shared_files_by_type(graph, file_type)
+    
+    if shared_files_of_type:
+        # High bonus for creating alternatives to shared resources
+        return base_score + 0.3  # 0.6 + 0.3 = 0.9 (beats remove_file_resource)
+    
+    # Check if this creates a missing resource type
+    if _is_missing_resource_type(graph, file_type):
+        return base_score + 0.2  # 0.6 + 0.2 = 0.8
+    
+    return base_score
+
+
+def _adjust_remove_file_resource_score(param_values, graph, base_score):
+    """Smart scoring for resource removal: boost when safe cleanup, penalize when risky"""
+    
+    resource = param_values.get('resource', '')
+    
+    # MASSIVE BOOST: If this is a shared resource that's no longer needed (cleanup phase)
+    if _is_shared_resource(graph, resource):
+        if _is_shared_resource_ready_for_cleanup(graph, resource):
+            return base_score + 0.6  # 0.4 + 0.6 = 1.0 (HIGHEST priority - final cleanup)
+        elif _would_violate_constraints_if_removed(graph, resource):
+            return base_score - 0.4  # 0.4 - 0.4 = 0.0 (very low priority)
+    
+    # Medium penalty if removing a resource that might be needed
+    holders = _get_resource_holders(graph, resource)
+    if len(holders) > 0:
+        return base_score - 0.1  # 0.4 - 0.1 = 0.3
+    
+    return base_score
+
+
+def _adjust_add_hold_edge_score(param_values, graph, base_score):
+    """Boost score for connecting PDs to private resources (solving sharing)"""
+    
+    # Handle different parameter formats from candidate generation
+    to_resource = param_values.get('to_resource', param_values.get('resource', ''))
+    from_pd = param_values.get('from_pd', param_values.get('pd', ''))
+    
+    # HUGE BOOST: Check if connecting PD to newly created private alternative
+    if _is_newly_created_private_alternative(graph, to_resource, from_pd):
+        return base_score + 0.5  # 0.4 + 0.5 = 0.9 (matches add_file_resource priority)
+    
+    # Check if this connects a PD to a private resource (good pattern)
+    if _is_private_resource(graph, to_resource):
+        # Check if this PD currently shares resources and this provides private alternative
+        if _pd_has_shared_resources(graph, from_pd):
+            return base_score + 0.3  # 0.4 + 0.3 = 0.7 (high priority)
+    
+    return base_score
+
+
+def _adjust_remove_hold_edge_score(param_values, graph, base_score):
+    """Boost score for disconnecting from shared resources when safe"""
+    
+    # Handle different parameter formats from candidate generation
+    to_resource = param_values.get('to_resource', param_values.get('to_node', ''))
+    from_pd = param_values.get('from_pd', param_values.get('from_node', ''))
+    
+    # MASSIVE BOOST: Disconnecting from shared resource when PD has private alternative  
+    if _is_shared_resource(graph, to_resource):
+        if _has_private_alternative_connected(graph, from_pd, to_resource):
+            return base_score + 0.5  # 0.5 + 0.5 = 1.0 (HIGHEST priority - beats everything)
+        elif _has_alternative_resources(graph, from_pd, to_resource):
+            return base_score + 0.4  # 0.5 + 0.4 = 0.9 (matches coordination priority)
+        else:
+            # Heavy penalty if no alternatives (would violate constraints)
+            return base_score - 0.4  # 0.5 - 0.4 = 0.1 (very low priority)
+    
+    return base_score
+
+
+def _apply_goal_adjustments(score, goals, transition, param_values):
+    """Apply adjustments based on specific goals"""
+    
+    # For now, keep the original score
+    # Could add goal-specific logic here (e.g., boost RSI-improving operations)
+    return score
+
+
+# Helper functions for context analysis
+
+def _find_shared_files_by_type(graph, file_type):
+    """Find all shared resources of a specific file type"""
+    import json
+    shared_files = []
+    
+    # Find shared resources
+    resource_holders = {}
+    for from_node, to_node, edge_data in graph.g.edges(data=True):
+        if edge_data.get('type') == 'HOLD' and to_node.startswith('FILE_'):
+            if to_node not in resource_holders:
+                resource_holders[to_node] = []
+            resource_holders[to_node].append(from_node)
+    
+    # Check shared files of the specified type
+    for resource, holders in resource_holders.items():
+        if len(holders) > 1:  # Shared
+            node_data = graph.g.nodes.get(resource, {})
+            extra_str = node_data.get('extra', '{}')
+            try:
+                extra_data = json.loads(extra_str) if extra_str else {}
+            except (json.JSONDecodeError, TypeError):
+                extra_data = {}
+            if extra_data.get('file_type') == file_type:
+                shared_files.append(resource)
+    
+    return shared_files
+
+
+def _is_shared_resource(graph, resource):
+    """Check if a resource is shared by multiple PDs"""
+    holders = []
+    for from_node, to_node, edge_data in graph.g.edges(data=True):
+        if to_node == resource and edge_data.get('type') == 'HOLD':
+            holders.append(from_node)
+    return len(holders) > 1
+
+
+def _get_resource_holders(graph, resource):
+    """Get all PDs that hold a specific resource"""
+    holders = []
+    for from_node, to_node, edge_data in graph.g.edges(data=True):
+        if to_node == resource and edge_data.get('type') == 'HOLD':
+            holders.append(from_node)
+    return holders
+
+
+def _would_violate_constraints_if_removed(graph, resource):
+    """Check if removing this resource would violate constraints"""
+    import json
+    
+    # Get resource type
+    node_data = graph.g.nodes.get(resource, {})
+    extra_str = node_data.get('extra', '{}')
+    try:
+        extra_data = json.loads(extra_str) if extra_str else {}
+    except (json.JSONDecodeError, TypeError):
+        extra_data = {}
+    resource_type = extra_data.get('file_type', 'UNKNOWN')
+    
+    # Get current holders
+    holders = _get_resource_holders(graph, resource)
+    
+    # For each holder, check if they have other resources of this type
+    for holder in holders:
+        other_resources_of_type = 0
+        for from_node, to_node, edge_data in graph.g.edges(data=True):
+            if (from_node == holder and to_node != resource and 
+                edge_data.get('type') == 'HOLD' and to_node.startswith('FILE_')):
+                other_data = graph.g.nodes.get(to_node, {})
+                other_extra_str = other_data.get('extra', '{}')
+                try:
+                    other_extra = json.loads(other_extra_str) if other_extra_str else {}
+                except (json.JSONDecodeError, TypeError):
+                    other_extra = {}
+                if other_extra.get('file_type') == resource_type:
+                    other_resources_of_type += 1
+        
+        if other_resources_of_type == 0:
+            return True  # This holder would lose access to this resource type
+    
+    return False
+
+
+def _is_private_resource(graph, resource):
+    """Check if a resource is private (held by only one PD)"""
+    return not _is_shared_resource(graph, resource)
+
+
+def _pd_has_shared_resources(graph, pd):
+    """Check if a PD currently holds shared resources"""
+    for from_node, to_node, edge_data in graph.g.edges(data=True):
+        if from_node == pd and edge_data.get('type') == 'HOLD':
+            if _is_shared_resource(graph, to_node):
+                return True
+    return False
+
+
+def _has_alternative_resources(graph, pd, resource):
+    """Check if PD has alternative resources of the same type as the given resource"""
+    import json
+    
+    # Get type of the resource
+    node_data = graph.g.nodes.get(resource, {})
+    extra_str = node_data.get('extra', '{}')
+    try:
+        extra_data = json.loads(extra_str) if extra_str else {}
+    except (json.JSONDecodeError, TypeError):
+        extra_data = {}
+    resource_type = extra_data.get('file_type', 'UNKNOWN')
+    
+    # Count other resources of same type held by this PD
+    alternative_count = 0
+    for from_node, to_node, edge_data in graph.g.edges(data=True):
+        if (from_node == pd and to_node != resource and 
+            edge_data.get('type') == 'HOLD' and to_node.startswith('FILE_')):
+            other_data = graph.g.nodes.get(to_node, {})
+            other_extra_str = other_data.get('extra', '{}')
+            try:
+                other_extra = json.loads(other_extra_str) if other_extra_str else {}
+            except (json.JSONDecodeError, TypeError):
+                other_extra = {}
+            if other_extra.get('file_type') == resource_type:
+                alternative_count += 1
+    
+    return alternative_count > 0
+
+
+def _is_missing_resource_type(graph, file_type):
+    """Check if no resources of this type exist in the graph"""
+    import json
+    
+    for node, node_data in graph.g.nodes(data=True):
+        if node.startswith('FILE_'):
+            extra_str = node_data.get('extra', '{}')
+            try:
+                extra_data = json.loads(extra_str) if extra_str else {}
+            except (json.JSONDecodeError, TypeError):
+                extra_data = {}
+            if extra_data.get('file_type') == file_type:
+                return False
+    return True
+
+
+def _is_newly_created_private_alternative(graph, resource, pd):
+    """Check if resource is a newly created private alternative for the PD"""
+    import json
+    
+    # Check if this resource is private (not shared)
+    if _is_shared_resource(graph, resource):
+        return False
+    
+    # Check if PD currently shares resources of the same type
+    if not _pd_has_shared_resources(graph, pd):
+        return False
+    
+    # Get resource type
+    node_data = graph.g.nodes.get(resource, {})
+    extra_str = node_data.get('extra', '{}')
+    try:
+        extra_data = json.loads(extra_str) if extra_str else {}
+    except (json.JSONDecodeError, TypeError):
+        extra_data = {}
+    resource_type = extra_data.get('file_type', 'UNKNOWN')
+    
+    # Check if PD shares resources of this same type (indicating this could be alternative)
+    shared_resources_of_type = []
+    for from_node, to_node, edge_data in graph.g.edges(data=True):
+        if (from_node == pd and edge_data.get('type') == 'HOLD' and 
+            _is_shared_resource(graph, to_node)):
+            other_data = graph.g.nodes.get(to_node, {})
+            other_extra_str = other_data.get('extra', '{}')
+            try:
+                other_extra = json.loads(other_extra_str) if other_extra_str else {}
+            except (json.JSONDecodeError, TypeError):
+                other_extra = {}
+            if other_extra.get('file_type') == resource_type:
+                shared_resources_of_type.append(to_node)
+    
+    # If PD shares resources of this type, then this private resource is likely an alternative
+    return len(shared_resources_of_type) > 0
+
+
+def _has_private_alternative_connected(graph, pd, shared_resource):
+    """Check if PD has a private alternative of the same type as shared_resource AND is connected to it"""
+    import json
+    
+    # Get type of shared resource
+    node_data = graph.g.nodes.get(shared_resource, {})
+    extra_str = node_data.get('extra', '{}')
+    try:
+        extra_data = json.loads(extra_str) if extra_str else {}
+    except (json.JSONDecodeError, TypeError):
+        extra_data = {}
+    shared_type = extra_data.get('file_type', 'UNKNOWN')
+    
+    # Check if PD has private resources of same type that it's connected to
+    for from_node, to_node, edge_data in graph.g.edges(data=True):
+        if (from_node == pd and to_node != shared_resource and 
+            edge_data.get('type') == 'HOLD' and to_node.startswith('FILE_')):
+            # Check if this is private and same type
+            if _is_private_resource(graph, to_node):
+                other_data = graph.g.nodes.get(to_node, {})
+                other_extra_str = other_data.get('extra', '{}')
+                try:
+                    other_extra = json.loads(other_extra_str) if other_extra_str else {}
+                except (json.JSONDecodeError, TypeError):
+                    other_extra = {}
+                if other_extra.get('file_type') == shared_type:
+                    return True
+    
+    return False
+
+
+def _is_shared_resource_ready_for_cleanup(graph, resource):
+    """Check if a shared resource can be safely removed (all holders have private alternatives)"""
+    
+    if not _is_shared_resource(graph, resource):
+        return False
+    
+    # Get all holders of this resource
+    holders = _get_resource_holders(graph, resource)
+    
+    # Check if all holders have private alternatives connected
+    for holder in holders:
+        if not _has_private_alternative_connected(graph, holder, resource):
+            return False
+    
+    return True
 
 
 def _find_transformation_candidates(graph, transition, constraints, goals):

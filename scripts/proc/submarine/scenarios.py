@@ -136,14 +136,8 @@ class Transition:
         candidates = []
         for from_node, to_node, edge_data in graph.g.edges(data=True):
             if edge_data.get('type') == 'HOLD':
-                # Check if removal violates constraints
-                can_remove = True
-                for constraint in constraints:
-                    if constraint.constraint_type == "requires_file_access":
-                        pd_string = f"PD_{constraint.pd_id}"
-                        if pd_string == from_node and to_node.startswith('FILE_'):
-                            can_remove = False
-                            break
+                # Smart constraint checking: allow removal if PD has alternatives
+                can_remove = self._can_safely_remove_hold_edge(graph, from_node, to_node, constraints)
                 
                 if can_remove:
                     candidates.append({
@@ -151,6 +145,56 @@ class Transition:
                         'target_description': f"remove {from_node} -> {to_node} HOLD edge"
                     })
         return candidates
+    
+    def _can_safely_remove_hold_edge(self, graph, from_pd, to_resource, constraints):
+        """Check if removing a HOLD edge would violate constraints"""
+        import json
+        
+        # Get the resource type being removed
+        if not to_resource.startswith('FILE_'):
+            return True  # Not a file, safe to remove
+        
+        resource_data = graph.g.nodes.get(to_resource, {})
+        extra_str = resource_data.get('extra', '{}')
+        try:
+            extra_data = json.loads(extra_str) if extra_str else {}
+        except (json.JSONDecodeError, TypeError):
+            extra_data = {}
+        resource_type = extra_data.get('file_type', 'UNKNOWN')
+        
+        # Check if this PD has constraints requiring this resource type
+        pd_id = int(from_pd.split('_')[1]) if from_pd.startswith('PD_') else None
+        if pd_id is None:
+            return True
+        
+        has_constraint_for_type = False
+        for constraint in constraints:
+            if (constraint.constraint_type == "requires_file_access" and 
+                constraint.pd_id == pd_id):
+                required_type = constraint.properties.get('file_type', 'any')
+                if required_type == resource_type or required_type == 'any':
+                    has_constraint_for_type = True
+                    break
+        
+        if not has_constraint_for_type:
+            return True  # No constraint requires this type, safe to remove
+        
+        # Check if PD has other resources of the same type
+        alternative_count = 0
+        for other_from, other_to, other_edge in graph.g.edges(data=True):
+            if (other_from == from_pd and other_to != to_resource and 
+                other_edge.get('type') == 'HOLD' and other_to.startswith('FILE_')):
+                other_data = graph.g.nodes.get(other_to, {})
+                other_extra_str = other_data.get('extra', '{}')
+                try:
+                    other_extra = json.loads(other_extra_str) if other_extra_str else {}
+                except (json.JSONDecodeError, TypeError):
+                    other_extra = {}
+                if other_extra.get('file_type') == resource_type:
+                    alternative_count += 1
+        
+        # Allow removal if PD has at least one alternative of the same type
+        return alternative_count > 0
     
     def _find_add_pd_candidates(self, graph, constraints):
         """Find opportunities to add new PDs"""
@@ -546,23 +590,43 @@ class Transition:
                 return True
             elif self.name == "add_hold_edge":
                 from graph_transformations import EdgeTransformations
-                from generic_model import Permission
+                from generic_model import Permission, ResourceType
+                
+                # Extract PD ID and resource ID for EdgeTransformations
+                pd_string = param_values['pd']
+                resource_string = param_values['resource']
+                
+                # Extract numeric IDs
+                pd_id = int(pd_string.split('_')[1]) if pd_string.startswith('PD_') else 1
+                resource_id = int(resource_string.split('_')[-1]) if resource_string.startswith('FILE_') else 1
+                
+                # Extract resource space ID (default to 1 for FILE_SPACE_1)  
+                resource_space_id = 1
+                
                 EdgeTransformations.add_hold_edge(
                     graph, 
                     Permission.R,  # Default permission
-                    param_values['pd'],
-                    param_values.get('resource_type', 'FILE'), 
-                    param_values.get('resource_space', 'FILE_SPACE_1'),
-                    param_values['resource']
+                    pd_id,
+                    ResourceType.FILE,  # Use enum instead of string
+                    resource_space_id,
+                    resource_id
                 )
                 return True
             elif self.name == "add_file_resource":
                 from graph_transformations import NodeTransformations
                 from generic_model import FileType
                 file_type = getattr(FileType, param_values['file_type'])
+                
+                # Extract file space ID from node name (e.g., 'FILE_SPACE_1' -> 1)
+                file_space_name = param_values['file_space']
+                if file_space_name.startswith('FILE_SPACE_'):
+                    file_space_id = int(file_space_name.split('_')[-1])
+                else:
+                    file_space_id = 1  # Default
+                
                 NodeTransformations.add_file_resource(
                     graph,
-                    param_values['file_space'],
+                    file_space_id,
                     file_type,
                     param_values['file_path'],
                     param_values.get('file_size', 1024)
