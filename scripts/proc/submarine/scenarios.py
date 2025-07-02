@@ -25,7 +25,7 @@ class Goal:
 
 
 class Constraint:
-    """Enhanced constraint structure for functional requirements"""
+    """Constraint structure for functional requirements"""
     def __init__(self, constraint_type, pd_id, resource_info=None, target_pd=None, properties=None):
         self.constraint_type = constraint_type  # e.g., "requires_vmr_access", "requires_communication"
         self.pd_id = pd_id  # The PD this constraint applies to
@@ -94,24 +94,33 @@ class Transition:
     
     def _find_primitive_candidates(self, graph, constraints):
         """Find candidates for primitive operations"""
-        if self.name == "remove_hold_edge":
-            return self._find_remove_hold_edge_candidates(graph, constraints)
-        elif self.name == "add_pd":
+        # Node operations
+        if self.name == "add_pd":
             return self._find_add_pd_candidates(graph, constraints)
-        elif self.name == "add_hold_edge":
-            return self._find_add_hold_edge_candidates(graph, constraints)
+        elif self.name == "remove_pd":
+            return self._find_remove_pd_candidates(graph, constraints)
         elif self.name == "add_file_resource":
             return self._find_add_file_resource_candidates(graph, constraints)
         elif self.name == "remove_file_resource":
             return self._find_remove_file_resource_candidates(graph, constraints)
-        # Legacy/enhanced primitives (not true primitives)
-        elif self.name == "clone_vmr_resource":
-            return self._find_clone_vmr_resource_candidates(graph, constraints)
-        elif self.name == "replace_hold_edge":
-            return self._find_replace_hold_edge_candidates(graph, constraints)
-        elif self.name == "create_private_copy":
-            return self._find_create_private_copy_candidates(graph, constraints)
-        # Add other primitives as needed
+        elif self.name == "add_resource_space":
+            return self._find_add_resource_space_candidates(graph, constraints)
+        elif self.name == "remove_resource_space":
+            return self._find_remove_resource_space_candidates(graph, constraints)
+        # Edge operations
+        elif self.name == "add_hold_edge":
+            return self._find_add_hold_edge_candidates(graph, constraints)
+        elif self.name == "remove_hold_edge":
+            return self._find_remove_hold_edge_candidates(graph, constraints)
+        elif self.name == "add_request_edge":
+            return self._find_add_request_edge_candidates(graph, constraints)
+        elif self.name == "remove_request_edge":
+            return self._find_remove_request_edge_candidates(graph, constraints)
+        elif self.name == "add_subset_edge":
+            return self._find_add_subset_edge_candidates(graph, constraints)
+        elif self.name == "remove_subset_edge":
+            return self._find_remove_subset_edge_candidates(graph, constraints)
+        
         return []
     
     def _find_multistep_candidates(self, graph, constraints):
@@ -205,85 +214,7 @@ class Transition:
         
         return candidates
     
-    def _find_clone_file_resource_candidates(self, graph, constraints):
-        """Find shared FILE resources that can be cloned for privatization (Strategy 3: Constraint-Guided)"""
-        candidates = []
-        
-        # Analyze constraint violations to guide candidate discovery
-        violations = self._analyze_sharing_violations(graph, constraints)
-        
-        for violation in violations:
-            resource = violation['resource']
-            sharers = violation['sharers']
-            constraint = violation['constraint']
-            
-            # Suggest cloning for each sharer
-            for i, sharer in enumerate(sharers):
-                new_va = hex(0x8000 + i * 0x1000)  # Generate unique VAs
-                candidates.append({
-                    'param_values': {
-                        'source_resource': resource,
-                        'new_va': new_va,
-                        'target_pd': sharer
-                    },
-                    'target_description': f"clone {resource} as private copy for {sharer}",
-                    'constraint_relevance': 0.9,  # High relevance for constraint violations
-                    'addresses_violation': True
-                })
-        
-        return candidates
     
-    def _find_replace_hold_edge_candidates(self, graph, constraints):
-        """Find HOLD edges that can be replaced to resolve sharing violations"""
-        candidates = []
-        
-        # Find sharing violations
-        violations = self._analyze_sharing_violations(graph, constraints)
-        
-        for violation in violations:
-            resource = violation['resource']
-            sharers = violation['sharers']
-            
-            for sharer in sharers:
-                # Look for potential private replacement resources
-                potential_replacements = self._find_potential_private_resources(graph, resource, sharer)
-                
-                for replacement in potential_replacements:
-                    candidates.append({
-                        'param_values': {
-                            'pd': sharer,
-                            'old_resource': resource,
-                            'new_resource': replacement
-                        },
-                        'target_description': f"redirect {sharer} from {resource} to private {replacement}",
-                        'constraint_relevance': 0.8,
-                        'addresses_violation': True
-                    })
-        
-        return candidates
-    
-    def _find_create_private_copy_candidates(self, graph, constraints):
-        """Find opportunities to create private copies (combines clone + replace)"""
-        candidates = []
-        
-        violations = self._analyze_sharing_violations(graph, constraints)
-        
-        for violation in violations:
-            resource = violation['resource']
-            sharers = violation['sharers']
-            
-            for sharer in sharers:
-                candidates.append({
-                    'param_values': {
-                        'source_resource': resource,
-                        'target_pd': sharer
-                    },
-                    'target_description': f"create private copy of {resource} for {sharer}",
-                    'constraint_relevance': 1.0,  # Highest relevance - directly solves sharing
-                    'addresses_violation': True
-                })
-        
-        return candidates
     
     def _analyze_sharing_violations(self, graph, constraints):
         """Strategy 3: Analyze constraints to identify sharing violations"""
@@ -444,6 +375,151 @@ class Transition:
         
         return candidates
     
+    def _find_remove_pd_candidates(self, graph, constraints):
+        """Find PDs that can be safely removed"""
+        candidates = []
+        
+        for node, data in graph.g.nodes(data=True):
+            if data.get('type') == 'PD':
+                # Check if this PD has any HOLD edges (resources it depends on)
+                has_resources = False
+                for from_node, to_node, edge_data in graph.g.edges(data=True):
+                    if from_node == node and edge_data.get('type') == 'HOLD':
+                        has_resources = True
+                        break
+                
+                # Only suggest removal if PD has no resource dependencies
+                if not has_resources:
+                    candidates.append({
+                        'param_values': {'pd': node},
+                        'target_description': f"remove empty {node}"
+                    })
+        
+        return candidates
+    
+    def _find_add_resource_space_candidates(self, graph, constraints):
+        """Find opportunities to add new resource spaces"""
+        candidates = []
+        
+        # Simple implementation - suggest adding FILE space if none exists
+        file_spaces = [node for node, data in graph.g.nodes(data=True) 
+                      if data.get('type') == 'RESOURCE_SPACE' and data.get('data') == 'FILE']
+        
+        if len(file_spaces) == 0:
+            candidates.append({
+                'param_values': {'resource_type': 'FILE'},
+                'target_description': "create new FILE resource space"
+            })
+        
+        return candidates
+    
+    def _find_remove_resource_space_candidates(self, graph, constraints):
+        """Find resource spaces that can be safely removed"""
+        candidates = []
+        
+        for node, data in graph.g.nodes(data=True):
+            if data.get('type') == 'RESOURCE_SPACE':
+                # Check if any resources are connected to this space
+                has_resources = False
+                for from_node, to_node, edge_data in graph.g.edges(data=True):
+                    if to_node == node and edge_data.get('type') == 'SUBSET':
+                        has_resources = True
+                        break
+                
+                # Only suggest removal if no resources depend on this space
+                if not has_resources:
+                    candidates.append({
+                        'param_values': {'resource_space': node},
+                        'target_description': f"remove empty {node}"
+                    })
+        
+        return candidates
+    
+    def _find_add_request_edge_candidates(self, graph, constraints):
+        """Find opportunities to add REQUEST edges (PD -> PD authority)"""
+        candidates = []
+        
+        pds = [node for node, data in graph.g.nodes(data=True) if data.get('type') == 'PD']
+        
+        for pd1 in pds:
+            for pd2 in pds:
+                if pd1 != pd2:
+                    # Check if REQUEST edge already exists
+                    edge_exists = False
+                    for from_node, to_node, edge_data in graph.g.edges(data=True):
+                        if (from_node == pd1 and to_node == pd2 and 
+                            edge_data.get('type') == 'REQUEST'):
+                            edge_exists = True
+                            break
+                    
+                    if not edge_exists:
+                        candidates.append({
+                            'param_values': {'from_pd': pd1, 'to_pd': pd2},
+                            'target_description': f"add authority {pd1} -> {pd2}"
+                        })
+        
+        return candidates
+    
+    def _find_remove_request_edge_candidates(self, graph, constraints):
+        """Find REQUEST edges that can be removed"""
+        candidates = []
+        
+        for from_node, to_node, edge_data in graph.g.edges(data=True):
+            if edge_data.get('type') == 'REQUEST':
+                candidates.append({
+                    'param_values': {'from_pd': from_node, 'to_pd': to_node},
+                    'target_description': f"remove authority {from_node} -> {to_node}"
+                })
+        
+        return candidates
+    
+    def _find_add_subset_edge_candidates(self, graph, constraints):
+        """Find opportunities to add SUBSET edges (Resource -> ResourceSpace)"""
+        candidates = []
+        
+        resources = [node for node, data in graph.g.nodes(data=True) 
+                    if data.get('type') == 'RESOURCE']
+        spaces = [node for node, data in graph.g.nodes(data=True) 
+                 if data.get('type') == 'RESOURCE_SPACE']
+        
+        for resource in resources:
+            resource_data = graph.g.nodes[resource]
+            resource_type = resource_data.get('data', 'UNKNOWN')
+            
+            for space in spaces:
+                space_data = graph.g.nodes[space]
+                space_type = space_data.get('data', 'UNKNOWN')
+                
+                # Check if types match and edge doesn't exist
+                if resource_type == space_type:
+                    edge_exists = False
+                    for from_node, to_node, edge_data in graph.g.edges(data=True):
+                        if (from_node == resource and to_node == space and 
+                            edge_data.get('type') == 'SUBSET'):
+                            edge_exists = True
+                            break
+                    
+                    if not edge_exists:
+                        candidates.append({
+                            'param_values': {'resource': resource, 'resource_space': space},
+                            'target_description': f"connect {resource} to {space}"
+                        })
+        
+        return candidates
+    
+    def _find_remove_subset_edge_candidates(self, graph, constraints):
+        """Find SUBSET edges that can be removed"""
+        candidates = []
+        
+        for from_node, to_node, edge_data in graph.g.edges(data=True):
+            if edge_data.get('type') == 'SUBSET':
+                candidates.append({
+                    'param_values': {'resource': from_node, 'resource_space': to_node},
+                    'target_description': f"disconnect {from_node} from {to_node}"
+                })
+        
+        return candidates
+    
     def apply(self, graph, param_values):
         """Apply the transition with given parameter values"""
         if self.transition_type == "primitive":
@@ -543,12 +619,84 @@ class Transition:
                 # Remove the resource node
                 graph.g.remove_node(resource)
                 return True
-            elif self.name == "clone_vmr_resource":
-                return self._apply_clone_vmr_resource(graph, param_values)
-            elif self.name == "replace_hold_edge":
-                return self._apply_replace_hold_edge(graph, param_values)
-            elif self.name == "create_private_copy":
-                return self._apply_create_private_copy(graph, param_values)
+            elif self.name == "remove_pd":
+                # Remove PD node and all its edges
+                pd = param_values['pd']
+                
+                # Remove all edges connected to this PD
+                edges_to_remove = []
+                for from_node, to_node, edge_data in graph.g.edges(data=True):
+                    if from_node == pd or to_node == pd:
+                        edges_to_remove.append((from_node, to_node))
+                
+                for from_node, to_node in edges_to_remove:
+                    graph.g.remove_edge(from_node, to_node)
+                
+                # Remove the PD node
+                graph.g.remove_node(pd)
+                return True
+            elif self.name == "add_resource_space":
+                from graph_transformations import NodeTransformations
+                from generic_model import ResourceType
+                resource_type = getattr(ResourceType, param_values['resource_type'])
+                NodeTransformations.add_resource_space(graph, resource_type)
+                return True
+            elif self.name == "remove_resource_space":
+                # Remove resource space node and all its edges
+                space = param_values['resource_space']
+                
+                # Remove all edges connected to this space
+                edges_to_remove = []
+                for from_node, to_node, edge_data in graph.g.edges(data=True):
+                    if from_node == space or to_node == space:
+                        edges_to_remove.append((from_node, to_node))
+                
+                for from_node, to_node in edges_to_remove:
+                    graph.g.remove_edge(from_node, to_node)
+                
+                # Remove the space node
+                graph.g.remove_node(space)
+                return True
+            elif self.name == "add_request_edge":
+                from graph_transformations import EdgeTransformations
+                from generic_model import EdgeType
+                EdgeTransformations.add_edge(
+                    graph,
+                    param_values['from_pd'],
+                    param_values['to_pd'],
+                    EdgeType.REQUEST
+                )
+                return True
+            elif self.name == "remove_request_edge":
+                from graph_transformations import EdgeTransformations
+                from generic_model import EdgeType
+                EdgeTransformations.remove_edge(
+                    graph,
+                    param_values['from_pd'],
+                    param_values['to_pd'],
+                    EdgeType.REQUEST
+                )
+                return True
+            elif self.name == "add_subset_edge":
+                from graph_transformations import EdgeTransformations
+                from generic_model import EdgeType
+                EdgeTransformations.add_edge(
+                    graph,
+                    param_values['resource'],
+                    param_values['resource_space'],
+                    EdgeType.SUBSET
+                )
+                return True
+            elif self.name == "remove_subset_edge":
+                from graph_transformations import EdgeTransformations
+                from generic_model import EdgeType
+                EdgeTransformations.remove_edge(
+                    graph,
+                    param_values['resource'],
+                    param_values['resource_space'],
+                    EdgeType.SUBSET
+                )
+                return True
             # Add other primitive implementations as needed
             else:
                 print(f"Primitive {self.name} not yet implemented")
@@ -655,120 +803,8 @@ class Transition:
             print(f"Error in add_mediator: {e}")
             return False
     
-    def _apply_clone_file_resource(self, graph, param_values):
-        """Apply clone_file_resource primitive - create private copy of FILE resource"""
-        from graph_transformations import NodeTransformations
-        from generic_model import FileType
-        import json
-        
-        try:
-            source_resource = param_values['source_resource']
-            new_path = param_values['new_path'] 
-            target_pd = param_values['target_pd']
-            
-            # Get source resource properties
-            source_data = graph.g.nodes[source_resource]
-            source_extra = json.loads(source_data.get('extra', '{}'))
-            
-            # Find FILE space
-            file_space_id = self._find_file_space_for_resource(graph, source_resource)
-            
-            # Create new private resource with same properties but different path
-            file_type = FileType[source_extra['file_type']]
-            file_size = int(source_extra['size_bytes'])
-            
-            new_resource_id = NodeTransformations.add_file_resource(
-                graph, file_space_id, file_type, new_path, file_size
-            )
-            
-            print(f"  🔧 Cloned {source_resource} → FILE_{file_space_id}_{new_resource_id} for {target_pd}")
-            return True
-            
-        except Exception as e:
-            print(f"Error in clone_file_resource: {e}")
-            return False
     
-    def _apply_replace_hold_edge(self, graph, param_values):
-        """Apply replace_hold_edge primitive - atomically replace HOLD edge target"""
-        from graph_transformations import EdgeTransformations
-        from generic_model import EdgeType, ResourceType, Permission
-        
-        try:
-            pd = param_values['pd']
-            old_resource = param_values['old_resource']
-            new_resource = param_values['new_resource']
-            
-            # Find existing edge properties
-            edge_data = None
-            for from_node, to_node, data in graph.g.edges(data=True):
-                if from_node == pd and to_node == old_resource and data.get('type') == 'HOLD':
-                    edge_data = data
-                    break
-            
-            if not edge_data:
-                print(f"No HOLD edge found from {pd} to {old_resource}")
-                return False
-            
-            permission = edge_data.get('permission', Permission.R)
-            
-            # Atomic replacement: remove old, add new
-            EdgeTransformations.remove_edge(graph, pd, old_resource, EdgeType.HOLD)
-            
-            # Extract IDs for new edge
-            pd_id = int(pd.split('_')[1])
-            resource_id = int(new_resource.split('_')[-1])
-            file_space_id = self._find_file_space_for_resource(graph, new_resource)
-            
-            EdgeTransformations.add_hold_edge(
-                graph, permission, pd_id, ResourceType.FILE, file_space_id, resource_id
-            )
-            
-            print(f"  🔧 Redirected {pd}: {old_resource} → {new_resource}")
-            return True
-            
-        except Exception as e:
-            print(f"Error in replace_hold_edge: {e}")
-            return False
     
-    def _apply_create_private_copy(self, graph, param_values):
-        """Apply create_private_copy primitive - combines clone + replace"""
-        try:
-            source_resource = param_values['source_resource']
-            target_pd = param_values['target_pd']
-            
-            # Generate unique VA for private copy
-            import random
-            new_va = hex(0x8000 + random.randint(0, 0x1000))
-            
-            # Step 1: Clone the resource
-            clone_params = {
-                'source_resource': source_resource,
-                'new_va': new_va,
-                'target_pd': target_pd
-            }
-            
-            if not self._apply_clone_vmr_resource(graph, clone_params):
-                return False
-            
-            # Find the newly created resource
-            new_resource = self._find_latest_resource(graph, source_resource)
-            
-            # Step 2: Replace the HOLD edge
-            replace_params = {
-                'pd': target_pd,
-                'old_resource': source_resource,
-                'new_resource': new_resource
-            }
-            
-            if not self._apply_replace_hold_edge(graph, replace_params):
-                return False
-            
-            print(f"  🎯 Created private copy: {source_resource} → {new_resource} for {target_pd}")
-            return True
-            
-        except Exception as e:
-            print(f"Error in create_private_copy: {e}")
-            return False
     
     def _find_file_space_for_resource(self, graph, resource):
         """Find the FILE space ID for a given resource"""
@@ -866,6 +902,11 @@ PRIMITIVE_TRANSITIONS = {
         description="Create new resource space",
         transition_type="primitive"
     ),
+    "remove_resource_space": Transition(
+        name="remove_resource_space",
+        description="Remove resource space",
+        transition_type="primitive"
+    ),
     
     # Edge Operations
     "add_hold_edge": Transition(
@@ -888,40 +929,36 @@ PRIMITIVE_TRANSITIONS = {
         description="Remove PD → PD authority relationship",
         transition_type="primitive"
     ),
-    
-    # Enhanced Resource Management Primitives (Strategy 1)
-    "clone_file_resource": Transition(
-        name="clone_file_resource",
-        description="Create private copy of existing FILE resource",
+    "add_subset_edge": Transition(
+        name="add_subset_edge",
+        description="Create Resource → ResourceSpace relationship",
         transition_type="primitive"
     ),
-    "replace_hold_edge": Transition(
-        name="replace_hold_edge", 
-        description="Atomically replace HOLD edge target resource",
-        transition_type="primitive"
-    ),
-    "create_private_copy": Transition(
-        name="create_private_copy",
-        description="Create private FILE copy for specific PD",
+    "remove_subset_edge": Transition(
+        name="remove_subset_edge",
+        description="Remove Resource → ResourceSpace relationship",
         transition_type="primitive"
     )
 }
 
-# Multi-Step Transition Definitions
+# Multi-Step Transition Definitions  
 MULTISTEP_TRANSITIONS = {
     "privatize_resource": Transition(
         name="privatize_resource",
         description="Remove shared access and create private copies",
         transition_type="multistep",
         primitives=[
-            Primitive("remove_hold_edge", source="$pd1", target="$resource"),
-            Primitive("remove_hold_edge", source="$pd2", target="$resource"),
-            Primitive("add_vmr_resource", space="$resource_space", vmr_type="$vmr_type", pages="$pages", va="$va1"),
-            Primitive("add_vmr_resource", space="$resource_space", vmr_type="$vmr_type", pages="$pages", va="$va2"),
-            Primitive("add_hold_edge", source="$pd1", target="$new_resource1"),
-            Primitive("add_hold_edge", source="$pd2", target="$new_resource2")
+            Primitive("add_file_resource", file_space="$resource_space", file_type="$file_type", file_path="$path1", file_size="$size"),
+            Primitive("add_file_resource", file_space="$resource_space", file_type="$file_type", file_path="$path2", file_size="$size"),
+            Primitive("add_subset_edge", resource="$new_resource1", resource_space="$resource_space"),
+            Primitive("add_subset_edge", resource="$new_resource2", resource_space="$resource_space"),
+            Primitive("add_hold_edge", pd="$pd1", resource="$new_resource1"),
+            Primitive("add_hold_edge", pd="$pd2", resource="$new_resource2"),
+            Primitive("remove_hold_edge", from_node="$pd1", to_node="$resource"),
+            Primitive("remove_hold_edge", from_node="$pd2", to_node="$resource"),
+            Primitive("remove_file_resource", resource="$resource")
         ],
-        parameters=["pd1", "pd2", "resource", "resource_space", "vmr_type", "pages", "va1", "va2", "new_resource1", "new_resource2"]
+        parameters=["pd1", "pd2", "resource", "resource_space", "file_type", "path1", "path2", "size", "new_resource1", "new_resource2"]
     ),
     
     "add_mediator": Transition(
@@ -930,11 +967,11 @@ MULTISTEP_TRANSITIONS = {
         transition_type="multistep",
         primitives=[
             Primitive("add_pd", pd_type="mediator"),
-            Primitive("remove_hold_edge", source="$pd1", target="$resource"),
-            Primitive("remove_hold_edge", source="$pd2", target="$resource"),
-            Primitive("add_hold_edge", source="$mediator_pd", target="$resource"),
-            Primitive("add_request_edge", source="$pd1", target="$mediator_pd"),
-            Primitive("add_request_edge", source="$pd2", target="$mediator_pd")
+            Primitive("remove_hold_edge", from_node="$pd1", to_node="$resource"),
+            Primitive("remove_hold_edge", from_node="$pd2", to_node="$resource"),
+            Primitive("add_hold_edge", pd="$mediator_pd", resource="$resource"),
+            Primitive("add_request_edge", from_pd="$pd1", to_pd="$mediator_pd"),
+            Primitive("add_request_edge", from_pd="$pd2", to_pd="$mediator_pd")
         ],
         parameters=["pd1", "pd2", "resource", "mediator_pd"]
     )
@@ -1097,11 +1134,20 @@ def build_high_attack_surface_graph():
 
 
 # Standard transition sets for easy reuse
-BASIC_PRIMITIVES = ["add_pd", "remove_pd", "add_hold_edge", "remove_hold_edge", "add_request_edge", "remove_request_edge"]
-BASIC_MULTISTEP = ["privatize_resource", "add_mediator"]
-EXTENDED_PRIMITIVES = BASIC_PRIMITIVES + ["add_file_resource", "remove_file_resource", "add_resource_space"]
-ENHANCED_PRIMITIVES = BASIC_PRIMITIVES + ["clone_file_resource", "replace_hold_edge", "create_private_copy"]
-EXTENDED_MULTISTEP = BASIC_MULTISTEP
+# All atomic graph operations (node and edge operations)
+PRIMITIVES = [
+    # Node operations
+    "add_pd", "remove_pd", 
+    "add_file_resource", "remove_file_resource", 
+    "add_resource_space", "remove_resource_space",
+    # Edge operations  
+    "add_hold_edge", "remove_hold_edge",
+    "add_request_edge", "remove_request_edge",
+    "add_subset_edge", "remove_subset_edge"
+]
+
+# Multi-step transitions composed of primitives
+MULTISTEP = ["privatize_resource", "add_mediator"]
 
 
 # Scenario definitions
@@ -1141,7 +1187,7 @@ SCENARIOS = {
             Constraint("requires_file_access", 1, "FILE", properties={"file_type": "TEMP", "min_size_kb": 1}),
             Constraint("requires_file_access", 2, "FILE", properties={"file_type": "TEMP", "min_size_kb": 1}),
         ],
-        allowed_primitives=EXTENDED_PRIMITIVES,  # True primitive operations: add/remove nodes/edges
+        allowed_primitives=PRIMITIVES,  # All atomic graph operations
         allowed_multistep=[],  # No multi-step allowed
         graph_builder=build_basic_shared_resource_graph
     ),
@@ -1160,7 +1206,7 @@ SCENARIOS = {
             Constraint("requires_file_access", 2, "FILE", properties={"file_type": "any", "min_size_kb": 3}),
             Constraint("requires_file_access", 3, "FILE", properties={"file_type": "LIBRARY", "min_size_kb": 1}),
         ],
-        allowed_primitives=BASIC_PRIMITIVES,  # Only primitive operations
+        allowed_primitives=PRIMITIVES,  # All atomic graph operations
         allowed_multistep=[],  # No multi-step allowed
         graph_builder=build_high_sharing_graph
     ),
@@ -1181,7 +1227,7 @@ SCENARIOS = {
             Constraint("requires_communication", 2, "REQUEST", target_pd=3),  # PD_2 -> PD_3  
             Constraint("requires_communication", 3, "REQUEST", target_pd=4),  # PD_3 -> PD_4
         ],
-        allowed_primitives=BASIC_PRIMITIVES,  # Only primitive operations
+        allowed_primitives=PRIMITIVES,  # All atomic graph operations
         allowed_multistep=[],  # No multi-step allowed
         graph_builder=build_authority_chain_graph
     ),
@@ -1233,8 +1279,8 @@ SCENARIOS = {
             # Communication constraint that creates the TCB challenge
             Constraint("requires_communication", 1, "REQUEST", target_pd=3),
         ],
-        allowed_primitives=BASIC_PRIMITIVES,  # Both primitive and multi-step allowed
-        allowed_multistep=BASIC_MULTISTEP,    # Full flexibility for multi-objective
+        allowed_primitives=PRIMITIVES,  # All atomic graph operations
+        allowed_multistep=MULTISTEP,    # All multi-step transitions
         graph_builder=build_basic_shared_resource_graph
     ),
     

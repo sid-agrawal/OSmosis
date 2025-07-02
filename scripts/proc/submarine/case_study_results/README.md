@@ -41,7 +41,7 @@ Open any of the HTML files in a web browser to see:
    - Alternative paths not taken
    - Exploration strategy effectiveness
 
-### Case Study 3: Enhanced Primitive-Only Approach (basic_sharing_primitive with enhanced primitives)
+### Case Study 3: Primitive-Only Approach (basic_sharing_primitive)
 - **Timeline Visualization**: `isosearch_viz_basic_sharing_primitive_20250630_221119.html`
 - **Decision Tree**: `isosearch_tree_basic_sharing_primitive_20250630_221119.html`
 
@@ -49,22 +49,22 @@ Open any of the HTML files in a web browser to see:
 - Initial RSI: 0.143 (14.3% sharing between PD_1 and PD_2)
 - Final RSI: 0.000 (complete isolation achieved in iteration 1!)
 - Mechanism: `create_private_copy` primitive transformation
-- **SUCCESS**: Enhanced primitives achieved same core outcome as multi-step transitions
+- **SUCCESS**: Primitives achieved same core outcome as multi-step transitions
 
-**Enhanced Features Demonstrated:**
-- **Strategy 1**: Enhanced primitive set with `create_private_copy`, `clone_vmr_resource`, `replace_hold_edge`
+**Primitive Features Demonstrated:**
+- **Strategy 1**: Comprehensive primitive set with atomic graph operations
 - **Strategy 3**: Constraint-guided discovery identified sharing violations (scores 0.7-0.95 vs 0.3 for basic primitives)
 - **Intelligent prioritization**: Constraint-addressing candidates boosted by +0.5 priority
 - **Effective decision making**: Selected optimal solution in iteration 1, then optimized ASR through additional PDs
 
 ## Comparison Summary
 
-| Approach | Iterations to RSI=0.000 | Final RSI | Final TCB[PD_1] | Enhanced Primitives |
-|----------|-------------------------|-----------|-----------------|-------------------|
-| **Multi-step** (basic_sharing) | 1 | 0.000 | 0 | ❌ |
-| **Basic Primitives** (original) | ∞ | 0.143 | 1 | ❌ |
-| **Enhanced Primitives** (new) | 1 | 0.000 | 0 | ✅ |
+| Approach | Iterations to RSI=0.000 | Final RSI | Final TCB[PD_1] | Primitive Type |
+|----------|-------------------------|-----------|-----------------|----------------|
+| **Multi-step** (basic_sharing) | 1 | 0.000 | 0 | Multi-step |
+| **Basic Primitives** (original) | ∞ | 0.143 | 1 | Limited |
+| **Unified Primitives** (current) | 1 | 0.000 | 0 | Comprehensive |
 
 ## Usage for Workshop Paper
 
-These visualizations provide concrete evidence of IsoSearch's automated security mechanism discovery capabilities, showing both the exploration process and the final security improvements achieved through systematic graph transformations. The enhanced primitive approach demonstrates that sophisticated primitive design can match multi-step transformation effectiveness.
+These visualizations provide concrete evidence of IsoSearch's automated security mechanism discovery capabilities, showing both the exploration process and the final security improvements achieved through systematic graph transformations. The unified primitive approach demonstrates that comprehensive primitive design can match multi-step transformation effectiveness.

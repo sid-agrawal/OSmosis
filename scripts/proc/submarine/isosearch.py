@@ -422,7 +422,7 @@ def GenerateCandidate(graph, constraints, transitions, goals):
         print("  No valid transitions found")
         return None, candidate_info
     
-    # Enhanced sorting: prioritize constraint-relevant candidates (Strategy 3)
+    # Prioritize constraint-relevant candidates (Strategy 3)
     def candidate_priority(candidate):
         base_improvement = candidate['predicted_improvement']
         constraint_relevance = candidate.get('constraint_relevance', 0.1)
@@ -494,28 +494,23 @@ def _predict_improvement(transition, candidate, graph, goals):
         "privatize_resource": 1.0,  # High impact on RSI
         "add_mediator": 0.5,        # Medium impact on security
         
-        # Enhanced primitives (Strategy 1) - higher scores for targeted operations
-        "create_private_copy": 0.95,    # Directly addresses sharing - almost as good as multi-step
-        "clone_vmr_resource": 0.7,      # Creates private resources
-        "clone_file_resource": 0.7,     # Creates private FILE resources  
-        "replace_hold_edge": 0.6,       # Redirects access to private resources
-        
-        # True graph primitives - context-aware scoring
-        "add_file_resource": 0.5,       # Can create private files to solve sharing
+        # High-impact primitives (problem-solving)
         "remove_file_resource": 0.6,    # Can eliminate shared resources
-        "add_hold_edge": 0.4,          # Can connect PDs to new private resources
+        "add_file_resource": 0.5,       # Can create private files to solve sharing
         "remove_hold_edge": 0.5,       # Can disconnect from shared resources
+        "add_hold_edge": 0.4,          # Can connect PDs to new private resources
         
-        # Basic PD and space operations
+        # Medium-impact primitives (structural)
+        "remove_pd": 0.3,              # Can remove unnecessary components
+        "add_subset_edge": 0.3,        # Can connect resources to spaces
+        "remove_subset_edge": 0.3,     # Can disconnect resources from spaces
+        "add_request_edge": 0.2,       # Can add authority relationships
+        "remove_request_edge": 0.3,    # Can remove authority relationships
+        
+        # Low-impact primitives (infrastructure)
         "add_pd": 0.2,                 # Lower priority - doesn't solve sharing directly
-        "remove_pd": 0.3,
-        "add_resource_space": 0.1,
-        "add_request_edge": 0.2,
-        "remove_request_edge": 0.3,
-        
-        # Legacy VMR operations
-        "add_vmr_resource": 0.2,
-        "remove_vmr_resource": 0.3
+        "add_resource_space": 0.1,     # Infrastructure operation
+        "remove_resource_space": 0.2   # Cleanup operation
     }
     
     base_improvement = improvement_map.get(transition.name, 0.3)

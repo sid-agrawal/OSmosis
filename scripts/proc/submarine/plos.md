@@ -115,7 +115,7 @@ OUTPUT: sequence of mechanism graphs {G0, G1, ..., Gj}
 
 The IsoSearch framework is implemented in Python using NetworkX for graph operations and comprises four key components. The **ModelGraph** class represents system models as directed multigraphs with typed nodes (Protection Domains, Resource Spaces, Resources) and typed edges (HOLD, MAP, SUBSET, REQUEST), supporting both legacy VMR (Virtual Memory Region) and modern FILE resource types through a unified interface.
 
-**Graph transformations** are organized into primitive operations (add/remove nodes/edges) and multi-step transitions (privatize_resource, add_mediator) that encode domain-specific security patterns. The Transition class provides a unified interface for both types, with constraint validation and parameter binding. Enhanced primitives use constraint-violation analysis to generate targeted candidates automatically.
+**Graph transformations** are organized into primitive operations (add/remove nodes/edges) and multi-step transitions (privatize_resource, add_mediator) that encode domain-specific security patterns. The Transition class provides a unified interface for both types, with constraint validation and parameter binding. Primitives use constraint-violation analysis to generate targeted candidates automatically.
 
 **Constraint checking** ensures functional requirements are preserved throughout exploration. File access constraints specify required resource types, file types, and minimum sizes, while communication constraints define inter-PD relationships. The system validates all constraints before and after each transformation.
 
@@ -138,13 +138,13 @@ We evaluate IsoSearch across 8 scenarios using FILE-based resources representing
 | Scenario | Goals | Transitions | Objectives Achieved | Key Insights |
 |----------|--------|-------------|-------------------|--------------|
 | **basic_sharing** | RSI≤0.3, TCB≤0, ASR≤1.0 | Multi-step (2) | ✅ RSI, ✅ TCB, ❌ ASR | Single-iteration success with multi-step efficiency (simplified: 1+1 shared) |
-| **basic_sharing_primitive** | RSI≤0.3, TCB≤0, ASR≤1.0 | Primitive (9) | ❌ RSI, ❌ TCB, ⚠️ ASR | Primitive limitations for complex security patterns |
-| **high_sharing** | RSI≤0.2, ASR≤2.0, TCB≤1 | Primitive (6) | ❌ RSI, ✅ ASR, ❌ TCB | Complex sharing patterns resist basic approaches |
-| **authority_chain** | FR≤3, TCB≤2, ASR≤1.5 | Primitive (6) | ❌ FR, ❌ TCB, ✅ ASR | Authority structure repair beyond primitive capability |
+| **basic_sharing_primitive** | RSI≤0.3, TCB≤0, ASR≤1.0 | Primitive (12) | ❌ RSI, ❌ TCB, ⚠️ ASR | Primitive limitations for complex security patterns |
+| **high_sharing** | RSI≤0.2, ASR≤2.0, TCB≤1 | Primitive (12) | ❌ RSI, ✅ ASR, ❌ TCB | Complex sharing patterns resist basic approaches |
+| **authority_chain** | FR≤3, TCB≤2, ASR≤1.5 | Primitive (12) | ❌ FR, ❌ TCB, ✅ ASR | Authority structure repair beyond primitive capability |
 | **rsi_focused** | RSI≤0.1 | Multi-step (2) | ✅ RSI | Perfect tool-problem matching → optimal solution |
 | **mediator_test** | RSI≤0.8 | Multi-step (2) | ✅ RSI | Sophisticated architectural pattern implementation |
 | **multi_objective** | RSI≤0.3, ASR≤1.0, TCB≤1, FR≤4 | Multi-step (2) | ✅ RSI, ❌ ASR, ✅ TCB, ❌ FR | Mixed strategy with goal prioritization |
-| **attack_surface_reduction** | ASR≤2.5 | Primitive (6) | ❌ ASR | Constraint deadlock demonstrates robust error handling |
+| **attack_surface_reduction** | ASR≤2.5 | Primitive (1) | ❌ ASR | Constraint deadlock demonstrates robust error handling |
 
 ### Key Findings
 

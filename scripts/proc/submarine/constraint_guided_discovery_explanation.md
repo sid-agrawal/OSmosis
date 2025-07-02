@@ -1,6 +1,6 @@
 # Constraint-Guided Discovery: Why Discarded Paths Only Appear in Early Iterations
 
-This document explains the behavior observed in IsoSearch's enhanced primitive system where multiple discarded transformation paths appear in iteration 1, but subsequent iterations show no discarded paths.
+This document explains the behavior observed in IsoSearch's primitive system where multiple discarded transformation paths appear in iteration 1, but subsequent iterations show no discarded paths.
 
 ## 🔍 **The Pattern Observed**
 
@@ -35,7 +35,7 @@ The discarded paths only appear in iteration 1 because of how the **constraint-g
 **System State:**
 - **Sharing violation present**: VMR_1_7 shared between PD_1 and PD_2
 - **Constraint analysis active**: `_analyze_sharing_violations()` detects violations
-- **Enhanced primitives triggered**: Constraint-addressing transformations generated
+- **Constraint-addressing primitives triggered**: Constraint-addressing transformations generated
 
 **Candidate Generation:**
 ```python
@@ -68,7 +68,7 @@ def _find_clone_vmr_resource_candidates(self, graph, constraints):
 **System State After Iteration 1:**
 - **Sharing violation resolved**: PD_1 → VMR_1_8 (private), PD_2 → VMR_1_7 (now private)
 - **No constraint violations**: `_analyze_sharing_violations()` returns empty list
-- **Enhanced primitives dormant**: No constraint-addressing candidates generated
+- **Constraint-addressing primitives dormant**: No constraint-addressing candidates generated
 
 **Candidate Generation:**
 ```python
@@ -92,7 +92,7 @@ def _find_clone_vmr_resource_candidates(self, graph, constraints):
 ## 🎯 **Why This Design Is Intelligent**
 
 ### **1. Problem-Focused Resource Allocation**
-- **Enhanced primitives activate only when needed**: No wasted computation on irrelevant transformations
+- **Constraint-addressing primitives activate only when needed**: No wasted computation on irrelevant transformations
 - **Constraint-guided targeting**: Resources focused on actual security violations
 - **Efficient exploration**: Generate candidates only when they address real problems
 
@@ -100,7 +100,7 @@ def _find_clone_vmr_resource_candidates(self, graph, constraints):
 ```
 Phase 1: Constraint Violation Resolution
 ├── Multiple sophisticated candidates compete
-├── Enhanced primitives target specific violations  
+├── Constraint-addressing primitives target specific violations  
 └── Best solution selected from rich candidate pool
 
 Phase 2: System Optimization
@@ -136,7 +136,7 @@ Phase 2: System Optimization
 
 ### **Constraint-Guided Discovery (Current):**
 - ✅ **Adaptive**: High candidate generation when problems exist, efficient when solved
-- ✅ **Targeted**: Enhanced primitives activate only for constraint violations
+- ✅ **Targeted**: Constraint-addressing primitives activate only for constraint violations
 - ✅ **Scalable**: Computational cost scales with problem complexity
 
 ## 📝 **Key Insights**
@@ -147,7 +147,7 @@ Phase 2: System Optimization
 
 3. **Constraint-guided discovery is working as designed**: The system correctly transitions from problem-solving to optimization
 
-4. **Enhanced primitives are problem-focused**: They activate when violations exist, step back when problems are resolved
+4. **Constraint-addressing primitives are problem-focused**: They activate when violations exist, step back when problems are resolved
 
 ## 🏆 **Conclusion**
 
@@ -158,4 +158,4 @@ The pattern of discarded paths only in iteration 1 is **not a limitation but a f
 - **Efficient resource utilization** that conserves computation after problems are resolved
 - **Clear separation** between constraint resolution and system optimization phases
 
-This behavior validates that the enhanced primitive system with constraint-guided discovery is working correctly and efficiently.
+This behavior validates that the primitive system with constraint-guided discovery is working correctly and efficiently.
