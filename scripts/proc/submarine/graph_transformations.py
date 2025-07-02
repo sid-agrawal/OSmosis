@@ -7,7 +7,7 @@ while preserving graph validity and semantic integrity.
 
 from enum import Enum
 from typing import Optional, Set, Dict, Any
-from generic_model import ModelGraph, NodeType, EdgeType, ResourceType, VmrType, Permission
+from generic_model import ModelGraph, NodeType, EdgeType, ResourceType, VmrType, FileType, Permission
 
 
 class TransformationType(Enum):
@@ -58,6 +58,12 @@ class NodeTransformations:
     def add_mo_resource(graph: ModelGraph, space_id: int, phys_addr: int, n_pages: int) -> int:
         """Add MO resource to existing MO space"""
         return graph.add_mo_node(space_id, phys_addr, n_pages)
+    
+    @staticmethod
+    def add_file_resource(graph: ModelGraph, space_id: int, file_type: FileType, 
+                         file_path: str, file_size: int = 0) -> int:
+        """Add FILE resource to existing FILE space"""
+        return graph.add_file_node(space_id, file_type, file_path, file_size)
     
     @staticmethod
     def modify_pd_name(graph: ModelGraph, pd_id: int, new_name: str) -> bool:

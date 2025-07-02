@@ -4,7 +4,7 @@ IsoSearch Algorithm Implementation - Baby Steps
 
 # Import our graph transformation capabilities
 from graph_transformations import NodeTransformations, EdgeTransformations
-from generic_model import ModelGraph, ResourceType, VmrType, Permission, EdgeType
+from generic_model import ModelGraph, ResourceType, VmrType, FileType, Permission, EdgeType
 from scenarios import get_scenario, list_scenarios, SCENARIOS, Goal, Constraint, Transition
 from visualization import IsoSearchVisualizer
 from decision_tree_viz import DecisionTreeVisualizer
@@ -97,8 +97,8 @@ def _get_resource_type(graph, resource_node):
         return node_data.get('data', 'UNKNOWN')
     else:
         # Try to infer from node name
-        if 'VMR' in resource_node:
-            return 'VMR'
+        if 'FILE' in resource_node:
+            return 'FILE'
         elif 'MO' in resource_node:
             return 'MO'
         elif 'FILE' in resource_node:
@@ -533,7 +533,7 @@ def _find_privatization_candidates(graph, constraints, goals):
     
     # Find all shared resources
     for from_node, to_node, edge_data in graph.g.edges(data=True):
-        if edge_data.get('type') == 'HOLD' and to_node.startswith('VMR_'):
+        if edge_data.get('type') == 'HOLD' and to_node.startswith('FILE_'):
             if to_node not in resource_holders:
                 resource_holders[to_node] = []
             resource_holders[to_node].append(from_node)
@@ -660,15 +660,15 @@ def _mediate_specific_resource(graph, resource, sharers):
 def _check_privatization_constraints(resource, holders, constraints):
     """Check if privatizing a resource violates any constraints"""
     for constraint in constraints:
-        if constraint.constraint_type == "requires_vmr_access":
+        if constraint.constraint_type == "requires_file_access":
             pd_string = f"PD_{constraint.pd_id}"
-            if pd_string in holders and resource.startswith('VMR_'):
-                # Check if the PD's VMR access requirements are still met after privatization
-                vmr_type = constraint.properties.get('vmr_type', 'any')
-                if vmr_type == 'any' or vmr_type.upper() in resource:
+            if pd_string in holders and resource.startswith('FILE_'):
+                # Check if the PD's FILE access requirements are still met after privatization
+                file_type = constraint.properties.get('file_type', 'any')
+                if file_type == 'any' or file_type.upper() in resource:
                     continue  # Requirement is satisfied
                 else:
-                    return False  # VMR type requirement not met
+                    return False  # FILE type requirement not met
         elif constraint.constraint_type == "requires_communication":
             # Communication constraints are not affected by resource privatization
             continue
@@ -678,17 +678,17 @@ def _check_privatization_constraints(resource, holders, constraints):
 def _check_mediation_constraints(resource, sharers, constraints):
     """Check if adding mediation violates any constraints"""
     for constraint in constraints:
-        if constraint.constraint_type == "requires_vmr_access":
+        if constraint.constraint_type == "requires_file_access":
             pd_string = f"PD_{constraint.pd_id}"
-            if pd_string in sharers and resource.startswith('VMR_'):
-                # Check if mediated access still meets VMR requirements
-                vmr_type = constraint.properties.get('vmr_type', 'any')
+            if pd_string in sharers and resource.startswith('FILE_'):
+                # Check if mediated access still meets FILE requirements
+                file_type = constraint.properties.get('file_type', 'any')
                 permissions = constraint.properties.get('permissions', 'R')
                 # Mediation might restrict permissions, check if still compatible
-                if 'W' in permissions and resource.startswith('VMR_'):
-                    # Write access through mediator might be problematic for some VMR types
-                    if vmr_type == 'STACK':
-                        return False  # Stack VMRs need direct write access
+                if 'W' in permissions and resource.startswith('FILE_'):
+                    # Write access through mediator might be problematic for some FILE types
+                    if file_type == 'LOG':
+                        return False  # Log files need direct write access
         elif constraint.constraint_type == "requires_communication":
             # Communication constraints not directly affected by resource mediation
             continue
@@ -698,12 +698,12 @@ def _check_mediation_constraints(resource, sharers, constraints):
 def _can_remove_hold_edge(from_node, to_node, constraints):
     """Check if removing a HOLD edge violates constraints"""
     for constraint in constraints:
-        if constraint.constraint_type == "requires_vmr_access":
+        if constraint.constraint_type == "requires_file_access":
             pd_string = f"PD_{constraint.pd_id}"
-            if pd_string == from_node and to_node.startswith('VMR_'):
-                # Check if this specific VMR is required by the constraint
-                vmr_type = constraint.properties.get('vmr_type', 'any')
-                if vmr_type == 'any' or vmr_type.upper() in to_node:
+            if pd_string == from_node and to_node.startswith('FILE_'):
+                # Check if this specific FILE is required by the constraint
+                file_type = constraint.properties.get('file_type', 'any')
+                if file_type == 'any' or file_type.upper() in to_node:
                     # This edge is required by constraint, cannot remove
                     return False
         elif constraint.constraint_type == "requires_communication":
@@ -714,9 +714,9 @@ def _can_remove_hold_edge(from_node, to_node, constraints):
                 # This is a direct communication edge required by constraint
                 return False
             # Could also check for indirect communication paths through shared resources
-            if (pd_string == from_node and to_node.startswith('VMR_') and 
+            if (pd_string == from_node and to_node.startswith('FILE_') and 
                 constraint.resource_info in ['REQUEST', 'REPLY']):
-                # Removing access to communication VMR might break required communication
+                # Removing access to communication FILE might break required communication
                 return False
     return True
 
@@ -741,22 +741,22 @@ def _privatize_shared_resource(graph, shared_resource, holders):
             # Create new private resource
             import json
             extra_data = json.loads(original_data.get('extra', '{}'))
-            new_vmr = NodeTransformations.add_vmr_resource(
-                graph, space_id, VmrType.HEAP, 
-                int(extra_data.get('num_pages', 10)), 
-                int(extra_data.get('va', '0x1000'), 16) + i * 0x1000
+            new_file = NodeTransformations.add_file_resource(
+                graph, space_id, FileType.CONFIG, 
+                f"/etc/private_{holder.split('_')[1]}.conf", 
+                int(extra_data.get('size_bytes', '1024'))
             )
             
             # Find the holder's hold edge and redirect it to new resource
-            new_resource_id = f"VMR_{space_id}_{new_vmr}"
+            new_resource_id = f"FILE_{space_id}_{new_file}"
             
             # Remove old hold edge
             EdgeTransformations.remove_edge(graph, holder, shared_resource, EdgeType.HOLD)
             
             # Add new hold edge to private resource
             EdgeTransformations.add_hold_edge(graph, Permission.R, 
-                                            int(holder.split('_')[1]), ResourceType.VMR, 
-                                            space_id, new_vmr)
+                                            int(holder.split('_')[1]), ResourceType.FILE, 
+                                            space_id, new_file)
 
 
 def _add_mediator_between_pds(graph, shared_resource, sharers):
@@ -769,16 +769,16 @@ def _add_mediator_between_pds(graph, shared_resource, sharers):
         EdgeTransformations.remove_edge(graph, sharer, shared_resource, EdgeType.HOLD)
     
     # Add mediator access to resource
-    space_id = 1  # Assume VMR_SPACE_1 for now
+    space_id = 1  # Assume FILE_SPACE_1 for now
     resource_num = int(shared_resource.split('_')[-1])
     EdgeTransformations.add_hold_edge(graph, Permission.R | Permission.W, 
-                                    mediator_id, ResourceType.VMR, space_id, resource_num)
+                                    mediator_id, ResourceType.FILE, space_id, resource_num)
     
     # Add REQUEST edges from original sharers to mediator
     for sharer in sharers:
         sharer_id = int(sharer.split('_')[1])
         EdgeTransformations.add_request_edge(graph, sharer_id, mediator_id, 
-                                           ResourceType.VMR, space_id)
+                                           ResourceType.FILE, space_id)
 
 
 def DesignSpaceExplorationWithVisualization(scenario, visualizer=None, tree_visualizer=None):
@@ -1139,7 +1139,7 @@ def _print_exploration_summary(summary):
 
 
 def _print_graph_arrows(graph):
-    """Print ASCII art using arrow notation like PD_1 -> VMR_SPACE_1 -> VMR_1_1"""
+    """Print ASCII art using arrow notation like PD_1 -> FILE_SPACE_1 -> FILE_1_1"""
     
     # Build paths from PDs through their relationships
     pd_nodes = [node for node, data in graph.g.nodes(data=True) 

@@ -25,6 +25,7 @@ class ResourceType(Enum):
     VMR = 1
     MO = 2  # Same as PMR, a region of contiguous virtual memory
     PID = 3  # Same as PMR, a region of contiguous virtual memory
+    FILE = 4  # File system resources
 
 
 class VmrType(Enum):
@@ -40,6 +41,20 @@ class VmrType(Enum):
     SHM = 9
     DEV = 10
     KVM = 11
+
+
+class FileType(Enum):
+    UNKNOWN = 0
+    REGULAR = 1    # Regular files
+    CONFIG = 2     # Configuration files
+    LOG = 3        # Log files
+    DATABASE = 4   # Database files
+    LIBRARY = 5    # Shared library files
+    EXECUTABLE = 6 # Executable files
+    TEMP = 7       # Temporary files
+    CACHE = 8      # Cache files
+    DEVICE = 9     # Device files
+    SOCKET = 10    # Socket files
 
 
 class Permission(Enum):
@@ -189,6 +204,29 @@ class ModelGraph:
 
         return self.add_resource_node(
             ResourceType.MO, space_id, None, json.dumps(extra)
+        )
+
+    def add_file_node(
+        self, space_id: int, file_type: FileType, file_path: str, file_size: int = 0
+    ) -> int:
+        """
+        Add a FILE node to a model state graph, including the subset edge to the file system space
+
+        :param space_id: ID of the file system space to add the file to
+        :param file_type: The type of file (CONFIG, LOG, DATABASE, etc.)
+        :param file_path: File path string (e.g., "/etc/config.txt", "/var/log/app.log")
+        :param file_size: Size of file in bytes (default: 0)
+        :return: the resource ID
+        """
+
+        extra = {
+            "path": file_path,
+            "file_type": file_type.name,
+            "size_bytes": str(file_size),
+            "permissions": "rw-"  # Default file permissions
+        }
+        return self.add_resource_node(
+            ResourceType.FILE, space_id, None, json.dumps(extra)
         )
 
     def add_pd_node(self, name: str, pd_id: int | None = None) -> int:

@@ -6,7 +6,7 @@ Each scenario defines a starting graph, goals, constraints, and allowed transiti
 """
 
 from graph_transformations import NodeTransformations, EdgeTransformations
-from generic_model import ModelGraph, ResourceType, VmrType, Permission
+from generic_model import ModelGraph, ResourceType, VmrType, FileType, Permission
 
 
 class Goal:
@@ -123,9 +123,9 @@ class Transition:
                 # Check if removal violates constraints
                 can_remove = True
                 for constraint in constraints:
-                    if constraint.constraint_type == "requires_vmr_access":
+                    if constraint.constraint_type == "requires_file_access":
                         pd_string = f"PD_{constraint.pd_id}"
-                        if pd_string == from_node and to_node.startswith('VMR_'):
+                        if pd_string == from_node and to_node.startswith('FILE_'):
                             can_remove = False
                             break
                 
@@ -151,7 +151,7 @@ class Transition:
         
         # Find shared resources
         for from_node, to_node, edge_data in graph.g.edges(data=True):
-            if edge_data.get('type') == 'HOLD' and to_node.startswith('VMR_'):
+            if edge_data.get('type') == 'HOLD' and to_node.startswith('FILE_'):
                 if to_node not in resource_holders:
                     resource_holders[to_node] = []
                 resource_holders[to_node].append(from_node)
@@ -164,7 +164,7 @@ class Transition:
                         'resource': resource,
                         'pd1': holders[0], 
                         'pd2': holders[1],
-                        'resource_space': 'VMR_SPACE_1'  # Simplified
+                        'resource_space': 'FILE_SPACE_1'  # Simplified
                     },
                     'target_description': f"privatize {resource} shared by {holders[0]}, {holders[1]}"
                 })
@@ -178,7 +178,7 @@ class Transition:
         
         # Find shared resources
         for from_node, to_node, edge_data in graph.g.edges(data=True):
-            if edge_data.get('type') == 'HOLD' and to_node.startswith('VMR_'):
+            if edge_data.get('type') == 'HOLD' and to_node.startswith('FILE_'):
                 if to_node not in resource_holders:
                     resource_holders[to_node] = []
                 resource_holders[to_node].append(from_node)
@@ -198,8 +198,8 @@ class Transition:
         
         return candidates
     
-    def _find_clone_vmr_resource_candidates(self, graph, constraints):
-        """Find shared VMR resources that can be cloned for privatization (Strategy 3: Constraint-Guided)"""
+    def _find_clone_file_resource_candidates(self, graph, constraints):
+        """Find shared FILE resources that can be cloned for privatization (Strategy 3: Constraint-Guided)"""
         candidates = []
         
         # Analyze constraint violations to guide candidate discovery
@@ -283,16 +283,16 @@ class Transition:
         violations = []
         
         for constraint in constraints:
-            if constraint.constraint_type == "requires_vmr_access":
+            if constraint.constraint_type == "requires_file_access":
                 pd_id = constraint.pd_id
-                vmr_type = constraint.properties.get('vmr_type', 'any')
+                file_type = constraint.properties.get('file_type', 'any')
                 pd_string = f"PD_{pd_id}"
                 
                 # Find resources this PD accesses
                 pd_resources = []
                 for from_node, to_node, edge_data in graph.g.edges(data=True):
-                    if from_node == pd_string and edge_data.get('type') == 'HOLD' and to_node.startswith('VMR_'):
-                        if self._matches_vmr_type(graph, to_node, vmr_type):
+                    if from_node == pd_string and edge_data.get('type') == 'HOLD' and to_node.startswith('FILE_'):
+                        if self._matches_file_type(graph, to_node, file_type):
                             pd_resources.append(to_node)
                 
                 # Check for sharing violations
@@ -309,20 +309,20 @@ class Transition:
                             'resource': resource,
                             'sharers': sharers,
                             'severity': len(sharers) - 1,
-                            'vmr_type': vmr_type
+                            'file_type': file_type
                         })
         
         # Sort by severity (most shared resources first)
         return sorted(violations, key=lambda x: x['severity'], reverse=True)
     
-    def _matches_vmr_type(self, graph, resource, required_type):
-        """Check if resource matches required VMR type"""
+    def _matches_file_type(self, graph, resource, required_type):
+        """Check if resource matches required FILE type"""
         if required_type == 'any':
             return True
         
         try:
             resource_data = graph.g.nodes[resource]
-            if resource_data.get('type') == 'RESOURCE' and resource_data.get('data') == 'VMR':
+            if resource_data.get('type') == 'RESOURCE' and resource_data.get('data') == 'FILE':
                 import json
                 extra = json.loads(resource_data.get('extra', '{}'))
                 actual_type = extra.get('vmr_type', '').upper()
@@ -336,7 +336,7 @@ class Transition:
         """Find existing private resources that could replace shared access"""
         potential = []
         
-        # Look for private VMR resources of same type that this PD could use
+        # Look for private FILE resources of same type that this PD could use
         try:
             shared_data = graph.g.nodes[shared_resource]
             import json
@@ -344,11 +344,11 @@ class Transition:
             shared_type = shared_extra.get('vmr_type')
             
             for node, data in graph.g.nodes(data=True):
-                if (node.startswith('VMR_') and node != shared_resource and 
-                    data.get('type') == 'RESOURCE' and data.get('data') == 'VMR'):
+                if (node.startswith('FILE_') and node != shared_resource and 
+                    data.get('type') == 'RESOURCE' and data.get('data') == 'FILE'):
                     
                     node_extra = json.loads(data.get('extra', '{}'))
-                    if node_extra.get('vmr_type') == shared_type:
+                    if node_extra.get('file_type') == shared_type:
                         # Check if this resource is private or could be made available
                         current_holders = []
                         for from_node, to_node, edge_data in graph.g.edges(data=True):
@@ -432,26 +432,26 @@ class Transition:
             EdgeTransformations.remove_edge(graph, pd1, resource, EdgeType.HOLD)
             EdgeTransformations.remove_edge(graph, pd2, resource, EdgeType.HOLD)
             
-            # Find existing VMR space or create one
+            # Find existing FILE space or create one
             vmr_spaces = [node for node, data in graph.g.nodes(data=True) 
-                         if data.get('type') == 'RESOURCE_SPACE' and data.get('data') == 'VMR']
+                         if data.get('type') == 'RESOURCE_SPACE' and data.get('data') == 'FILE']
             
             if vmr_spaces:
-                # Extract space ID from node name (e.g., "VMR_SPACE_1" -> 1)
+                # Extract space ID from node name (e.g., "FILE_SPACE_1" -> 1)
                 space_id = int(vmr_spaces[0].split('_')[-1])
             else:
-                # Create new VMR space if none exists
-                space_id = NodeTransformations.add_resource_space(graph, ResourceType.VMR)
+                # Create new FILE space if none exists
+                space_id = NodeTransformations.add_resource_space(graph, ResourceType.FILE)
             
             # Create new private resources
-            new_resource1 = NodeTransformations.add_vmr_resource(graph, space_id, VmrType.HEAP, 10, 0x3000)
-            new_resource2 = NodeTransformations.add_vmr_resource(graph, space_id, VmrType.HEAP, 10, 0x4000)
+            new_resource1 = NodeTransformations.add_file_resource(graph, space_id, FileType.TEMP, "/tmp/private1.tmp", 10240)
+            new_resource2 = NodeTransformations.add_file_resource(graph, space_id, FileType.TEMP, "/tmp/private2.tmp", 10240)
             
             # Add new HOLD edges
             pd1_id = int(pd1.split('_')[1])
             pd2_id = int(pd2.split('_')[1])
-            EdgeTransformations.add_hold_edge(graph, Permission.R, pd1_id, ResourceType.VMR, space_id, new_resource1)
-            EdgeTransformations.add_hold_edge(graph, Permission.R, pd2_id, ResourceType.VMR, space_id, new_resource2)
+            EdgeTransformations.add_hold_edge(graph, Permission.R, pd1_id, ResourceType.FILE, space_id, new_resource1)
+            EdgeTransformations.add_hold_edge(graph, Permission.R, pd2_id, ResourceType.FILE, space_id, new_resource2)
             
             return True
         except Exception as e:
@@ -475,62 +475,61 @@ class Transition:
             EdgeTransformations.remove_edge(graph, pd1, resource, EdgeType.HOLD)
             EdgeTransformations.remove_edge(graph, pd2, resource, EdgeType.HOLD)
             
-            # Find existing VMR space
+            # Find existing FILE space
             vmr_spaces = [node for node, data in graph.g.nodes(data=True) 
-                         if data.get('type') == 'RESOURCE_SPACE' and data.get('data') == 'VMR']
+                         if data.get('type') == 'RESOURCE_SPACE' and data.get('data') == 'FILE']
             
             if vmr_spaces:
                 space_id = int(vmr_spaces[0].split('_')[-1])
             else:
-                space_id = NodeTransformations.add_resource_space(graph, ResourceType.VMR)
+                space_id = NodeTransformations.add_resource_space(graph, ResourceType.FILE)
             
             # Add mediator access to resource
             resource_num = int(resource.split('_')[-1])
-            EdgeTransformations.add_hold_edge(graph, Permission.R, mediator_pd, ResourceType.VMR, space_id, resource_num)
+            EdgeTransformations.add_hold_edge(graph, Permission.R, mediator_pd, ResourceType.FILE, space_id, resource_num)
             
             # Add REQUEST edges
             pd1_id = int(pd1.split('_')[1])
             pd2_id = int(pd2.split('_')[1])
-            EdgeTransformations.add_request_edge(graph, pd1_id, mediator_pd, ResourceType.VMR, space_id)
-            EdgeTransformations.add_request_edge(graph, pd2_id, mediator_pd, ResourceType.VMR, space_id)
+            EdgeTransformations.add_request_edge(graph, pd1_id, mediator_pd, ResourceType.FILE, space_id)
+            EdgeTransformations.add_request_edge(graph, pd2_id, mediator_pd, ResourceType.FILE, space_id)
             
             return True
         except Exception as e:
             print(f"Error in add_mediator: {e}")
             return False
     
-    def _apply_clone_vmr_resource(self, graph, param_values):
-        """Apply clone_vmr_resource primitive - create private copy of VMR resource"""
+    def _apply_clone_file_resource(self, graph, param_values):
+        """Apply clone_file_resource primitive - create private copy of FILE resource"""
         from graph_transformations import NodeTransformations
-        from generic_model import VmrType
+        from generic_model import FileType
         import json
         
         try:
             source_resource = param_values['source_resource']
-            new_va = param_values['new_va'] 
+            new_path = param_values['new_path'] 
             target_pd = param_values['target_pd']
             
             # Get source resource properties
             source_data = graph.g.nodes[source_resource]
             source_extra = json.loads(source_data.get('extra', '{}'))
             
-            # Find VMR space
-            vmr_space_id = self._find_vmr_space_for_resource(graph, source_resource)
+            # Find FILE space
+            file_space_id = self._find_file_space_for_resource(graph, source_resource)
             
-            # Create new private resource with same properties but different VA
-            vmr_type = VmrType[source_extra['vmr_type']]
-            num_pages = int(source_extra['num_pages'])
-            va_int = int(new_va, 16) if isinstance(new_va, str) else new_va
+            # Create new private resource with same properties but different path
+            file_type = FileType[source_extra['file_type']]
+            file_size = int(source_extra['size_bytes'])
             
-            new_resource_id = NodeTransformations.add_vmr_resource(
-                graph, vmr_space_id, vmr_type, num_pages, va_int
+            new_resource_id = NodeTransformations.add_file_resource(
+                graph, file_space_id, file_type, new_path, file_size
             )
             
-            print(f"  🔧 Cloned {source_resource} → VMR_{vmr_space_id}_{new_resource_id} for {target_pd}")
+            print(f"  🔧 Cloned {source_resource} → FILE_{file_space_id}_{new_resource_id} for {target_pd}")
             return True
             
         except Exception as e:
-            print(f"Error in clone_vmr_resource: {e}")
+            print(f"Error in clone_file_resource: {e}")
             return False
     
     def _apply_replace_hold_edge(self, graph, param_values):
@@ -562,10 +561,10 @@ class Transition:
             # Extract IDs for new edge
             pd_id = int(pd.split('_')[1])
             resource_id = int(new_resource.split('_')[-1])
-            vmr_space_id = self._find_vmr_space_for_resource(graph, new_resource)
+            file_space_id = self._find_file_space_for_resource(graph, new_resource)
             
             EdgeTransformations.add_hold_edge(
-                graph, permission, pd_id, ResourceType.VMR, vmr_space_id, resource_id
+                graph, permission, pd_id, ResourceType.FILE, file_space_id, resource_id
             )
             
             print(f"  🔧 Redirected {pd}: {old_resource} → {new_resource}")
@@ -615,8 +614,8 @@ class Transition:
             print(f"Error in create_private_copy: {e}")
             return False
     
-    def _find_vmr_space_for_resource(self, graph, resource):
-        """Find the VMR space ID for a given resource"""
+    def _find_file_space_for_resource(self, graph, resource):
+        """Find the FILE space ID for a given resource"""
         for from_node, to_node, edge_data in graph.g.edges(data=True):
             if from_node == resource and edge_data.get('type') == 'SUBSET':
                 # Extract space ID from node name
@@ -629,7 +628,7 @@ class Transition:
         latest_resource = None
         
         for node in graph.g.nodes():
-            if node.startswith('VMR_') and node != base_resource:
+            if node.startswith('FILE_') and node != base_resource:
                 try:
                     resource_id = int(node.split('_')[-1])
                     if resource_id > max_id:
@@ -696,14 +695,14 @@ PRIMITIVE_TRANSITIONS = {
         description="Remove existing Protection Domain",
         transition_type="primitive"
     ),
-    "add_vmr_resource": Transition(
-        name="add_vmr_resource",
-        description="Create new VMR resource", 
+    "add_file_resource": Transition(
+        name="add_file_resource",
+        description="Create new FILE resource", 
         transition_type="primitive"
     ),
-    "remove_vmr_resource": Transition(
-        name="remove_vmr_resource",
-        description="Remove VMR resource",
+    "remove_file_resource": Transition(
+        name="remove_file_resource",
+        description="Remove FILE resource",
         transition_type="primitive"
     ),
     "add_resource_space": Transition(
@@ -735,9 +734,9 @@ PRIMITIVE_TRANSITIONS = {
     ),
     
     # Enhanced Resource Management Primitives (Strategy 1)
-    "clone_vmr_resource": Transition(
-        name="clone_vmr_resource",
-        description="Create private copy of existing VMR resource",
+    "clone_file_resource": Transition(
+        name="clone_file_resource",
+        description="Create private copy of existing FILE resource",
         transition_type="primitive"
     ),
     "replace_hold_edge": Transition(
@@ -747,7 +746,7 @@ PRIMITIVE_TRANSITIONS = {
     ),
     "create_private_copy": Transition(
         name="create_private_copy",
-        description="Create private VMR copy for specific PD",
+        description="Create private FILE copy for specific PD",
         transition_type="primitive"
     )
 }
@@ -788,48 +787,48 @@ MULTISTEP_TRANSITIONS = {
 # Graph builder functions for different scenarios
 
 def build_basic_shared_resource_graph():
-    """Build a basic graph with 2 PDs each having 3 private VMR resources + 1 shared VMR resource"""
+    """Build a basic graph with 2 PDs each having 3 private FILE resources + 1 shared FILE resource"""
     graph = ModelGraph()
     
     # Add two protection domains
     pd1 = NodeTransformations.add_pd_node(graph, "user_process")
     pd2 = NodeTransformations.add_pd_node(graph, "database_server")
     
-    # Add a VMR space
-    vmr_space = NodeTransformations.add_resource_space(graph, ResourceType.VMR)
+    # Add a FILE space
+    file_space = NodeTransformations.add_resource_space(graph, ResourceType.FILE)
     
     # Create 3 private resources for PD1
-    pd1_heap = NodeTransformations.add_vmr_resource(graph, vmr_space, VmrType.HEAP, 10, 0x1000)
-    pd1_stack = NodeTransformations.add_vmr_resource(graph, vmr_space, VmrType.STACK, 5, 0x2000)
-    pd1_lib = NodeTransformations.add_vmr_resource(graph, vmr_space, VmrType.LIB, 8, 0x3000)
+    pd1_config = NodeTransformations.add_file_resource(graph, file_space, FileType.CONFIG, "/etc/user.conf", 1024)
+    pd1_log = NodeTransformations.add_file_resource(graph, file_space, FileType.LOG, "/var/log/user.log", 2048)
+    pd1_lib = NodeTransformations.add_file_resource(graph, file_space, FileType.LIBRARY, "/usr/lib/user.so", 8192)
     
     # Create 3 private resources for PD2  
-    pd2_heap = NodeTransformations.add_vmr_resource(graph, vmr_space, VmrType.HEAP, 15, 0x4000)
-    pd2_stack = NodeTransformations.add_vmr_resource(graph, vmr_space, VmrType.STACK, 6, 0x5000)
-    pd2_lib = NodeTransformations.add_vmr_resource(graph, vmr_space, VmrType.LIB, 12, 0x6000)
+    pd2_config = NodeTransformations.add_file_resource(graph, file_space, FileType.CONFIG, "/etc/database.conf", 4096)
+    pd2_log = NodeTransformations.add_file_resource(graph, file_space, FileType.LOG, "/var/log/database.log", 6144)
+    pd2_db = NodeTransformations.add_file_resource(graph, file_space, FileType.DATABASE, "/var/db/main.db", 12288)
     
     # Create 1 shared resource that both PDs access
-    shared_buffer = NodeTransformations.add_vmr_resource(graph, vmr_space, VmrType.HEAP, 20, 0x7000)
+    shared_buffer = NodeTransformations.add_file_resource(graph, file_space, FileType.TEMP, "/tmp/shared_buffer.tmp", 20480)
     
     # PD1 holds its 3 private resources
-    EdgeTransformations.add_hold_edge(graph, Permission.R, pd1, ResourceType.VMR, vmr_space, pd1_heap)
-    EdgeTransformations.add_hold_edge(graph, Permission.R, pd1, ResourceType.VMR, vmr_space, pd1_stack)
-    EdgeTransformations.add_hold_edge(graph, Permission.R, pd1, ResourceType.VMR, vmr_space, pd1_lib)
+    EdgeTransformations.add_hold_edge(graph, Permission.R, pd1, ResourceType.FILE, file_space, pd1_config)
+    EdgeTransformations.add_hold_edge(graph, Permission.R, pd1, ResourceType.FILE, file_space, pd1_log)
+    EdgeTransformations.add_hold_edge(graph, Permission.R, pd1, ResourceType.FILE, file_space, pd1_lib)
     
     # PD2 holds its 3 private resources
-    EdgeTransformations.add_hold_edge(graph, Permission.R, pd2, ResourceType.VMR, vmr_space, pd2_heap)
-    EdgeTransformations.add_hold_edge(graph, Permission.R, pd2, ResourceType.VMR, vmr_space, pd2_stack)
-    EdgeTransformations.add_hold_edge(graph, Permission.R, pd2, ResourceType.VMR, vmr_space, pd2_lib)
+    EdgeTransformations.add_hold_edge(graph, Permission.R, pd2, ResourceType.FILE, file_space, pd2_config)
+    EdgeTransformations.add_hold_edge(graph, Permission.R, pd2, ResourceType.FILE, file_space, pd2_log)
+    EdgeTransformations.add_hold_edge(graph, Permission.R, pd2, ResourceType.FILE, file_space, pd2_db)
     
     # Both PD1 and PD2 hold the shared resource (the security problem to solve)
-    EdgeTransformations.add_hold_edge(graph, Permission.W, pd1, ResourceType.VMR, vmr_space, shared_buffer)
-    EdgeTransformations.add_hold_edge(graph, Permission.W, pd2, ResourceType.VMR, vmr_space, shared_buffer)
+    EdgeTransformations.add_hold_edge(graph, Permission.W, pd1, ResourceType.FILE, file_space, shared_buffer)
+    EdgeTransformations.add_hold_edge(graph, Permission.W, pd2, ResourceType.FILE, file_space, shared_buffer)
     
     return graph
 
 
 def build_high_sharing_graph():
-    """Build a graph with 3 PDs sharing multiple resources"""
+    """Build a graph with 3 PDs sharing multiple FILE resources"""
     graph = ModelGraph()
     
     # Add three protection domains
@@ -837,24 +836,24 @@ def build_high_sharing_graph():
     pd2 = NodeTransformations.add_pd_node(graph, "database")
     pd3 = NodeTransformations.add_pd_node(graph, "cache_service")
     
-    # Add VMR space and multiple shared resources
-    vmr_space = NodeTransformations.add_resource_space(graph, ResourceType.VMR)
-    shared_heap = NodeTransformations.add_vmr_resource(graph, vmr_space, VmrType.HEAP, 20, 0x1000)
-    shared_stack = NodeTransformations.add_vmr_resource(graph, vmr_space, VmrType.STACK, 10, 0x2000)
-    shared_lib = NodeTransformations.add_vmr_resource(graph, vmr_space, VmrType.LIB, 15, 0x3000)
+    # Add FILE space and multiple shared resources
+    file_space = NodeTransformations.add_resource_space(graph, ResourceType.FILE)
+    shared_config = NodeTransformations.add_file_resource(graph, file_space, FileType.CONFIG, "/etc/shared.conf", 2048)
+    shared_log = NodeTransformations.add_file_resource(graph, file_space, FileType.LOG, "/var/log/shared.log", 1024)
+    shared_lib = NodeTransformations.add_file_resource(graph, file_space, FileType.LIBRARY, "/usr/lib/shared.so", 15360)
     
-    # All PDs share the heap
-    EdgeTransformations.add_hold_edge(graph, Permission.R, pd1, ResourceType.VMR, vmr_space, shared_heap)
-    EdgeTransformations.add_hold_edge(graph, Permission.R, pd2, ResourceType.VMR, vmr_space, shared_heap)
-    EdgeTransformations.add_hold_edge(graph, Permission.R, pd3, ResourceType.VMR, vmr_space, shared_heap)
+    # All PDs share the config file
+    EdgeTransformations.add_hold_edge(graph, Permission.R, pd1, ResourceType.FILE, file_space, shared_config)
+    EdgeTransformations.add_hold_edge(graph, Permission.R, pd2, ResourceType.FILE, file_space, shared_config)
+    EdgeTransformations.add_hold_edge(graph, Permission.R, pd3, ResourceType.FILE, file_space, shared_config)
     
-    # PD1 and PD2 share the stack
-    EdgeTransformations.add_hold_edge(graph, Permission.R, pd1, ResourceType.VMR, vmr_space, shared_stack)
-    EdgeTransformations.add_hold_edge(graph, Permission.R, pd2, ResourceType.VMR, vmr_space, shared_stack)
+    # PD1 and PD2 share the log file
+    EdgeTransformations.add_hold_edge(graph, Permission.R, pd1, ResourceType.FILE, file_space, shared_log)
+    EdgeTransformations.add_hold_edge(graph, Permission.R, pd2, ResourceType.FILE, file_space, shared_log)
     
     # PD2 and PD3 share the library
-    EdgeTransformations.add_hold_edge(graph, Permission.R, pd2, ResourceType.VMR, vmr_space, shared_lib)
-    EdgeTransformations.add_hold_edge(graph, Permission.R, pd3, ResourceType.VMR, vmr_space, shared_lib)
+    EdgeTransformations.add_hold_edge(graph, Permission.R, pd2, ResourceType.FILE, file_space, shared_lib)
+    EdgeTransformations.add_hold_edge(graph, Permission.R, pd3, ResourceType.FILE, file_space, shared_lib)
     
     return graph
 
@@ -869,21 +868,21 @@ def build_authority_chain_graph():
     kernel_pd = NodeTransformations.add_pd_node(graph, "kernel_module")
     root_pd = NodeTransformations.add_pd_node(graph, "root_authority")
     
-    # Add VMR space and resources
-    vmr_space = NodeTransformations.add_resource_space(graph, ResourceType.VMR)
-    user_resource = NodeTransformations.add_vmr_resource(graph, vmr_space, VmrType.HEAP, 5, 0x1000)
-    service_resource = NodeTransformations.add_vmr_resource(graph, vmr_space, VmrType.PROGRAM, 10, 0x2000)
-    kernel_resource = NodeTransformations.add_vmr_resource(graph, vmr_space, VmrType.STACK, 15, 0x3000)
+    # Add FILE space and resources
+    file_space = NodeTransformations.add_resource_space(graph, ResourceType.FILE)
+    user_resource = NodeTransformations.add_file_resource(graph, file_space, FileType.CONFIG, "/etc/user.conf", 512)
+    service_resource = NodeTransformations.add_file_resource(graph, file_space, FileType.EXECUTABLE, "/bin/service", 1024)
+    kernel_resource = NodeTransformations.add_file_resource(graph, file_space, FileType.LOG, "/var/log/kernel.log", 1536)
     
     # Each PD holds its own resource
-    EdgeTransformations.add_hold_edge(graph, Permission.R, user_pd, ResourceType.VMR, vmr_space, user_resource)
-    EdgeTransformations.add_hold_edge(graph, Permission.R, service_pd, ResourceType.VMR, vmr_space, service_resource)
-    EdgeTransformations.add_hold_edge(graph, Permission.R, kernel_pd, ResourceType.VMR, vmr_space, kernel_resource)
+    EdgeTransformations.add_hold_edge(graph, Permission.R, user_pd, ResourceType.FILE, file_space, user_resource)
+    EdgeTransformations.add_hold_edge(graph, Permission.R, service_pd, ResourceType.FILE, file_space, service_resource)
+    EdgeTransformations.add_hold_edge(graph, Permission.R, kernel_pd, ResourceType.FILE, file_space, kernel_resource)
     
     # Create authority chain: user -> service -> kernel -> root
-    EdgeTransformations.add_request_edge(graph, user_pd, service_pd, ResourceType.VMR, vmr_space)
-    EdgeTransformations.add_request_edge(graph, service_pd, kernel_pd, ResourceType.VMR, vmr_space)
-    EdgeTransformations.add_request_edge(graph, kernel_pd, root_pd, ResourceType.VMR, vmr_space)
+    EdgeTransformations.add_request_edge(graph, user_pd, service_pd, ResourceType.FILE, file_space)
+    EdgeTransformations.add_request_edge(graph, service_pd, kernel_pd, ResourceType.FILE, file_space)
+    EdgeTransformations.add_request_edge(graph, kernel_pd, root_pd, ResourceType.FILE, file_space)
     
     return graph
 
@@ -898,53 +897,53 @@ def build_high_attack_surface_graph():
     db_pd = NodeTransformations.add_pd_node(graph, "database")
     admin_pd = NodeTransformations.add_pd_node(graph, "admin_panel")
     
-    # Add VMR space and multiple shared resources (creates many HOLD edges = attack paths)
-    vmr_space = NodeTransformations.add_resource_space(graph, ResourceType.VMR)
+    # Add FILE space and multiple shared resources (creates many HOLD edges = attack paths)
+    file_space = NodeTransformations.add_resource_space(graph, ResourceType.FILE)
     
     # Shared memory for inter-service communication (high attack surface)
-    shared_memory = NodeTransformations.add_vmr_resource(graph, vmr_space, VmrType.HEAP, 30, 0x1000)
+    shared_memory = NodeTransformations.add_file_resource(graph, file_space, FileType.TEMP, "/tmp/shared_mem.tmp", 30720)
     
     # Shared configuration space
-    config_space = NodeTransformations.add_vmr_resource(graph, vmr_space, VmrType.LIB, 20, 0x2000)
+    config_space = NodeTransformations.add_file_resource(graph, file_space, FileType.CONFIG, "/etc/shared_config.conf", 20480)
     
     # Shared log buffer
-    log_buffer = NodeTransformations.add_vmr_resource(graph, vmr_space, VmrType.STACK, 15, 0x3000)
+    log_buffer = NodeTransformations.add_file_resource(graph, file_space, FileType.LOG, "/var/log/shared.log", 15360)
     
     # Database connection pool (shared by multiple services)
-    db_pool = NodeTransformations.add_vmr_resource(graph, vmr_space, VmrType.HEAP, 25, 0x4000)
+    db_pool = NodeTransformations.add_file_resource(graph, file_space, FileType.DATABASE, "/var/db/conn_pool.db", 25600)
     
     # Session store (shared by web and admin)
-    session_store = NodeTransformations.add_vmr_resource(graph, vmr_space, VmrType.LIB, 10, 0x5000)
+    session_store = NodeTransformations.add_file_resource(graph, file_space, FileType.CACHE, "/var/cache/sessions.cache", 10240)
     
     # Create many HOLD edges (attack paths) - all services access shared resources
     # Web frontend accesses: shared memory, config, log buffer, session store
-    EdgeTransformations.add_hold_edge(graph, Permission.R, web_pd, ResourceType.VMR, vmr_space, shared_memory)
-    EdgeTransformations.add_hold_edge(graph, Permission.R, web_pd, ResourceType.VMR, vmr_space, config_space)
-    EdgeTransformations.add_hold_edge(graph, Permission.R, web_pd, ResourceType.VMR, vmr_space, log_buffer)
-    EdgeTransformations.add_hold_edge(graph, Permission.R, web_pd, ResourceType.VMR, vmr_space, session_store)
+    EdgeTransformations.add_hold_edge(graph, Permission.R, web_pd, ResourceType.FILE, file_space, shared_memory)
+    EdgeTransformations.add_hold_edge(graph, Permission.R, web_pd, ResourceType.FILE, file_space, config_space)
+    EdgeTransformations.add_hold_edge(graph, Permission.R, web_pd, ResourceType.FILE, file_space, log_buffer)
+    EdgeTransformations.add_hold_edge(graph, Permission.R, web_pd, ResourceType.FILE, file_space, session_store)
     
     # API server accesses: shared memory, config, log buffer, db pool
-    EdgeTransformations.add_hold_edge(graph, Permission.R, api_pd, ResourceType.VMR, vmr_space, shared_memory)
-    EdgeTransformations.add_hold_edge(graph, Permission.R, api_pd, ResourceType.VMR, vmr_space, config_space)
-    EdgeTransformations.add_hold_edge(graph, Permission.R, api_pd, ResourceType.VMR, vmr_space, log_buffer)
-    EdgeTransformations.add_hold_edge(graph, Permission.R, api_pd, ResourceType.VMR, vmr_space, db_pool)
+    EdgeTransformations.add_hold_edge(graph, Permission.R, api_pd, ResourceType.FILE, file_space, shared_memory)
+    EdgeTransformations.add_hold_edge(graph, Permission.R, api_pd, ResourceType.FILE, file_space, config_space)
+    EdgeTransformations.add_hold_edge(graph, Permission.R, api_pd, ResourceType.FILE, file_space, log_buffer)
+    EdgeTransformations.add_hold_edge(graph, Permission.R, api_pd, ResourceType.FILE, file_space, db_pool)
     
     # Database accesses: config, log buffer, db pool
-    EdgeTransformations.add_hold_edge(graph, Permission.R, db_pd, ResourceType.VMR, vmr_space, config_space)
-    EdgeTransformations.add_hold_edge(graph, Permission.R, db_pd, ResourceType.VMR, vmr_space, log_buffer)
-    EdgeTransformations.add_hold_edge(graph, Permission.R, db_pd, ResourceType.VMR, vmr_space, db_pool)
+    EdgeTransformations.add_hold_edge(graph, Permission.R, db_pd, ResourceType.FILE, file_space, config_space)
+    EdgeTransformations.add_hold_edge(graph, Permission.R, db_pd, ResourceType.FILE, file_space, log_buffer)
+    EdgeTransformations.add_hold_edge(graph, Permission.R, db_pd, ResourceType.FILE, file_space, db_pool)
     
     # Admin panel accesses: config, session store, shared memory
-    EdgeTransformations.add_hold_edge(graph, Permission.R, admin_pd, ResourceType.VMR, vmr_space, config_space)
-    EdgeTransformations.add_hold_edge(graph, Permission.R, admin_pd, ResourceType.VMR, vmr_space, session_store)
-    EdgeTransformations.add_hold_edge(graph, Permission.R, admin_pd, ResourceType.VMR, vmr_space, shared_memory)
+    EdgeTransformations.add_hold_edge(graph, Permission.R, admin_pd, ResourceType.FILE, file_space, config_space)
+    EdgeTransformations.add_hold_edge(graph, Permission.R, admin_pd, ResourceType.FILE, file_space, session_store)
+    EdgeTransformations.add_hold_edge(graph, Permission.R, admin_pd, ResourceType.FILE, file_space, shared_memory)
     
     # Add some REQUEST edges (authority relationships) for additional attack paths
     # Web requests from API, API requests from DB, Admin has authority over all
-    EdgeTransformations.add_request_edge(graph, web_pd, api_pd, ResourceType.VMR, vmr_space)
-    EdgeTransformations.add_request_edge(graph, api_pd, db_pd, ResourceType.VMR, vmr_space)
-    EdgeTransformations.add_request_edge(graph, admin_pd, web_pd, ResourceType.VMR, vmr_space)
-    EdgeTransformations.add_request_edge(graph, admin_pd, api_pd, ResourceType.VMR, vmr_space)
+    EdgeTransformations.add_request_edge(graph, web_pd, api_pd, ResourceType.FILE, file_space)
+    EdgeTransformations.add_request_edge(graph, api_pd, db_pd, ResourceType.FILE, file_space)
+    EdgeTransformations.add_request_edge(graph, admin_pd, web_pd, ResourceType.FILE, file_space)
+    EdgeTransformations.add_request_edge(graph, admin_pd, api_pd, ResourceType.FILE, file_space)
     
     return graph
 
@@ -952,8 +951,8 @@ def build_high_attack_surface_graph():
 # Standard transition sets for easy reuse
 BASIC_PRIMITIVES = ["add_pd", "remove_pd", "add_hold_edge", "remove_hold_edge", "add_request_edge", "remove_request_edge"]
 BASIC_MULTISTEP = ["privatize_resource", "add_mediator"]
-EXTENDED_PRIMITIVES = BASIC_PRIMITIVES + ["add_vmr_resource", "remove_vmr_resource", "add_resource_space"]
-ENHANCED_PRIMITIVES = BASIC_PRIMITIVES + ["clone_vmr_resource", "replace_hold_edge", "create_private_copy"]
+EXTENDED_PRIMITIVES = BASIC_PRIMITIVES + ["add_file_resource", "remove_file_resource", "add_resource_space"]
+ENHANCED_PRIMITIVES = BASIC_PRIMITIVES + ["clone_file_resource", "replace_hold_edge", "create_private_copy"]
 EXTENDED_MULTISTEP = BASIC_MULTISTEP
 
 
@@ -962,16 +961,16 @@ EXTENDED_MULTISTEP = BASIC_MULTISTEP
 SCENARIOS = {
     "basic_sharing": Scenario(
         name="Basic Resource Sharing",
-        description="2 PDs each with 3 private VMR resources + 1 shared VMR resource",
+        description="2 PDs each with 3 private FILE resources + 1 shared FILE resource",
         goals=[
             Goal("RSI", 0.3, "minimize", "PD_1,PD_2"),  # Target specific PD pair
             Goal("TCB", 0, "minimize", "PD_1"),         # Target specific PD
             Goal("ASR", 1.0, "minimize")                # System-wide goal
         ],
         constraints=[
-            # Specific VMR access requirements
-            Constraint("requires_vmr_access", 1, "VMR", properties={"vmr_type": "HEAP", "min_pages": 3}),
-            Constraint("requires_vmr_access", 2, "VMR", properties={"vmr_type": "HEAP", "min_pages": 3}),
+            # Specific FILE access requirements
+            Constraint("requires_file_access", 1, "FILE", properties={"file_type": "CONFIG", "min_size_kb": 3}),
+            Constraint("requires_file_access", 2, "FILE", properties={"file_type": "DATABASE", "min_size_kb": 3}),
         ],
         allowed_primitives=[],  # No primitives allowed
         allowed_multistep=["privatize_resource", "add_mediator"],  # Only multi-step transformations
@@ -987,9 +986,9 @@ SCENARIOS = {
             Goal("ASR", 1.0, "minimize")                # System-wide goal
         ],
         constraints=[
-            # Specific VMR access requirements (same as basic_sharing)
-            Constraint("requires_vmr_access", 1, "VMR", properties={"vmr_type": "HEAP", "min_pages": 3}),
-            Constraint("requires_vmr_access", 2, "VMR", properties={"vmr_type": "HEAP", "min_pages": 3}),
+            # Specific FILE access requirements (same as basic_sharing)
+            Constraint("requires_file_access", 1, "FILE", properties={"file_type": "CONFIG", "min_size_kb": 3}),
+            Constraint("requires_file_access", 2, "FILE", properties={"file_type": "DATABASE", "min_size_kb": 3}),
         ],
         allowed_primitives=ENHANCED_PRIMITIVES,  # Enhanced primitive operations
         allowed_multistep=[],  # No multi-step allowed
@@ -998,7 +997,7 @@ SCENARIOS = {
     
     "high_sharing": Scenario(
         name="High Resource Sharing",
-        description="3 PDs sharing multiple VMR resources with complex sharing patterns",
+        description="3 PDs sharing multiple FILE resources with complex sharing patterns",
         goals=[
             Goal("RSI", 0.2, "minimize", "PD_1,PD_2"),  # Target specific high-sharing pair
             Goal("ASR", 2.0, "minimize"),               # System-wide goal
@@ -1006,9 +1005,9 @@ SCENARIOS = {
         ],
         constraints=[
             # Specific resource access requirements
-            Constraint("requires_vmr_access", 1, "VMR", properties={"vmr_type": "HEAP", "min_pages": 5}),
-            Constraint("requires_vmr_access", 2, "VMR", properties={"vmr_type": "any", "min_pages": 3}),
-            Constraint("requires_vmr_access", 3, "VMR", properties={"vmr_type": "LIB", "min_pages": 1}),
+            Constraint("requires_file_access", 1, "FILE", properties={"file_type": "CONFIG", "min_size_kb": 5}),
+            Constraint("requires_file_access", 2, "FILE", properties={"file_type": "any", "min_size_kb": 3}),
+            Constraint("requires_file_access", 3, "FILE", properties={"file_type": "LIBRARY", "min_size_kb": 1}),
         ],
         allowed_primitives=BASIC_PRIMITIVES,  # Only primitive operations
         allowed_multistep=[],  # No multi-step allowed
@@ -1024,8 +1023,8 @@ SCENARIOS = {
             Goal("ASR", 1.5, "minimize")                # System-wide goal
         ],
         constraints=[
-            # VMR access requirements
-            Constraint("requires_vmr_access", 1, "VMR", properties={"vmr_type": "HEAP", "min_pages": 1}),
+            # FILE access requirements
+            Constraint("requires_file_access", 1, "FILE", properties={"file_type": "CONFIG", "min_size_kb": 1}),
             # Authority chain requirements (user_app -> service_manager -> kernel_module -> root_authority)
             Constraint("requires_communication", 1, "REQUEST", target_pd=2),  # PD_1 -> PD_2
             Constraint("requires_communication", 2, "REQUEST", target_pd=3),  # PD_2 -> PD_3  
@@ -1044,8 +1043,8 @@ SCENARIOS = {
         ],
         constraints=[
             # Minimal constraints - allow maximum optimization freedom
-            Constraint("requires_vmr_access", 1, "VMR", properties={"vmr_type": "any", "min_pages": 1}),
-            Constraint("requires_vmr_access", 2, "VMR", properties={"vmr_type": "any", "min_pages": 1}),
+            Constraint("requires_file_access", 1, "FILE", properties={"file_type": "any", "min_size_kb": 1}),
+            Constraint("requires_file_access", 2, "FILE", properties={"file_type": "any", "min_size_kb": 1}),
         ],
         allowed_primitives=[],  # No primitives allowed
         allowed_multistep=["privatize_resource"],  # Only privatization for RSI focus
@@ -1059,8 +1058,8 @@ SCENARIOS = {
             Goal("RSI", 0.8, "minimize", "PD_1,PD_2")   # High threshold to allow mediator
         ],
         constraints=[
-            Constraint("requires_vmr_access", 1, "VMR", properties={"vmr_type": "any", "min_pages": 1}),
-            Constraint("requires_vmr_access", 2, "VMR", properties={"vmr_type": "any", "min_pages": 1}),
+            Constraint("requires_file_access", 1, "FILE", properties={"file_type": "any", "min_size_kb": 1}),
+            Constraint("requires_file_access", 2, "FILE", properties={"file_type": "any", "min_size_kb": 1}),
         ],
         allowed_primitives=[],  # No primitives allowed
         allowed_multistep=["add_mediator"],  # Only mediator
@@ -1078,8 +1077,8 @@ SCENARIOS = {
         ],
         constraints=[
             # Balanced constraints for multi-objective optimization
-            Constraint("requires_vmr_access", 1, "VMR", properties={"vmr_type": "STACK", "min_pages": 2}),
-            Constraint("requires_vmr_access", 2, "VMR", properties={"vmr_type": "any", "min_pages": 1}),
+            Constraint("requires_file_access", 1, "FILE", properties={"file_type": "LOG", "min_size_kb": 2}),
+            Constraint("requires_file_access", 2, "FILE", properties={"file_type": "any", "min_size_kb": 1}),
             # Communication constraint that creates the TCB challenge
             Constraint("requires_communication", 1, "REQUEST", target_pd=3),
         ],
@@ -1096,10 +1095,10 @@ SCENARIOS = {
         ],
         constraints=[
             # Service-specific resource requirements
-            Constraint("requires_vmr_access", 1, "VMR", properties={"vmr_type": "HEAP", "min_pages": 10}),  # Web frontend
-            Constraint("requires_vmr_access", 2, "VMR", properties={"vmr_type": "any", "min_pages": 15}),   # API server
-            Constraint("requires_vmr_access", 3, "VMR", properties={"vmr_type": "any", "min_pages": 5}),    # Database
-            Constraint("requires_vmr_access", 4, "VMR", properties={"vmr_type": "LIB", "min_pages": 5}),    # Admin panel
+            Constraint("requires_file_access", 1, "FILE", properties={"file_type": "TEMP", "min_size_kb": 10}),  # Web frontend
+            Constraint("requires_file_access", 2, "FILE", properties={"file_type": "any", "min_size_kb": 15}),   # API server
+            Constraint("requires_file_access", 3, "FILE", properties={"file_type": "any", "min_size_kb": 5}),    # Database
+            Constraint("requires_file_access", 4, "FILE", properties={"file_type": "CACHE", "min_size_kb": 5}),    # Admin panel
             # Service communication requirements
             Constraint("requires_communication", 1, "REQUEST", target_pd=2),  # Web -> API
             Constraint("requires_communication", 2, "REQUEST", target_pd=3),  # API -> DB
@@ -1115,15 +1114,15 @@ SCENARIOS = {
 
 # Helper functions for common constraint patterns
 
-def create_vmr_access_constraint(pd_id, vmr_type="any", min_pages=1, permissions="R"):
-    """Create a specific VMR access requirement constraint"""
+def create_file_access_constraint(pd_id, file_type="any", min_size_kb=1, permissions="R"):
+    """Create a specific FILE access requirement constraint"""
     return Constraint(
-        "requires_vmr_access", 
+        "requires_file_access", 
         pd_id, 
-        "VMR", 
+        "FILE", 
         properties={
-            "vmr_type": vmr_type, 
-            "min_pages": min_pages,
+            "file_type": file_type, 
+            "min_size_kb": min_size_kb,
             "permissions": permissions
         }
     )
@@ -1152,7 +1151,7 @@ def get_scenario(name):
 
 def _validate_scenario_constraints(scenario):
     """Validate that all constraint types in a scenario are supported by the implementation"""
-    supported_constraint_types = {"requires_vmr_access", "requires_communication"}
+    supported_constraint_types = {"requires_file_access", "requires_communication"}
     
     for constraint in scenario.constraints:
         if constraint.constraint_type not in supported_constraint_types:
