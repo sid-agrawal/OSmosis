@@ -140,7 +140,6 @@ We evaluate IsoSearch across 8 scenarios using FILE-based resources representing
 | **basic_sharing** | RSI≤0.3, TCB≤0, ASR≤1.0 | Multi-step (2) | ✅ RSI, ✅ TCB, ❌ ASR | Single-iteration success with multi-step efficiency (simplified: 1+1 shared) |
 | **basic_sharing_primitive** | RSI≤0.3, TCB≤0, ASR≤1.0 | Primitive (12) | ✅ RSI, ✅ TCB, ⚠️ ASR | **Breakthrough: Sequence coordination discovers complete 3-step solution matching multi-step effectiveness** |
 | **high_sharing** | RSI≤0.2, ASR≤2.0, TCB≤1 | Primitive (12) | ⚠️ RSI, ✅ ASR, ❌ TCB | **Major improvement: 0→5 mechanisms, systematic infrastructure building, RSI progress** |
-| **rsi_focused** | RSI≤0.1 | Multi-step (2) | ✅ RSI | Perfect tool-problem matching → optimal solution |
 | **mediator_test** | RSI≤0.8 | Multi-step (2) | ✅ RSI | Sophisticated architectural pattern implementation |
 | **attack_surface_reduction** | ASR≤2.5 | Primitive (1) | ❌ ASR | Constraint deadlock demonstrates robust error handling |
 

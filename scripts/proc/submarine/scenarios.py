@@ -1249,21 +1249,6 @@ SCENARIOS = {
     ),
     
     
-    "rsi_focused": Scenario(
-        name="RSI Optimization",
-        description="Focus on minimizing resource sharing index",
-        goals=[
-            Goal("RSI", 0.1, "minimize", "PD_1,PD_2")   # Target the sharing pair
-        ],
-        constraints=[
-            # Minimal constraints - allow maximum optimization freedom
-            Constraint("requires_file_access", 1, "FILE", properties={"file_type": "any", "min_size_kb": 1}),
-            Constraint("requires_file_access", 2, "FILE", properties={"file_type": "any", "min_size_kb": 1}),
-        ],
-        allowed_primitives=[],  # No primitives allowed
-        allowed_multistep=["privatize_resource"],  # Only privatization for RSI focus
-        graph_builder=build_basic_shared_resource_graph
-    ),
     
     "mediator_test": Scenario(
         name="Mediator Test",
