@@ -98,6 +98,13 @@ class Transition:
             return self._find_remove_hold_edge_candidates(graph, constraints)
         elif self.name == "add_pd":
             return self._find_add_pd_candidates(graph, constraints)
+        elif self.name == "add_hold_edge":
+            return self._find_add_hold_edge_candidates(graph, constraints)
+        elif self.name == "add_file_resource":
+            return self._find_add_file_resource_candidates(graph, constraints)
+        elif self.name == "remove_file_resource":
+            return self._find_remove_file_resource_candidates(graph, constraints)
+        # Legacy/enhanced primitives (not true primitives)
         elif self.name == "clone_vmr_resource":
             return self._find_clone_vmr_resource_candidates(graph, constraints)
         elif self.name == "replace_hold_edge":
@@ -363,6 +370,80 @@ class Transition:
         
         return potential
     
+    def _find_add_hold_edge_candidates(self, graph, constraints):
+        """Find opportunities to add HOLD edges (PD -> Resource connections)"""
+        candidates = []
+        
+        # Find PDs that could connect to existing resources
+        pds = [node for node, data in graph.g.nodes(data=True) if data.get('type') == 'PD']
+        resources = [node for node, data in graph.g.nodes(data=True) 
+                    if data.get('type') == 'RESOURCE' and data.get('data') == 'FILE']
+        
+        for pd in pds:
+            # Find resources this PD doesn't already hold
+            current_resources = []
+            for from_node, to_node, edge_data in graph.g.edges(data=True):
+                if from_node == pd and edge_data.get('type') == 'HOLD':
+                    current_resources.append(to_node)
+            
+            for resource in resources:
+                if resource not in current_resources:
+                    # Check if adding this connection would make sense
+                    candidates.append({
+                        'param_values': {'pd': pd, 'resource': resource, 'permission': 'R'},
+                        'target_description': f"connect {pd} to {resource}"
+                    })
+        
+        return candidates
+    
+    def _find_add_file_resource_candidates(self, graph, constraints):
+        """Find opportunities to add new FILE resources"""
+        candidates = []
+        
+        # Find FILE spaces where we could add resources
+        file_spaces = [node for node, data in graph.g.nodes(data=True) 
+                      if data.get('type') == 'RESOURCE_SPACE' and data.get('data') == 'FILE']
+        
+        if file_spaces:
+            file_space = file_spaces[0]  # Use first available FILE space
+            
+            # Generate candidates for different file types that might help
+            file_types = ['CONFIG', 'DATABASE', 'TEMP', 'LOG']
+            for file_type in file_types:
+                candidates.append({
+                    'param_values': {
+                        'file_space': file_space,
+                        'file_type': file_type,
+                        'file_path': f"/tmp/new_{file_type.lower()}.tmp",
+                        'file_size': 1024
+                    },
+                    'target_description': f"create new {file_type} file in {file_space}"
+                })
+        
+        return candidates
+    
+    def _find_remove_file_resource_candidates(self, graph, constraints):
+        """Find FILE resources that can be safely removed"""
+        candidates = []
+        
+        # Find FILE resources
+        for node, data in graph.g.nodes(data=True):
+            if data.get('type') == 'RESOURCE' and data.get('data') == 'FILE':
+                # Check if any PD currently holds this resource
+                holders = []
+                for from_node, to_node, edge_data in graph.g.edges(data=True):
+                    if to_node == node and edge_data.get('type') == 'HOLD':
+                        holders.append(from_node)
+                
+                # Only suggest removal if no PD depends on it, or if it's shared (might want to eliminate sharing)
+                if len(holders) == 0 or len(holders) > 1:
+                    candidates.append({
+                        'param_values': {'resource': node},
+                        'target_description': f"remove {node} (holders: {len(holders)})"
+                    })
+        
+        return candidates
+    
     def apply(self, graph, param_values):
         """Apply the transition with given parameter values"""
         if self.transition_type == "primitive":
@@ -386,6 +467,81 @@ class Transition:
             elif self.name == "add_pd":
                 from graph_transformations import NodeTransformations
                 NodeTransformations.add_pd_node(graph, param_values.get('pd_type', 'new_component'))
+                return True
+            elif self.name == "add_hold_edge":
+                from graph_transformations import EdgeTransformations
+                from generic_model import Permission
+                EdgeTransformations.add_hold_edge(
+                    graph, 
+                    Permission.R,  # Default permission
+                    param_values['pd'],
+                    param_values.get('resource_type', 'FILE'), 
+                    param_values.get('resource_space', 'FILE_SPACE_1'),
+                    param_values['resource']
+                )
+                return True
+            elif self.name == "add_file_resource":
+                from graph_transformations import NodeTransformations
+                from generic_model import FileType
+                file_type = getattr(FileType, param_values['file_type'])
+                NodeTransformations.add_file_resource(
+                    graph,
+                    param_values['file_space'],
+                    file_type,
+                    param_values['file_path'],
+                    param_values.get('file_size', 1024)
+                )
+                return True
+            elif self.name == "remove_file_resource":
+                from graph_transformations import NodeTransformations
+                import json
+                # Remove the resource node and its edges
+                resource = param_values['resource']
+                
+                # Check constraints before removal - find which PDs currently hold this resource
+                current_holders = []
+                for from_node, to_node, edge_data in graph.g.edges(data=True):
+                    if to_node == resource and edge_data.get('type') == 'HOLD':
+                        current_holders.append(from_node)
+                
+                # Get the file type of the resource being removed
+                resource_data = graph.g.nodes[resource]
+                resource_extra = json.loads(resource_data.get('extra', '{}'))
+                resource_file_type = resource_extra.get('file_type', 'UNKNOWN')
+                
+                # Check if any PD has a constraint requiring this file type
+                for holder in current_holders:
+                    pd_id = int(holder.split('_')[1]) if holder.startswith('PD_') else None
+                    if pd_id is not None:
+                        # Check if this PD has any other resources of the same type
+                        other_resources_of_type = []
+                        for from_node, to_node, edge_data in graph.g.edges(data=True):
+                            if (from_node == holder and to_node != resource and 
+                                edge_data.get('type') == 'HOLD' and to_node.startswith('FILE_')):
+                                other_data = graph.g.nodes[to_node]
+                                other_extra = json.loads(other_data.get('extra', '{}'))
+                                if other_extra.get('file_type') == resource_file_type:
+                                    other_resources_of_type.append(to_node)
+                        
+                        # If this PD has no other resources of this type, check if it's required by constraints
+                        if len(other_resources_of_type) == 0:
+                            # This would leave the PD without any files of this type
+                            # For now, prevent removal if it would violate file access (conservative approach)
+                            print(f"Cannot remove {resource}: {holder} would lose access to {resource_file_type} files")
+                            return False
+                
+                # If we get here, removal is safe
+                # Remove all edges connected to this resource
+                edges_to_remove = []
+                for from_node, to_node, edge_data in graph.g.edges(data=True):
+                    if from_node == resource or to_node == resource:
+                        edges_to_remove.append((from_node, to_node))
+                
+                for from_node, to_node in edges_to_remove:
+                    graph.g.remove_edge(from_node, to_node)
+                
+                # Remove the resource node
+                graph.g.remove_node(resource)
                 return True
             elif self.name == "clone_vmr_resource":
                 return self._apply_clone_vmr_resource(graph, param_values)
@@ -970,8 +1126,8 @@ SCENARIOS = {
     ),
     
     "basic_sharing_primitive": Scenario(
-        name="Basic Resource Sharing (Primitive Only)",
-        description="Same as basic_sharing but using only primitive transitions to see if same outcome can be achieved",
+        name="Basic Resource Sharing (True Primitives Only)",
+        description="Same simplified scenario as basic_sharing (1 private file + 1 shared file per PD) but using only true graph primitives",
         goals=[
             Goal("RSI", 0.3, "minimize", "PD_1,PD_2"),  # Target specific PD pair
             Goal("TCB", 0, "minimize", "PD_1"),         # Target specific PD
@@ -981,8 +1137,11 @@ SCENARIOS = {
             # Specific FILE access requirements (same as basic_sharing)
             Constraint("requires_file_access", 1, "FILE", properties={"file_type": "CONFIG", "min_size_kb": 1}),
             Constraint("requires_file_access", 2, "FILE", properties={"file_type": "DATABASE", "min_size_kb": 1}),
+            # Both PDs need access to TEMP files
+            Constraint("requires_file_access", 1, "FILE", properties={"file_type": "TEMP", "min_size_kb": 1}),
+            Constraint("requires_file_access", 2, "FILE", properties={"file_type": "TEMP", "min_size_kb": 1}),
         ],
-        allowed_primitives=ENHANCED_PRIMITIVES,  # Enhanced primitive operations
+        allowed_primitives=EXTENDED_PRIMITIVES,  # True primitive operations: add/remove nodes/edges
         allowed_multistep=[],  # No multi-step allowed
         graph_builder=build_basic_shared_resource_graph
     ),

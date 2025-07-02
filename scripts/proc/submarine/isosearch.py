@@ -497,18 +497,25 @@ def _predict_improvement(transition, candidate, graph, goals):
         # Enhanced primitives (Strategy 1) - higher scores for targeted operations
         "create_private_copy": 0.95,    # Directly addresses sharing - almost as good as multi-step
         "clone_vmr_resource": 0.7,      # Creates private resources
+        "clone_file_resource": 0.7,     # Creates private FILE resources  
         "replace_hold_edge": 0.6,       # Redirects access to private resources
         
-        # Basic primitives
-        "add_pd": 0.3,
-        "remove_pd": 0.4,
-        "add_vmr_resource": 0.2,
-        "remove_vmr_resource": 0.3,
+        # True graph primitives - context-aware scoring
+        "add_file_resource": 0.5,       # Can create private files to solve sharing
+        "remove_file_resource": 0.6,    # Can eliminate shared resources
+        "add_hold_edge": 0.4,          # Can connect PDs to new private resources
+        "remove_hold_edge": 0.5,       # Can disconnect from shared resources
+        
+        # Basic PD and space operations
+        "add_pd": 0.2,                 # Lower priority - doesn't solve sharing directly
+        "remove_pd": 0.3,
         "add_resource_space": 0.1,
-        "add_hold_edge": 0.2,
-        "remove_hold_edge": 0.3,
         "add_request_edge": 0.2,
-        "remove_request_edge": 0.3
+        "remove_request_edge": 0.3,
+        
+        # Legacy VMR operations
+        "add_vmr_resource": 0.2,
+        "remove_vmr_resource": 0.3
     }
     
     base_improvement = improvement_map.get(transition.name, 0.3)
