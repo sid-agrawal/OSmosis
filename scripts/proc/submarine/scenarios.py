@@ -1265,6 +1265,21 @@ SCENARIOS = {
         graph_builder=build_basic_shared_resource_graph
     ),
     
+    "mediator_test_primitive": Scenario(
+        name="Mediator Test Primitive",
+        description="Test if primitives can achieve mediation pattern",
+        goals=[
+            Goal("RSI", 0.8, "minimize", "PD_1,PD_2")   # Same goal as mediator_test
+        ],
+        constraints=[
+            Constraint("requires_file_access", 1, "FILE", properties={"file_type": "any", "min_size_kb": 1}),
+            Constraint("requires_file_access", 2, "FILE", properties={"file_type": "any", "min_size_kb": 1}),
+        ],
+        allowed_primitives=PRIMITIVES,  # All primitives allowed
+        allowed_multistep=[],  # No multi-step transitions
+        graph_builder=build_basic_shared_resource_graph
+    ),
+    
     
     "attack_surface_reduction": Scenario(
         name="Attack Surface Reduction",
