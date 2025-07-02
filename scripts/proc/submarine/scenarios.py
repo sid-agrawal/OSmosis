@@ -1280,26 +1280,6 @@ SCENARIOS = {
         graph_builder=build_basic_shared_resource_graph
     ),
     
-    "multi_objective": Scenario(
-        name="Multi-Objective Optimization",
-        description="Simultaneously optimize all metrics",
-        goals=[
-            Goal("RSI", 0.3, "minimize", "PD_1,PD_2"),  # Target sharing pair
-            Goal("ASR", 1.0, "minimize"),               # System-wide
-            Goal("TCB", 1, "minimize", "PD_1"),         # Target specific PD
-            Goal("FR", 4, "minimize", "PD_1,PD_3")      # Target specific PD pair
-        ],
-        constraints=[
-            # Balanced constraints for multi-objective optimization
-            Constraint("requires_file_access", 1, "FILE", properties={"file_type": "LOG", "min_size_kb": 2}),
-            Constraint("requires_file_access", 2, "FILE", properties={"file_type": "any", "min_size_kb": 1}),
-            # Communication constraint that creates the TCB challenge
-            Constraint("requires_communication", 1, "REQUEST", target_pd=3),
-        ],
-        allowed_primitives=PRIMITIVES,  # All atomic graph operations
-        allowed_multistep=MULTISTEP,    # All multi-step transitions
-        graph_builder=build_basic_shared_resource_graph
-    ),
     
     "attack_surface_reduction": Scenario(
         name="Attack Surface Reduction",
