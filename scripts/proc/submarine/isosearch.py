@@ -1874,7 +1874,7 @@ Examples:
   %(prog)s                                    # Run default scenario (basic_sharing)
   %(prog)s --list                             # List all available scenarios
   %(prog)s basic_sharing                      # Run single scenario
-  %(prog)s rsi_focused authority_chain        # Run multiple scenarios
+  %(prog)s rsi_focused high_sharing           # Run multiple scenarios
   %(prog)s --all                              # Run all scenarios
   %(prog)s --verbose rsi_focused              # Run with detailed output
         ''',

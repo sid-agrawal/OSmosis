@@ -1107,33 +1107,6 @@ def build_high_sharing_graph():
     return graph
 
 
-def build_authority_chain_graph():
-    """Build a graph with a chain of authority relationships"""
-    graph = ModelGraph()
-    
-    # Add four protection domains in authority hierarchy
-    user_pd = NodeTransformations.add_pd_node(graph, "user_app")
-    service_pd = NodeTransformations.add_pd_node(graph, "service_manager")
-    kernel_pd = NodeTransformations.add_pd_node(graph, "kernel_module")
-    root_pd = NodeTransformations.add_pd_node(graph, "root_authority")
-    
-    # Add FILE space and resources
-    file_space = NodeTransformations.add_resource_space(graph, ResourceType.FILE)
-    user_resource = NodeTransformations.add_file_resource(graph, file_space, FileType.CONFIG, "/etc/user.conf", 512)
-    service_resource = NodeTransformations.add_file_resource(graph, file_space, FileType.EXECUTABLE, "/bin/service", 1024)
-    kernel_resource = NodeTransformations.add_file_resource(graph, file_space, FileType.LOG, "/var/log/kernel.log", 1536)
-    
-    # Each PD holds its own resource
-    EdgeTransformations.add_hold_edge(graph, Permission.R, user_pd, ResourceType.FILE, file_space, user_resource)
-    EdgeTransformations.add_hold_edge(graph, Permission.R, service_pd, ResourceType.FILE, file_space, service_resource)
-    EdgeTransformations.add_hold_edge(graph, Permission.R, kernel_pd, ResourceType.FILE, file_space, kernel_resource)
-    
-    # Create authority chain: user -> service -> kernel -> root
-    EdgeTransformations.add_request_edge(graph, user_pd, service_pd, ResourceType.FILE, file_space)
-    EdgeTransformations.add_request_edge(graph, service_pd, kernel_pd, ResourceType.FILE, file_space)
-    EdgeTransformations.add_request_edge(graph, kernel_pd, root_pd, ResourceType.FILE, file_space)
-    
-    return graph
 
 
 def build_high_attack_surface_graph():
@@ -1275,26 +1248,6 @@ SCENARIOS = {
         graph_builder=build_high_sharing_graph
     ),
     
-    "authority_chain": Scenario(
-        name="Authority Chain",
-        description="4 PDs in authority hierarchy to test fault radius optimization",
-        goals=[
-            Goal("FR", 3, "minimize", "PD_1,PD_4"),     # Target specific PD pair with long chain
-            Goal("TCB", 2, "minimize", "PD_1"),         # Target leaf PD
-            Goal("ASR", 1.5, "minimize")                # System-wide goal
-        ],
-        constraints=[
-            # FILE access requirements
-            Constraint("requires_file_access", 1, "FILE", properties={"file_type": "CONFIG", "min_size_kb": 1}),
-            # Authority chain requirements (user_app -> service_manager -> kernel_module -> root_authority)
-            Constraint("requires_communication", 1, "REQUEST", target_pd=2),  # PD_1 -> PD_2
-            Constraint("requires_communication", 2, "REQUEST", target_pd=3),  # PD_2 -> PD_3  
-            Constraint("requires_communication", 3, "REQUEST", target_pd=4),  # PD_3 -> PD_4
-        ],
-        allowed_primitives=PRIMITIVES,  # All atomic graph operations
-        allowed_multistep=[],  # No multi-step allowed
-        graph_builder=build_authority_chain_graph
-    ),
     
     "rsi_focused": Scenario(
         name="RSI Optimization",
