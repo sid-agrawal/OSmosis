@@ -787,7 +787,7 @@ MULTISTEP_TRANSITIONS = {
 # Graph builder functions for different scenarios
 
 def build_basic_shared_resource_graph():
-    """Build a basic graph with 2 PDs each having 3 private FILE resources + 1 shared FILE resource"""
+    """Build a basic graph with 2 PDs each having 1 private FILE resource + 1 shared FILE resource"""
     graph = ModelGraph()
     
     # Add two protection domains
@@ -797,27 +797,19 @@ def build_basic_shared_resource_graph():
     # Add a FILE space
     file_space = NodeTransformations.add_resource_space(graph, ResourceType.FILE)
     
-    # Create 3 private resources for PD1
-    pd1_config = NodeTransformations.add_file_resource(graph, file_space, FileType.CONFIG, "/etc/user.conf", 1024)
-    pd1_log = NodeTransformations.add_file_resource(graph, file_space, FileType.LOG, "/var/log/user.log", 2048)
-    pd1_lib = NodeTransformations.add_file_resource(graph, file_space, FileType.LIBRARY, "/usr/lib/user.so", 8192)
+    # Create 1 private resource for PD1
+    pd1_config = NodeTransformations.add_file_resource(graph, file_space, FileType.CONFIG, "/etc/user.conf", 4096)
     
-    # Create 3 private resources for PD2  
-    pd2_config = NodeTransformations.add_file_resource(graph, file_space, FileType.CONFIG, "/etc/database.conf", 4096)
-    pd2_log = NodeTransformations.add_file_resource(graph, file_space, FileType.LOG, "/var/log/database.log", 6144)
-    pd2_db = NodeTransformations.add_file_resource(graph, file_space, FileType.DATABASE, "/var/db/main.db", 12288)
+    # Create 1 private resource for PD2  
+    pd2_db = NodeTransformations.add_file_resource(graph, file_space, FileType.DATABASE, "/var/db/main.db", 8192)
     
     # Create 1 shared resource that both PDs access
-    shared_buffer = NodeTransformations.add_file_resource(graph, file_space, FileType.TEMP, "/tmp/shared_buffer.tmp", 20480)
+    shared_buffer = NodeTransformations.add_file_resource(graph, file_space, FileType.TEMP, "/tmp/shared_buffer.tmp", 2048)
     
-    # PD1 holds its 3 private resources
+    # PD1 holds its 1 private resource
     EdgeTransformations.add_hold_edge(graph, Permission.R, pd1, ResourceType.FILE, file_space, pd1_config)
-    EdgeTransformations.add_hold_edge(graph, Permission.R, pd1, ResourceType.FILE, file_space, pd1_log)
-    EdgeTransformations.add_hold_edge(graph, Permission.R, pd1, ResourceType.FILE, file_space, pd1_lib)
     
-    # PD2 holds its 3 private resources
-    EdgeTransformations.add_hold_edge(graph, Permission.R, pd2, ResourceType.FILE, file_space, pd2_config)
-    EdgeTransformations.add_hold_edge(graph, Permission.R, pd2, ResourceType.FILE, file_space, pd2_log)
+    # PD2 holds its 1 private resource
     EdgeTransformations.add_hold_edge(graph, Permission.R, pd2, ResourceType.FILE, file_space, pd2_db)
     
     # Both PD1 and PD2 hold the shared resource (the security problem to solve)
@@ -961,7 +953,7 @@ EXTENDED_MULTISTEP = BASIC_MULTISTEP
 SCENARIOS = {
     "basic_sharing": Scenario(
         name="Basic Resource Sharing",
-        description="2 PDs each with 3 private FILE resources + 1 shared FILE resource",
+        description="2 PDs each with 1 private FILE resource + 1 shared FILE resource",
         goals=[
             Goal("RSI", 0.3, "minimize", "PD_1,PD_2"),  # Target specific PD pair
             Goal("TCB", 0, "minimize", "PD_1"),         # Target specific PD
@@ -969,8 +961,8 @@ SCENARIOS = {
         ],
         constraints=[
             # Specific FILE access requirements
-            Constraint("requires_file_access", 1, "FILE", properties={"file_type": "CONFIG", "min_size_kb": 3}),
-            Constraint("requires_file_access", 2, "FILE", properties={"file_type": "DATABASE", "min_size_kb": 3}),
+            Constraint("requires_file_access", 1, "FILE", properties={"file_type": "CONFIG", "min_size_kb": 1}),
+            Constraint("requires_file_access", 2, "FILE", properties={"file_type": "DATABASE", "min_size_kb": 1}),
         ],
         allowed_primitives=[],  # No primitives allowed
         allowed_multistep=["privatize_resource", "add_mediator"],  # Only multi-step transformations
@@ -987,8 +979,8 @@ SCENARIOS = {
         ],
         constraints=[
             # Specific FILE access requirements (same as basic_sharing)
-            Constraint("requires_file_access", 1, "FILE", properties={"file_type": "CONFIG", "min_size_kb": 3}),
-            Constraint("requires_file_access", 2, "FILE", properties={"file_type": "DATABASE", "min_size_kb": 3}),
+            Constraint("requires_file_access", 1, "FILE", properties={"file_type": "CONFIG", "min_size_kb": 1}),
+            Constraint("requires_file_access", 2, "FILE", properties={"file_type": "DATABASE", "min_size_kb": 1}),
         ],
         allowed_primitives=ENHANCED_PRIMITIVES,  # Enhanced primitive operations
         allowed_multistep=[],  # No multi-step allowed

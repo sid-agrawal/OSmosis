@@ -137,7 +137,7 @@ We evaluate IsoSearch across 8 scenarios using FILE-based resources representing
 
 | Scenario | Goals | Transitions | Objectives Achieved | Key Insights |
 |----------|--------|-------------|-------------------|--------------|
-| **basic_sharing** | RSI≤0.3, TCB≤0, ASR≤1.0 | Multi-step (2) | ✅ RSI, ✅ TCB, ❌ ASR | Single-iteration success with multi-step efficiency |
+| **basic_sharing** | RSI≤0.3, TCB≤0, ASR≤1.0 | Multi-step (2) | ✅ RSI, ✅ TCB, ❌ ASR | Single-iteration success with multi-step efficiency (simplified: 1+1 shared) |
 | **basic_sharing_primitive** | RSI≤0.3, TCB≤0, ASR≤1.0 | Primitive (9) | ❌ RSI, ❌ TCB, ⚠️ ASR | Primitive limitations for complex security patterns |
 | **high_sharing** | RSI≤0.2, ASR≤2.0, TCB≤1 | Primitive (6) | ❌ RSI, ✅ ASR, ❌ TCB | Complex sharing patterns resist basic approaches |
 | **authority_chain** | FR≤3, TCB≤2, ASR≤1.5 | Primitive (6) | ❌ FR, ❌ TCB, ✅ ASR | Authority structure repair beyond primitive capability |
