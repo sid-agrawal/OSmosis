@@ -409,7 +409,7 @@ def GenerateCandidate(graph, constraints, transitions, goals, last_transition_ty
         for candidate in candidates:
             candidate['transition_name'] = transition.name
             candidate['transition_type'] = transition.transition_type
-            candidate['predicted_improvement'] = _predict_improvement(transition, candidate, graph, goals)
+            candidate['predicted_improvement'] = _predict_improvement(transition, candidate, graph, goals, constraints)
             # Debug output for remove_hold_edge candidates
             if transition.name == "remove_hold_edge":
                 print(f"    remove_hold_edge candidate: {candidate['target_description']} -> score: {candidate['predicted_improvement']:.3f}")
@@ -527,11 +527,16 @@ def GenerateCandidate(graph, constraints, transitions, goals, last_transition_ty
         return None, candidate_info
 
 
-def _predict_improvement(transition, candidate, graph, goals):
+def _predict_improvement(transition, candidate, graph, goals, constraints=None):
     """
     Context-aware improvement prediction that considers current graph state and constraints
     Returns: float representing predicted improvement (higher = better)
     """
+    
+    # Check if pattern-aware scoring is enabled
+    if hasattr(args, 'pattern_aware_scoring') and args.pattern_aware_scoring and constraints:
+        from pattern_aware_scoring import get_pattern_aware_score
+        return get_pattern_aware_score(transition, candidate, graph, goals, constraints)
     
     # Get base improvement score
     base_scores = {
@@ -2137,7 +2142,10 @@ def run_scenario(scenario_name, enable_visualization=False):
             from true_bfs_exploration import TrueBFSExploration
             result = TrueBFSExploration(scenario, max_depth=args.bfs_max_depth, max_states=args.bfs_max_states)
         elif args.beam_search:
-            print(f"🔍 Using beam search (width={args.beam_width})")
+            if args.pattern_aware_scoring:
+                print(f"🔍 Using beam search (width={args.beam_width}) with PATTERN-AWARE SCORING")
+            else:
+                print(f"🔍 Using beam search (width={args.beam_width})")
             result = BeamSearchExploration(scenario, beam_width=args.beam_width)
         else:
             result = DesignSpaceExplorationWithVisualization(scenario, visualizer, tree_visualizer)
@@ -2301,6 +2309,12 @@ Examples:
     )
     
     parser.add_argument(
+        '--pattern-aware-scoring',
+        action='store_true',
+        help='Use pattern-aware scoring that recognizes multi-step security patterns'
+    )
+    
+    parser.add_argument(
         '--version',
         action='version',
         version='IsoSearch v1.0 - Automated Security Mechanism Discovery'
@@ -2350,6 +2364,9 @@ def print_detailed_scenario_info():
 if __name__ == "__main__":
     parser = create_cli_parser()
     args = parser.parse_args()
+    
+    # Make args globally available for pattern-aware scoring
+    globals()['args'] = args
     
     # Handle list scenarios option
     if args.list:

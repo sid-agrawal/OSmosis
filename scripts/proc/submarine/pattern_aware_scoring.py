@@ -48,19 +48,33 @@ class PatternAwareScoring:
     
     def analyze_graph_state(self, graph):
         """Analyze current graph to identify pattern opportunities"""
-        self.pattern_states['orphaned_resources'] = self._find_orphaned_resources(graph)
-        self.pattern_states['potential_mediators'] = self._find_potential_mediators(graph)
-        
-        # Check for mediation opportunity
-        has_orphaned = len(self.pattern_states['orphaned_resources']) > 0
-        has_pds_needing_access = self._find_pds_needing_access(graph)
-        
-        return {
-            'has_orphaned_resources': has_orphaned,
-            'has_access_needs': has_pds_needing_access,
-            'mediation_opportunity': has_orphaned and has_pds_needing_access,
-            'potential_mediators': self.pattern_states['potential_mediators']
-        }
+        try:
+            orphaned = self._find_orphaned_resources(graph)
+            mediators = self._find_potential_mediators(graph)
+            
+            self.pattern_states['orphaned_resources'] = orphaned
+            self.pattern_states['potential_mediators'] = mediators
+            
+            # Check for mediation opportunity
+            has_orphaned = len(orphaned) > 0
+            has_pds_needing_access = self._find_pds_needing_access(graph)
+            
+            return {
+                'has_orphaned_resources': has_orphaned,
+                'orphaned_resources': orphaned,
+                'has_access_needs': has_pds_needing_access,
+                'mediation_opportunity': has_orphaned and has_pds_needing_access,
+                'potential_mediators': mediators
+            }
+        except Exception as e:
+            print(f"Warning: Error analyzing graph state: {e}")
+            return {
+                'has_orphaned_resources': False,
+                'orphaned_resources': [],
+                'has_access_needs': False,
+                'mediation_opportunity': False,
+                'potential_mediators': []
+            }
     
     def score_operation(self, operation, candidate, graph, goals, constraints):
         """
@@ -92,8 +106,9 @@ class PatternAwareScoring:
         
         # CRITICAL: Constraint violation removal gets maximum priority
         if op_name == "remove_hold_edge":
-            from_pd = params.get('from_node', '')
-            to_resource = params.get('to_node', '')
+            # Handle both parameter naming conventions
+            from_pd = params.get('from_node', '') or params.get('pd', '')
+            to_resource = params.get('to_node', '') or params.get('resource', '')
             
             # Check if this removes a prohibited edge
             if self._is_prohibited_edge(from_pd, to_resource, constraints):
@@ -102,7 +117,7 @@ class PatternAwareScoring:
         # Pattern 1: Mediation Opportunity Detection
         if state_analysis['mediation_opportunity']:
             score = self._score_for_mediation_pattern(
-                op_name, params, score, state_analysis, graph
+                op_name, params, score, state_analysis, graph, constraints
             )
         
         # Pattern 2: Sequence Recognition
@@ -113,12 +128,12 @@ class PatternAwareScoring:
         
         return score
     
-    def _score_for_mediation_pattern(self, op_name, params, base_score, state_analysis, graph):
+    def _score_for_mediation_pattern(self, op_name, params, base_score, state_analysis, graph, constraints):
         """Special scoring when mediation pattern is possible"""
         
         # Phase 1: If orphaned resources exist
         if state_analysis['has_orphaned_resources']:
-            orphaned = state_analysis['orphaned_resources']
+            orphaned = state_analysis.get('orphaned_resources', [])
             
             # Boost PD creation as potential mediator
             if op_name == "add_pd":
@@ -126,14 +141,25 @@ class PatternAwareScoring:
             
             # CRITICAL: Boost connecting to orphaned resources
             if op_name == "add_hold_edge":
-                to_resource = params.get('to_node', '')
+                # Handle both parameter naming conventions
+                to_resource = params.get('to_node', '') or params.get('resource', '')
                 if to_resource in orphaned:
-                    from_pd = params.get('from_node', '')
+                    from_pd = params.get('from_node', '') or params.get('pd', '')
+                    
+                    # EXTRA BOOST: If resource is mentioned in constraints (like FILE_1_3)
+                    constraint_priority = self._is_constraint_mentioned_resource(to_resource, constraints)
+                    
                     # Check if this PD could be a mediator
                     if self._could_be_mediator(from_pd, graph):
-                        return 2.5  # VERY HIGH PRIORITY
+                        if constraint_priority:
+                            return 3.0  # MAXIMUM PRIORITY for constraint-required resources
+                        else:
+                            return 2.5  # VERY HIGH PRIORITY for other orphaned resources
                     else:
-                        return 1.0  # Still good but not mediator
+                        if constraint_priority:
+                            return 1.5  # HIGH PRIORITY for constraint-required resources
+                        else:
+                            return 1.0  # Still good but not mediator
             
             # If mediator exists and is connected, boost REQUEST edges
             if op_name == "add_request_edge":
@@ -332,6 +358,17 @@ class PatternAwareScoring:
         """Check if operation fixes a constraint violation"""
         # Simplified check - would need actual constraint validation
         return True  # Assume removes help constraints
+    
+    def _is_constraint_mentioned_resource(self, resource, constraints):
+        """Check if a resource is specifically mentioned in constraints"""
+        for constraint in constraints:
+            # Check if constraint mentions this resource
+            if hasattr(constraint, 'resource_info') and constraint.resource_info == resource:
+                return True
+            # Also check if resource is in constraint description
+            if hasattr(constraint, 'description') and resource in str(constraint.description):
+                return True
+        return False
 
 
 # Integration function
