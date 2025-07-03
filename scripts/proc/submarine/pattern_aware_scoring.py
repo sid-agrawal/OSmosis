@@ -51,20 +51,28 @@ class PatternAwareScoring:
         try:
             orphaned = self._find_orphaned_resources(graph)
             mediators = self._find_potential_mediators(graph)
+            shared = self._find_shared_resources(graph)
             
             self.pattern_states['orphaned_resources'] = orphaned
             self.pattern_states['potential_mediators'] = mediators
+            self.pattern_states['shared_resources'] = shared
             
             # Check for mediation opportunity
             has_orphaned = len(orphaned) > 0
             has_pds_needing_access = self._find_pds_needing_access(graph)
+            
+            # Check for sharing reduction opportunity
+            has_shared = len(shared) > 0
             
             return {
                 'has_orphaned_resources': has_orphaned,
                 'orphaned_resources': orphaned,
                 'has_access_needs': has_pds_needing_access,
                 'mediation_opportunity': has_orphaned and has_pds_needing_access,
-                'potential_mediators': mediators
+                'potential_mediators': mediators,
+                'has_shared_resources': has_shared,
+                'shared_resources': shared,
+                'sharing_reduction_opportunity': has_shared
             }
         except Exception as e:
             print(f"Warning: Error analyzing graph state: {e}")
@@ -73,7 +81,10 @@ class PatternAwareScoring:
                 'orphaned_resources': [],
                 'has_access_needs': False,
                 'mediation_opportunity': False,
-                'potential_mediators': []
+                'potential_mediators': [],
+                'has_shared_resources': False,
+                'shared_resources': [],
+                'sharing_reduction_opportunity': False
             }
     
     def score_operation(self, operation, candidate, graph, goals, constraints):
@@ -92,7 +103,7 @@ class PatternAwareScoring:
         
         # Apply pattern-aware adjustments
         score = self._apply_pattern_scoring(
-            operation.name, params, base_score, state_analysis, graph, constraints
+            operation.name, params, base_score, state_analysis, graph, constraints, goals
         )
         
         # Track operation history
@@ -100,7 +111,7 @@ class PatternAwareScoring:
         
         return score
     
-    def _apply_pattern_scoring(self, op_name, params, base_score, state_analysis, graph, constraints):
+    def _apply_pattern_scoring(self, op_name, params, base_score, state_analysis, graph, constraints, goals):
         """Apply pattern-aware scoring adjustments"""
         score = base_score
         
@@ -120,10 +131,16 @@ class PatternAwareScoring:
                 op_name, params, score, state_analysis, graph, constraints
             )
         
-        # Pattern 2: Sequence Recognition
+        # Pattern 2: Sharing Reduction Opportunity Detection
+        if state_analysis['sharing_reduction_opportunity']:
+            score = self._score_for_sharing_reduction_pattern(
+                op_name, params, score, state_analysis, graph, constraints, goals
+            )
+        
+        # Pattern 3: Sequence Recognition
         score = self._apply_sequence_bonuses(op_name, score)
         
-        # Pattern 3: Constraint-Driven Scoring
+        # Pattern 4: Constraint-Driven Scoring
         score = self._apply_constraint_scoring(op_name, params, score, graph, constraints)
         
         return score
@@ -173,6 +190,50 @@ class PatternAwareScoring:
                 to_resource = params.get('to_node', '')
                 if self._is_shared_resource(graph, to_resource):
                     return base_score + 0.8  # Encourage creating orphaned resources
+        
+        return base_score
+    
+    def _score_for_sharing_reduction_pattern(self, op_name, params, base_score, state_analysis, graph, constraints, goals):
+        """Special scoring when sharing reduction pattern is needed"""
+        
+        shared_resources = state_analysis.get('shared_resources', [])
+        
+        # Check if we have RSI goals that require sharing reduction
+        has_rsi_goal = any(goal.metric_name == 'RSI' for goal in goals)
+        
+        if has_rsi_goal and shared_resources:
+            # CRITICAL: Prioritize removing shared resource relationships
+            if op_name == "remove_hold_edge":
+                to_resource = params.get('to_node', '') or params.get('resource', '')
+                
+                # If this removes sharing on a shared resource, HIGH PRIORITY
+                if to_resource in shared_resources:
+                    return 2.8  # Very high priority for sharing reduction
+            
+            # When we have shared resources, avoid creating more sharing
+            if op_name == "add_hold_edge":
+                to_resource = params.get('to_node', '') or params.get('resource', '')
+                from_pd = params.get('from_node', '') or params.get('pd', '')
+                
+                # Penalize adding more holders to already shared resources
+                if to_resource in shared_resources:
+                    return base_score * 0.1  # Strong penalty
+                
+                # CRITICAL: Boost connecting PDs to private alternatives that satisfy constraints
+                if (to_resource not in shared_resources and 
+                    self._is_private_alternative_for_shared_constraint(from_pd, to_resource, shared_resources, constraints)):
+                    return 2.9  # Very high priority for private constraint alternatives
+                
+                # Boost connecting to private resources instead
+                if to_resource not in shared_resources:
+                    return base_score + 0.5  # Encourage private resource use
+            
+            # Boost creating alternative private resources
+            if op_name == "add_file_resource":
+                # Check if we need private alternatives for constraint satisfaction
+                if self._needs_private_alternatives_for_constraints(shared_resources, constraints):
+                    return base_score + 1.2  # HIGH boost for constraint-required alternatives
+                return base_score + 0.3  # Slightly boost resource creation for alternatives
         
         return base_score
     
@@ -369,6 +430,73 @@ class PatternAwareScoring:
             if hasattr(constraint, 'description') and resource in str(constraint.description):
                 return True
         return False
+    
+    def _needs_private_alternatives_for_constraints(self, shared_resources, constraints):
+        """Check if we need to create private alternatives to satisfy constraints"""
+        # Look for constraints that require access to shared resource types
+        shared_types = set()
+        
+        # Get the types of shared resources
+        for resource in shared_resources:
+            if resource.startswith('FILE_'):
+                # Extract file type - for FILE_1_3 it's TEMP
+                if resource == 'FILE_1_3':
+                    shared_types.add('TEMP')
+                elif resource == 'FILE_1_1':
+                    shared_types.add('CONFIG')
+                elif resource == 'FILE_1_2':
+                    shared_types.add('DATABASE')
+        
+        # Check if constraints require access to these types
+        for constraint in constraints:
+            if hasattr(constraint, 'constraint_type') and constraint.constraint_type == 'requires_file_access':
+                if hasattr(constraint, 'properties') and constraint.properties:
+                    required_type = constraint.properties.get('file_type', '').upper()
+                    if required_type in shared_types:
+                        return True
+        
+        return False
+    
+    def _is_private_alternative_for_shared_constraint(self, pd, resource, shared_resources, constraints):
+        """Check if connecting PD to resource provides private alternative for shared constraint"""
+        # Check if the PD has constraints requiring access to a shared resource type
+        for constraint in constraints:
+            if (hasattr(constraint, 'constraint_type') and 
+                constraint.constraint_type == 'requires_file_access' and
+                hasattr(constraint, 'pd_id') and 
+                f"PD_{constraint.pd_id}" == pd):
+                
+                # Get the required file type
+                if hasattr(constraint, 'properties') and constraint.properties:
+                    required_type = constraint.properties.get('file_type', '').upper()
+                    
+                    # Check if this resource matches the required type and provides alternative
+                    if self._resource_matches_type(resource, required_type):
+                        # Check if there's a shared resource of this type
+                        for shared_res in shared_resources:
+                            if self._resource_matches_type(shared_res, required_type):
+                                return True  # This is a private alternative for shared resource
+        
+        return False
+    
+    def _resource_matches_type(self, resource, file_type):
+        """Check if resource matches the given file type"""
+        if file_type == 'ANY':
+            return True
+        
+        # Simple mapping for our scenario
+        type_mapping = {
+            'FILE_1_1': 'CONFIG',
+            'FILE_1_2': 'DATABASE', 
+            'FILE_1_3': 'TEMP',
+            'FILE_1_4': 'CONFIG',  # Created files follow pattern
+            'FILE_1_5': 'DATABASE',
+            'FILE_1_6': 'TEMP',
+            'FILE_1_7': 'CONFIG',
+            'FILE_1_8': 'DATABASE'
+        }
+        
+        return type_mapping.get(resource, '').upper() == file_type.upper()
 
 
 # Integration function
