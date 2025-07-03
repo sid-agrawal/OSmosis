@@ -2132,7 +2132,11 @@ def run_scenario(scenario_name, enable_visualization=False):
         
         # Run the exploration
         print(f"\n=== Exploring {scenario.name} ===")
-        if args.beam_search:
+        if args.true_bfs:
+            print(f"🔍 Using TRUE BFS (no scoring, exhaustive exploration)")
+            from true_bfs_exploration import TrueBFSExploration
+            result = TrueBFSExploration(scenario, max_depth=args.bfs_max_depth, max_states=args.bfs_max_states)
+        elif args.beam_search:
             print(f"🔍 Using beam search (width={args.beam_width})")
             result = BeamSearchExploration(scenario, beam_width=args.beam_width)
         else:
@@ -2274,6 +2278,26 @@ Examples:
         type=int,
         default=3,
         help='Beam width for beam search (default: 3)'
+    )
+    
+    parser.add_argument(
+        '--true-bfs',
+        action='store_true',
+        help='Use true BFS (breadth-first search) without scoring - explores all paths exhaustively'
+    )
+    
+    parser.add_argument(
+        '--bfs-max-depth',
+        type=int,
+        default=8,
+        help='Maximum depth for true BFS exploration (default: 8)'
+    )
+    
+    parser.add_argument(
+        '--bfs-max-states',
+        type=int,
+        default=10000,
+        help='Maximum states to explore in true BFS (default: 10000)'
     )
     
     parser.add_argument(
