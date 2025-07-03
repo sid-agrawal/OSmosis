@@ -150,6 +150,16 @@ class Transition:
         """Check if removing a HOLD edge would violate constraints"""
         import json
         
+        # FIRST: Check if there's a prohibit_direct_hold constraint that REQUIRES this removal
+        pd_id = int(from_pd.split('_')[1]) if from_pd.startswith('PD_') else None
+        if pd_id is not None:
+            for constraint in constraints:
+                if (constraint.constraint_type == "prohibit_direct_hold" and 
+                    constraint.pd_id == pd_id and 
+                    constraint.resource_info == to_resource):
+                    # This edge is explicitly prohibited - removal is strongly encouraged
+                    return True
+        
         # Get the resource type being removed
         if not to_resource.startswith('FILE_'):
             return True  # Not a file, safe to remove
@@ -163,7 +173,6 @@ class Transition:
         resource_type = extra_data.get('file_type', 'UNKNOWN')
         
         # Check if this PD has constraints requiring this resource type
-        pd_id = int(from_pd.split('_')[1]) if from_pd.startswith('PD_') else None
         if pd_id is None:
             return True
         
@@ -197,12 +206,54 @@ class Transition:
         return alternative_count > 0
     
     def _find_add_pd_candidates(self, graph, constraints):
-        """Find opportunities to add new PDs"""
-        # Simple implementation - always allow adding one PD
-        return [{
-            'param_values': {'pd_type': 'new_component'},
-            'target_description': "add new protection domain"
-        }]
+        """Find opportunities to add new PDs, especially for mediation"""
+        candidates = []
+        
+        # Strategy 1: Detect orphaned resources that need mediators
+        orphaned_resources = self._find_orphaned_resources_needing_mediation(graph, constraints)
+        
+        # Only suggest adding NEW mediator PDs if we don't already have unused PDs
+        existing_unused_pds = self._find_unused_pds(graph)
+        
+        for resource_info in orphaned_resources:
+            # If we already have unused PDs, prioritize using them instead of creating new ones
+            if existing_unused_pds:
+                constraint_relevance = 0.3  # Lower priority - prefer using existing PDs
+                description = f"add mediator PD for orphaned resource {resource_info['resource']} (consider using existing PDs first)"
+            else:
+                constraint_relevance = 0.8  # High priority - no existing PDs available
+                description = f"add mediator PD for orphaned resource {resource_info['resource']}"
+            
+            candidates.append({
+                'param_values': {'pd_type': 'mediator'},
+                'target_description': description,
+                'mediation_context': resource_info,
+                'constraint_relevance': constraint_relevance,
+                'addresses_violation': True
+            })
+        
+        # Strategy 2: Detect shared resources that could benefit from mediation
+        shared_resources = self._find_shared_resources_needing_mediation(graph, constraints)
+        
+        for resource_info in shared_resources:
+            candidates.append({
+                'param_values': {'pd_type': 'mediator'},
+                'target_description': f"add mediator PD for shared resource {resource_info['resource']}",
+                'mediation_context': resource_info,
+                'constraint_relevance': 0.6,  # Medium relevance
+                'addresses_violation': False
+            })
+        
+        # Strategy 3: General PD addition (fallback)
+        if not candidates:  # Only if no mediation opportunities found
+            candidates.append({
+                'param_values': {'pd_type': 'new_component'},
+                'target_description': "add new protection domain",
+                'constraint_relevance': 0.2,  # Low relevance
+                'addresses_violation': False
+            })
+        
+        return candidates
     
     def _find_privatize_resource_candidates(self, graph, constraints):
         """Find shared resources that can be privatized"""
@@ -346,7 +397,7 @@ class Transition:
         return potential
     
     def _find_add_hold_edge_candidates(self, graph, constraints):
-        """Find opportunities to add HOLD edges (PD -> Resource connections)"""
+        """Find opportunities to add HOLD edges (PD -> Resource connections), prioritizing mediation patterns"""
         candidates = []
         
         # Find PDs that could connect to existing resources
@@ -354,29 +405,42 @@ class Transition:
         resources = [node for node, data in graph.g.nodes(data=True) 
                     if data.get('type') == 'RESOURCE' and data.get('data') == 'FILE']
         
+        # Strategy 1: HIGHEST PRIORITY - Connect newly created PDs to orphaned resources they could mediate
         for pd in pds:
-            # Find resources this PD doesn't already hold
-            current_resources = []
-            for from_node, to_node, edge_data in graph.g.edges(data=True):
-                if from_node == pd and edge_data.get('type') == 'HOLD':
-                    current_resources.append(to_node)
+            current_resources = self._get_pd_held_resources(graph, pd)
             
             for resource in resources:
                 if resource not in current_resources:
+                    # Check if this connection would solve a constraint violation
+                    relevance_score = self._calculate_mediation_relevance(graph, pd, resource, constraints)
+                    
                     # Check prohibit_direct_hold constraints
-                    prohibited = False
-                    for constraint in constraints:
-                        if constraint.constraint_type == "prohibit_direct_hold":
-                            pd_string = f"PD_{constraint.pd_id}"
-                            prohibited_resource = constraint.resource_info
-                            if pd == pd_string and resource == prohibited_resource:
-                                prohibited = True
-                                break
+                    prohibited = self._is_connection_prohibited(pd, resource, constraints)
                     
                     if not prohibited:
+                        constraint_relevance = 0.1  # Default low relevance
+                        addresses_violation = False
+                        description = f"connect {pd} to {resource}"
+                        
+                        # BOOST for mediation patterns
+                        if relevance_score > 0.5:
+                            constraint_relevance = relevance_score
+                            addresses_violation = True
+                            description = f"connect mediator {pd} to orphaned resource {resource}"
+                        elif self._is_orphaned_resource(graph, resource):
+                            constraint_relevance = 0.7
+                            addresses_violation = True  
+                            description = f"connect {pd} to orphaned resource {resource}"
+                        elif self._would_enable_indirect_access(graph, pd, resource, constraints):
+                            constraint_relevance = 0.6
+                            addresses_violation = True
+                            description = f"enable indirect access: connect {pd} to {resource}"
+                        
                         candidates.append({
                             'param_values': {'pd': pd, 'resource': resource, 'permission': 'R'},
-                            'target_description': f"connect {pd} to {resource}"
+                            'target_description': description,
+                            'constraint_relevance': constraint_relevance,
+                            'addresses_violation': addresses_violation
                         })
         
         return candidates
@@ -490,27 +554,28 @@ class Transition:
         return candidates
     
     def _find_add_request_edge_candidates(self, graph, constraints):
-        """Find opportunities to add REQUEST edges (PD -> PD authority)"""
+        """Find opportunities to add REQUEST edges (PD -> PD authority), prioritizing mediation patterns"""
         candidates = []
         
         pds = [node for node, data in graph.g.nodes(data=True) if data.get('type') == 'PD']
         
-        for pd1 in pds:
-            for pd2 in pds:
-                if pd1 != pd2:
+        for from_pd in pds:
+            for to_pd in pds:
+                if from_pd != to_pd:
                     # Check if REQUEST edge already exists
-                    edge_exists = False
-                    for from_node, to_node, edge_data in graph.g.edges(data=True):
-                        if (from_node == pd1 and to_node == pd2 and 
-                            edge_data.get('type') == 'REQUEST'):
-                            edge_exists = True
-                            break
+                    if self._request_edge_exists(graph, from_pd, to_pd):
+                        continue
                     
-                    if not edge_exists:
-                        candidates.append({
-                            'param_values': {'from_pd': pd1, 'to_pd': pd2},
-                            'target_description': f"add authority {pd1} -> {pd2}"
-                        })
+                    # Calculate constraint relevance and whether this addresses violations
+                    constraint_relevance, addresses_violation, description = self._analyze_request_edge_relevance(
+                        graph, from_pd, to_pd, constraints)
+                    
+                    candidates.append({
+                        'param_values': {'from_pd': from_pd, 'to_pd': to_pd},
+                        'target_description': description,
+                        'constraint_relevance': constraint_relevance,
+                        'addresses_violation': addresses_violation
+                    })
         
         return candidates
     
@@ -733,12 +798,21 @@ class Transition:
                 return True
             elif self.name == "add_request_edge":
                 from graph_transformations import EdgeTransformations
-                from generic_model import EdgeType
-                EdgeTransformations.add_edge(
-                    graph,
-                    param_values['from_pd'],
-                    param_values['to_pd'],
-                    EdgeType.REQUEST
+                from generic_model import ResourceType
+                
+                # Extract PD IDs from PD strings
+                from_pd_string = param_values['from_pd']
+                to_pd_string = param_values['to_pd']
+                from_pd_id = int(from_pd_string.split('_')[1]) if from_pd_string.startswith('PD_') else 1
+                to_pd_id = int(to_pd_string.split('_')[1]) if to_pd_string.startswith('PD_') else 1
+                
+                # Use FILE space 1 as default for REQUEST edges
+                EdgeTransformations.add_request_edge(
+                    graph, 
+                    from_pd_id, 
+                    to_pd_id, 
+                    ResourceType.FILE, 
+                    1  # space_id 
                 )
                 return True
             elif self.name == "remove_request_edge":
@@ -904,6 +978,256 @@ class Transition:
                     continue
         
         return latest_resource or base_resource
+    
+    # ========== Mediation-Aware Helper Methods ==========
+    
+    def _find_orphaned_resources_needing_mediation(self, graph, constraints):
+        """Find resources that have no holders but are required by constraints"""
+        orphaned_resources = []
+        
+        # Find all resources that have no HOLD edges pointing to them
+        resources = [node for node, data in graph.g.nodes(data=True) 
+                    if data.get('type') == 'RESOURCE' and data.get('data') == 'FILE']
+        
+        for resource in resources:
+            holders = self._get_resource_holders(graph, resource)
+            
+            # Check if any PD should have access to this resource based on constraints
+            if len(holders) == 0:
+                required_by_pds = self._get_pds_requiring_resource(resource, constraints)
+                if required_by_pds:
+                    orphaned_resources.append({
+                        'resource': resource,
+                        'required_by': required_by_pds,
+                        'resource_type': self._get_resource_file_type(graph, resource)
+                    })
+        
+        return orphaned_resources
+    
+    def _find_shared_resources_needing_mediation(self, graph, constraints):
+        """Find shared resources that could benefit from mediation based on constraints"""
+        shared_resources = []
+        
+        # Find resources with multiple holders that have prohibition constraints
+        resource_holders = {}
+        for from_node, to_node, edge_data in graph.g.edges(data=True):
+            if edge_data.get('type') == 'HOLD' and to_node.startswith('FILE_'):
+                if to_node not in resource_holders:
+                    resource_holders[to_node] = []
+                resource_holders[to_node].append(from_node)
+        
+        for resource, holders in resource_holders.items():
+            if len(holders) > 1:  # Shared resource
+                # Check if any PD is prohibited from directly holding this resource
+                prohibited_pds = self._get_pds_prohibited_from_resource(resource, constraints)
+                if prohibited_pds:
+                    shared_resources.append({
+                        'resource': resource,
+                        'current_holders': holders,
+                        'prohibited_holders': prohibited_pds,
+                        'resource_type': self._get_resource_file_type(graph, resource)
+                    })
+        
+        return shared_resources
+    
+    def _get_pd_held_resources(self, graph, pd):
+        """Get all resources currently held by a PD"""
+        resources = []
+        for from_node, to_node, edge_data in graph.g.edges(data=True):
+            if from_node == pd and edge_data.get('type') == 'HOLD':
+                resources.append(to_node)
+        return resources
+    
+    def _get_resource_holders(self, graph, resource):
+        """Get all PDs that currently hold a resource"""
+        holders = []
+        for from_node, to_node, edge_data in graph.g.edges(data=True):
+            if to_node == resource and edge_data.get('type') == 'HOLD':
+                holders.append(from_node)
+        return holders
+    
+    def _calculate_mediation_relevance(self, graph, pd, resource, constraints):
+        """Calculate how relevant connecting this PD to this resource is for mediation"""
+        score = 0.0
+        
+        # HIGHEST PRIORITY: Complete existing mediation patterns
+        if self._is_orphaned_resource(graph, resource) and self._is_likely_mediator_pd(graph, pd):
+            if self._is_resource_required_by_constraints(resource, constraints):
+                score += 1.0  # Maximum priority for completing mediation
+        
+        # High score if this resource is orphaned and required by constraints
+        elif self._is_orphaned_resource(graph, resource):
+            if self._is_resource_required_by_constraints(resource, constraints):
+                score += 0.8
+        
+        # Medium score if this would enable indirect access for constrained PDs
+        if self._would_enable_indirect_access(graph, pd, resource, constraints):
+            score += 0.6
+        
+        # Boost if this PD looks like it was recently created (likely for mediation)
+        if self._is_likely_mediator_pd(graph, pd):
+            score += 0.3
+        
+        return min(score, 1.0)  # Cap at 1.0
+    
+    def _is_connection_prohibited(self, pd, resource, constraints):
+        """Check if connecting this PD to this resource is prohibited by constraints"""
+        for constraint in constraints:
+            if constraint.constraint_type == "prohibit_direct_hold":
+                pd_id = int(pd.split('_')[1]) if pd.startswith('PD_') else None
+                if pd_id == constraint.pd_id and resource == constraint.resource_info:
+                    return True
+        return False
+    
+    def _is_orphaned_resource(self, graph, resource):
+        """Check if a resource has no holders"""
+        return len(self._get_resource_holders(graph, resource)) == 0
+    
+    def _would_enable_indirect_access(self, graph, mediator_pd, resource, constraints):
+        """Check if connecting mediator_pd to resource would enable indirect access for constrained PDs"""
+        # Look for constraints requiring indirect access to this resource
+        for constraint in constraints:
+            if constraint.constraint_type == "requires_resource_access":
+                if constraint.resource_info == resource:
+                    constrained_pd = f"PD_{constraint.pd_id}"
+                    # Check if connecting mediator to resource + adding REQUEST edge would solve constraint
+                    if not self._pd_has_access_to_resource(graph, constrained_pd, resource):
+                        return True
+        return False
+    
+    def _is_likely_mediator_pd(self, graph, pd):
+        """Check if this PD looks like it was recently created for mediation purposes"""
+        # Simple heuristic: PD with no current connections might be newly created
+        outgoing_edges = 0
+        for from_node, to_node, edge_data in graph.g.edges(data=True):
+            if from_node == pd:
+                outgoing_edges += 1
+        return outgoing_edges == 0
+    
+    def _request_edge_exists(self, graph, from_pd, to_pd):
+        """Check if a REQUEST edge already exists between two PDs"""
+        for from_node, to_node, edge_data in graph.g.edges(data=True):
+            if (from_node == from_pd and to_node == to_pd and 
+                edge_data.get('type') == 'REQUEST'):
+                return True
+        return False
+    
+    def _analyze_request_edge_relevance(self, graph, from_pd, to_pd, constraints):
+        """Analyze the relevance of adding a REQUEST edge for constraint solving"""
+        constraint_relevance = 0.1  # Default low relevance
+        addresses_violation = False
+        description = f"add authority {from_pd} -> {to_pd}"
+        
+        # HIGHEST PRIORITY: Check if this would enable required indirect access
+        for constraint in constraints:
+            if constraint.constraint_type == "requires_resource_access":
+                constrained_pd = f"PD_{constraint.pd_id}"
+                required_resource = constraint.resource_info
+                
+                if from_pd == constrained_pd:
+                    # Check if to_pd holds the required resource
+                    if self._pd_has_access_to_resource(graph, to_pd, required_resource):
+                        constraint_relevance = 0.9
+                        addresses_violation = True
+                        description = f"enable indirect access: {from_pd} -> {to_pd} for {required_resource}"
+                        break
+        
+        # MEDIUM PRIORITY: Check if this completes a mediation pattern
+        if constraint_relevance < 0.5:  # Only if not already high priority
+            if self._would_complete_mediation_pattern(graph, from_pd, to_pd, constraints):
+                constraint_relevance = 0.6
+                addresses_violation = True
+                description = f"complete mediation pattern: {from_pd} -> {to_pd}"
+        
+        return constraint_relevance, addresses_violation, description
+    
+    def _would_complete_mediation_pattern(self, graph, from_pd, to_pd, constraints):
+        """Check if adding this REQUEST edge would complete a mediation pattern"""
+        # Look for cases where from_pd is prohibited from direct access but to_pd has access
+        for constraint in constraints:
+            if constraint.constraint_type == "prohibit_direct_hold":
+                constrained_pd = f"PD_{constraint.pd_id}"
+                prohibited_resource = constraint.resource_info
+                
+                if from_pd == constrained_pd:
+                    # Check if to_pd has access to the prohibited resource
+                    if self._pd_has_access_to_resource(graph, to_pd, prohibited_resource):
+                        return True
+        return False
+    
+    def _get_pds_requiring_resource(self, resource, constraints):
+        """Get list of PDs that require access to this resource based on constraints"""
+        required_by = []
+        
+        # Check requires_resource_access constraints
+        for constraint in constraints:
+            if constraint.constraint_type == "requires_resource_access":
+                if constraint.resource_info == resource:
+                    required_by.append(f"PD_{constraint.pd_id}")
+        
+        # Check requires_file_access constraints that might apply to this resource
+        resource_type = None  # Would need to get from graph
+        for constraint in constraints:
+            if constraint.constraint_type == "requires_file_access":
+                file_type = constraint.properties.get('file_type', 'any')
+                if file_type == 'any':  # This PD needs access to any file, including this one
+                    required_by.append(f"PD_{constraint.pd_id}")
+        
+        return required_by
+    
+    def _get_pds_prohibited_from_resource(self, resource, constraints):
+        """Get list of PDs that are prohibited from directly accessing this resource"""
+        prohibited = []
+        for constraint in constraints:
+            if constraint.constraint_type == "prohibit_direct_hold":
+                if constraint.resource_info == resource:
+                    prohibited.append(f"PD_{constraint.pd_id}")
+        return prohibited
+    
+    def _get_resource_file_type(self, graph, resource):
+        """Get the file type of a resource"""
+        import json
+        try:
+            node_data = graph.g.nodes.get(resource, {})
+            extra_str = node_data.get('extra', '{}')
+            extra_data = json.loads(extra_str) if extra_str else {}
+            return extra_data.get('file_type', 'UNKNOWN')
+        except:
+            return 'UNKNOWN'
+    
+    def _is_resource_required_by_constraints(self, resource, constraints):
+        """Check if any constraint requires access to this specific resource"""
+        for constraint in constraints:
+            if constraint.constraint_type == "requires_resource_access":
+                if constraint.resource_info == resource:
+                    return True
+            elif constraint.constraint_type == "requires_resource_exists":
+                if constraint.resource_info == resource:
+                    return True
+        return False
+    
+    def _pd_has_access_to_resource(self, graph, pd, resource):
+        """Check if a PD has direct access to a resource"""
+        for from_node, to_node, edge_data in graph.g.edges(data=True):
+            if from_node == pd and to_node == resource and edge_data.get('type') == 'HOLD':
+                return True
+        return False
+    
+    def _find_unused_pds(self, graph):
+        """Find PDs that have no outgoing edges (likely created for mediation but not connected yet)"""
+        unused_pds = []
+        pds = [node for node, data in graph.g.nodes(data=True) if data.get('type') == 'PD']
+        
+        for pd in pds:
+            outgoing_edges = 0
+            for from_node, to_node, edge_data in graph.g.edges(data=True):
+                if from_node == pd:
+                    outgoing_edges += 1
+            
+            if outgoing_edges == 0:
+                unused_pds.append(pd)
+        
+        return unused_pds
     
     def __str__(self):
         if self.transition_type == "primitive":
@@ -1317,9 +1641,14 @@ SCENARIOS = {
         constraints=[
             Constraint("requires_file_access", 1, "FILE", properties={"file_type": "any", "min_size_kb": 1}),
             Constraint("requires_file_access", 2, "FILE", properties={"file_type": "any", "min_size_kb": 1}),
-            # For now, let's just use prohibit_direct_hold to see if it helps mediation discovery
+            # Prohibit direct access to the shared resource
             Constraint("prohibit_direct_hold", 1, "FILE_1_3", properties={"constraint_type": "negative"}),
             Constraint("prohibit_direct_hold", 2, "FILE_1_3", properties={"constraint_type": "negative"}),
+            # New constraint: Both PDs must have access to FILE_1_3 (direct or indirect)
+            Constraint("requires_resource_access", 1, "FILE_1_3", properties={"access_type": "direct_or_indirect"}),
+            Constraint("requires_resource_access", 2, "FILE_1_3", properties={"access_type": "direct_or_indirect"}),
+            # Critical constraint: FILE_1_3 must exist in the graph (prevents removal)
+            Constraint("requires_resource_exists", None, "FILE_1_3", properties={"mandatory": True}),
         ],
         allowed_primitives=PRIMITIVES,  # All primitives allowed
         allowed_multistep=[],  # No multi-step transitions
@@ -1391,7 +1720,7 @@ def get_scenario(name):
 
 def _validate_scenario_constraints(scenario):
     """Validate that all constraint types in a scenario are supported by the implementation"""
-    supported_constraint_types = {"requires_file_access", "requires_communication", "prohibit_direct_hold", "requires_indirect_access"}
+    supported_constraint_types = {"requires_file_access", "requires_communication", "prohibit_direct_hold", "requires_indirect_access", "requires_resource_access", "requires_resource_exists"}
     
     for constraint in scenario.constraints:
         if constraint.constraint_type not in supported_constraint_types:

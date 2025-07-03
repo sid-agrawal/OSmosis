@@ -5,14 +5,47 @@ Comprehensive constraint validation for IsoSearch
 from generic_model import EdgeType
 
 
-def validate_all_constraints(graph, constraints):
+def validate_all_constraints(graph, constraints, mode="strict"):
     """
     Validate all constraints are satisfied in the current graph state
+    
+    Args:
+        graph: The graph to validate
+        constraints: List of constraints to check
+        mode: Validation mode
+            - "strict": All constraints must be satisfied (default)
+            - "exploration": Allow temporary violations of access constraints during multi-step exploration
+    
     Returns: (bool, list of violation messages)
     """
     violations = []
     
     for constraint in constraints:
+        # In exploration mode, be selective about access constraints
+        if mode == "exploration" and constraint.constraint_type in ["requires_resource_access", "requires_file_access"]:
+            # For resource access constraints, still enforce if the resource has NO holders at all
+            # This prevents the algorithm from thinking "no access" is a valid solution
+            if constraint.constraint_type == "requires_resource_access":
+                target_resource = constraint.resource_info
+                
+                # Check if the required resource has any holders
+                has_any_holder = False
+                for from_node, to_node, edge_data in graph.g.edges(data=True):
+                    if to_node == target_resource and edge_data.get('type') == 'HOLD':
+                        has_any_holder = True
+                        break
+                
+                # If resource has no holders, this violates the constraint even in exploration mode
+                if not has_any_holder:
+                    pd_string = f"PD_{constraint.pd_id}"
+                    violations.append(f"{pd_string} lacks any access to {target_resource} (resource has no holders)")
+                    continue
+            
+            # Skip other access validation during exploration for multi-step solutions
+            continue
+            
+        # Always enforce existence constraints (prevent resource removal)
+        # Always enforce prohibition constraints (prevent forbidden relationships)
         is_satisfied, message = validate_constraint(graph, constraint)
         if not is_satisfied:
             violations.append(message)
@@ -33,12 +66,18 @@ def validate_constraint(graph, constraint):
         return validate_prohibit_direct_hold(graph, constraint)
     elif constraint.constraint_type == "requires_indirect_access":
         return validate_requires_indirect_access(graph, constraint)
+    elif constraint.constraint_type == "requires_resource_access":
+        return validate_requires_resource_access(graph, constraint)
+    elif constraint.constraint_type == "requires_resource_exists":
+        return validate_requires_resource_exists(graph, constraint)
     else:
         return False, f"Unknown constraint type: {constraint.constraint_type}"
 
 
 def validate_requires_file_access(graph, constraint):
     """PD must have access to files matching the constraint"""
+    import json
+    
     pd_string = f"PD_{constraint.pd_id}"
     required_type = constraint.properties.get('file_type', 'any')
     min_size_kb = constraint.properties.get('min_size_kb', 0)
@@ -56,7 +95,6 @@ def validate_requires_file_access(graph, constraint):
                 if required_type == 'any':
                     has_required_type = True
                 else:
-                    import json
                     try:
                         extra = json.loads(node_data.get('extra', '{}'))
                         if extra.get('file_type', '').upper() == required_type.upper():
@@ -157,12 +195,89 @@ def validate_requires_indirect_access(graph, constraint):
     return True, f"{pd_string} has indirect access to {target_resource} through mediation"
 
 
+def validate_requires_resource_access(graph, constraint):
+    """
+    PD must have access to a specific resource (direct or indirect)
+    This constraint supports the access_type property:
+    - "direct": PD must have a direct HOLD edge to the resource
+    - "indirect": PD must have indirect access through REQUEST edges
+    - "direct_or_indirect": PD can have either direct or indirect access
+    """
+    pd_string = f"PD_{constraint.pd_id}"
+    target_resource = constraint.resource_info
+    access_type = constraint.properties.get('access_type', 'direct_or_indirect')
+    
+    # Check for direct access
+    has_direct_access = False
+    for from_node, to_node, edge_data in graph.g.edges(data=True):
+        if (from_node == pd_string and to_node == target_resource and 
+            edge_data.get('type') == 'HOLD'):
+            has_direct_access = True
+            break
+    
+    # Check for indirect access
+    has_indirect_access = False
+    
+    # Find all PDs that this PD has REQUEST edges to
+    requested_pds = []
+    for from_node, to_node, edge_data in graph.g.edges(data=True):
+        if from_node == pd_string and edge_data.get('type') == 'REQUEST':
+            requested_pds.append(to_node)
+    
+    # Check if any of those PDs hold the target resource
+    for mediator_pd in requested_pds:
+        for from_node, to_node, edge_data in graph.g.edges(data=True):
+            if (from_node == mediator_pd and to_node == target_resource and 
+                edge_data.get('type') == 'HOLD'):
+                has_indirect_access = True
+                break
+        if has_indirect_access:
+            break
+    
+    # Validate based on access_type
+    if access_type == "direct":
+        if not has_direct_access:
+            return False, f"{pd_string} lacks direct access to {target_resource}"
+        return True, f"{pd_string} has direct access to {target_resource}"
+    
+    elif access_type == "indirect":
+        if has_direct_access:
+            return False, f"{pd_string} has direct access to {target_resource} (should be indirect only)"
+        if not has_indirect_access:
+            return False, f"{pd_string} lacks indirect access to {target_resource}"
+        return True, f"{pd_string} has indirect access to {target_resource}"
+    
+    elif access_type == "direct_or_indirect":
+        if has_direct_access or has_indirect_access:
+            access_method = "direct" if has_direct_access else "indirect"
+            return True, f"{pd_string} has {access_method} access to {target_resource}"
+        else:
+            return False, f"{pd_string} lacks any access to {target_resource}"
+    
+    else:
+        return False, f"Unknown access_type '{access_type}' for requires_resource_access constraint"
+
+
+def validate_requires_resource_exists(graph, constraint):
+    """
+    Validate that a specific resource exists in the graph
+    This prevents removal of critical resources that must remain available
+    """
+    target_resource = constraint.resource_info
+    
+    # Check if the resource node exists in the graph
+    if target_resource in graph.g.nodes():
+        return True, f"Resource {target_resource} exists in the graph"
+    else:
+        return False, f"Required resource {target_resource} does not exist in the graph"
+
+
 def check_constraints_before_transformation(graph, constraints, transformation_type, params):
     """
     Check if a transformation would violate constraints
     Returns: (bool allowed, str reason)
     """
-    # For now, we mainly check prohibit_direct_hold
+    # Check prohibit_direct_hold constraints
     if transformation_type == "add_hold_edge":
         pd = params.get('pd', '')
         resource = params.get('resource', '')
@@ -174,7 +289,15 @@ def check_constraints_before_transformation(graph, constraints, transformation_t
                 if pd == pd_string and resource == prohibited_resource:
                     return False, f"Would violate prohibit_direct_hold constraint"
     
-    # TODO: Add more pre-transformation checks
+    # Check requires_resource_exists constraints (prevent resource removal)
+    if transformation_type == "remove_file_resource":
+        resource = params.get('resource', '')
+        
+        for constraint in constraints:
+            if constraint.constraint_type == "requires_resource_exists":
+                required_resource = constraint.resource_info
+                if resource == required_resource:
+                    return False, f"Cannot remove {resource}: required by exists constraint"
     
     return True, "Transformation allowed"
 
