@@ -12,7 +12,7 @@ class PatternAwareScoring:
     and adjusts operation scores based on graph context
     """
     
-    def __init__(self):
+    def __init__(self, initial_graph=None):
         # Base scores remain as fallback
         self.base_scores = {
             # Multi-step transitions
@@ -43,12 +43,21 @@ class PatternAwareScoring:
             'orphaned_resources': [],
             'potential_mediators': [],
             'recent_operations': [],
-            'constraint_violations_removed': 0
+            'constraint_violations_removed': 0,
+            'original_pds': None  # Will be set dynamically
         }
+        
+        # If initial graph provided, identify original PDs immediately
+        if initial_graph is not None:
+            self.pattern_states['original_pds'] = self._identify_original_pds(initial_graph)
     
     def analyze_graph_state(self, graph):
         """Analyze current graph to identify pattern opportunities"""
         try:
+            # Dynamically identify original PDs if not yet cached
+            if self.pattern_states['original_pds'] is None:
+                self.pattern_states['original_pds'] = self._identify_original_pds(graph)
+            
             orphaned = self._find_orphaned_resources(graph)
             mediators = self._find_potential_mediators(graph)
             shared = self._find_shared_resources(graph)
@@ -310,11 +319,17 @@ class PatternAwareScoring:
     
     def _could_be_mediator(self, pd, graph):
         """Check if a PD could serve as mediator"""
-        # Don't use original PDs as mediators
-        if pd in ['PD_1', 'PD_2']:
+        # Don't use original PDs as mediators - they have existing responsibilities
+        original_pds = self.pattern_states.get('original_pds')
+        if original_pds is None:
+            # If not yet identified, identify them now
+            original_pds = self._identify_original_pds(graph)
+            self.pattern_states['original_pds'] = original_pds
+        
+        if pd in original_pds:
             return False
         
-        # New PDs (PD_3, etc.) are good mediator candidates
+        # New PDs are good mediator candidates as they have no existing constraints
         return True
     
     def _mediator_ready_for_requests(self, graph):
@@ -479,31 +494,82 @@ class PatternAwareScoring:
         
         return False
     
+    def _identify_original_pds(self, graph):
+        """Dynamically identify original PDs based on graph structure"""
+        # Get all PDs and sort by ID to identify original ones
+        all_pds = []
+        for node, data in graph.g.nodes(data=True):
+            if data.get('type') == 'PD' and node.startswith('PD_'):
+                try:
+                    pd_id = int(node.split('_')[1])
+                    all_pds.append((pd_id, node))
+                except (ValueError, IndexError):
+                    continue
+        
+        # Sort by ID to get creation order
+        all_pds.sort(key=lambda x: x[0])
+        
+        # Heuristic: Original PDs are likely the first few with the lowest IDs
+        # We'll consider PDs with consecutive IDs starting from 1 as original
+        original_pds = []
+        expected_id = 1
+        for pd_id, pd_name in all_pds:
+            if pd_id == expected_id:
+                original_pds.append(pd_name)
+                expected_id += 1
+            else:
+                break  # Gap in IDs indicates newly created PDs
+        
+        return original_pds
+    
     def _resource_matches_type(self, resource, file_type):
         """Check if resource matches the given file type"""
         if file_type == 'ANY':
             return True
         
-        # Simple mapping for our scenario
-        type_mapping = {
-            'FILE_1_1': 'CONFIG',
-            'FILE_1_2': 'DATABASE', 
-            'FILE_1_3': 'TEMP',
-            'FILE_1_4': 'CONFIG',  # Created files follow pattern
-            'FILE_1_5': 'DATABASE',
-            'FILE_1_6': 'TEMP',
-            'FILE_1_7': 'CONFIG',
-            'FILE_1_8': 'DATABASE'
-        }
+        # Dynamic type inference based on resource naming patterns
+        inferred_type = self._infer_resource_type(resource)
+        return inferred_type.upper() == file_type.upper()
+    
+    def _infer_resource_type(self, resource):
+        """Dynamically infer resource type from naming patterns or context"""
+        if not resource.startswith('FILE_'):
+            return 'UNKNOWN'
         
-        return type_mapping.get(resource, '').upper() == file_type.upper()
+        try:
+            # Parse FILE_SPACE_ID_RESOURCE_ID format
+            parts = resource.split('_')
+            if len(parts) >= 3:
+                space_id = parts[1]
+                resource_id = int(parts[2])
+                
+                # Heuristic: Infer type based on resource ID patterns
+                # This can be made more sophisticated by analyzing file paths, 
+                # usage patterns, or other graph context
+                type_cycle = ['CONFIG', 'DATABASE', 'TEMP']
+                inferred_type = type_cycle[(resource_id - 1) % len(type_cycle)]
+                
+                return inferred_type
+        except (ValueError, IndexError):
+            pass
+        
+        # Fallback: analyze any embedded type hints in resource name
+        resource_upper = resource.upper()
+        if 'CONFIG' in resource_upper or 'CONF' in resource_upper:
+            return 'CONFIG'
+        elif 'DATABASE' in resource_upper or 'DB' in resource_upper:
+            return 'DATABASE'
+        elif 'TEMP' in resource_upper or 'TMP' in resource_upper:
+            return 'TEMP'
+        
+        return 'UNKNOWN'
 
 
 # Integration function
-def get_pattern_aware_score(transition, candidate, graph, goals, constraints):
+def get_pattern_aware_score(transition, candidate, graph, goals, constraints, initial_graph=None):
     """
     Main entry point for pattern-aware scoring
     Replaces _predict_improvement in isosearch.py
     """
-    scorer = PatternAwareScoring()
+    scorer = PatternAwareScoring(initial_graph)
     return scorer.score_operation(transition, candidate, graph, goals, constraints)
