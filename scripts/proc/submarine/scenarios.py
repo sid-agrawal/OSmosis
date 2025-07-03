@@ -1667,6 +1667,29 @@ SCENARIOS = {
         allowed_primitives=["remove_hold_edge"],  # Only edge removal for ASR reduction
         allowed_multistep=[],  # No multi-step allowed
         graph_builder=build_high_attack_surface_graph
+    ),
+    
+    "attack_surface_reduction_enhanced": Scenario(
+        name="Attack Surface Reduction Enhanced",
+        description="Same high attack surface system as attack_surface_reduction but with all primitives enabled for pattern-aware optimization",
+        goals=[
+            Goal("ASR", 2.5, "minimize")   # System-wide ASR goal
+        ],
+        constraints=[
+            # Service-specific resource requirements
+            Constraint("requires_file_access", 1, "FILE", properties={"file_type": "TEMP", "min_size_kb": 10}),  # Web frontend
+            Constraint("requires_file_access", 2, "FILE", properties={"file_type": "any", "min_size_kb": 15}),   # API server
+            Constraint("requires_file_access", 3, "FILE", properties={"file_type": "any", "min_size_kb": 5}),    # Database
+            Constraint("requires_file_access", 4, "FILE", properties={"file_type": "CACHE", "min_size_kb": 5}),    # Admin panel
+            # Service communication requirements
+            Constraint("requires_communication", 1, "REQUEST", target_pd=2),  # Web -> API
+            Constraint("requires_communication", 2, "REQUEST", target_pd=3),  # API -> DB
+            Constraint("requires_communication", 4, "REQUEST", target_pd=1),  # Admin -> Web
+            Constraint("requires_communication", 4, "REQUEST", target_pd=2),  # Admin -> API
+        ],
+        allowed_primitives=PRIMITIVES,  # All atomic graph operations enabled
+        allowed_multistep=[],  # No multi-step allowed
+        graph_builder=build_high_attack_surface_graph
     )
 }
 
