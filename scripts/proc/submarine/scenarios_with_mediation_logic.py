@@ -206,45 +206,52 @@ class Transition:
         return alternative_count > 0
     
     def _find_add_pd_candidates(self, graph, constraints):
-        """Simplified PD addition - let mediation emerge naturally"""
+        """Find opportunities to add new PDs, especially for mediation"""
         candidates = []
         
-        # SIMPLIFIED APPROACH: Check if we have constraint violations that might benefit from new PDs
-        # Let the scoring system and constraints naturally guide toward mediation
+        # Strategy 1: Detect orphaned resources that need mediators
+        orphaned_resources = self._find_orphaned_resources_needing_mediation(graph, constraints)
         
-        from constraint_validation import validate_constraint
-        has_violations = False
-        violation_count = 0
+        # Only suggest adding NEW mediator PDs if we don't already have unused PDs
+        existing_unused_pds = self._find_unused_pds(graph)
         
-        for constraint in constraints:
-            try:
-                is_satisfied, _ = validate_constraint(graph, constraint)
-                if not is_satisfied:
-                    has_violations = True
-                    violation_count += 1
-            except:
-                # If validation fails, assume there might be violations
-                has_violations = True
-                violation_count += 1
+        for resource_info in orphaned_resources:
+            # If we already have unused PDs, prioritize using them instead of creating new ones
+            if existing_unused_pds:
+                constraint_relevance = 0.3  # Lower priority - prefer using existing PDs
+                description = f"add mediator PD for orphaned resource {resource_info['resource']} (consider using existing PDs first)"
+            else:
+                constraint_relevance = 0.8  # High priority - no existing PDs available
+                description = f"add mediator PD for orphaned resource {resource_info['resource']}"
+            
+            candidates.append({
+                'param_values': {'pd_type': 'mediator'},
+                'target_description': description,
+                'mediation_context': resource_info,
+                'constraint_relevance': constraint_relevance,
+                'addresses_violation': True
+            })
         
-        # Always suggest adding a PD, but with different priorities based on violations
-        if has_violations:
-            # Higher priority when violations exist - system needs help
-            constraint_relevance = 0.7
-            description = f"add new protection domain to help resolve {violation_count} constraint violation(s)"
-            addresses_violation = True
-        else:
-            # Lower priority when no violations - just system expansion
-            constraint_relevance = 0.3
-            description = "add new protection domain for system expansion"
-            addresses_violation = False
+        # Strategy 2: Detect shared resources that could benefit from mediation
+        shared_resources = self._find_shared_resources_needing_mediation(graph, constraints)
         
-        candidates.append({
-            'param_values': {'pd_type': 'new_component'},
-            'target_description': description,
-            'constraint_relevance': constraint_relevance,
-            'addresses_violation': addresses_violation
-        })
+        for resource_info in shared_resources:
+            candidates.append({
+                'param_values': {'pd_type': 'mediator'},
+                'target_description': f"add mediator PD for shared resource {resource_info['resource']}",
+                'mediation_context': resource_info,
+                'constraint_relevance': 0.6,  # Medium relevance
+                'addresses_violation': False
+            })
+        
+        # Strategy 3: General PD addition (fallback)
+        if not candidates:  # Only if no mediation opportunities found
+            candidates.append({
+                'param_values': {'pd_type': 'new_component'},
+                'target_description': "add new protection domain",
+                'constraint_relevance': 0.2,  # Low relevance
+                'addresses_violation': False
+            })
         
         return candidates
     
@@ -390,7 +397,7 @@ class Transition:
         return potential
     
     def _find_add_hold_edge_candidates(self, graph, constraints):
-        """Simplified HOLD edge addition - minimal special logic"""
+        """Find opportunities to add HOLD edges (PD -> Resource connections), prioritizing mediation patterns"""
         candidates = []
         
         # Find PDs that could connect to existing resources
@@ -398,26 +405,36 @@ class Transition:
         resources = [node for node, data in graph.g.nodes(data=True) 
                     if data.get('type') == 'RESOURCE' and data.get('data') == 'FILE']
         
+        # Strategy 1: HIGHEST PRIORITY - Connect newly created PDs to orphaned resources they could mediate
         for pd in pds:
             current_resources = self._get_pd_held_resources(graph, pd)
             
             for resource in resources:
                 if resource not in current_resources:
+                    # Check if this connection would solve a constraint violation
+                    relevance_score = self._calculate_mediation_relevance(graph, pd, resource, constraints)
+                    
                     # Check prohibit_direct_hold constraints
                     prohibited = self._is_connection_prohibited(pd, resource, constraints)
                     
                     if not prohibited:
-                        # Simplified scoring - no complex mediation logic
-                        constraint_relevance = 0.4  # Standard score for all connections
+                        constraint_relevance = 0.1  # Default low relevance
                         addresses_violation = False
                         description = f"connect {pd} to {resource}"
                         
-                        # Significant boost for orphaned resources needed for constraints
-                        holders = self._get_resource_holders(graph, resource)
-                        if len(holders) == 0:
-                            # Check if this orphaned resource is needed by constraint violations
-                            constraint_relevance = 0.8  # Higher priority for orphaned resources
+                        # BOOST for mediation patterns
+                        if relevance_score > 0.5:
+                            constraint_relevance = relevance_score
+                            addresses_violation = True
+                            description = f"connect mediator {pd} to orphaned resource {resource}"
+                        elif self._is_orphaned_resource(graph, resource):
+                            constraint_relevance = 0.7
+                            addresses_violation = True  
                             description = f"connect {pd} to orphaned resource {resource}"
+                        elif self._would_enable_indirect_access(graph, pd, resource, constraints):
+                            constraint_relevance = 0.6
+                            addresses_violation = True
+                            description = f"enable indirect access: connect {pd} to {resource}"
                         
                         candidates.append({
                             'param_values': {'pd': pd, 'resource': resource, 'permission': 'R'},
@@ -537,7 +554,7 @@ class Transition:
         return candidates
     
     def _find_add_request_edge_candidates(self, graph, constraints):
-        """Simplified REQUEST edge addition - let patterns emerge naturally"""
+        """Find opportunities to add REQUEST edges (PD -> PD authority), prioritizing mediation patterns"""
         candidates = []
         
         pds = [node for node, data in graph.g.nodes(data=True) if data.get('type') == 'PD']
@@ -549,16 +566,9 @@ class Transition:
                     if self._request_edge_exists(graph, from_pd, to_pd):
                         continue
                     
-                    # Simplified scoring - no complex mediation detection
-                    constraint_relevance = 0.2  # Lower priority for authority relationships
-                    description = f"add authority relationship: {from_pd} -> {to_pd}"
-                    addresses_violation = False
-                    
-                    # Small boost if to_pd has resources that from_pd might need
-                    to_pd_resources = self._get_pd_held_resources(graph, to_pd)
-                    if to_pd_resources:
-                        constraint_relevance = 0.3  # Slight preference for potential indirect access
-                        description = f"enable indirect access: {from_pd} -> {to_pd}"
+                    # Calculate constraint relevance and whether this addresses violations
+                    constraint_relevance, addresses_violation, description = self._analyze_request_edge_relevance(
+                        graph, from_pd, to_pd, constraints)
                     
                     candidates.append({
                         'param_values': {'from_pd': from_pd, 'to_pd': to_pd},

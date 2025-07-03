@@ -389,10 +389,12 @@ def GoalsMet(metrics, goals):
     return True
 
 
-def GenerateCandidate(graph, constraints, transitions, goals):
+def GenerateCandidate(graph, constraints, transitions, goals, last_transition_type=None):
     """
     Generate a new candidate graph by applying a transition
     Uses smart selection to choose the best node/edge for transformation
+    Args:
+        last_transition_type: The transition type used in the previous iteration (to avoid repetition)
     Returns: tuple of (new graph or None, candidate_info dict)
     """
     import copy
@@ -436,10 +438,32 @@ def GenerateCandidate(graph, constraints, transitions, goals):
             return base_improvement + constraint_relevance + 0.5
         return base_improvement
     
+    # Filter out candidates of the same type as last iteration to force exploration diversity
+    if last_transition_type is not None:
+        original_count = len(transformation_candidates)
+        same_type_candidates = [c for c in transformation_candidates if c['transition_name'] == last_transition_type]
+        different_type_candidates = [c for c in transformation_candidates if c['transition_name'] != last_transition_type]
+        
+        if different_type_candidates:
+            # Only use different types if available
+            transformation_candidates = different_type_candidates
+            print(f"  🚫 Filtered out {len(same_type_candidates)} '{last_transition_type}' candidates (avoiding repetition)")
+        else:
+            # If no different types available, keep all candidates
+            print(f"  ⚠️  No alternatives to '{last_transition_type}', keeping all {original_count} candidates")
+    
     transformation_candidates.sort(key=candidate_priority, reverse=True)
     
-    # Try the best transformation candidate
-    best_candidate = transformation_candidates[0]
+    # Add exploration diversity - sometimes pick from top candidates instead of always the best
+    import random
+    exploration_factor = 0.15  # 15% chance to explore alternatives
+    if len(transformation_candidates) > 1 and random.random() < exploration_factor:
+        top_n = min(3, len(transformation_candidates))
+        selected_index = random.randint(0, top_n - 1)
+        best_candidate = transformation_candidates[selected_index]
+        print(f"  🎲 Exploration: selecting candidate #{selected_index + 1} instead of best")
+    else:
+        best_candidate = transformation_candidates[0]
     candidate_info['selected_candidate'] = best_candidate
     candidate_info['discarded_candidates'] = transformation_candidates[1:]  # All except the best
     
@@ -1252,6 +1276,192 @@ def _add_mediator_between_pds(graph, shared_resource, sharers):
                                            ResourceType.FILE, space_id)
 
 
+def BeamSearchExploration(scenario, beam_width=3):
+    """
+    Beam search implementation for design space exploration
+    Explores multiple promising paths simultaneously instead of greedy single-path
+    
+    Args:
+        scenario - Scenario object with goals, constraints, transitions, and graph builder
+        beam_width - Number of top states to keep at each iteration (default: 3)
+    Returns: list of explored mechanisms
+    """
+    import copy
+    
+    # Step 1: Initialize components from scenario
+    goals = scenario.goals
+    constraints = scenario.constraints
+    transitions = scenario.get_allowed_transitions()
+    initial_graph = scenario.build_graph()
+    
+    print(f"🔍 Starting beam search exploration (beam_width={beam_width})")
+    print(f"   Goals: {len(goals)}, Constraints: {len(constraints)}, Transitions: {len(transitions)}")
+    
+    # Show initial graph structure
+    print(f"\n📊 Initial graph:")
+    _print_graph_arrows(initial_graph)
+    
+    # Initialize beam with initial state
+    class BeamState:
+        def __init__(self, graph, iteration=0, path_description="initial", score=0.0, parent=None):
+            self.graph = graph
+            self.iteration = iteration
+            self.path_description = path_description
+            self.score = score
+            self.parent = parent
+            self.path_history = [] if parent is None else parent.path_history + [path_description]
+        
+        def __str__(self):
+            return f"BeamState(iter={self.iteration}, score={self.score:.3f}, path={' → '.join(self.path_history[-3:])})"
+    
+    # Initialize beam
+    initial_state = BeamState(initial_graph, 0, "initial")
+    current_beam = [initial_state]
+    
+    # Track all discovered mechanisms
+    explored_mechanisms = []
+    max_iterations = 8  # Reduced for beam search to manage complexity
+    
+    # Step 2: Main beam search loop
+    for iteration in range(1, max_iterations + 1):
+        print(f"\n{'='*60}")
+        print(f"🔍 Beam Search Iteration {iteration}/{max_iterations}")
+        print(f"📊 Current beam size: {len(current_beam)}")
+        
+        # Show current beam states
+        for i, state in enumerate(current_beam):
+            print(f"  Beam[{i}]: {state}")
+        
+        next_beam = []
+        total_candidates = 0
+        
+        # Step 3: Expand each state in current beam
+        for beam_idx, state in enumerate(current_beam):
+            print(f"\n🌟 Expanding Beam[{beam_idx}] (score: {state.score:.3f})")
+            
+            # Check constraint satisfaction first - must be satisfied before goals matter
+            from constraint_validation import validate_all_constraints
+            constraints_satisfied, violations = validate_all_constraints(state.graph, constraints, mode="strict")
+            
+            if not constraints_satisfied:
+                print(f"  ⚠️  Constraints violated: {'; '.join(violations[:2])}{'...' if len(violations) > 2 else ''}")
+                # Continue expansion - need to fix constraint violations
+            else:
+                # Only check goals if constraints are satisfied
+                current_metrics = ComputeMetrics(state.graph)
+                goals_met = GoalsMet(current_metrics, goals)
+                
+                if goals_met:
+                    print(f"  🎯 Goals met with constraints satisfied! Saving mechanism.")
+                    mechanism = {
+                        'graph': copy.deepcopy(state.graph),
+                        'metrics': current_metrics,
+                        'iteration': iteration,
+                        'beam_path': state.path_history,
+                        'discovery_method': 'beam_search',
+                        'constraints_satisfied': True
+                    }
+                    explored_mechanisms.append(mechanism)
+                    continue  # Don't expand states that already meet goals
+            
+            # Generate candidates for this state
+            candidate, candidate_info = GenerateCandidate(
+                state.graph, constraints, transitions, goals, 
+                last_transition_type=state.path_history[-1] if state.path_history else None
+            )
+            
+            if candidate is None:
+                print(f"  ❌ No valid candidates for Beam[{beam_idx}]")
+                continue
+            
+            # Get all candidates (not just the selected one)
+            all_candidates = candidate_info.get('all_candidates', [])
+            print(f"  📋 Generated {len(all_candidates)} candidate(s)")
+            
+            # Create new beam states for top candidates
+            # Take more candidates per state to ensure diversity
+            candidates_per_state = max(1, beam_width // len(current_beam))
+            top_candidates = sorted(all_candidates, 
+                                  key=lambda x: x.get('predicted_improvement', 0), 
+                                  reverse=True)[:candidates_per_state + 1]
+            
+            for candidate_data in top_candidates:
+                # Apply transformation to create new state
+                try:
+                    new_graph = copy.deepcopy(state.graph)
+                    
+                    # Find the transition and apply it
+                    transition_name = candidate_data['transition_name']
+                    param_values = candidate_data.get('param_values', {})
+                    
+                    # Find transition object
+                    transition = None
+                    for t in transitions:
+                        if t.name == transition_name:
+                            transition = t
+                            break
+                    
+                    if transition is None:
+                        print(f"    ❌ Transition {transition_name} not found")
+                        continue
+                    
+                    # Apply transformation
+                    success = transition.apply(new_graph, param_values)
+                    
+                    if success:
+                        # Calculate state score (could be more sophisticated)
+                        new_metrics = ComputeMetrics(new_graph)
+                        state_score = candidate_data.get('predicted_improvement', 0)
+                        
+                        # Create new beam state
+                        new_state = BeamState(
+                            graph=new_graph,
+                            iteration=iteration,
+                            path_description=f"{transition_name}({candidate_data.get('target_description', '')})",
+                            score=state_score,
+                            parent=state
+                        )
+                        
+                        next_beam.append(new_state)
+                        total_candidates += 1
+                        
+                        print(f"    ✅ Added candidate: {transition_name} (score: {state_score:.3f})")
+                    else:
+                        print(f"    ❌ Failed to apply {transition_name}")
+                        
+                except Exception as e:
+                    print(f"    ❌ Error applying candidate: {e}")
+                    continue
+        
+        # Step 4: Select top states for next beam
+        if not next_beam:
+            print(f"\n🛑 No valid candidates generated, stopping exploration")
+            break
+        
+        # Sort by score and keep top beam_width states
+        next_beam.sort(key=lambda x: x.score, reverse=True)
+        current_beam = next_beam[:beam_width]
+        
+        print(f"\n📊 Next beam ({len(current_beam)} states):")
+        for i, state in enumerate(current_beam):
+            print(f"  Beam[{i}]: {state}")
+        
+        print(f"💡 Total candidates generated: {total_candidates}")
+        print(f"🎯 Mechanisms discovered so far: {len(explored_mechanisms)}")
+    
+    print(f"\n🏁 Beam search complete!")
+    print(f"🎯 Total mechanisms discovered: {len(explored_mechanisms)}")
+    
+    # Show final beam states
+    if current_beam:
+        print(f"\n📊 Final beam states:")
+        for i, state in enumerate(current_beam):
+            print(f"  Final[{i}]: {state}")
+            print(f"    Path: {' → '.join(state.path_history)}")
+    
+    return explored_mechanisms
+
+
 def DesignSpaceExplorationWithVisualization(scenario, visualizer=None, tree_visualizer=None):
     """
     Main IsoSearch algorithm for exploring design space with optional visualization
@@ -1294,13 +1504,14 @@ def DesignSpaceExplorationWithVisualization(scenario, visualizer=None, tree_visu
         tree_visualizer.add_decision_node(0, curGraph, initial_metrics, [])
     
     # Step 2: Main exploration loop (from pseudocode line 8)
-    maxIterations = 5  # Keep it small for testing
+    maxIterations = 10  # More iterations for emergent discovery
+    last_transition_type = None  # Track last transition to avoid repetition
     
     for i in range(1, maxIterations + 1):
         print(f"Iteration {i}/{maxIterations}")
         
         # Step 3: Generate candidate (from pseudocode line 9-10)
-        candidate, candidate_info = GenerateCandidate(curGraph, constraints, transitions, goals)
+        candidate, candidate_info = GenerateCandidate(curGraph, constraints, transitions, goals, last_transition_type)
         
         # Track exploration decisions
         iteration_info = {
@@ -1389,6 +1600,10 @@ def DesignSpaceExplorationWithVisualization(scenario, visualizer=None, tree_visu
         # Step 7: Update current graph (from pseudocode line 18)
         curGraph = candidate
         
+        # Update last transition type to avoid repetition
+        if candidate_info['selected_candidate']:
+            last_transition_type = candidate_info['selected_candidate']['transition_name']
+        
         # Show graph structure after this iteration
         print(f"\n📊 Graph after iteration {i}:")
         _print_graph_arrows(curGraph)
@@ -1440,13 +1655,14 @@ def DesignSpaceExploration(scenario):
     _print_graph_arrows(curGraph)
     
     # Step 2: Main exploration loop (from pseudocode line 8)
-    maxIterations = 5  # Keep it small for testing
+    maxIterations = 10  # More iterations for emergent discovery
+    last_transition_type = None  # Track last transition to avoid repetition
     
     for i in range(1, maxIterations + 1):
         print(f"Iteration {i}/{maxIterations}")
         
         # Step 3: Generate candidate (from pseudocode line 9-10)
-        candidate, candidate_info = GenerateCandidate(curGraph, constraints, transitions, goals)
+        candidate, candidate_info = GenerateCandidate(curGraph, constraints, transitions, goals, last_transition_type)
         
         # Track exploration decisions
         iteration_info = {
@@ -1493,6 +1709,10 @@ def DesignSpaceExploration(scenario):
         
         # Step 8: Update current graph for next iteration (from pseudocode line 19)
         curGraph = candidate
+        
+        # Update last transition type to avoid repetition
+        if candidate_info['selected_candidate']:
+            last_transition_type = candidate_info['selected_candidate']['transition_name']
         
         # Add iteration info to summary
         exploration_summary['iterations'].append(iteration_info)
@@ -1912,7 +2132,11 @@ def run_scenario(scenario_name, enable_visualization=False):
         
         # Run the exploration
         print(f"\n=== Exploring {scenario.name} ===")
-        result = DesignSpaceExplorationWithVisualization(scenario, visualizer, tree_visualizer)
+        if args.beam_search:
+            print(f"🔍 Using beam search (width={args.beam_width})")
+            result = BeamSearchExploration(scenario, beam_width=args.beam_width)
+        else:
+            result = DesignSpaceExplorationWithVisualization(scenario, visualizer, tree_visualizer)
         
         # Generate visualization if enabled
         if enable_visualization:
@@ -2037,6 +2261,19 @@ Examples:
         '--visualize', '-z',
         action='store_true',
         help='Generate HTML visualizations: timeline view and decision tree showing OSmosis graph states'
+    )
+    
+    parser.add_argument(
+        '--beam-search',
+        action='store_true',
+        help='Use beam search instead of greedy search for exploration'
+    )
+    
+    parser.add_argument(
+        '--beam-width',
+        type=int,
+        default=3,
+        help='Beam width for beam search (default: 3)'
     )
     
     parser.add_argument(
