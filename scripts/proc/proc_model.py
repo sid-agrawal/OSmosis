@@ -194,10 +194,10 @@ def run_process(name: str, start_type: ProcessStartType = False) -> tuple[int, i
         cmd = args[2]
         docker_cmd(cmd="rm", container_name=container_name)
 
-        # Docker Run 
+        # Docker Run
         docker_cmd(cmd="run", container_name=container_name, exec_cmd=cmd, image=image)
- 
-        # Docker Inspect to get the PID 
+
+        # Docker Inspect to get the PID
         inspect_output = docker_cmd("inspect", container_name)
         inspect_json_dict = json.loads(inspect_output)
         pid = inspect_json_dict[0]["State"]["Pid"]
@@ -306,8 +306,8 @@ def extract_mountinfo_for_pid(data: ProcFsData, pid: int, should_print: bool = F
     """
     Show each mount point as a resource, which the mount_ns as the resource_space.
         - For overlayFS and ext4, show host dirs.
-        - For other, show that it is some kernel-data resource. 
-    
+        - For other, show that it is some kernel-data resource.
+
     1. What is the resource?
         A. It is the mount/dir
     2. What is the resource space ?
@@ -320,7 +320,7 @@ def extract_mountinfo_for_pid(data: ProcFsData, pid: int, should_print: bool = F
         A. Or kernel internal state resource
             - Cannot say anything about psuedo FS
     4. What does the follwing map to:
-        A. /proc/pid        --> PID resource 
+        A. /proc/pid        --> PID resource
         A. /proc/sys        --> Generic Kernel Resource
         A. /proc/sys/kernel --> Generic Kernel Resource
         A. /sys/kernel      --> Generic Kernel Resource
@@ -336,7 +336,7 @@ def extract_mountinfo_for_pid(data: ProcFsData, pid: int, should_print: bool = F
     data.procs[pid].pid_mounts = read_mountinfo_file(pid, True)
 
 def extract_cgroups_for_pid(data: ProcFsData, pid: int, should_print: bool = False):
-    
+
     task = pfs_obj.get_task(pid)
     x = task.get_cgroups()
     for y in x:
@@ -564,7 +564,7 @@ def extract_from_status(data: ProcFsData, pid: int, should_print=False):
 
     data.procs[pid].uid_effective = status.uid.effective
     data.procs[pid].gid_effective = status.gid.effective
-    
+
     data.procs[pid].cap_eff = status.cap_eff.raw
 
     print(data.procs[pid].pid_in_ns)
@@ -632,8 +632,8 @@ def extract_all_process_data(data: ProcFsData, should_print=False):
 
         if should_print:
             print(f"\033[92m---- Extracted process{idx} {host_pid}\033[0m")
-    
-    
+
+
 
 def extract_process_data(data: ProcFsData, pid: int, name: str, should_print=False):
     """
@@ -762,7 +762,7 @@ def extract_all_namespaces(data_main, should_print=False):
             (ns_pid[0], parent_ns_id),
             (ns_pid[1], child_ns_id)
         ]
-    
+
     # Helper function for Mount NS
     def create_mnt_ns_generic_data(pid):
         pass
@@ -841,7 +841,7 @@ def do_proc_model(args):
         print(f"{y.subsys_name} {y.hierarchy} . {y.num_cgroups}  {y.enabled}")
 
 
-    
+
     data_main = ProcFsData()
     if args.guest:
         data_main.os_name = "Guest Linux"
@@ -876,7 +876,7 @@ def do_proc_model(args):
             p = psutil.Process(args.pid)
             extract_process_data(data_main, args.pid, p.name(), False)
         else:
-            # We add this delay so that the gettimeofday call in hello_static 
+            # We add this delay so that the gettimeofday call in hello_static
             # gets a chance to run
             time.sleep(2)
             for (name, _), pid in zip(to_run, pids):
