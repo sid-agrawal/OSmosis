@@ -30,6 +30,7 @@ from procfs_data import (
 import sys
 import argparse
 import pexpect
+import functools
 
 # PFS Setup
 sys.path.append("pfs/lib")
@@ -41,6 +42,20 @@ pfs_obj = pypfs.procfs()  # Interface to the PFS library
 ### CONFIGURATION ###
 print_logs = False
 
+def timeit(func):
+    """
+    Decorator to measure the time taken by a function.
+    """
+
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        start = time.time()
+        result = func(*args, **kwargs)
+        end = time.time()
+        print(f"Function '{func.__name__}' took {end - start:.4f} seconds")
+        return result
+
+    return wrapper
 
 class ProcessStartType(Enum):
     """
@@ -441,6 +456,7 @@ def assert_increasing_vaddrs(results):
         prev_va = curr_va
 
 
+@timeit
 def read_pagemap_file(pid: int, should_print: bool = False) -> list[PageMapObj]:
     """
     Parse a /proc/pid/pagemaps file
@@ -471,7 +487,7 @@ def read_pagemap_file(pid: int, should_print: bool = False) -> list[PageMapObj]:
 
     return results
 
-
+@timeit
 def extract_memory_data(data: ProcFsData, pid: int, should_print=False):
     """
     Get the VMR, PMR, and Device data for a particular process
@@ -861,10 +877,10 @@ def do_proc_model(args):
     # Extract Info for all the PIDs
     #############################################
     # This is system Wide
-    extract_all_namespaces(data_main, True)
-    extract_all_users(data_main, True)
-    extract_all_groups(data_main, True)
-    extract_all_user_groups(data_main, True)
+    # extract_all_namespaces(data_main, True)
+    # extract_all_users(data_main, True)
+    # extract_all_groups(data_main, True)
+    # extract_all_user_groups(data_main, True)
     # exit(1)
 
     # This is for the processe of interest
