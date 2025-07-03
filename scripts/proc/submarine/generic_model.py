@@ -146,6 +146,9 @@ class ModelGraph:
         :return: the resource ID
         """
         if res_id is None:
+            # Initialize counter if it doesn't exist
+            if space_id not in self.resource_counters:
+                self.resource_counters[space_id] = 0
             self.resource_counters[space_id] += 1
             res_id = self.resource_counters[space_id]
 

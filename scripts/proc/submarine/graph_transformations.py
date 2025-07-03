@@ -139,6 +139,24 @@ class EdgeTransformations:
         return False
     
     @staticmethod
+    def add_edge(graph: ModelGraph, from_node: str, to_node: str, edge_type: EdgeType, 
+                 data: str = "", extra: str = "") -> bool:
+        """Add a generic edge between nodes"""
+        try:
+            # Ensure both nodes exist
+            if from_node not in graph.g.nodes or to_node not in graph.g.nodes:
+                return False
+            
+            # Add the edge
+            graph.g.add_edge(from_node, to_node, 
+                           type=edge_type.name, 
+                           data=data, 
+                           extra=extra)
+            return True
+        except Exception:
+            return False
+    
+    @staticmethod
     def remove_edge(graph: ModelGraph, from_node: str, to_node: str, 
                    edge_type: Optional[EdgeType] = None) -> bool:
         """Remove specific edge between nodes"""

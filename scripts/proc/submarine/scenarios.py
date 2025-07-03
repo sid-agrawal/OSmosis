@@ -680,7 +680,12 @@ class Transition:
             elif self.name == "add_file_resource":
                 from graph_transformations import NodeTransformations
                 from generic_model import FileType
-                file_type = getattr(FileType, param_values['file_type'])
+                
+                try:
+                    file_type = getattr(FileType, param_values['file_type'])
+                except AttributeError:
+                    print(f"Error: Invalid file_type '{param_values['file_type']}'. Available: {[ft.name for ft in FileType]}")
+                    return False
                 
                 # Extract file space ID from node name (e.g., 'FILE_SPACE_1' -> 1)
                 file_space_name = param_values['file_space']
@@ -689,14 +694,14 @@ class Transition:
                 else:
                     file_space_id = 1  # Default
                 
-                NodeTransformations.add_file_resource(
+                result = NodeTransformations.add_file_resource(
                     graph,
                     file_space_id,
                     file_type,
                     param_values['file_path'],
                     param_values.get('file_size', 1024)
                 )
-                return True
+                return result is not None
             elif self.name == "remove_file_resource":
                 from graph_transformations import NodeTransformations
                 import json
@@ -728,12 +733,11 @@ class Transition:
                                 if other_extra.get('file_type') == resource_file_type:
                                     other_resources_of_type.append(to_node)
                         
-                        # If this PD has no other resources of this type, check if it's required by constraints
+                        # If this PD has no other resources of this type, allow removal but warn
                         if len(other_resources_of_type) == 0:
-                            # This would leave the PD without any files of this type
-                            # For now, prevent removal if it would violate file access (conservative approach)
-                            print(f"Cannot remove {resource}: {holder} would lose access to {resource_file_type} files")
-                            return False
+                            # Allow removal for exploration purposes, but note the impact
+                            print(f"Warning: Removing {resource} will leave {holder} without {resource_file_type} files")
+                            # Continue with removal - let constraint validation catch violations later
                 
                 # If we get here, removal is safe
                 # Remove all edges connected to this resource
@@ -841,6 +845,8 @@ class Transition:
                 return False
         except Exception as e:
             print(f"Error applying primitive {self.name}: {e}")
+            import traceback
+            traceback.print_exc()
             return False
     
     def _apply_multistep(self, graph, param_values):
