@@ -63,8 +63,14 @@ class MediationPatternDetector(PatternDetector):
         
         # Phase 2: Connect mediators to orphaned resources
         if operation.name == "add_hold_edge":
-            to_resource = candidate.get('to_node') or candidate.get('resource')
-            from_pd = candidate.get('from_node') or candidate.get('pd')
+            # Extract parameters from param_values
+            param_values = candidate.get('param_values', {})
+            to_resource = param_values.get('to_node') or param_values.get('resource')
+            from_pd = param_values.get('from_node') or param_values.get('pd')
+            
+            # Skip if we don't have valid parameters
+            if not to_resource or not from_pd:
+                return None
             
             if to_resource in orphaned_resources:
                 # Check if connecting PD could be a mediator
@@ -82,8 +88,9 @@ class MediationPatternDetector(PatternDetector):
         
         # Phase 4: Remove shared edges to create orphaned resources
         if operation.name == "remove_hold_edge":
-            to_resource = candidate.get('to_node') or candidate.get('resource')
-            if self._is_shared_resource(to_resource, context):
+            param_values = candidate.get('param_values', {})
+            to_resource = param_values.get('to_node') or param_values.get('resource')
+            if to_resource and self._is_shared_resource(to_resource, context):
                 return 1.0  # Medium priority for creating mediation opportunities
         
         return None
@@ -107,8 +114,9 @@ class MediationPatternDetector(PatternDetector):
     
     def _completes_mediation_pattern(self, candidate: Dict, context) -> bool:
         """Check if REQUEST edge completes a mediation pattern"""
-        from_pd = candidate.get('from_pd') or candidate.get('from_node')
-        to_pd = candidate.get('to_pd') or candidate.get('to_node')
+        param_values = candidate.get('param_values', {})
+        from_pd = param_values.get('from_pd') or param_values.get('from_node')
+        to_pd = param_values.get('to_pd') or param_values.get('to_node')
         
         # Check if to_pd has resources that from_pd needs
         to_pd_resources = self._get_pd_resources(to_pd, context)
@@ -161,14 +169,20 @@ class SharingReductionPatternDetector(PatternDetector):
         
         # High priority: Remove shared resource connections
         if operation.name == "remove_hold_edge":
-            to_resource = candidate.get('to_node') or candidate.get('resource')
-            if to_resource in shared_resources:
+            param_values = candidate.get('param_values', {})
+            to_resource = param_values.get('to_node') or param_values.get('resource')
+            if to_resource and to_resource in shared_resources:
                 return 2.8  # Very high priority for reducing sharing
         
         # Very high priority: Connect to private alternatives
         if operation.name == "add_hold_edge":
-            to_resource = candidate.get('to_node') or candidate.get('resource')
-            from_pd = candidate.get('from_node') or candidate.get('pd')
+            param_values = candidate.get('param_values', {})
+            to_resource = param_values.get('to_node') or param_values.get('resource')
+            from_pd = param_values.get('from_node') or param_values.get('pd')
+            
+            # Skip if we don't have valid parameters
+            if not to_resource or not from_pd:
+                return None
             
             # Penalize adding more sharing
             if to_resource in shared_resources:

@@ -67,12 +67,17 @@ class GenericPatternAwareScoring:
             pattern_state=pattern_state
         )
         
-        # Get operation parameters
-        params = candidate.get('param_values', {}) if isinstance(candidate, dict) else {}
+        # Get operation parameters - handle both old and new parameter formats
+        params = {}
+        if isinstance(candidate, dict):
+            params = candidate.get('param_values', {})
+            # Also try to get parameters directly from candidate for backward compatibility
+            if not params:
+                params = {k: v for k, v in candidate.items() if k not in ['target_description', 'constraint_relevance', 'addresses_violation', 'predicted_improvement', 'transition_name', 'transition_type']}
         
         # Apply constraint-specific scoring
         constraint_scores = self._apply_constraint_scoring(
-            operation, params, graph, constraints, context
+            operation, candidate, graph, constraints, context
         )
         
         # Apply pattern-specific scoring
@@ -93,14 +98,14 @@ class GenericPatternAwareScoring:
         
         return final_score
     
-    def _apply_constraint_scoring(self, operation, params: Dict, graph, constraints, context: ScoringContext) -> List[tuple]:
+    def _apply_constraint_scoring(self, operation, candidate: Dict, graph, constraints, context: ScoringContext) -> List[tuple]:
         """Apply constraint-specific scoring using pluggable handlers"""
         constraint_scores = []
         
         for constraint in constraints:
             for handler in self.constraint_handlers:
                 if handler.applies_to(constraint):
-                    score = handler.score_operation(operation, params, graph, constraint, context)
+                    score = handler.score_operation(operation, candidate, graph, constraint, context)
                     if score is not None:
                         priority = handler.get_priority_level()
                         constraint_scores.append((score, priority, handler.__class__.__name__))

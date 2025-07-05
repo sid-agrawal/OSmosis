@@ -122,6 +122,10 @@ class ResourceTypeSystem:
     
     def provides_alternative(self, pd: str, resource: str, context) -> bool:
         """Check if resource provides alternative that satisfies constraints"""
+        # Handle None or empty pd
+        if not pd:
+            return False
+            
         # Find constraints for this PD
         pd_constraints = self._get_pd_constraints(pd, context)
         
@@ -239,6 +243,10 @@ class ResourceTypeSystem:
     def _get_pd_constraints(self, pd: str, context) -> List:
         """Get constraints that apply to specified PD"""
         pd_constraints = []
+        
+        # Handle None or empty pd
+        if not pd:
+            return pd_constraints
         
         # Extract PD ID from name (e.g., "PD_1" -> 1)
         try:

@@ -30,7 +30,7 @@ class ConstraintHandler(ABC):
         pass
     
     @abstractmethod
-    def score_operation(self, operation, params: Dict, graph, constraint, context: ScoringContext) -> Optional[float]:
+    def score_operation(self, operation, candidate: Dict, graph, constraint, context: ScoringContext) -> Optional[float]:
         """Return score adjustment for this constraint, or None if no adjustment"""
         pass
     
@@ -45,7 +45,8 @@ class ProhibitionConstraintHandler(ConstraintHandler):
     def applies_to(self, constraint) -> bool:
         return hasattr(constraint, 'constraint_type') and constraint.constraint_type.startswith('prohibit_')
     
-    def score_operation(self, operation, params: Dict, graph, constraint, context: ScoringContext) -> Optional[float]:
+    def score_operation(self, operation, candidate: Dict, graph, constraint, context: ScoringContext) -> Optional[float]:
+        params = candidate.get('param_values', {})
         if operation.name == "remove_hold_edge":
             if self._violates_prohibition(params, constraint):
                 return 3.0  # Maximum priority for removing violations
@@ -80,7 +81,8 @@ class AccessRequirementHandler(ConstraintHandler):
                 constraint.constraint_type.startswith('requires_') and 
                 'access' in constraint.constraint_type)
     
-    def score_operation(self, operation, params: Dict, graph, constraint, context: ScoringContext) -> Optional[float]:
+    def score_operation(self, operation, candidate: Dict, graph, constraint, context: ScoringContext) -> Optional[float]:
+        params = candidate.get('param_values', {})
         # Check if operation helps satisfy access requirements
         if operation.name == "add_hold_edge":
             if self._satisfies_access_requirement(params, constraint, context):
@@ -141,7 +143,8 @@ class ExistenceConstraintHandler(ConstraintHandler):
         return (hasattr(constraint, 'constraint_type') and 
                 'exists' in constraint.constraint_type)
     
-    def score_operation(self, operation, params: Dict, graph, constraint, context: ScoringContext) -> Optional[float]:
+    def score_operation(self, operation, candidate: Dict, graph, constraint, context: ScoringContext) -> Optional[float]:
+        params = candidate.get('param_values', {})
         # Prevent removal of required resources
         if operation.name in ["remove_file_resource", "remove_resource_space"]:
             resource = params.get('resource') or params.get('to_node')
@@ -175,7 +178,8 @@ class CommunicationConstraintHandler(ConstraintHandler):
         return (hasattr(constraint, 'constraint_type') and 
                 'communication' in constraint.constraint_type)
     
-    def score_operation(self, operation, params: Dict, graph, constraint, context: ScoringContext) -> Optional[float]:
+    def score_operation(self, operation, candidate: Dict, graph, constraint, context: ScoringContext) -> Optional[float]:
+        params = candidate.get('param_values', {})
         if operation.name == "add_request_edge":
             if self._satisfies_communication_requirement(params, constraint):
                 return 1.0  # Medium priority for communication

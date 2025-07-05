@@ -8,80 +8,103 @@ This paper presents a novel approach to discovering emergent security patterns i
 
 ### 1.1 Core Algorithm Pseudocode
 
-```
-ALGORITHM: PatternAwareIsoSearch
-INPUT: initial_graph G₀, constraints C, goals Φ, beam_width k
-OUTPUT: discovered_mechanisms M
+```python
+def pattern_aware_iso_search(initial_graph, constraints, goals, beam_width):
+    """
+    Algorithm: PatternAwareIsoSearch
+    Args:
+        initial_graph: Initial graph state G0
+        constraints: System constraints C
+        goals: Optimization goals (phi)
+        beam_width: Search beam width k
+    Returns:
+        discovered_mechanisms: Set of discovered security mechanisms M
+    """
+    
+    # INITIALIZATION:
+    beam = [BFSState(initial_graph, [], 0)]
+    discovered_mechanisms = set()
+    pattern_scorer = PatternAwareScoring()
 
-INITIALIZATION:
-    beam ← [BFSState(G₀, [], 0)]
-    discovered_mechanisms ← ∅
-    pattern_scorer ← PatternAwareScoring()
-
-FOR iteration = 1 to max_iterations:
-    candidates ← ∅
-    
-    FOR each state s in beam:
-        FOR each transition t in available_transitions:
-            FOR each param_binding p in t.find_candidates(s.graph, C):
-                score ← pattern_scorer.score_operation(t, p, s.graph, Φ, C)
-                candidates.add(Candidate(s, t, p, score))
-    
-    // Remove repetitive operations to encourage exploration
-    candidates ← filter_repetitive_operations(candidates)
-    
-    // Select top-k candidates for beam expansion
-    selected ← top_k_by_score(candidates, k)
-    new_beam ← ∅
-    
-    FOR each candidate c in selected:
-        new_graph ← apply_transformation(c.state.graph, c.transition, c.params)
-        IF satisfies_constraints(new_graph, C):
-            new_state ← BFSState(new_graph, c.state.path + [c], c.score)
-            new_beam.add(new_state)
-            
-            IF satisfies_goals(new_graph, Φ):
-                discovered_mechanisms.add(new_state)
-    
-    beam ← new_beam
-    
-RETURN discovered_mechanisms
+    for iteration in range(1, max_iterations + 1):
+        candidates = []
+        
+        for state in beam:
+            for transition in available_transitions:
+                for param_binding in transition.find_candidates(state.graph, constraints):
+                    score = pattern_scorer.score_operation(transition, param_binding, 
+                                                         state.graph, goals, constraints)
+                    candidates.append(Candidate(state, transition, param_binding, score))
+        
+        # Remove repetitive operations to encourage exploration
+        candidates = filter_repetitive_operations(candidates)
+        
+        # Select top-k candidates for beam expansion
+        selected = top_k_by_score(candidates, beam_width)
+        new_beam = []
+        
+        for candidate in selected:
+            new_graph = apply_transformation(candidate.state.graph, 
+                                           candidate.transition, candidate.params)
+            if satisfies_constraints(new_graph, constraints):
+                new_state = BFSState(new_graph, candidate.state.path + [candidate], 
+                                   candidate.score)
+                new_beam.append(new_state)
+                
+                if satisfies_goals(new_graph, goals):
+                    discovered_mechanisms.add(new_state)
+        
+        beam = new_beam
+        
+    return discovered_mechanisms
 ```
 
 ### 1.2 Pattern-Aware Scoring System
 
 The core innovation lies in our pattern-aware scoring system that dynamically adjusts operation scores based on graph context and multi-step pattern recognition:
 
-```
-ALGORITHM: PatternAwareScoring
-INPUT: operation op, parameters params, graph G, goals Φ, constraints C
-OUTPUT: dynamic_score
+```python
+def pattern_aware_scoring(operation, params, graph, goals, constraints):
+    """
+    Algorithm: PatternAwareScoring
+    Args:
+        operation: Graph transformation operation
+        params: Operation parameters
+        graph: Current graph state G
+        goals: Optimization goals (phi)
+        constraints: System constraints C
+    Returns:
+        dynamic_score: Context-aware operation score
+    """
+    
+    # Analyze current graph state for pattern opportunities
+    state_analysis = analyze_graph_state(graph)
+    base_score = get_base_score(operation.name)
 
-// Analyze current graph state for pattern opportunities
-state_analysis ← analyze_graph_state(G)
-base_score ← get_base_score(op.name)
+    # Apply pattern-aware adjustments
+    score = base_score
 
-// Apply pattern-aware adjustments
-score ← base_score
+    # PHASE 1: Constraint violation removal (highest priority)
+    if operation.name == "remove_hold_edge" and is_prohibited_edge(params, constraints):
+        return 3.0  # Maximum priority for constraint compliance
 
-// PHASE 1: Constraint violation removal (highest priority)
-IF op.name = "remove_hold_edge" AND is_prohibited_edge(params, C):
-    RETURN 3.0  // Maximum priority for constraint compliance
+    # PHASE 2: Multi-pattern recognition
+    if state_analysis.mediation_opportunity:
+        score = score_for_mediation_pattern(operation, params, score, 
+                                          state_analysis, graph, constraints)
 
-// PHASE 2: Multi-pattern recognition
-IF state_analysis.mediation_opportunity:
-    score ← score_for_mediation_pattern(op, params, score, state_analysis, G, C)
+    if state_analysis.sharing_reduction_opportunity and has_rsi_goals(goals):
+        score = score_for_sharing_reduction_pattern(operation, params, score, 
+                                                  state_analysis, graph, 
+                                                  constraints, goals)
 
-IF state_analysis.sharing_reduction_opportunity AND has_rsi_goals(Φ):
-    score ← score_for_sharing_reduction_pattern(op, params, score, state_analysis, G, C, Φ)
+    # PHASE 3: Sequence recognition bonuses
+    score = apply_sequence_bonuses(operation.name, score, recent_operations)
 
-// PHASE 3: Sequence recognition bonuses
-score ← apply_sequence_bonuses(op.name, score, recent_operations)
+    # PHASE 4: Constraint-driven scoring
+    score = apply_constraint_scoring(operation.name, params, score, graph, constraints)
 
-// PHASE 4: Constraint-driven scoring
-score ← apply_constraint_scoring(op.name, params, score, G, C)
-
-RETURN score
+    return score
 ```
 
 #### Algorithm Explanation
@@ -293,9 +316,13 @@ The most significant result was achieved in the `mediator_test_indirect` scenari
 **Initial Configuration**: Two PDs (PD_1, PD_2) with prohibited direct access to shared resource FILE_1_3, but requiring functional access.
 
 **Discovered Solution**:
-```
-PD_1 --REQUEST--> PD_3 --HOLD--> FILE_1_3
-PD_2 --REQUEST--> PD_3
+```python
+# Mediation pattern discovered
+mediation_graph = {
+    'PD_1': {'REQUEST': 'PD_3'},
+    'PD_2': {'REQUEST': 'PD_3'},
+    'PD_3': {'HOLD': 'FILE_1_3'}
+}
 ```
 
 **Discovery Sequence**:
@@ -313,26 +340,38 @@ PD_2 --REQUEST--> PD_3
 ### 3.3 Scoring System Impact Analysis
 
 #### Before Pattern-Aware Scoring:
-```
-Static Scores:
-- add_pd: 0.2 (too low for mediation infrastructure)
-- add_request_edge: 0.2 (too low for pattern completion)  
-- add_hold_edge: 0.4 (insufficient for orphaned resource priority)
+```python
+# Static scoring configuration
+static_scores = {
+    'add_pd': 0.2,                # Too low for mediation infrastructure
+    'add_request_edge': 0.2,      # Too low for pattern completion
+    'add_hold_edge': 0.4          # Insufficient for orphaned resource priority
+}
 
-Result: Algorithm creates resources and PDs but fails to establish mediation relationships
+# Result: Algorithm creates resources and PDs but fails to establish mediation relationships
 ```
 
 #### After Pattern-Aware Scoring:
-```
-Dynamic Multi-Pattern Scores:
-- remove_hold_edge (constraint violation): 3.0
-- remove_hold_edge (shared resource): 2.8 (sharing reduction)
-- add_hold_edge (private alternative): 2.9 (sharing reduction)
-- add_hold_edge (to orphaned resource): 2.5-3.0 (mediation)
-- add_pd (when orphaned resources exist): 1.5
-- add_request_edge (mediation completion): 1.0-1.8
+```python
+# Dynamic multi-pattern scoring configuration
+dynamic_scores = {
+    'remove_hold_edge': {
+        'constraint_violation': 3.0,     # Maximum priority
+        'shared_resource': 2.8           # Sharing reduction pattern
+    },
+    'add_hold_edge': {
+        'private_alternative': 2.9,      # Sharing reduction pattern
+        'orphaned_resource': (2.5, 3.0)  # Mediation pattern range
+    },
+    'add_pd': {
+        'orphaned_resources_exist': 1.5  # Infrastructure building
+    },
+    'add_request_edge': {
+        'mediation_completion': (1.0, 1.8)  # Pattern completion range
+    }
+}
 
-Result: Algorithm discovers both mediation and sharing reduction patterns automatically
+# Result: Algorithm discovers both mediation and sharing reduction patterns automatically
 ```
 
 **Critical Success Factors**: 
