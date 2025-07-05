@@ -84,6 +84,44 @@ score ← apply_constraint_scoring(op.name, params, score, G, C)
 RETURN score
 ```
 
+#### Algorithm Explanation
+
+**PatternAwareIsoSearch Algorithm**
+
+The main algorithm implements a beam search approach with pattern-aware scoring to discover emergent security architectures. Here's how it works:
+
+1. **Initialization Phase (lines 16-19)**: The algorithm starts with the initial graph G₀ and creates a beam containing a single initial state. Each state tracks the current graph, transformation path taken, and cumulative score. The pattern-aware scoring system is initialized to recognize security patterns.
+
+2. **Main Search Loop (lines 21-47)**: For each iteration up to max_iterations:
+   - **Candidate Generation (lines 24-28)**: For every state in the current beam, the algorithm examines all available transitions (graph transformations). For each transition, it finds all possible parameter bindings that could be applied to the current graph while respecting constraints. Each combination of (state, transition, parameters) becomes a candidate, scored by the pattern-aware scoring system.
+   
+   - **Repetition Filtering (line 31)**: To encourage exploration diversity and prevent the algorithm from getting stuck in loops, repetitive operations (e.g., repeatedly adding and removing the same edge) are filtered out.
+   
+   - **Beam Selection (lines 34-35)**: Candidates are sorted by score and the top k candidates are selected to form the next beam. This beam width k controls the trade-off between exploration breadth and computational efficiency.
+   
+   - **Graph Transformation (lines 37-44)**: For each selected candidate, the transformation is applied to create a new graph. The algorithm verifies that constraints are still satisfied. If the new graph meets all goals, it's added to the discovered mechanisms. The new state (with updated graph and path history) is added to the next beam.
+
+3. **Termination**: The algorithm returns all discovered mechanisms that satisfy both constraints and goals.
+
+**PatternAwareScoring Algorithm**
+
+The scoring system is the intelligence behind the search, dynamically adjusting operation scores based on graph context and pattern recognition:
+
+1. **State Analysis (lines 61-62)**: The algorithm first analyzes the current graph to identify opportunities for security patterns. This includes finding orphaned resources (resources with no holders), shared resources (held by multiple PDs), and potential mediators.
+
+2. **Hierarchical Scoring Phases**:
+   - **Phase 1 - Constraint Compliance (lines 67-69)**: Operations that remove constraint violations receive maximum priority (score 3.0). For example, if constraints prohibit direct PD→resource edges, removing such edges gets top priority.
+   
+   - **Phase 2 - Pattern Recognition (lines 71-76)**: The system recognizes two primary patterns:
+     - **Mediation Pattern**: When orphaned resources exist and PDs need access, operations that create mediators or establish mediation relationships receive high scores (2.5-2.9).
+     - **Sharing Reduction Pattern**: When RSI (Resource Sharing Index) goals exist and shared resources are detected, operations that reduce sharing or create private alternatives receive high scores (2.8-2.9).
+   
+   - **Phase 3 - Sequence Recognition (line 79)**: The algorithm tracks recent operations and provides bonuses for complementary sequences. For instance, after removing prohibited edges, creating infrastructure (PDs, resources) gets boosted scores.
+   
+   - **Phase 4 - Constraint-Driven Scoring (line 82)**: Additional adjustments based on how operations help satisfy specific constraints, particularly for resources mentioned in constraints.
+
+The hierarchical structure ensures that critical security requirements (constraint compliance) always take precedence, while still guiding the search toward sophisticated multi-step patterns like mediation and sharing reduction. This enables the discovery of complex security architectures that would be impossible to find with static scoring approaches.
+
 The algorithm employs a **hierarchical scoring strategy** that prioritizes:
 1. **Constraint satisfaction** (score: 3.0) - Removes prohibited configurations
 2. **Multi-pattern establishment** (score: 2.5-2.9) - Mediation connections and sharing reduction
