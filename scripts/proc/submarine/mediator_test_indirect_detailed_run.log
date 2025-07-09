@@ -1,0 +1,547 @@
+🔍 Verbose mode enabled - detailed exploration tracking
+
+🎯 Running scenario: mediator_test_indirect
+✓ Validated 7 constraints in scenario 'Mediator Test Indirect Access'
+🎯 Running scenario: Mediator Test Indirect Access
+   Description: Test if requiring indirect access forces mediation discovery
+   Goals (1): ['Goal(minimize RSI[PD_1,PD_2] to 0.8)']
+   Constraints (7): ["Constraint(requires_file_access for PD_1: FILE, {'file_type': 'any', 'min_size_kb': 1})", "Constraint(requires_file_access for PD_2: FILE, {'file_type': 'any', 'min_size_kb': 1})", "Constraint(prohibit_direct_hold for PD_1: FILE_1_3, {'constraint_type': 'negative'})", "Constraint(prohibit_direct_hold for PD_2: FILE_1_3, {'constraint_type': 'negative'})", "Constraint(requires_resource_access for PD_1: FILE_1_3, {'access_type': 'direct_or_indirect'})", "Constraint(requires_resource_access for PD_2: FILE_1_3, {'access_type': 'direct_or_indirect'})", "Constraint(requires_resource_exists for PD_None: FILE_1_3, {'mandatory': True})"]
+   Transitions (12): ['Transition(add_pd: Create new Protection Domain)', 'Transition(remove_pd: Remove existing Protection Domain)', 'Transition(add_file_resource: Create new FILE resource)', 'Transition(remove_file_resource: Remove FILE resource)', 'Transition(add_resource_space: Create new resource space)', 'Transition(remove_resource_space: Remove resource space)', 'Transition(add_hold_edge: Create PD → Resource relationship)', 'Transition(remove_hold_edge: Remove PD → Resource relationship)', 'Transition(add_request_edge: Create PD → PD authority relationship)', 'Transition(remove_request_edge: Remove PD → PD authority relationship)', 'Transition(add_subset_edge: Create Resource → ResourceSpace relationship)', 'Transition(remove_subset_edge: Remove Resource → ResourceSpace relationship)']
+   Starting Graph: 6 nodes, 7 edges
+
+=== Graph Details ===
+Node: PD_1 -> {'type': 'PD', 'data': 'user_process', 'extra': ''}
+Node: PD_2 -> {'type': 'PD', 'data': 'database_server', 'extra': ''}
+Node: FILE_SPACE_1 -> {'type': 'RESOURCE_SPACE', 'data': 'FILE', 'extra': ''}
+Node: FILE_1_1 -> {'type': 'RESOURCE', 'data': 'FILE', 'extra': '{"path": "/etc/user.conf", "file_type": "CONFIG", "size_bytes": "4096", "permissions": "rw-"}'}
+Node: FILE_1_2 -> {'type': 'RESOURCE', 'data': 'FILE', 'extra': '{"path": "/var/db/main.db", "file_type": "DATABASE", "size_bytes": "8192", "permissions": "rw-"}'}
+Node: FILE_1_3 -> {'type': 'RESOURCE', 'data': 'FILE', 'extra': '{"path": "/tmp/shared_buffer.tmp", "file_type": "TEMP", "size_bytes": "2048", "permissions": "rw-"}'}
+
+=== Ready for IsoSearch! ===
+
+=== Exploring Mediator Test Indirect Access ===
+Starting exploration with 1 goals, 7 constraints, 12 transitions
+
+📊 Initial graph:
+        # Graph structure:
+        # PD_1 --HOLD--> FILE_1_1 -> FILE_SPACE_1
+        # PD_1 --HOLD--> FILE_1_3 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_2 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_3 -> FILE_SPACE_1
+        #
+        # FILE_1_3 shared by: PD_1, PD_2
+
+Iteration 1/10
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_3 HOLD edge -> score: 2.000
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_3 HOLD edge -> score: 2.000
+  Trying best transition: primitive
+    Target: remove PD_1 -> FILE_1_3 HOLD edge
+    Predicted improvement: 2.000
+    Considered 14 other option(s):
+      1. primitive: remove PD_2 -> FILE_1_3 HOLD edge (improvement: 2.000)
+      2. primitive: add new protection domain to help resolve 2 constraint violation(s) (improvement: 0.700)
+      3. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      4. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.800)
+      5. primitive: connect PD_1 to FILE_1_2 (improvement: 0.700)
+      6. primitive: connect PD_2 to FILE_1_1 (improvement: 0.700)
+      7. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.600)
+      8. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.600)
+      9. primitive: disconnect FILE_1_1 from FILE_SPACE_1 (improvement: 0.300)
+      10. primitive: disconnect FILE_1_2 from FILE_SPACE_1 (improvement: 0.300)
+      ... and 4 more
+    ⚠️  Applied remove_hold_edge with constraint violations: PD_2 has prohibited direct hold on FILE_1_3
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0}, ASR: 1.5, TCB: {'PD_1': [], 'PD_2': []}, FR: {'PD_1,PD_2': inf}
+    All 1 goals met!
+    All 1 goal(s) met!
+  ✅ Mechanism saved! Total mechanisms found: 1
+
+📊 Graph after iteration 1:
+        # Graph structure:
+        # PD_1 --HOLD--> FILE_1_1 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_2 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_3 -> FILE_SPACE_1
+        #
+
+
+Iteration 2/10
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_3 HOLD edge -> score: 2.000
+  🚫 Filtered out 1 'remove_hold_edge' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 2 constraint violation(s)
+    Predicted improvement: 0.700
+    Considered 11 other option(s):
+      1. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.800)
+      2. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.600)
+      3. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.600)
+      4. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.600)
+      5. primitive: connect PD_1 to FILE_1_2 (improvement: 0.400)
+      6. primitive: connect PD_2 to FILE_1_1 (improvement: 0.400)
+      7. primitive: disconnect FILE_1_1 from FILE_SPACE_1 (improvement: 0.300)
+      8. primitive: disconnect FILE_1_2 from FILE_SPACE_1 (improvement: 0.300)
+      9. primitive: disconnect FILE_1_3 from FILE_SPACE_1 (improvement: 0.300)
+      10. primitive: enable indirect access: PD_1 -> PD_2 (improvement: 0.200)
+      ... and 1 more
+    ⚠️  Applied add_pd with constraint violations: PD_2 has prohibited direct hold on FILE_1_3
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.0, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    All 1 goals met!
+    All 1 goal(s) met!
+  ✅ Mechanism saved! Total mechanisms found: 2
+
+📊 Graph after iteration 2:
+        # Graph structure:
+        # PD_1 --HOLD--> FILE_1_1 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_2 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_3 -> FILE_SPACE_1
+        # PD_3
+        #
+
+
+Iteration 3/10
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_3 HOLD edge -> score: 2.000
+  🚫 Filtered out 1 'add_pd' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: remove PD_2 -> FILE_1_3 HOLD edge
+    Predicted improvement: 2.000
+    Considered 19 other option(s):
+      1. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.800)
+      2. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.600)
+      3. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.600)
+      4. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.600)
+      5. primitive: connect PD_1 to FILE_1_2 (improvement: 0.400)
+      6. primitive: connect PD_2 to FILE_1_1 (improvement: 0.400)
+      7. primitive: connect PD_3 to FILE_1_1 (improvement: 0.400)
+      8. primitive: connect PD_3 to FILE_1_2 (improvement: 0.400)
+      9. primitive: connect PD_3 to FILE_1_3 (improvement: 0.400)
+      10. primitive: remove empty PD_3 (improvement: 0.300)
+      ... and 9 more
+    ⚠️  Applied remove_hold_edge with constraint violations: PD_1 lacks any access to FILE_1_3 (resource has no holders); PD_2 lacks any access to FILE_1_3 (resource has no holders)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    All 1 goals met!
+    All 1 goal(s) met!
+  ✅ Mechanism saved! Total mechanisms found: 3
+
+📊 Graph after iteration 3:
+        # Graph structure:
+        # PD_1 --HOLD--> FILE_1_1 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_2 -> FILE_SPACE_1
+        # PD_3
+        #
+
+
+Iteration 4/10
+  🚫 Filtered out 0 'remove_hold_edge' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 2 constraint violation(s)
+    Predicted improvement: 0.700
+    Considered 20 other option(s):
+      1. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.800)
+      2. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.600)
+      3. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.600)
+      4. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.600)
+      5. primitive: remove FILE_1_3 (holders: 0) (improvement: 0.400)
+      6. primitive: connect PD_1 to FILE_1_2 (improvement: 0.400)
+      7. primitive: connect PD_2 to FILE_1_1 (improvement: 0.400)
+      8. primitive: connect PD_3 to FILE_1_1 (improvement: 0.400)
+      9. primitive: connect PD_3 to FILE_1_2 (improvement: 0.400)
+      10. primitive: connect PD_3 to orphaned resource FILE_1_3 (improvement: 0.400)
+      ... and 10 more
+    ⚠️  Applied add_pd with constraint violations: PD_1 lacks any access to FILE_1_3 (resource has no holders); PD_2 lacks any access to FILE_1_3 (resource has no holders)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    All 1 goals met!
+    All 1 goal(s) met!
+  ✅ Mechanism saved! Total mechanisms found: 4
+
+📊 Graph after iteration 4:
+        # Graph structure:
+        # PD_1 --HOLD--> FILE_1_1 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_2 -> FILE_SPACE_1
+        # PD_3
+        # PD_4
+        #
+
+
+Iteration 5/10
+  🚫 Filtered out 1 'add_pd' candidates (avoiding repetition)
+  🎲 Exploration: selecting candidate #3 instead of best
+  Trying best transition: primitive
+    Target: create new DATABASE file in FILE_SPACE_1
+    Predicted improvement: 0.600
+    Considered 29 other option(s):
+      1. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.600)
+      2. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.600)
+      3. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.600)
+      4. primitive: remove FILE_1_3 (holders: 0) (improvement: 0.400)
+      5. primitive: connect PD_1 to FILE_1_2 (improvement: 0.400)
+      6. primitive: connect PD_2 to FILE_1_1 (improvement: 0.400)
+      7. primitive: connect PD_3 to FILE_1_1 (improvement: 0.400)
+      8. primitive: connect PD_3 to FILE_1_2 (improvement: 0.400)
+      9. primitive: connect PD_3 to orphaned resource FILE_1_3 (improvement: 0.400)
+      10. primitive: connect PD_4 to FILE_1_1 (improvement: 0.400)
+      ... and 19 more
+    ⚠️  Applied add_file_resource with constraint violations: PD_1 lacks any access to FILE_1_3 (resource has no holders); PD_2 lacks any access to FILE_1_3 (resource has no holders)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    All 1 goals met!
+    All 1 goal(s) met!
+  ✅ Mechanism saved! Total mechanisms found: 5
+
+📊 Graph after iteration 5:
+        # Graph structure:
+        # PD_1 --HOLD--> FILE_1_1 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_2 -> FILE_SPACE_1
+        # PD_3
+        # PD_4
+        #
+
+
+Iteration 6/10
+  🚫 Filtered out 4 'add_file_resource' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 2 constraint violation(s)
+    Predicted improvement: 0.700
+    Considered 32 other option(s):
+      1. primitive: remove FILE_1_3 (holders: 0) (improvement: 0.400)
+      2. primitive: remove FILE_1_4 (holders: 0) (improvement: 0.400)
+      3. primitive: connect PD_1 to FILE_1_2 (improvement: 0.400)
+      4. primitive: connect PD_1 to orphaned resource FILE_1_4 (improvement: 0.400)
+      5. primitive: connect PD_2 to FILE_1_1 (improvement: 0.400)
+      6. primitive: connect PD_2 to orphaned resource FILE_1_4 (improvement: 0.400)
+      7. primitive: connect PD_3 to FILE_1_1 (improvement: 0.400)
+      8. primitive: connect PD_3 to FILE_1_2 (improvement: 0.400)
+      9. primitive: connect PD_3 to orphaned resource FILE_1_3 (improvement: 0.400)
+      10. primitive: connect PD_3 to orphaned resource FILE_1_4 (improvement: 0.400)
+      ... and 22 more
+    ⚠️  Applied add_pd with constraint violations: PD_1 lacks any access to FILE_1_3 (resource has no holders); PD_2 lacks any access to FILE_1_3 (resource has no holders)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_1,PD_5': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_2,PD_5': 0.0, 'PD_3,PD_4': 0.0, 'PD_3,PD_5': 0.0, 'PD_4,PD_5': 0.0}, ASR: 0.4, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': [], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_1,PD_5': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_2,PD_5': inf, 'PD_3,PD_4': inf, 'PD_3,PD_5': inf, 'PD_4,PD_5': inf}
+    All 1 goals met!
+    All 1 goal(s) met!
+  ✅ Mechanism saved! Total mechanisms found: 6
+
+📊 Graph after iteration 6:
+        # Graph structure:
+        # PD_1 --HOLD--> FILE_1_1 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_2 -> FILE_SPACE_1
+        # PD_3
+        # PD_4
+        # PD_5
+        #
+
+
+Iteration 7/10
+  🚫 Filtered out 1 'add_pd' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: create new LOG file in FILE_SPACE_1
+    Predicted improvement: 0.800
+    Considered 48 other option(s):
+      1. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.600)
+      2. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.600)
+      3. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.600)
+      4. primitive: remove FILE_1_3 (holders: 0) (improvement: 0.400)
+      5. primitive: remove FILE_1_4 (holders: 0) (improvement: 0.400)
+      6. primitive: connect PD_1 to FILE_1_2 (improvement: 0.400)
+      7. primitive: connect PD_1 to orphaned resource FILE_1_4 (improvement: 0.400)
+      8. primitive: connect PD_2 to FILE_1_1 (improvement: 0.400)
+      9. primitive: connect PD_2 to orphaned resource FILE_1_4 (improvement: 0.400)
+      10. primitive: connect PD_3 to FILE_1_1 (improvement: 0.400)
+      ... and 38 more
+    ⚠️  Applied add_file_resource with constraint violations: PD_1 lacks any access to FILE_1_3 (resource has no holders); PD_2 lacks any access to FILE_1_3 (resource has no holders)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_1,PD_5': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_2,PD_5': 0.0, 'PD_3,PD_4': 0.0, 'PD_3,PD_5': 0.0, 'PD_4,PD_5': 0.0}, ASR: 0.4, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': [], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_1,PD_5': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_2,PD_5': inf, 'PD_3,PD_4': inf, 'PD_3,PD_5': inf, 'PD_4,PD_5': inf}
+    All 1 goals met!
+    All 1 goal(s) met!
+  ✅ Mechanism saved! Total mechanisms found: 7
+
+📊 Graph after iteration 7:
+        # Graph structure:
+        # PD_1 --HOLD--> FILE_1_1 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_2 -> FILE_SPACE_1
+        # PD_3
+        # PD_4
+        # PD_5
+        #
+
+
+Iteration 8/10
+  🚫 Filtered out 4 'add_file_resource' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 2 constraint violation(s)
+    Predicted improvement: 0.700
+    Considered 52 other option(s):
+      1. primitive: remove FILE_1_3 (holders: 0) (improvement: 0.400)
+      2. primitive: remove FILE_1_4 (holders: 0) (improvement: 0.400)
+      3. primitive: remove FILE_1_5 (holders: 0) (improvement: 0.400)
+      4. primitive: connect PD_1 to FILE_1_2 (improvement: 0.400)
+      5. primitive: connect PD_1 to orphaned resource FILE_1_4 (improvement: 0.400)
+      6. primitive: connect PD_1 to orphaned resource FILE_1_5 (improvement: 0.400)
+      7. primitive: connect PD_2 to FILE_1_1 (improvement: 0.400)
+      8. primitive: connect PD_2 to orphaned resource FILE_1_4 (improvement: 0.400)
+      9. primitive: connect PD_2 to orphaned resource FILE_1_5 (improvement: 0.400)
+      10. primitive: connect PD_3 to FILE_1_1 (improvement: 0.400)
+      ... and 42 more
+    ⚠️  Applied add_pd with constraint violations: PD_1 lacks any access to FILE_1_3 (resource has no holders); PD_2 lacks any access to FILE_1_3 (resource has no holders)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_1,PD_5': 0.0, 'PD_1,PD_6': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_2,PD_5': 0.0, 'PD_2,PD_6': 0.0, 'PD_3,PD_4': 0.0, 'PD_3,PD_5': 0.0, 'PD_3,PD_6': 0.0, 'PD_4,PD_5': 0.0, 'PD_4,PD_6': 0.0, 'PD_5,PD_6': 0.0}, ASR: 0.3333333333333333, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': [], 'PD_5': [], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_1,PD_5': inf, 'PD_1,PD_6': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_2,PD_5': inf, 'PD_2,PD_6': inf, 'PD_3,PD_4': inf, 'PD_3,PD_5': inf, 'PD_3,PD_6': inf, 'PD_4,PD_5': inf, 'PD_4,PD_6': inf, 'PD_5,PD_6': inf}
+    All 1 goals met!
+    All 1 goal(s) met!
+  ✅ Mechanism saved! Total mechanisms found: 8
+
+📊 Graph after iteration 8:
+        # Graph structure:
+        # PD_1 --HOLD--> FILE_1_1 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_2 -> FILE_SPACE_1
+        # PD_3
+        # PD_4
+        # PD_5
+        # PD_6
+        #
+
+
+Iteration 9/10
+  🚫 Filtered out 1 'add_pd' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: create new CONFIG file in FILE_SPACE_1
+    Predicted improvement: 0.600
+    Considered 71 other option(s):
+      1. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.600)
+      2. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.600)
+      3. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.600)
+      4. primitive: remove FILE_1_3 (holders: 0) (improvement: 0.400)
+      5. primitive: remove FILE_1_4 (holders: 0) (improvement: 0.400)
+      6. primitive: remove FILE_1_5 (holders: 0) (improvement: 0.400)
+      7. primitive: connect PD_1 to FILE_1_2 (improvement: 0.400)
+      8. primitive: connect PD_1 to orphaned resource FILE_1_4 (improvement: 0.400)
+      9. primitive: connect PD_1 to orphaned resource FILE_1_5 (improvement: 0.400)
+      10. primitive: connect PD_2 to FILE_1_1 (improvement: 0.400)
+      ... and 61 more
+    ⚠️  Applied add_file_resource with constraint violations: PD_1 lacks any access to FILE_1_3 (resource has no holders); PD_2 lacks any access to FILE_1_3 (resource has no holders)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_1,PD_5': 0.0, 'PD_1,PD_6': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_2,PD_5': 0.0, 'PD_2,PD_6': 0.0, 'PD_3,PD_4': 0.0, 'PD_3,PD_5': 0.0, 'PD_3,PD_6': 0.0, 'PD_4,PD_5': 0.0, 'PD_4,PD_6': 0.0, 'PD_5,PD_6': 0.0}, ASR: 0.3333333333333333, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': [], 'PD_5': [], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_1,PD_5': inf, 'PD_1,PD_6': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_2,PD_5': inf, 'PD_2,PD_6': inf, 'PD_3,PD_4': inf, 'PD_3,PD_5': inf, 'PD_3,PD_6': inf, 'PD_4,PD_5': inf, 'PD_4,PD_6': inf, 'PD_5,PD_6': inf}
+    All 1 goals met!
+    All 1 goal(s) met!
+  ✅ Mechanism saved! Total mechanisms found: 9
+
+📊 Graph after iteration 9:
+        # Graph structure:
+        # PD_1 --HOLD--> FILE_1_1 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_2 -> FILE_SPACE_1
+        # PD_3
+        # PD_4
+        # PD_5
+        # PD_6
+        #
+
+
+Iteration 10/10
+  🚫 Filtered out 4 'add_file_resource' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 2 constraint violation(s)
+    Predicted improvement: 0.700
+    Considered 76 other option(s):
+      1. primitive: remove FILE_1_3 (holders: 0) (improvement: 0.400)
+      2. primitive: remove FILE_1_4 (holders: 0) (improvement: 0.400)
+      3. primitive: remove FILE_1_5 (holders: 0) (improvement: 0.400)
+      4. primitive: remove FILE_1_6 (holders: 0) (improvement: 0.400)
+      5. primitive: connect PD_1 to FILE_1_2 (improvement: 0.400)
+      6. primitive: connect PD_1 to orphaned resource FILE_1_4 (improvement: 0.400)
+      7. primitive: connect PD_1 to orphaned resource FILE_1_5 (improvement: 0.400)
+      8. primitive: connect PD_1 to orphaned resource FILE_1_6 (improvement: 0.400)
+      9. primitive: connect PD_2 to FILE_1_1 (improvement: 0.400)
+      10. primitive: connect PD_2 to orphaned resource FILE_1_4 (improvement: 0.400)
+      ... and 66 more
+    ⚠️  Applied add_pd with constraint violations: PD_1 lacks any access to FILE_1_3 (resource has no holders); PD_2 lacks any access to FILE_1_3 (resource has no holders)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_1,PD_5': 0.0, 'PD_1,PD_6': 0.0, 'PD_1,PD_7': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_2,PD_5': 0.0, 'PD_2,PD_6': 0.0, 'PD_2,PD_7': 0.0, 'PD_3,PD_4': 0.0, 'PD_3,PD_5': 0.0, 'PD_3,PD_6': 0.0, 'PD_3,PD_7': 0.0, 'PD_4,PD_5': 0.0, 'PD_4,PD_6': 0.0, 'PD_4,PD_7': 0.0, 'PD_5,PD_6': 0.0, 'PD_5,PD_7': 0.0, 'PD_6,PD_7': 0.0}, ASR: 0.2857142857142857, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': [], 'PD_5': [], 'PD_6': [], 'PD_7': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_1,PD_5': inf, 'PD_1,PD_6': inf, 'PD_1,PD_7': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_2,PD_5': inf, 'PD_2,PD_6': inf, 'PD_2,PD_7': inf, 'PD_3,PD_4': inf, 'PD_3,PD_5': inf, 'PD_3,PD_6': inf, 'PD_3,PD_7': inf, 'PD_4,PD_5': inf, 'PD_4,PD_6': inf, 'PD_4,PD_7': inf, 'PD_5,PD_6': inf, 'PD_5,PD_7': inf, 'PD_6,PD_7': inf}
+    All 1 goals met!
+    All 1 goal(s) met!
+  ✅ Mechanism saved! Total mechanisms found: 10
+
+📊 Graph after iteration 10:
+        # Graph structure:
+        # PD_1 --HOLD--> FILE_1_1 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_2 -> FILE_SPACE_1
+        # PD_3
+        # PD_4
+        # PD_5
+        # PD_6
+        # PD_7
+        #
+
+
+Exploration complete!
+
+🏁 Final graph:
+        # Graph structure:
+        # PD_1 --HOLD--> FILE_1_1 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_2 -> FILE_SPACE_1
+        # PD_3
+        # PD_4
+        # PD_5
+        # PD_6
+        # PD_7
+        #
+
+
+============================================================
+📊 EXPLORATION DECISION SUMMARY
+============================================================
+Total iterations completed: 10
+Total transformation candidates considered: 399
+Total transformation candidates discarded: 372
+Mechanisms discovered: 10
+Success rate: 100.0%
+
+🔧 Transformation Types:
+   Tried: primitive
+   Available but never selected: None
+
+📋 Per-Iteration Decision Breakdown:
+
+  Iteration 1:
+    ✅ SUCCESS Selected: primitive
+      Target: remove PD_1 -> FILE_1_3 HOLD edge
+      Predicted improvement: 2.000
+      Result: 🎯 GOALS MET
+    🗂️  Discarded 14 alternatives:
+      1. primitive: remove PD_2 -> FILE_1_3 HOLD edge (improvement: 2.000)
+      2. primitive: add new protection domain to help resolve 2 constraint violation(s) (improvement: 0.700)
+      3. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      4. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.800)
+      5. primitive: connect PD_1 to FILE_1_2 (improvement: 0.700)
+      ... and 9 more
+
+  Iteration 2:
+    ✅ SUCCESS Selected: primitive
+      Target: add new protection domain to help resolve 2 constraint violation(s)
+      Predicted improvement: 0.700
+      Result: 🎯 GOALS MET
+    🗂️  Discarded 11 alternatives:
+      1. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.800)
+      2. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.600)
+      3. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.600)
+      4. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.600)
+      5. primitive: connect PD_1 to FILE_1_2 (improvement: 0.400)
+      ... and 6 more
+
+  Iteration 3:
+    ✅ SUCCESS Selected: primitive
+      Target: remove PD_2 -> FILE_1_3 HOLD edge
+      Predicted improvement: 2.000
+      Result: 🎯 GOALS MET
+    🗂️  Discarded 19 alternatives:
+      1. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.800)
+      2. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.600)
+      3. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.600)
+      4. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.600)
+      5. primitive: connect PD_1 to FILE_1_2 (improvement: 0.400)
+      ... and 14 more
+
+  Iteration 4:
+    ✅ SUCCESS Selected: primitive
+      Target: add new protection domain to help resolve 2 constraint violation(s)
+      Predicted improvement: 0.700
+      Result: 🎯 GOALS MET
+    🗂️  Discarded 20 alternatives:
+      1. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.800)
+      2. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.600)
+      3. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.600)
+      4. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.600)
+      5. primitive: remove FILE_1_3 (holders: 0) (improvement: 0.400)
+      ... and 15 more
+
+  Iteration 5:
+    ✅ SUCCESS Selected: primitive
+      Target: create new DATABASE file in FILE_SPACE_1
+      Predicted improvement: 0.600
+      Result: 🎯 GOALS MET
+    🗂️  Discarded 29 alternatives:
+      1. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.600)
+      2. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.600)
+      3. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.600)
+      4. primitive: remove FILE_1_3 (holders: 0) (improvement: 0.400)
+      5. primitive: connect PD_1 to FILE_1_2 (improvement: 0.400)
+      ... and 24 more
+
+  Iteration 6:
+    ✅ SUCCESS Selected: primitive
+      Target: add new protection domain to help resolve 2 constraint violation(s)
+      Predicted improvement: 0.700
+      Result: 🎯 GOALS MET
+    🗂️  Discarded 32 alternatives:
+      1. primitive: remove FILE_1_3 (holders: 0) (improvement: 0.400)
+      2. primitive: remove FILE_1_4 (holders: 0) (improvement: 0.400)
+      3. primitive: connect PD_1 to FILE_1_2 (improvement: 0.400)
+      4. primitive: connect PD_1 to orphaned resource FILE_1_4 (improvement: 0.400)
+      5. primitive: connect PD_2 to FILE_1_1 (improvement: 0.400)
+      ... and 27 more
+
+  Iteration 7:
+    ✅ SUCCESS Selected: primitive
+      Target: create new LOG file in FILE_SPACE_1
+      Predicted improvement: 0.800
+      Result: 🎯 GOALS MET
+    🗂️  Discarded 48 alternatives:
+      1. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.600)
+      2. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.600)
+      3. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.600)
+      4. primitive: remove FILE_1_3 (holders: 0) (improvement: 0.400)
+      5. primitive: remove FILE_1_4 (holders: 0) (improvement: 0.400)
+      ... and 43 more
+
+  Iteration 8:
+    ✅ SUCCESS Selected: primitive
+      Target: add new protection domain to help resolve 2 constraint violation(s)
+      Predicted improvement: 0.700
+      Result: 🎯 GOALS MET
+    🗂️  Discarded 52 alternatives:
+      1. primitive: remove FILE_1_3 (holders: 0) (improvement: 0.400)
+      2. primitive: remove FILE_1_4 (holders: 0) (improvement: 0.400)
+      3. primitive: remove FILE_1_5 (holders: 0) (improvement: 0.400)
+      4. primitive: connect PD_1 to FILE_1_2 (improvement: 0.400)
+      5. primitive: connect PD_1 to orphaned resource FILE_1_4 (improvement: 0.400)
+      ... and 47 more
+
+  Iteration 9:
+    ✅ SUCCESS Selected: primitive
+      Target: create new CONFIG file in FILE_SPACE_1
+      Predicted improvement: 0.600
+      Result: 🎯 GOALS MET
+    🗂️  Discarded 71 alternatives:
+      1. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.600)
+      2. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.600)
+      3. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.600)
+      4. primitive: remove FILE_1_3 (holders: 0) (improvement: 0.400)
+      5. primitive: remove FILE_1_4 (holders: 0) (improvement: 0.400)
+      ... and 66 more
+
+  Iteration 10:
+    ✅ SUCCESS Selected: primitive
+      Target: add new protection domain to help resolve 2 constraint violation(s)
+      Predicted improvement: 0.700
+      Result: 🎯 GOALS MET
+    🗂️  Discarded 76 alternatives:
+      1. primitive: remove FILE_1_3 (holders: 0) (improvement: 0.400)
+      2. primitive: remove FILE_1_4 (holders: 0) (improvement: 0.400)
+      3. primitive: remove FILE_1_5 (holders: 0) (improvement: 0.400)
+      4. primitive: remove FILE_1_6 (holders: 0) (improvement: 0.400)
+      5. primitive: connect PD_1 to FILE_1_2 (improvement: 0.400)
+      ... and 71 more
+
+🔍 Decision Pattern Analysis:
+   Most frequently selected:
+     - primitive: 10 time(s)
+   Average predicted improvement:
+     - All candidates: 0.363
+     - Selected candidates: 0.950
+     - Discarded candidates: 0.331
+
+============================================================
+
+✅ Scenario 'Mediator Test Indirect Access' complete!
+   Mechanisms discovered: 10
+
+✅ Exploration complete!
