@@ -124,7 +124,7 @@ class PatternAwareScoring:
         """Apply pattern-aware scoring adjustments"""
         score = base_score
         
-        # CRITICAL: Constraint violation removal gets maximum priority
+        # CRITICAL: Constraint violation removal gets high priority but not maximum
         if op_name == "remove_hold_edge":
             # Handle both parameter naming conventions
             from_pd = params.get('from_node', '') or params.get('pd', '')
@@ -132,7 +132,7 @@ class PatternAwareScoring:
             
             # Check if this removes a prohibited edge
             if self._is_prohibited_edge(from_pd, to_resource, constraints):
-                return 3.0  # MAXIMUM PRIORITY
+                return 1.5  # HIGH PRIORITY but allows mediation to compete
         
         # Pattern 1: Mediation Opportunity Detection
         if state_analysis['mediation_opportunity']:

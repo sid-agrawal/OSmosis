@@ -435,7 +435,7 @@ def GenerateCandidate(graph, constraints, transitions, goals, last_transition_ty
         
         # Boost priority for constraint-addressing candidates
         if addresses_violation:
-            return base_improvement + constraint_relevance + 0.5
+            return base_improvement + constraint_relevance + 0.1
         return base_improvement
     
     # Filter out candidates of the same type as last iteration to force exploration diversity
