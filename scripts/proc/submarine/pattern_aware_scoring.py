@@ -140,11 +140,17 @@ class PatternAwareScoring:
                 op_name, params, score, state_analysis, graph, constraints
             )
         
-        # Pattern 2: Sharing Reduction Opportunity Detection
+        # Pattern 2: Sharing Pattern Detection (Reduction or Maximization)
         if state_analysis['sharing_reduction_opportunity']:
-            score = self._score_for_sharing_reduction_pattern(
-                op_name, params, score, state_analysis, graph, constraints, goals
-            )
+            # Check if we should maximize or minimize RSI
+            if self._has_rsi_maximization_goal(goals):
+                score = self._score_for_sharing_maximization_pattern(
+                    op_name, params, score, state_analysis, graph, constraints, goals
+                )
+            else:
+                score = self._score_for_sharing_reduction_pattern(
+                    op_name, params, score, state_analysis, graph, constraints, goals
+                )
         
         # Pattern 3: Sequence Recognition
         score = self._apply_sequence_bonuses(op_name, score)
@@ -201,6 +207,90 @@ class PatternAwareScoring:
                     return base_score + 0.8  # Encourage creating orphaned resources
         
         return base_score
+    
+    def _has_rsi_maximization_goal(self, goals):
+        """Check if any RSI goal is set to maximize"""
+        for goal in goals:
+            if goal.metric_name == 'RSI' and goal.direction == 'maximize':
+                return True
+        return False
+    
+    def _score_for_sharing_maximization_pattern(self, op_name, params, base_score, state_analysis, graph, constraints, goals):
+        """Special scoring when sharing maximization (RSI increase) is needed"""
+        
+        shared_resources = state_analysis.get('shared_resources', [])
+        
+        # Get the target PDs from RSI maximization goal
+        rsi_target_pds = []
+        for goal in goals:
+            if goal.metric_name == 'RSI' and goal.direction == 'maximize' and goal.target_spec:
+                # Parse PD_1,PD_2 format
+                pds = goal.target_spec.split(',')
+                rsi_target_pds = [pd.strip() for pd in pds]
+                break
+        
+        if not rsi_target_pds:
+            return base_score
+        
+        # CRITICAL: Prioritize creating shared access for target PDs
+        if op_name == "add_hold_edge":
+            to_resource = params.get('to_node', '') or params.get('resource', '')
+            from_pd = params.get('from_node', '') or params.get('pd', '')
+            
+            # Check if this is one of the target PDs
+            if from_pd in rsi_target_pds:
+                # Case 1: Resource is already shared - very high priority to join the sharing
+                if to_resource in shared_resources:
+                    return 2.9  # Very high priority for increasing sharing
+                
+                # Case 2: Resource is held by the other target PD - create new sharing
+                other_pd = rsi_target_pds[1] if from_pd == rsi_target_pds[0] else rsi_target_pds[0]
+                other_pd_resources = self._get_pd_resources(graph, other_pd)
+                if to_resource in other_pd_resources:
+                    return 2.8  # High priority for creating new sharing
+                
+                # Case 3: Direct access to constraint-mentioned resources
+                if self._is_constraint_mentioned_resource(to_resource, constraints):
+                    # Check if PD currently has only indirect access
+                    if self._has_only_indirect_access(graph, from_pd):
+                        return 3.0  # Maximum priority for direct access
+                    else:
+                        return 2.5  # Still high for constraint resources
+        
+        # PENALTY: Removing shared edges when maximizing RSI
+        if op_name == "remove_hold_edge":
+            to_resource = params.get('to_node', '') or params.get('resource', '')
+            from_pd = params.get('from_node', '') or params.get('pd', '')
+            
+            # Don't remove edges that contribute to RSI
+            if to_resource in shared_resources:
+                # Extra penalty if it's one of our target PDs
+                if from_pd in rsi_target_pds:
+                    return base_score * 0.05  # Very strong penalty
+                else:
+                    return base_score * 0.1  # Strong penalty for any sharing reduction
+        
+        # Boost infrastructure that enables sharing
+        if op_name == "add_file_resource":
+            # Less important when we already have resources to share
+            if shared_resources:
+                return base_score * 0.5
+        
+        return base_score
+    
+    def _has_only_indirect_access(self, graph, pd):
+        """Check if PD has only REQUEST edges (no direct HOLD edges)"""
+        # Get resources held directly
+        direct_resources = self._get_pd_resources(graph, pd)
+        
+        # Get REQUEST edges
+        request_targets = []
+        for from_node, to_node, edge_data in graph.g.edges(data=True):
+            if from_node == pd and edge_data.get('type') == 'REQUEST':
+                request_targets.append(to_node)
+        
+        # Has only indirect access if it has REQUEST edges but no HOLD edges
+        return len(request_targets) > 0 and len(direct_resources) == 0
     
     def _score_for_sharing_reduction_pattern(self, op_name, params, base_score, state_analysis, graph, constraints, goals):
         """Special scoring when sharing reduction pattern is needed"""
