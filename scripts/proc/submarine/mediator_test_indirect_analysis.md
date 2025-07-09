@@ -20,7 +20,10 @@ The scenario successfully demonstrates **constraint-driven mediation pattern dis
 **Final RSI**: 0.0 (perfect isolation through mediation)  
 **Mechanisms Discovered**: 10  
 **Total Iterations**: 10  
-**Total Candidates**: 280  
+**Total Candidates**: 356 candidates considered  
+**Total Candidates Discarded**: 327 candidates discarded  
+**Goal Achievement**: 100% (all goals met from iteration 1)  
+**Success Rate**: 100% (mechanisms found and goals achieved)  
 **Key Achievement**: Complete mediation pattern with indirect access
 
 ## Pattern Discovery Sequence
