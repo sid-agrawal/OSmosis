@@ -1459,9 +1459,9 @@ def build_reduce_isolation_graph():
     EdgeTransformations.add_hold_edge(graph, Permission.R, pd3, ResourceType.FILE, file_space, r0)
     EdgeTransformations.add_hold_edge(graph, Permission.R, pd4, ResourceType.FILE, file_space, r0)
     
-    # Clients request from mediators
-    EdgeTransformations.add_request_edge(graph, pd1, pd3)
-    EdgeTransformations.add_request_edge(graph, pd2, pd4)
+    # Clients request from mediators for the FILE resource space
+    EdgeTransformations.add_request_edge(graph, pd1, pd3, ResourceType.FILE, file_space)
+    EdgeTransformations.add_request_edge(graph, pd2, pd4, ResourceType.FILE, file_space)
     
     return graph
 

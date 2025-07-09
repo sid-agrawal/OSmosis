@@ -1,0 +1,1219 @@
+🔍 Verbose mode enabled - detailed exploration tracking
+📊 Using 10 maximum iterations per scenario
+
+🎯 Running scenario: mediator_test_indirect
+✓ Validated 7 constraints in scenario 'Mediator Test Indirect Access'
+🎯 Running scenario: Mediator Test Indirect Access
+   Description: Test if requiring indirect access forces mediation discovery
+   Goals (1): ['Goal(minimize RSI[PD_1,PD_2] to 0.8)']
+   Constraints (7): ["Constraint(requires_file_access for PD_1: FILE, {'file_type': 'any', 'min_size_kb': 1})", "Constraint(requires_file_access for PD_2: FILE, {'file_type': 'any', 'min_size_kb': 1})", "Constraint(prohibit_direct_hold for PD_1: FILE_1_3, {'constraint_type': 'negative'})", "Constraint(prohibit_direct_hold for PD_2: FILE_1_3, {'constraint_type': 'negative'})", "Constraint(requires_resource_access for PD_1: FILE_1_3, {'access_type': 'direct_or_indirect'})", "Constraint(requires_resource_access for PD_2: FILE_1_3, {'access_type': 'direct_or_indirect'})", "Constraint(requires_resource_exists for PD_None: FILE_1_3, {'mandatory': True})"]
+   Transitions (12): ['Transition(add_pd: Create new Protection Domain)', 'Transition(remove_pd: Remove existing Protection Domain)', 'Transition(add_file_resource: Create new FILE resource)', 'Transition(remove_file_resource: Remove FILE resource)', 'Transition(add_resource_space: Create new resource space)', 'Transition(remove_resource_space: Remove resource space)', 'Transition(add_hold_edge: Create PD → Resource relationship)', 'Transition(remove_hold_edge: Remove PD → Resource relationship)', 'Transition(add_request_edge: Create PD → PD authority relationship)', 'Transition(remove_request_edge: Remove PD → PD authority relationship)', 'Transition(add_subset_edge: Create Resource → ResourceSpace relationship)', 'Transition(remove_subset_edge: Remove Resource → ResourceSpace relationship)']
+   Starting Graph: 6 nodes, 7 edges
+
+=== Graph Details ===
+Node: PD_1 -> {'type': 'PD', 'data': 'user_process', 'extra': ''}
+Node: PD_2 -> {'type': 'PD', 'data': 'database_server', 'extra': ''}
+Node: FILE_SPACE_1 -> {'type': 'RESOURCE_SPACE', 'data': 'FILE', 'extra': ''}
+Node: FILE_1_1 -> {'type': 'RESOURCE', 'data': 'FILE', 'extra': '{"path": "/etc/user.conf", "file_type": "CONFIG", "size_bytes": "4096", "permissions": "rw-"}'}
+Node: FILE_1_2 -> {'type': 'RESOURCE', 'data': 'FILE', 'extra': '{"path": "/var/db/main.db", "file_type": "DATABASE", "size_bytes": "8192", "permissions": "rw-"}'}
+Node: FILE_1_3 -> {'type': 'RESOURCE', 'data': 'FILE', 'extra': '{"path": "/tmp/shared_buffer.tmp", "file_type": "TEMP", "size_bytes": "2048", "permissions": "rw-"}'}
+
+=== Ready for IsoSearch! ===
+
+=== Exploring Mediator Test Indirect Access ===
+🔍 Using beam search (width=5) with PATTERN-AWARE SCORING
+🔍 Starting beam search exploration (beam_width=5)
+   Goals: 1, Constraints: 7, Transitions: 12
+
+📊 Initial graph:
+        # Graph structure:
+        # PD_1 --HOLD--> FILE_1_1 -> FILE_SPACE_1
+        # PD_1 --HOLD--> FILE_1_3 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_2 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_3 -> FILE_SPACE_1
+        #
+        # FILE_1_3 shared by: PD_1, PD_2
+
+
+============================================================
+🔍 Beam Search Iteration 1/8
+📊 Current beam size: 1
+  Beam[0]: BeamState(iter=0, score=0.000, path=)
+
+🌟 Expanding Beam[0] (score: 0.000)
+  ⚠️  Constraints violated: PD_1 has prohibited direct hold on FILE_1_3; PD_2 has prohibited direct hold on FILE_1_3
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_3 HOLD edge -> score: 1.500
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_3 HOLD edge -> score: 1.500
+  Trying best transition: primitive
+    Target: connect PD_1 to FILE_1_2
+    Predicted improvement: 2.900
+    Considered 14 other option(s):
+      1. primitive: connect PD_2 to FILE_1_1 (improvement: 2.900)
+      2. primitive: remove PD_1 -> FILE_1_3 HOLD edge (improvement: 1.500)
+      3. primitive: remove PD_2 -> FILE_1_3 HOLD edge (improvement: 1.500)
+      4. primitive: enable indirect access: PD_1 -> PD_2 (improvement: 1.000)
+      5. primitive: enable indirect access: PD_2 -> PD_1 (improvement: 1.000)
+      6. primitive: add new protection domain to help resolve 2 constraint violation(s) (improvement: 0.200)
+      7. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.900)
+      8. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.900)
+      9. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      10. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.900)
+      ... and 4 more
+    ⚠️  Applied add_hold_edge with constraint violations: PD_1 has prohibited direct hold on FILE_1_3; PD_2 has prohibited direct hold on FILE_1_3
+  📋 Generated 15 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_hold_edge (score: 2.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_hold_edge (score: 2.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0}, ASR: 1.5, TCB: {'PD_1': [], 'PD_2': []}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: remove_hold_edge (score: 1.500)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0}, ASR: 1.5, TCB: {'PD_1': [], 'PD_2': []}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: remove_hold_edge (score: 1.500)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.3333333333333333}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_request_edge (score: 1.000)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.3333333333333333}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_request_edge (score: 1.000)
+
+📊 Next beam (5 states):
+  Beam[0]: BeamState(iter=1, score=2.900, path=add_hold_edge(connect PD_1 to FILE_1_2))
+  Beam[1]: BeamState(iter=1, score=2.900, path=add_hold_edge(connect PD_2 to FILE_1_1))
+  Beam[2]: BeamState(iter=1, score=1.500, path=remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge))
+  Beam[3]: BeamState(iter=1, score=1.500, path=remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge))
+  Beam[4]: BeamState(iter=1, score=1.000, path=add_request_edge(enable indirect access: PD_1 -> PD_2))
+💡 Total candidates generated: 6
+🎯 Mechanisms discovered so far: 0
+
+============================================================
+🔍 Beam Search Iteration 2/8
+📊 Current beam size: 5
+  Beam[0]: BeamState(iter=1, score=2.900, path=add_hold_edge(connect PD_1 to FILE_1_2))
+  Beam[1]: BeamState(iter=1, score=2.900, path=add_hold_edge(connect PD_2 to FILE_1_1))
+  Beam[2]: BeamState(iter=1, score=1.500, path=remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge))
+  Beam[3]: BeamState(iter=1, score=1.500, path=remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge))
+  Beam[4]: BeamState(iter=1, score=1.000, path=add_request_edge(enable indirect access: PD_1 -> PD_2))
+
+🌟 Expanding Beam[0] (score: 2.900)
+  ⚠️  Constraints violated: PD_1 has prohibited direct hold on FILE_1_3; PD_2 has prohibited direct hold on FILE_1_3
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_3 HOLD edge -> score: 1.500
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_3 HOLD edge -> score: 1.500
+  🚫 Filtered out 0 'add_hold_edge(connect PD_1 to FILE_1_2)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: connect PD_2 to FILE_1_1
+    Predicted improvement: 2.900
+    Considered 14 other option(s):
+      1. primitive: remove PD_1 -> FILE_1_3 HOLD edge (improvement: 1.500)
+      2. primitive: remove PD_2 -> FILE_1_3 HOLD edge (improvement: 1.500)
+      3. primitive: enable indirect access: PD_1 -> PD_2 (improvement: 1.000)
+      4. primitive: enable indirect access: PD_2 -> PD_1 (improvement: 1.000)
+      5. primitive: add new protection domain to help resolve 2 constraint violation(s) (improvement: 0.200)
+      6. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.900)
+      7. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.900)
+      8. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      9. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.900)
+      10. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.400)
+      ... and 4 more
+    ⚠️  Applied add_hold_edge with constraint violations: PD_1 has prohibited direct hold on FILE_1_3; PD_2 has prohibited direct hold on FILE_1_3
+  📋 Generated 15 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 3.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_hold_edge (score: 2.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.3333333333333333}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: remove_hold_edge (score: 1.500)
+
+🌟 Expanding Beam[1] (score: 2.900)
+  ⚠️  Constraints violated: PD_1 has prohibited direct hold on FILE_1_3; PD_2 has prohibited direct hold on FILE_1_3
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_3 HOLD edge -> score: 1.500
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_3 HOLD edge -> score: 1.500
+  🚫 Filtered out 0 'add_hold_edge(connect PD_2 to FILE_1_1)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: connect PD_1 to FILE_1_2
+    Predicted improvement: 2.900
+    Considered 14 other option(s):
+      1. primitive: remove PD_1 -> FILE_1_3 HOLD edge (improvement: 1.500)
+      2. primitive: remove PD_2 -> FILE_1_3 HOLD edge (improvement: 1.500)
+      3. primitive: enable indirect access: PD_1 -> PD_2 (improvement: 1.000)
+      4. primitive: enable indirect access: PD_2 -> PD_1 (improvement: 1.000)
+      5. primitive: add new protection domain to help resolve 2 constraint violation(s) (improvement: 0.200)
+      6. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.900)
+      7. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.900)
+      8. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      9. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.900)
+      10. primitive: remove FILE_1_1 (holders: 2) (improvement: 0.400)
+      ... and 4 more
+    ⚠️  Applied add_hold_edge with constraint violations: PD_1 has prohibited direct hold on FILE_1_3; PD_2 has prohibited direct hold on FILE_1_3
+  📋 Generated 15 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 3.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_hold_edge (score: 2.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.3333333333333333}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: remove_hold_edge (score: 1.500)
+
+🌟 Expanding Beam[2] (score: 1.500)
+  ⚠️  Constraints violated: PD_2 has prohibited direct hold on FILE_1_3; PD_1 lacks any access to FILE_1_3
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_3 HOLD edge -> score: 1.500
+  🚫 Filtered out 0 'remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: remove PD_2 -> FILE_1_3 HOLD edge
+    Predicted improvement: 1.500
+    Considered 12 other option(s):
+      1. primitive: enable indirect access: PD_1 -> PD_2 (improvement: 1.000)
+      2. primitive: enable indirect access: PD_2 -> PD_1 (improvement: 1.000)
+      3. primitive: add new protection domain to help resolve 2 constraint violation(s) (improvement: 0.200)
+      4. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.600)
+      5. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.600)
+      6. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.600)
+      7. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.600)
+      8. primitive: connect PD_1 to FILE_1_2 (improvement: 0.400)
+      9. primitive: connect PD_2 to FILE_1_1 (improvement: 0.400)
+      10. primitive: disconnect FILE_1_1 from FILE_SPACE_1 (improvement: 0.300)
+      ... and 2 more
+    ⚠️  Applied remove_hold_edge with constraint violations: PD_1 lacks any access to FILE_1_3 (resource has no holders); PD_2 lacks any access to FILE_1_3 (resource has no holders)
+  📋 Generated 13 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0}, ASR: 1.0, TCB: {'PD_1': [], 'PD_2': []}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: remove_hold_edge (score: 1.500)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': []}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_request_edge (score: 1.000)
+
+🌟 Expanding Beam[3] (score: 1.500)
+  ⚠️  Constraints violated: PD_1 has prohibited direct hold on FILE_1_3; PD_2 lacks any access to FILE_1_3
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_3 HOLD edge -> score: 1.500
+  🚫 Filtered out 0 'remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: remove PD_1 -> FILE_1_3 HOLD edge
+    Predicted improvement: 1.500
+    Considered 12 other option(s):
+      1. primitive: enable indirect access: PD_1 -> PD_2 (improvement: 1.000)
+      2. primitive: enable indirect access: PD_2 -> PD_1 (improvement: 1.000)
+      3. primitive: add new protection domain to help resolve 2 constraint violation(s) (improvement: 0.200)
+      4. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.600)
+      5. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.600)
+      6. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.600)
+      7. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.600)
+      8. primitive: connect PD_1 to FILE_1_2 (improvement: 0.400)
+      9. primitive: connect PD_2 to FILE_1_1 (improvement: 0.400)
+      10. primitive: disconnect FILE_1_1 from FILE_SPACE_1 (improvement: 0.300)
+      ... and 2 more
+    ⚠️  Applied remove_hold_edge with constraint violations: PD_1 lacks any access to FILE_1_3 (resource has no holders); PD_2 lacks any access to FILE_1_3 (resource has no holders)
+  📋 Generated 13 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0}, ASR: 1.0, TCB: {'PD_1': [], 'PD_2': []}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: remove_hold_edge (score: 1.500)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': []}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_request_edge (score: 1.000)
+
+🌟 Expanding Beam[4] (score: 1.000)
+  ⚠️  Constraints violated: PD_1 has prohibited direct hold on FILE_1_3; PD_2 has prohibited direct hold on FILE_1_3
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_3 HOLD edge -> score: 1.500
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_3 HOLD edge -> score: 1.500
+  🚫 Filtered out 0 'add_request_edge(enable indirect access: PD_1 -> PD_2)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: connect PD_1 to FILE_1_2
+    Predicted improvement: 2.900
+    Considered 14 other option(s):
+      1. primitive: connect PD_2 to FILE_1_1 (improvement: 2.900)
+      2. primitive: remove PD_1 -> FILE_1_3 HOLD edge (improvement: 1.500)
+      3. primitive: remove PD_2 -> FILE_1_3 HOLD edge (improvement: 1.500)
+      4. primitive: enable indirect access: PD_2 -> PD_1 (improvement: 1.000)
+      5. primitive: add new protection domain to help resolve 2 constraint violation(s) (improvement: 0.200)
+      6. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.900)
+      7. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.900)
+      8. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      9. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.900)
+      10. primitive: remove FILE_1_3 (holders: 2) (improvement: 0.400)
+      ... and 4 more
+    ⚠️  Applied add_hold_edge with constraint violations: PD_1 has prohibited direct hold on FILE_1_3; PD_2 has prohibited direct hold on FILE_1_3
+  📋 Generated 15 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 3.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_hold_edge (score: 2.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 3.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_hold_edge (score: 2.900)
+
+📊 Next beam (5 states):
+  Beam[0]: BeamState(iter=2, score=2.900, path=add_hold_edge(connect PD_1 to FILE_1_2) → add_hold_edge(connect PD_2 to FILE_1_1))
+  Beam[1]: BeamState(iter=2, score=2.900, path=add_hold_edge(connect PD_2 to FILE_1_1) → add_hold_edge(connect PD_1 to FILE_1_2))
+  Beam[2]: BeamState(iter=2, score=2.900, path=add_request_edge(enable indirect access: PD_1 -> PD_2) → add_hold_edge(connect PD_1 to FILE_1_2))
+  Beam[3]: BeamState(iter=2, score=2.900, path=add_request_edge(enable indirect access: PD_1 -> PD_2) → add_hold_edge(connect PD_2 to FILE_1_1))
+  Beam[4]: BeamState(iter=2, score=1.500, path=add_hold_edge(connect PD_1 to FILE_1_2) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge))
+💡 Total candidates generated: 10
+🎯 Mechanisms discovered so far: 0
+
+============================================================
+🔍 Beam Search Iteration 3/8
+📊 Current beam size: 5
+  Beam[0]: BeamState(iter=2, score=2.900, path=add_hold_edge(connect PD_1 to FILE_1_2) → add_hold_edge(connect PD_2 to FILE_1_1))
+  Beam[1]: BeamState(iter=2, score=2.900, path=add_hold_edge(connect PD_2 to FILE_1_1) → add_hold_edge(connect PD_1 to FILE_1_2))
+  Beam[2]: BeamState(iter=2, score=2.900, path=add_request_edge(enable indirect access: PD_1 -> PD_2) → add_hold_edge(connect PD_1 to FILE_1_2))
+  Beam[3]: BeamState(iter=2, score=2.900, path=add_request_edge(enable indirect access: PD_1 -> PD_2) → add_hold_edge(connect PD_2 to FILE_1_1))
+  Beam[4]: BeamState(iter=2, score=1.500, path=add_hold_edge(connect PD_1 to FILE_1_2) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge))
+
+🌟 Expanding Beam[0] (score: 2.900)
+  ⚠️  Constraints violated: PD_1 has prohibited direct hold on FILE_1_3; PD_2 has prohibited direct hold on FILE_1_3
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_3 HOLD edge -> score: 1.500
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_3 HOLD edge -> score: 1.500
+  🚫 Filtered out 0 'add_hold_edge(connect PD_2 to FILE_1_1)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: remove PD_1 -> FILE_1_3 HOLD edge
+    Predicted improvement: 1.500
+    Considered 14 other option(s):
+      1. primitive: remove PD_2 -> FILE_1_3 HOLD edge (improvement: 1.500)
+      2. primitive: enable indirect access: PD_1 -> PD_2 (improvement: 1.000)
+      3. primitive: enable indirect access: PD_2 -> PD_1 (improvement: 1.000)
+      4. primitive: add new protection domain to help resolve 2 constraint violation(s) (improvement: 0.200)
+      5. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.900)
+      6. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.900)
+      7. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      8. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.900)
+      9. primitive: remove FILE_1_1 (holders: 2) (improvement: 0.400)
+      10. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.400)
+      ... and 4 more
+    ⚠️  Applied remove_hold_edge with constraint violations: PD_2 has prohibited direct hold on FILE_1_3
+  📋 Generated 15 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: remove_hold_edge (score: 1.500)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: remove_hold_edge (score: 1.500)
+
+🌟 Expanding Beam[1] (score: 2.900)
+  ⚠️  Constraints violated: PD_1 has prohibited direct hold on FILE_1_3; PD_2 has prohibited direct hold on FILE_1_3
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_3 HOLD edge -> score: 1.500
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_3 HOLD edge -> score: 1.500
+  🚫 Filtered out 0 'add_hold_edge(connect PD_1 to FILE_1_2)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: remove PD_1 -> FILE_1_3 HOLD edge
+    Predicted improvement: 1.500
+    Considered 14 other option(s):
+      1. primitive: remove PD_2 -> FILE_1_3 HOLD edge (improvement: 1.500)
+      2. primitive: enable indirect access: PD_1 -> PD_2 (improvement: 1.000)
+      3. primitive: enable indirect access: PD_2 -> PD_1 (improvement: 1.000)
+      4. primitive: add new protection domain to help resolve 2 constraint violation(s) (improvement: 0.200)
+      5. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.900)
+      6. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.900)
+      7. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      8. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.900)
+      9. primitive: remove FILE_1_1 (holders: 2) (improvement: 0.400)
+      10. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.400)
+      ... and 4 more
+    ⚠️  Applied remove_hold_edge with constraint violations: PD_2 has prohibited direct hold on FILE_1_3
+  📋 Generated 15 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: remove_hold_edge (score: 1.500)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: remove_hold_edge (score: 1.500)
+
+🌟 Expanding Beam[2] (score: 2.900)
+  ⚠️  Constraints violated: PD_1 has prohibited direct hold on FILE_1_3; PD_2 has prohibited direct hold on FILE_1_3
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_3 HOLD edge -> score: 1.500
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_3 HOLD edge -> score: 1.500
+  🚫 Filtered out 0 'add_hold_edge(connect PD_1 to FILE_1_2)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: connect PD_2 to FILE_1_1
+    Predicted improvement: 2.900
+    Considered 14 other option(s):
+      1. primitive: remove PD_1 -> FILE_1_3 HOLD edge (improvement: 1.500)
+      2. primitive: remove PD_2 -> FILE_1_3 HOLD edge (improvement: 1.500)
+      3. primitive: enable indirect access: PD_2 -> PD_1 (improvement: 1.000)
+      4. primitive: add new protection domain to help resolve 2 constraint violation(s) (improvement: 0.200)
+      5. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.900)
+      6. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.900)
+      7. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      8. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.900)
+      9. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.400)
+      10. primitive: remove FILE_1_3 (holders: 2) (improvement: 0.400)
+      ... and 4 more
+    ⚠️  Applied add_hold_edge with constraint violations: PD_1 has prohibited direct hold on FILE_1_3; PD_2 has prohibited direct hold on FILE_1_3
+  📋 Generated 15 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 3.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_hold_edge (score: 2.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.3333333333333333}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: remove_hold_edge (score: 1.500)
+
+🌟 Expanding Beam[3] (score: 2.900)
+  ⚠️  Constraints violated: PD_1 has prohibited direct hold on FILE_1_3; PD_2 has prohibited direct hold on FILE_1_3
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_3 HOLD edge -> score: 1.500
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_3 HOLD edge -> score: 1.500
+  🚫 Filtered out 0 'add_hold_edge(connect PD_2 to FILE_1_1)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: connect PD_1 to FILE_1_2
+    Predicted improvement: 2.900
+    Considered 14 other option(s):
+      1. primitive: remove PD_1 -> FILE_1_3 HOLD edge (improvement: 1.500)
+      2. primitive: remove PD_2 -> FILE_1_3 HOLD edge (improvement: 1.500)
+      3. primitive: enable indirect access: PD_2 -> PD_1 (improvement: 1.000)
+      4. primitive: add new protection domain to help resolve 2 constraint violation(s) (improvement: 0.200)
+      5. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.900)
+      6. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.900)
+      7. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      8. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.900)
+      9. primitive: remove FILE_1_1 (holders: 2) (improvement: 0.400)
+      10. primitive: remove FILE_1_3 (holders: 2) (improvement: 0.400)
+      ... and 4 more
+    ⚠️  Applied add_hold_edge with constraint violations: PD_1 has prohibited direct hold on FILE_1_3; PD_2 has prohibited direct hold on FILE_1_3
+  📋 Generated 15 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 3.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_hold_edge (score: 2.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.3333333333333333}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: remove_hold_edge (score: 1.500)
+
+🌟 Expanding Beam[4] (score: 1.500)
+  ⚠️  Constraints violated: PD_2 has prohibited direct hold on FILE_1_3; PD_1 lacks any access to FILE_1_3
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_3 HOLD edge -> score: 1.500
+  🚫 Filtered out 0 'remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: connect PD_2 to FILE_1_1
+    Predicted improvement: 2.900
+    Considered 12 other option(s):
+      1. primitive: remove PD_2 -> FILE_1_3 HOLD edge (improvement: 1.500)
+      2. primitive: enable indirect access: PD_1 -> PD_2 (improvement: 1.000)
+      3. primitive: enable indirect access: PD_2 -> PD_1 (improvement: 1.000)
+      4. primitive: add new protection domain to help resolve 2 constraint violation(s) (improvement: 0.200)
+      5. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.900)
+      6. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.900)
+      7. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      8. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.900)
+      9. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.400)
+      10. primitive: disconnect FILE_1_1 from FILE_SPACE_1 (improvement: 0.300)
+      ... and 2 more
+    ⚠️  Applied add_hold_edge with constraint violations: PD_2 has prohibited direct hold on FILE_1_3
+  📋 Generated 13 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_hold_edge (score: 2.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5}, ASR: 1.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: remove_hold_edge (score: 1.500)
+
+📊 Next beam (5 states):
+  Beam[0]: BeamState(iter=3, score=2.900, path=add_request_edge(enable indirect access: PD_1 -> PD_2) → add_hold_edge(connect PD_1 to FILE_1_2) → add_hold_edge(connect PD_2 to FILE_1_1))
+  Beam[1]: BeamState(iter=3, score=2.900, path=add_request_edge(enable indirect access: PD_1 -> PD_2) → add_hold_edge(connect PD_2 to FILE_1_1) → add_hold_edge(connect PD_1 to FILE_1_2))
+  Beam[2]: BeamState(iter=3, score=2.900, path=add_hold_edge(connect PD_1 to FILE_1_2) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) → add_hold_edge(connect PD_2 to FILE_1_1))
+  Beam[3]: BeamState(iter=3, score=1.500, path=add_hold_edge(connect PD_1 to FILE_1_2) → add_hold_edge(connect PD_2 to FILE_1_1) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge))
+  Beam[4]: BeamState(iter=3, score=1.500, path=add_hold_edge(connect PD_1 to FILE_1_2) → add_hold_edge(connect PD_2 to FILE_1_1) → remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge))
+💡 Total candidates generated: 10
+🎯 Mechanisms discovered so far: 0
+
+============================================================
+🔍 Beam Search Iteration 4/8
+📊 Current beam size: 5
+  Beam[0]: BeamState(iter=3, score=2.900, path=add_request_edge(enable indirect access: PD_1 -> PD_2) → add_hold_edge(connect PD_1 to FILE_1_2) → add_hold_edge(connect PD_2 to FILE_1_1))
+  Beam[1]: BeamState(iter=3, score=2.900, path=add_request_edge(enable indirect access: PD_1 -> PD_2) → add_hold_edge(connect PD_2 to FILE_1_1) → add_hold_edge(connect PD_1 to FILE_1_2))
+  Beam[2]: BeamState(iter=3, score=2.900, path=add_hold_edge(connect PD_1 to FILE_1_2) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) → add_hold_edge(connect PD_2 to FILE_1_1))
+  Beam[3]: BeamState(iter=3, score=1.500, path=add_hold_edge(connect PD_1 to FILE_1_2) → add_hold_edge(connect PD_2 to FILE_1_1) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge))
+  Beam[4]: BeamState(iter=3, score=1.500, path=add_hold_edge(connect PD_1 to FILE_1_2) → add_hold_edge(connect PD_2 to FILE_1_1) → remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge))
+
+🌟 Expanding Beam[0] (score: 2.900)
+  ⚠️  Constraints violated: PD_1 has prohibited direct hold on FILE_1_3; PD_2 has prohibited direct hold on FILE_1_3
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_3 HOLD edge -> score: 1.500
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_3 HOLD edge -> score: 1.500
+  🚫 Filtered out 0 'add_hold_edge(connect PD_2 to FILE_1_1)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: remove PD_1 -> FILE_1_3 HOLD edge
+    Predicted improvement: 1.500
+    Considered 14 other option(s):
+      1. primitive: remove PD_2 -> FILE_1_3 HOLD edge (improvement: 1.500)
+      2. primitive: enable indirect access: PD_2 -> PD_1 (improvement: 1.000)
+      3. primitive: add new protection domain to help resolve 2 constraint violation(s) (improvement: 0.200)
+      4. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.900)
+      5. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.900)
+      6. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      7. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.900)
+      8. primitive: remove FILE_1_1 (holders: 2) (improvement: 0.400)
+      9. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.400)
+      10. primitive: remove FILE_1_3 (holders: 2) (improvement: 0.400)
+      ... and 4 more
+    ⚠️  Applied remove_hold_edge with constraint violations: PD_2 has prohibited direct hold on FILE_1_3
+  📋 Generated 15 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 3.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: remove_hold_edge (score: 1.500)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 3.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: remove_hold_edge (score: 1.500)
+
+🌟 Expanding Beam[1] (score: 2.900)
+  ⚠️  Constraints violated: PD_1 has prohibited direct hold on FILE_1_3; PD_2 has prohibited direct hold on FILE_1_3
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_3 HOLD edge -> score: 1.500
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_3 HOLD edge -> score: 1.500
+  🚫 Filtered out 0 'add_hold_edge(connect PD_1 to FILE_1_2)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: remove PD_1 -> FILE_1_3 HOLD edge
+    Predicted improvement: 1.500
+    Considered 14 other option(s):
+      1. primitive: remove PD_2 -> FILE_1_3 HOLD edge (improvement: 1.500)
+      2. primitive: enable indirect access: PD_2 -> PD_1 (improvement: 1.000)
+      3. primitive: add new protection domain to help resolve 2 constraint violation(s) (improvement: 0.200)
+      4. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.900)
+      5. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.900)
+      6. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      7. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.900)
+      8. primitive: remove FILE_1_1 (holders: 2) (improvement: 0.400)
+      9. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.400)
+      10. primitive: remove FILE_1_3 (holders: 2) (improvement: 0.400)
+      ... and 4 more
+    ⚠️  Applied remove_hold_edge with constraint violations: PD_2 has prohibited direct hold on FILE_1_3
+  📋 Generated 15 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 3.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: remove_hold_edge (score: 1.500)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 3.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: remove_hold_edge (score: 1.500)
+
+🌟 Expanding Beam[2] (score: 2.900)
+  ⚠️  Constraints violated: PD_2 has prohibited direct hold on FILE_1_3; PD_1 lacks any access to FILE_1_3
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_3 HOLD edge -> score: 1.500
+  🚫 Filtered out 0 'add_hold_edge(connect PD_2 to FILE_1_1)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: remove PD_2 -> FILE_1_3 HOLD edge
+    Predicted improvement: 1.500
+    Considered 12 other option(s):
+      1. primitive: enable indirect access: PD_1 -> PD_2 (improvement: 1.000)
+      2. primitive: enable indirect access: PD_2 -> PD_1 (improvement: 1.000)
+      3. primitive: add new protection domain to help resolve 2 constraint violation(s) (improvement: 0.200)
+      4. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.900)
+      5. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.900)
+      6. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      7. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.900)
+      8. primitive: remove FILE_1_1 (holders: 2) (improvement: 0.400)
+      9. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.400)
+      10. primitive: disconnect FILE_1_1 from FILE_SPACE_1 (improvement: 0.300)
+      ... and 2 more
+    ⚠️  Applied remove_hold_edge with constraint violations: PD_1 lacks any access to FILE_1_3 (resource has no holders); PD_2 lacks any access to FILE_1_3 (resource has no holders)
+  📋 Generated 13 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: remove_hold_edge (score: 1.500)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 3.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_request_edge (score: 1.000)
+
+🌟 Expanding Beam[3] (score: 1.500)
+  ⚠️  Constraints violated: PD_2 has prohibited direct hold on FILE_1_3; PD_1 lacks any access to FILE_1_3
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_3 HOLD edge -> score: 1.500
+  🚫 Filtered out 0 'remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge)' candidates (avoiding repetition)
+  🎲 Exploration: selecting candidate #1 instead of best
+  Trying best transition: primitive
+    Target: remove PD_2 -> FILE_1_3 HOLD edge
+    Predicted improvement: 1.500
+    Considered 12 other option(s):
+      1. primitive: enable indirect access: PD_1 -> PD_2 (improvement: 1.000)
+      2. primitive: enable indirect access: PD_2 -> PD_1 (improvement: 1.000)
+      3. primitive: add new protection domain to help resolve 2 constraint violation(s) (improvement: 0.200)
+      4. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.900)
+      5. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.900)
+      6. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      7. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.900)
+      8. primitive: remove FILE_1_1 (holders: 2) (improvement: 0.400)
+      9. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.400)
+      10. primitive: disconnect FILE_1_1 from FILE_SPACE_1 (improvement: 0.300)
+      ... and 2 more
+    ⚠️  Applied remove_hold_edge with constraint violations: PD_1 lacks any access to FILE_1_3 (resource has no holders); PD_2 lacks any access to FILE_1_3 (resource has no holders)
+  📋 Generated 13 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: remove_hold_edge (score: 1.500)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 3.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_request_edge (score: 1.000)
+
+🌟 Expanding Beam[4] (score: 1.500)
+  ⚠️  Constraints violated: PD_1 has prohibited direct hold on FILE_1_3; PD_2 lacks any access to FILE_1_3
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_3 HOLD edge -> score: 1.500
+  🚫 Filtered out 0 'remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: remove PD_1 -> FILE_1_3 HOLD edge
+    Predicted improvement: 1.500
+    Considered 12 other option(s):
+      1. primitive: enable indirect access: PD_1 -> PD_2 (improvement: 1.000)
+      2. primitive: enable indirect access: PD_2 -> PD_1 (improvement: 1.000)
+      3. primitive: add new protection domain to help resolve 2 constraint violation(s) (improvement: 0.200)
+      4. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.900)
+      5. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.900)
+      6. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      7. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.900)
+      8. primitive: remove FILE_1_1 (holders: 2) (improvement: 0.400)
+      9. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.400)
+      10. primitive: disconnect FILE_1_1 from FILE_SPACE_1 (improvement: 0.300)
+      ... and 2 more
+    ⚠️  Applied remove_hold_edge with constraint violations: PD_1 lacks any access to FILE_1_3 (resource has no holders); PD_2 lacks any access to FILE_1_3 (resource has no holders)
+  📋 Generated 13 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: remove_hold_edge (score: 1.500)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 3.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_request_edge (score: 1.000)
+
+📊 Next beam (5 states):
+  Beam[0]: BeamState(iter=4, score=1.500, path=add_hold_edge(connect PD_1 to FILE_1_2) → add_hold_edge(connect PD_2 to FILE_1_1) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge))
+  Beam[1]: BeamState(iter=4, score=1.500, path=add_hold_edge(connect PD_1 to FILE_1_2) → add_hold_edge(connect PD_2 to FILE_1_1) → remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge))
+  Beam[2]: BeamState(iter=4, score=1.500, path=add_hold_edge(connect PD_2 to FILE_1_1) → add_hold_edge(connect PD_1 to FILE_1_2) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge))
+  Beam[3]: BeamState(iter=4, score=1.500, path=add_hold_edge(connect PD_2 to FILE_1_1) → add_hold_edge(connect PD_1 to FILE_1_2) → remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge))
+  Beam[4]: BeamState(iter=4, score=1.500, path=remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) → add_hold_edge(connect PD_2 to FILE_1_1) → remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge))
+💡 Total candidates generated: 10
+🎯 Mechanisms discovered so far: 0
+
+============================================================
+🔍 Beam Search Iteration 5/8
+📊 Current beam size: 5
+  Beam[0]: BeamState(iter=4, score=1.500, path=add_hold_edge(connect PD_1 to FILE_1_2) → add_hold_edge(connect PD_2 to FILE_1_1) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge))
+  Beam[1]: BeamState(iter=4, score=1.500, path=add_hold_edge(connect PD_1 to FILE_1_2) → add_hold_edge(connect PD_2 to FILE_1_1) → remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge))
+  Beam[2]: BeamState(iter=4, score=1.500, path=add_hold_edge(connect PD_2 to FILE_1_1) → add_hold_edge(connect PD_1 to FILE_1_2) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge))
+  Beam[3]: BeamState(iter=4, score=1.500, path=add_hold_edge(connect PD_2 to FILE_1_1) → add_hold_edge(connect PD_1 to FILE_1_2) → remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge))
+  Beam[4]: BeamState(iter=4, score=1.500, path=remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) → add_hold_edge(connect PD_2 to FILE_1_1) → remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge))
+
+🌟 Expanding Beam[0] (score: 1.500)
+  ⚠️  Constraints violated: PD_2 has prohibited direct hold on FILE_1_3
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_3 HOLD edge -> score: 1.500
+  🚫 Filtered out 0 'remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge)' candidates (avoiding repetition)
+  🎲 Exploration: selecting candidate #1 instead of best
+  Trying best transition: primitive
+    Target: remove PD_2 -> FILE_1_3 HOLD edge
+    Predicted improvement: 1.500
+    Considered 12 other option(s):
+      1. primitive: enable indirect access: PD_2 -> PD_1 (improvement: 1.000)
+      2. primitive: add new protection domain to help resolve 1 constraint violation(s) (improvement: 0.200)
+      3. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.900)
+      4. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.900)
+      5. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      6. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.900)
+      7. primitive: remove FILE_1_1 (holders: 2) (improvement: 0.400)
+      8. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.400)
+      9. primitive: remove authority PD_1 -> PD_2 (improvement: 0.300)
+      10. primitive: disconnect FILE_1_1 from FILE_SPACE_1 (improvement: 0.300)
+      ... and 2 more
+    ⚠️  Applied remove_hold_edge with constraint violations: PD_1 lacks any access to FILE_1_3 (resource has no holders); PD_2 lacks any access to FILE_1_3 (resource has no holders)
+  📋 Generated 13 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: remove_hold_edge (score: 1.500)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 3.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_request_edge (score: 1.000)
+
+🌟 Expanding Beam[1] (score: 1.500)
+  ⚠️  Constraints violated: PD_1 has prohibited direct hold on FILE_1_3; PD_2 lacks any access to FILE_1_3
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_3 HOLD edge -> score: 1.500
+  🚫 Filtered out 0 'remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: remove PD_1 -> FILE_1_3 HOLD edge
+    Predicted improvement: 1.500
+    Considered 12 other option(s):
+      1. primitive: enable indirect access: PD_2 -> PD_1 (improvement: 1.000)
+      2. primitive: add new protection domain to help resolve 2 constraint violation(s) (improvement: 0.200)
+      3. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.900)
+      4. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.900)
+      5. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      6. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.900)
+      7. primitive: remove FILE_1_1 (holders: 2) (improvement: 0.400)
+      8. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.400)
+      9. primitive: remove authority PD_1 -> PD_2 (improvement: 0.300)
+      10. primitive: disconnect FILE_1_1 from FILE_SPACE_1 (improvement: 0.300)
+      ... and 2 more
+    ⚠️  Applied remove_hold_edge with constraint violations: PD_1 lacks any access to FILE_1_3 (resource has no holders); PD_2 lacks any access to FILE_1_3 (resource has no holders)
+  📋 Generated 13 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: remove_hold_edge (score: 1.500)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 3.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_request_edge (score: 1.000)
+
+🌟 Expanding Beam[2] (score: 1.500)
+  ⚠️  Constraints violated: PD_2 has prohibited direct hold on FILE_1_3
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_3 HOLD edge -> score: 1.500
+  🚫 Filtered out 0 'remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: remove PD_2 -> FILE_1_3 HOLD edge
+    Predicted improvement: 1.500
+    Considered 12 other option(s):
+      1. primitive: enable indirect access: PD_2 -> PD_1 (improvement: 1.000)
+      2. primitive: add new protection domain to help resolve 1 constraint violation(s) (improvement: 0.200)
+      3. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.900)
+      4. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.900)
+      5. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      6. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.900)
+      7. primitive: remove FILE_1_1 (holders: 2) (improvement: 0.400)
+      8. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.400)
+      9. primitive: remove authority PD_1 -> PD_2 (improvement: 0.300)
+      10. primitive: disconnect FILE_1_1 from FILE_SPACE_1 (improvement: 0.300)
+      ... and 2 more
+    ⚠️  Applied remove_hold_edge with constraint violations: PD_1 lacks any access to FILE_1_3 (resource has no holders); PD_2 lacks any access to FILE_1_3 (resource has no holders)
+  📋 Generated 13 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: remove_hold_edge (score: 1.500)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 3.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_request_edge (score: 1.000)
+
+🌟 Expanding Beam[3] (score: 1.500)
+  ⚠️  Constraints violated: PD_1 has prohibited direct hold on FILE_1_3; PD_2 lacks any access to FILE_1_3
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_3 HOLD edge -> score: 1.500
+  🚫 Filtered out 0 'remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge)' candidates (avoiding repetition)
+  🎲 Exploration: selecting candidate #1 instead of best
+  Trying best transition: primitive
+    Target: remove PD_1 -> FILE_1_3 HOLD edge
+    Predicted improvement: 1.500
+    Considered 12 other option(s):
+      1. primitive: enable indirect access: PD_2 -> PD_1 (improvement: 1.000)
+      2. primitive: add new protection domain to help resolve 2 constraint violation(s) (improvement: 0.200)
+      3. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.900)
+      4. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.900)
+      5. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      6. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.900)
+      7. primitive: remove FILE_1_1 (holders: 2) (improvement: 0.400)
+      8. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.400)
+      9. primitive: remove authority PD_1 -> PD_2 (improvement: 0.300)
+      10. primitive: disconnect FILE_1_1 from FILE_SPACE_1 (improvement: 0.300)
+      ... and 2 more
+    ⚠️  Applied remove_hold_edge with constraint violations: PD_1 lacks any access to FILE_1_3 (resource has no holders); PD_2 lacks any access to FILE_1_3 (resource has no holders)
+  📋 Generated 13 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: remove_hold_edge (score: 1.500)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 3.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_request_edge (score: 1.000)
+
+🌟 Expanding Beam[4] (score: 1.500)
+  ⚠️  Constraints violated: PD_1 lacks any access to FILE_1_3; PD_2 lacks any access to FILE_1_3
+  🚫 Filtered out 0 'remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 2 constraint violation(s)
+    Predicted improvement: 1.500
+    Considered 12 other option(s):
+      1. primitive: enable indirect access: PD_1 -> PD_2 (improvement: 1.000)
+      2. primitive: enable indirect access: PD_2 -> PD_1 (improvement: 1.000)
+      3. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.900)
+      4. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.900)
+      5. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      6. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.900)
+      7. primitive: remove FILE_1_1 (holders: 2) (improvement: 0.400)
+      8. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.400)
+      9. primitive: remove FILE_1_3 (holders: 0) (improvement: 0.400)
+      10. primitive: disconnect FILE_1_1 from FILE_SPACE_1 (improvement: 0.300)
+      ... and 2 more
+    ⚠️  Applied add_pd with constraint violations: PD_1 lacks any access to FILE_1_3 (resource has no holders); PD_2 lacks any access to FILE_1_3 (resource has no holders)
+  📋 Generated 13 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.3333333333333333, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_pd (score: 1.500)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_request_edge (score: 1.000)
+
+📊 Next beam (5 states):
+  Beam[0]: BeamState(iter=5, score=1.500, path=add_hold_edge(connect PD_2 to FILE_1_1) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) → remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge))
+  Beam[1]: BeamState(iter=5, score=1.500, path=add_hold_edge(connect PD_2 to FILE_1_1) → remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge))
+  Beam[2]: BeamState(iter=5, score=1.500, path=add_hold_edge(connect PD_1 to FILE_1_2) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) → remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge))
+  Beam[3]: BeamState(iter=5, score=1.500, path=add_hold_edge(connect PD_1 to FILE_1_2) → remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge))
+  Beam[4]: BeamState(iter=5, score=1.500, path=add_hold_edge(connect PD_2 to FILE_1_1) → remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge) → add_pd(add new protection domain to help resolve 2 constraint violation(s)))
+💡 Total candidates generated: 10
+🎯 Mechanisms discovered so far: 0
+
+============================================================
+🔍 Beam Search Iteration 6/8
+📊 Current beam size: 5
+  Beam[0]: BeamState(iter=5, score=1.500, path=add_hold_edge(connect PD_2 to FILE_1_1) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) → remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge))
+  Beam[1]: BeamState(iter=5, score=1.500, path=add_hold_edge(connect PD_2 to FILE_1_1) → remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge))
+  Beam[2]: BeamState(iter=5, score=1.500, path=add_hold_edge(connect PD_1 to FILE_1_2) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) → remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge))
+  Beam[3]: BeamState(iter=5, score=1.500, path=add_hold_edge(connect PD_1 to FILE_1_2) → remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge))
+  Beam[4]: BeamState(iter=5, score=1.500, path=add_hold_edge(connect PD_2 to FILE_1_1) → remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge) → add_pd(add new protection domain to help resolve 2 constraint violation(s)))
+
+🌟 Expanding Beam[0] (score: 1.500)
+  ⚠️  Constraints violated: PD_1 lacks any access to FILE_1_3; PD_2 lacks any access to FILE_1_3
+  🚫 Filtered out 0 'remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 2 constraint violation(s)
+    Predicted improvement: 1.500
+    Considered 12 other option(s):
+      1. primitive: enable indirect access: PD_2 -> PD_1 (improvement: 1.000)
+      2. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.900)
+      3. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.900)
+      4. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      5. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.900)
+      6. primitive: remove FILE_1_1 (holders: 2) (improvement: 0.400)
+      7. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.400)
+      8. primitive: remove FILE_1_3 (holders: 0) (improvement: 0.400)
+      9. primitive: remove authority PD_1 -> PD_2 (improvement: 0.300)
+      10. primitive: disconnect FILE_1_1 from FILE_SPACE_1 (improvement: 0.300)
+      ... and 2 more
+    ⚠️  Applied add_pd with constraint violations: PD_1 lacks any access to FILE_1_3 (resource has no holders); PD_2 lacks any access to FILE_1_3 (resource has no holders)
+  📋 Generated 13 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_pd (score: 1.500)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 3.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_request_edge (score: 1.000)
+
+🌟 Expanding Beam[1] (score: 1.500)
+  ⚠️  Constraints violated: PD_1 lacks any access to FILE_1_3; PD_2 lacks any access to FILE_1_3
+  🚫 Filtered out 0 'remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 2 constraint violation(s)
+    Predicted improvement: 1.500
+    Considered 12 other option(s):
+      1. primitive: enable indirect access: PD_2 -> PD_1 (improvement: 1.000)
+      2. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.900)
+      3. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.900)
+      4. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      5. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.900)
+      6. primitive: remove FILE_1_1 (holders: 2) (improvement: 0.400)
+      7. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.400)
+      8. primitive: remove FILE_1_3 (holders: 0) (improvement: 0.400)
+      9. primitive: remove authority PD_1 -> PD_2 (improvement: 0.300)
+      10. primitive: disconnect FILE_1_1 from FILE_SPACE_1 (improvement: 0.300)
+      ... and 2 more
+    ⚠️  Applied add_pd with constraint violations: PD_1 lacks any access to FILE_1_3 (resource has no holders); PD_2 lacks any access to FILE_1_3 (resource has no holders)
+  📋 Generated 13 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_pd (score: 1.500)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 3.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_request_edge (score: 1.000)
+
+🌟 Expanding Beam[2] (score: 1.500)
+  ⚠️  Constraints violated: PD_1 lacks any access to FILE_1_3; PD_2 lacks any access to FILE_1_3
+  🚫 Filtered out 0 'remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 2 constraint violation(s)
+    Predicted improvement: 1.500
+    Considered 12 other option(s):
+      1. primitive: enable indirect access: PD_2 -> PD_1 (improvement: 1.000)
+      2. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.900)
+      3. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.900)
+      4. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      5. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.900)
+      6. primitive: remove FILE_1_1 (holders: 2) (improvement: 0.400)
+      7. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.400)
+      8. primitive: remove FILE_1_3 (holders: 0) (improvement: 0.400)
+      9. primitive: remove authority PD_1 -> PD_2 (improvement: 0.300)
+      10. primitive: disconnect FILE_1_1 from FILE_SPACE_1 (improvement: 0.300)
+      ... and 2 more
+    ⚠️  Applied add_pd with constraint violations: PD_1 lacks any access to FILE_1_3 (resource has no holders); PD_2 lacks any access to FILE_1_3 (resource has no holders)
+  📋 Generated 13 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_pd (score: 1.500)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 3.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_request_edge (score: 1.000)
+
+🌟 Expanding Beam[3] (score: 1.500)
+  ⚠️  Constraints violated: PD_1 lacks any access to FILE_1_3; PD_2 lacks any access to FILE_1_3
+  🚫 Filtered out 0 'remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 2 constraint violation(s)
+    Predicted improvement: 1.500
+    Considered 12 other option(s):
+      1. primitive: enable indirect access: PD_2 -> PD_1 (improvement: 1.000)
+      2. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.900)
+      3. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.900)
+      4. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      5. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.900)
+      6. primitive: remove FILE_1_1 (holders: 2) (improvement: 0.400)
+      7. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.400)
+      8. primitive: remove FILE_1_3 (holders: 0) (improvement: 0.400)
+      9. primitive: remove authority PD_1 -> PD_2 (improvement: 0.300)
+      10. primitive: disconnect FILE_1_1 from FILE_SPACE_1 (improvement: 0.300)
+      ... and 2 more
+    ⚠️  Applied add_pd with constraint violations: PD_1 lacks any access to FILE_1_3 (resource has no holders); PD_2 lacks any access to FILE_1_3 (resource has no holders)
+  📋 Generated 13 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_pd (score: 1.500)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 3.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_request_edge (score: 1.000)
+
+🌟 Expanding Beam[4] (score: 1.500)
+  ⚠️  Constraints violated: PD_1 lacks any access to FILE_1_3; PD_2 lacks any access to FILE_1_3
+  🚫 Filtered out 0 'add_pd(add new protection domain to help resolve 2 constraint violation(s))' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 2 constraint violation(s)
+    Predicted improvement: 1.500
+    Considered 20 other option(s):
+      1. primitive: connect PD_3 to orphaned resource FILE_1_3 (improvement: 2.000)
+      2. primitive: enable indirect access: PD_1 -> PD_2 (improvement: 1.000)
+      3. primitive: enable indirect access: PD_2 -> PD_1 (improvement: 1.000)
+      4. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.900)
+      5. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.900)
+      6. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      7. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.900)
+      8. primitive: remove FILE_1_1 (holders: 2) (improvement: 0.400)
+      9. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.400)
+      10. primitive: remove FILE_1_3 (holders: 0) (improvement: 0.400)
+      ... and 10 more
+    ⚠️  Applied add_pd with constraint violations: PD_1 lacks any access to FILE_1_3 (resource has no holders); PD_2 lacks any access to FILE_1_3 (resource has no holders)
+  📋 Generated 21 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_hold_edge (score: 2.000)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_pd (score: 1.500)
+
+📊 Next beam (5 states):
+  Beam[0]: BeamState(iter=6, score=2.000, path=remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge) → add_pd(add new protection domain to help resolve 2 constraint violation(s)) → add_hold_edge(connect PD_3 to orphaned resource FILE_1_3))
+  Beam[1]: BeamState(iter=6, score=1.500, path=remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) → remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge) → add_pd(add new protection domain to help resolve 2 constraint violation(s)))
+  Beam[2]: BeamState(iter=6, score=1.500, path=remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) → add_pd(add new protection domain to help resolve 2 constraint violation(s)))
+  Beam[3]: BeamState(iter=6, score=1.500, path=remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) → remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge) → add_pd(add new protection domain to help resolve 2 constraint violation(s)))
+  Beam[4]: BeamState(iter=6, score=1.500, path=remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) → add_pd(add new protection domain to help resolve 2 constraint violation(s)))
+💡 Total candidates generated: 10
+🎯 Mechanisms discovered so far: 0
+
+============================================================
+🔍 Beam Search Iteration 7/8
+📊 Current beam size: 5
+  Beam[0]: BeamState(iter=6, score=2.000, path=remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge) → add_pd(add new protection domain to help resolve 2 constraint violation(s)) → add_hold_edge(connect PD_3 to orphaned resource FILE_1_3))
+  Beam[1]: BeamState(iter=6, score=1.500, path=remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) → remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge) → add_pd(add new protection domain to help resolve 2 constraint violation(s)))
+  Beam[2]: BeamState(iter=6, score=1.500, path=remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) → add_pd(add new protection domain to help resolve 2 constraint violation(s)))
+  Beam[3]: BeamState(iter=6, score=1.500, path=remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) → remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge) → add_pd(add new protection domain to help resolve 2 constraint violation(s)))
+  Beam[4]: BeamState(iter=6, score=1.500, path=remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) → add_pd(add new protection domain to help resolve 2 constraint violation(s)))
+
+🌟 Expanding Beam[0] (score: 2.000)
+  ⚠️  Constraints violated: PD_1 lacks any access to FILE_1_3; PD_2 lacks any access to FILE_1_3
+    remove_hold_edge candidate: remove PD_3 -> FILE_1_3 HOLD edge -> score: 0.500
+  🚫 Filtered out 0 'add_hold_edge(connect PD_3 to orphaned resource FILE_1_3)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: enable indirect access: PD_1 -> PD_2
+    Predicted improvement: 1.000
+    Considered 18 other option(s):
+      1. primitive: enable indirect access: PD_1 -> PD_3 (improvement: 1.000)
+      2. primitive: enable indirect access: PD_2 -> PD_1 (improvement: 1.000)
+      3. primitive: enable indirect access: PD_2 -> PD_3 (improvement: 1.000)
+      4. primitive: add new protection domain to help resolve 2 constraint violation(s) (improvement: 0.200)
+      5. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.900)
+      6. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.900)
+      7. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      8. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.900)
+      9. primitive: remove PD_3 -> FILE_1_3 HOLD edge (improvement: 0.500)
+      10. primitive: remove FILE_1_1 (holders: 2) (improvement: 0.400)
+      ... and 8 more
+    ✅ Applied add_request_edge
+  📋 Generated 19 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_request_edge (score: 1.000)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 2.0, TCB: {'PD_1': ['PD_3', 'PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_request_edge (score: 1.000)
+
+🌟 Expanding Beam[1] (score: 1.500)
+  ⚠️  Constraints violated: PD_1 lacks any access to FILE_1_3; PD_2 lacks any access to FILE_1_3
+  🚫 Filtered out 0 'add_pd(add new protection domain to help resolve 2 constraint violation(s))' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 2 constraint violation(s)
+    Predicted improvement: 1.500
+    Considered 20 other option(s):
+      1. primitive: connect PD_3 to orphaned resource FILE_1_3 (improvement: 2.000)
+      2. primitive: enable indirect access: PD_2 -> PD_1 (improvement: 1.000)
+      3. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.900)
+      4. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.900)
+      5. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      6. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.900)
+      7. primitive: remove FILE_1_1 (holders: 2) (improvement: 0.400)
+      8. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.400)
+      9. primitive: remove FILE_1_3 (holders: 0) (improvement: 0.400)
+      10. primitive: remove empty PD_3 (improvement: 0.300)
+      ... and 10 more
+    ⚠️  Applied add_pd with constraint violations: PD_1 lacks any access to FILE_1_3 (resource has no holders); PD_2 lacks any access to FILE_1_3 (resource has no holders)
+  📋 Generated 21 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_hold_edge (score: 2.000)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 1.25, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_pd (score: 1.500)
+
+🌟 Expanding Beam[2] (score: 1.500)
+  ⚠️  Constraints violated: PD_1 lacks any access to FILE_1_3; PD_2 lacks any access to FILE_1_3
+  🚫 Filtered out 0 'add_pd(add new protection domain to help resolve 2 constraint violation(s))' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 2 constraint violation(s)
+    Predicted improvement: 1.500
+    Considered 20 other option(s):
+      1. primitive: connect PD_3 to orphaned resource FILE_1_3 (improvement: 2.000)
+      2. primitive: enable indirect access: PD_2 -> PD_1 (improvement: 1.000)
+      3. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.900)
+      4. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.900)
+      5. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      6. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.900)
+      7. primitive: remove FILE_1_1 (holders: 2) (improvement: 0.400)
+      8. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.400)
+      9. primitive: remove FILE_1_3 (holders: 0) (improvement: 0.400)
+      10. primitive: remove empty PD_3 (improvement: 0.300)
+      ... and 10 more
+    ⚠️  Applied add_pd with constraint violations: PD_1 lacks any access to FILE_1_3 (resource has no holders); PD_2 lacks any access to FILE_1_3 (resource has no holders)
+  📋 Generated 21 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_hold_edge (score: 2.000)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 1.25, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_pd (score: 1.500)
+
+🌟 Expanding Beam[3] (score: 1.500)
+  ⚠️  Constraints violated: PD_1 lacks any access to FILE_1_3; PD_2 lacks any access to FILE_1_3
+  🚫 Filtered out 0 'add_pd(add new protection domain to help resolve 2 constraint violation(s))' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 2 constraint violation(s)
+    Predicted improvement: 1.500
+    Considered 20 other option(s):
+      1. primitive: connect PD_3 to orphaned resource FILE_1_3 (improvement: 2.000)
+      2. primitive: enable indirect access: PD_2 -> PD_1 (improvement: 1.000)
+      3. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.900)
+      4. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.900)
+      5. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      6. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.900)
+      7. primitive: remove FILE_1_1 (holders: 2) (improvement: 0.400)
+      8. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.400)
+      9. primitive: remove FILE_1_3 (holders: 0) (improvement: 0.400)
+      10. primitive: remove empty PD_3 (improvement: 0.300)
+      ... and 10 more
+    ⚠️  Applied add_pd with constraint violations: PD_1 lacks any access to FILE_1_3 (resource has no holders); PD_2 lacks any access to FILE_1_3 (resource has no holders)
+  📋 Generated 21 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_hold_edge (score: 2.000)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 1.25, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_pd (score: 1.500)
+
+🌟 Expanding Beam[4] (score: 1.500)
+  ⚠️  Constraints violated: PD_1 lacks any access to FILE_1_3; PD_2 lacks any access to FILE_1_3
+  🚫 Filtered out 0 'add_pd(add new protection domain to help resolve 2 constraint violation(s))' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 2 constraint violation(s)
+    Predicted improvement: 1.500
+    Considered 20 other option(s):
+      1. primitive: connect PD_3 to orphaned resource FILE_1_3 (improvement: 2.000)
+      2. primitive: enable indirect access: PD_2 -> PD_1 (improvement: 1.000)
+      3. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.900)
+      4. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.900)
+      5. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      6. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.900)
+      7. primitive: remove FILE_1_1 (holders: 2) (improvement: 0.400)
+      8. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.400)
+      9. primitive: remove FILE_1_3 (holders: 0) (improvement: 0.400)
+      10. primitive: remove empty PD_3 (improvement: 0.300)
+      ... and 10 more
+    ⚠️  Applied add_pd with constraint violations: PD_1 lacks any access to FILE_1_3 (resource has no holders); PD_2 lacks any access to FILE_1_3 (resource has no holders)
+  📋 Generated 21 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_hold_edge (score: 2.000)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 1.25, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_pd (score: 1.500)
+
+📊 Next beam (5 states):
+  Beam[0]: BeamState(iter=7, score=2.000, path=remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge) → add_pd(add new protection domain to help resolve 2 constraint violation(s)) → add_hold_edge(connect PD_3 to orphaned resource FILE_1_3))
+  Beam[1]: BeamState(iter=7, score=2.000, path=remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) → add_pd(add new protection domain to help resolve 2 constraint violation(s)) → add_hold_edge(connect PD_3 to orphaned resource FILE_1_3))
+  Beam[2]: BeamState(iter=7, score=2.000, path=remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge) → add_pd(add new protection domain to help resolve 2 constraint violation(s)) → add_hold_edge(connect PD_3 to orphaned resource FILE_1_3))
+  Beam[3]: BeamState(iter=7, score=2.000, path=remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) → add_pd(add new protection domain to help resolve 2 constraint violation(s)) → add_hold_edge(connect PD_3 to orphaned resource FILE_1_3))
+  Beam[4]: BeamState(iter=7, score=1.500, path=remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge) → add_pd(add new protection domain to help resolve 2 constraint violation(s)) → add_pd(add new protection domain to help resolve 2 constraint violation(s)))
+💡 Total candidates generated: 10
+🎯 Mechanisms discovered so far: 0
+
+============================================================
+🔍 Beam Search Iteration 8/8
+📊 Current beam size: 5
+  Beam[0]: BeamState(iter=7, score=2.000, path=remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge) → add_pd(add new protection domain to help resolve 2 constraint violation(s)) → add_hold_edge(connect PD_3 to orphaned resource FILE_1_3))
+  Beam[1]: BeamState(iter=7, score=2.000, path=remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) → add_pd(add new protection domain to help resolve 2 constraint violation(s)) → add_hold_edge(connect PD_3 to orphaned resource FILE_1_3))
+  Beam[2]: BeamState(iter=7, score=2.000, path=remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge) → add_pd(add new protection domain to help resolve 2 constraint violation(s)) → add_hold_edge(connect PD_3 to orphaned resource FILE_1_3))
+  Beam[3]: BeamState(iter=7, score=2.000, path=remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) → add_pd(add new protection domain to help resolve 2 constraint violation(s)) → add_hold_edge(connect PD_3 to orphaned resource FILE_1_3))
+  Beam[4]: BeamState(iter=7, score=1.500, path=remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge) → add_pd(add new protection domain to help resolve 2 constraint violation(s)) → add_pd(add new protection domain to help resolve 2 constraint violation(s)))
+
+🌟 Expanding Beam[0] (score: 2.000)
+  ⚠️  Constraints violated: PD_1 lacks any access to FILE_1_3; PD_2 lacks any access to FILE_1_3
+    remove_hold_edge candidate: remove PD_3 -> FILE_1_3 HOLD edge -> score: 0.500
+  🚫 Filtered out 0 'add_hold_edge(connect PD_3 to orphaned resource FILE_1_3)' candidates (avoiding repetition)
+  🎲 Exploration: selecting candidate #2 instead of best
+  Trying best transition: primitive
+    Target: enable indirect access: PD_2 -> PD_1
+    Predicted improvement: 1.000
+    Considered 18 other option(s):
+      1. primitive: enable indirect access: PD_2 -> PD_1 (improvement: 1.000)
+      2. primitive: enable indirect access: PD_2 -> PD_3 (improvement: 1.000)
+      3. primitive: add new protection domain to help resolve 2 constraint violation(s) (improvement: 0.200)
+      4. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.900)
+      5. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.900)
+      6. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      7. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.900)
+      8. primitive: remove PD_3 -> FILE_1_3 HOLD edge (improvement: 0.500)
+      9. primitive: remove FILE_1_1 (holders: 2) (improvement: 0.400)
+      10. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.400)
+      ... and 8 more
+    ✅ Applied add_request_edge
+  📋 Generated 19 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 2.3333333333333335, TCB: {'PD_1': ['PD_2', 'PD_3'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_request_edge (score: 1.000)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 2.3333333333333335, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_request_edge (score: 1.000)
+
+🌟 Expanding Beam[1] (score: 2.000)
+  ⚠️  Constraints violated: PD_1 lacks any access to FILE_1_3; PD_2 lacks any access to FILE_1_3
+    remove_hold_edge candidate: remove PD_3 -> FILE_1_3 HOLD edge -> score: 0.500
+  🚫 Filtered out 0 'add_hold_edge(connect PD_3 to orphaned resource FILE_1_3)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: enable indirect access: PD_1 -> PD_3
+    Predicted improvement: 1.000
+    Considered 18 other option(s):
+      1. primitive: enable indirect access: PD_2 -> PD_1 (improvement: 1.000)
+      2. primitive: enable indirect access: PD_2 -> PD_3 (improvement: 1.000)
+      3. primitive: add new protection domain to help resolve 2 constraint violation(s) (improvement: 0.200)
+      4. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.900)
+      5. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.900)
+      6. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      7. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.900)
+      8. primitive: remove PD_3 -> FILE_1_3 HOLD edge (improvement: 0.500)
+      9. primitive: remove FILE_1_1 (holders: 2) (improvement: 0.400)
+      10. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.400)
+      ... and 8 more
+    ✅ Applied add_request_edge
+  📋 Generated 19 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 2.3333333333333335, TCB: {'PD_1': ['PD_2', 'PD_3'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_request_edge (score: 1.000)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 2.3333333333333335, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_request_edge (score: 1.000)
+
+🌟 Expanding Beam[2] (score: 2.000)
+  ⚠️  Constraints violated: PD_1 lacks any access to FILE_1_3; PD_2 lacks any access to FILE_1_3
+    remove_hold_edge candidate: remove PD_3 -> FILE_1_3 HOLD edge -> score: 0.500
+  🚫 Filtered out 0 'add_hold_edge(connect PD_3 to orphaned resource FILE_1_3)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: enable indirect access: PD_1 -> PD_3
+    Predicted improvement: 1.000
+    Considered 18 other option(s):
+      1. primitive: enable indirect access: PD_2 -> PD_1 (improvement: 1.000)
+      2. primitive: enable indirect access: PD_2 -> PD_3 (improvement: 1.000)
+      3. primitive: add new protection domain to help resolve 2 constraint violation(s) (improvement: 0.200)
+      4. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.900)
+      5. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.900)
+      6. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      7. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.900)
+      8. primitive: remove PD_3 -> FILE_1_3 HOLD edge (improvement: 0.500)
+      9. primitive: remove FILE_1_1 (holders: 2) (improvement: 0.400)
+      10. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.400)
+      ... and 8 more
+    ✅ Applied add_request_edge
+  📋 Generated 19 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 2.3333333333333335, TCB: {'PD_1': ['PD_2', 'PD_3'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_request_edge (score: 1.000)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 2.3333333333333335, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_request_edge (score: 1.000)
+
+🌟 Expanding Beam[3] (score: 2.000)
+  ⚠️  Constraints violated: PD_1 lacks any access to FILE_1_3; PD_2 lacks any access to FILE_1_3
+    remove_hold_edge candidate: remove PD_3 -> FILE_1_3 HOLD edge -> score: 0.500
+  🚫 Filtered out 0 'add_hold_edge(connect PD_3 to orphaned resource FILE_1_3)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: enable indirect access: PD_1 -> PD_3
+    Predicted improvement: 1.000
+    Considered 18 other option(s):
+      1. primitive: enable indirect access: PD_2 -> PD_1 (improvement: 1.000)
+      2. primitive: enable indirect access: PD_2 -> PD_3 (improvement: 1.000)
+      3. primitive: add new protection domain to help resolve 2 constraint violation(s) (improvement: 0.200)
+      4. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.900)
+      5. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.900)
+      6. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      7. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.900)
+      8. primitive: remove PD_3 -> FILE_1_3 HOLD edge (improvement: 0.500)
+      9. primitive: remove FILE_1_1 (holders: 2) (improvement: 0.400)
+      10. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.400)
+      ... and 8 more
+    ✅ Applied add_request_edge
+  📋 Generated 19 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 2.3333333333333335, TCB: {'PD_1': ['PD_2', 'PD_3'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_request_edge (score: 1.000)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 2.3333333333333335, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_request_edge (score: 1.000)
+
+🌟 Expanding Beam[4] (score: 1.500)
+  ⚠️  Constraints violated: PD_1 lacks any access to FILE_1_3; PD_2 lacks any access to FILE_1_3
+  🚫 Filtered out 0 'add_pd(add new protection domain to help resolve 2 constraint violation(s))' candidates (avoiding repetition)
+  🎲 Exploration: selecting candidate #3 instead of best
+  Trying best transition: primitive
+    Target: connect PD_4 to orphaned resource FILE_1_3
+    Predicted improvement: 2.000
+    Considered 30 other option(s):
+      1. primitive: connect PD_3 to orphaned resource FILE_1_3 (improvement: 2.000)
+      2. primitive: connect PD_4 to orphaned resource FILE_1_3 (improvement: 2.000)
+      3. primitive: enable indirect access: PD_2 -> PD_1 (improvement: 1.000)
+      4. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.900)
+      5. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.900)
+      6. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      7. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.900)
+      8. primitive: remove FILE_1_1 (holders: 2) (improvement: 0.400)
+      9. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.400)
+      10. primitive: remove FILE_1_3 (holders: 0) (improvement: 0.400)
+      ... and 20 more
+    ✅ Applied add_hold_edge
+  📋 Generated 31 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 1.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_hold_edge (score: 2.000)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 1.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_hold_edge (score: 2.000)
+
+📊 Next beam (5 states):
+  Beam[0]: BeamState(iter=8, score=2.000, path=add_pd(add new protection domain to help resolve 2 constraint violation(s)) → add_pd(add new protection domain to help resolve 2 constraint violation(s)) → add_hold_edge(connect PD_3 to orphaned resource FILE_1_3))
+  Beam[1]: BeamState(iter=8, score=2.000, path=add_pd(add new protection domain to help resolve 2 constraint violation(s)) → add_pd(add new protection domain to help resolve 2 constraint violation(s)) → add_hold_edge(connect PD_4 to orphaned resource FILE_1_3))
+  Beam[2]: BeamState(iter=8, score=1.000, path=add_pd(add new protection domain to help resolve 2 constraint violation(s)) → add_hold_edge(connect PD_3 to orphaned resource FILE_1_3) → add_request_edge(enable indirect access: PD_1 -> PD_3))
+  Beam[3]: BeamState(iter=8, score=1.000, path=add_pd(add new protection domain to help resolve 2 constraint violation(s)) → add_hold_edge(connect PD_3 to orphaned resource FILE_1_3) → add_request_edge(enable indirect access: PD_2 -> PD_1))
+  Beam[4]: BeamState(iter=8, score=1.000, path=add_pd(add new protection domain to help resolve 2 constraint violation(s)) → add_hold_edge(connect PD_3 to orphaned resource FILE_1_3) → add_request_edge(enable indirect access: PD_1 -> PD_3))
+💡 Total candidates generated: 10
+🎯 Mechanisms discovered so far: 0
+
+🏁 Beam search complete!
+🎯 Total mechanisms discovered: 0
+
+📊 Final beam states:
+  Final[0]: BeamState(iter=8, score=2.000, path=add_pd(add new protection domain to help resolve 2 constraint violation(s)) → add_pd(add new protection domain to help resolve 2 constraint violation(s)) → add_hold_edge(connect PD_3 to orphaned resource FILE_1_3))
+    Path: add_request_edge(enable indirect access: PD_1 -> PD_2) → add_hold_edge(connect PD_1 to FILE_1_2) → add_hold_edge(connect PD_2 to FILE_1_1) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) → remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge) → add_pd(add new protection domain to help resolve 2 constraint violation(s)) → add_pd(add new protection domain to help resolve 2 constraint violation(s)) → add_hold_edge(connect PD_3 to orphaned resource FILE_1_3)
+  Final[1]: BeamState(iter=8, score=2.000, path=add_pd(add new protection domain to help resolve 2 constraint violation(s)) → add_pd(add new protection domain to help resolve 2 constraint violation(s)) → add_hold_edge(connect PD_4 to orphaned resource FILE_1_3))
+    Path: add_request_edge(enable indirect access: PD_1 -> PD_2) → add_hold_edge(connect PD_1 to FILE_1_2) → add_hold_edge(connect PD_2 to FILE_1_1) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) → remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge) → add_pd(add new protection domain to help resolve 2 constraint violation(s)) → add_pd(add new protection domain to help resolve 2 constraint violation(s)) → add_hold_edge(connect PD_4 to orphaned resource FILE_1_3)
+  Final[2]: BeamState(iter=8, score=1.000, path=add_pd(add new protection domain to help resolve 2 constraint violation(s)) → add_hold_edge(connect PD_3 to orphaned resource FILE_1_3) → add_request_edge(enable indirect access: PD_1 -> PD_3))
+    Path: add_request_edge(enable indirect access: PD_1 -> PD_2) → add_hold_edge(connect PD_1 to FILE_1_2) → add_hold_edge(connect PD_2 to FILE_1_1) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) → remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge) → add_pd(add new protection domain to help resolve 2 constraint violation(s)) → add_hold_edge(connect PD_3 to orphaned resource FILE_1_3) → add_request_edge(enable indirect access: PD_1 -> PD_3)
+  Final[3]: BeamState(iter=8, score=1.000, path=add_pd(add new protection domain to help resolve 2 constraint violation(s)) → add_hold_edge(connect PD_3 to orphaned resource FILE_1_3) → add_request_edge(enable indirect access: PD_2 -> PD_1))
+    Path: add_request_edge(enable indirect access: PD_1 -> PD_2) → add_hold_edge(connect PD_1 to FILE_1_2) → add_hold_edge(connect PD_2 to FILE_1_1) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) → remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge) → add_pd(add new protection domain to help resolve 2 constraint violation(s)) → add_hold_edge(connect PD_3 to orphaned resource FILE_1_3) → add_request_edge(enable indirect access: PD_2 -> PD_1)
+  Final[4]: BeamState(iter=8, score=1.000, path=add_pd(add new protection domain to help resolve 2 constraint violation(s)) → add_hold_edge(connect PD_3 to orphaned resource FILE_1_3) → add_request_edge(enable indirect access: PD_1 -> PD_3))
+    Path: add_request_edge(enable indirect access: PD_1 -> PD_2) → add_hold_edge(connect PD_1 to FILE_1_2) → add_hold_edge(connect PD_2 to FILE_1_1) → remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) → add_pd(add new protection domain to help resolve 2 constraint violation(s)) → add_hold_edge(connect PD_3 to orphaned resource FILE_1_3) → add_request_edge(enable indirect access: PD_1 -> PD_3)
+
+✅ Scenario 'Mediator Test Indirect Access' complete!
+   Mechanisms discovered: 0
+
+✅ Exploration complete!
