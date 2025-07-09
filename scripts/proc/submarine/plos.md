@@ -20,7 +20,7 @@ def pattern_aware_iso_search(initial_graph, constraints, goals, beam_width):
     Returns:
         discovered_mechanisms: Set of discovered security mechanisms M
     """
-    
+
     # INITIALIZATION:
     beam = [BFSState(initial_graph, [], 0)]
     discovered_mechanisms = set()
@@ -28,36 +28,56 @@ def pattern_aware_iso_search(initial_graph, constraints, goals, beam_width):
 
     for iteration in range(1, max_iterations + 1):
         candidates = []
-        
+
         for state in beam:
             for transition in available_transitions:
                 for param_binding in transition.find_candidates(state.graph, constraints):
-                    score = pattern_scorer.score_operation(transition, param_binding, 
+                    score = pattern_scorer.score_operation(transition, param_binding,
                                                          state.graph, goals, constraints)
                     candidates.append(Candidate(state, transition, param_binding, score))
-        
+
         # Remove repetitive operations to encourage exploration
         candidates = filter_repetitive_operations(candidates)
-        
+
         # Select top-k candidates for beam expansion
         selected = top_k_by_score(candidates, beam_width)
         new_beam = []
-        
+
         for candidate in selected:
-            new_graph = apply_transformation(candidate.state.graph, 
+            new_graph = apply_transformation(candidate.state.graph,
                                            candidate.transition, candidate.params)
             if satisfies_constraints(new_graph, constraints):
-                new_state = BFSState(new_graph, candidate.state.path + [candidate], 
+                new_state = BFSState(new_graph, candidate.state.path + [candidate],
                                    candidate.score)
                 new_beam.append(new_state)
-                
+
                 if satisfies_goals(new_graph, goals):
                     discovered_mechanisms.add(new_state)
-        
+
         beam = new_beam
-        
+
     return discovered_mechanisms
 ```
+
+
+#### Algorithm Explanation
+
+**PatternAwareIsoSearch Algorithm**
+
+The main algorithm implements a beam search approach with pattern-aware scoring to discover emergent security architectures. Here's how it works:
+
+1. **Initialization Phase (lines 16-19)**: The algorithm starts with the initial graph G₀ and creates a beam containing a single initial state. Each state tracks the current graph, transformation path taken, and cumulative score. The pattern-aware scoring system is initialized to recognize security patterns.
+
+2. **Main Search Loop (lines 21-47)**: For each iteration up to max_iterations:
+   - **Candidate Generation (lines 24-28)**: For every state in the current beam, the algorithm examines all available transitions (graph transformations). For each transition, it finds all possible parameter bindings that could be applied to the current graph while respecting constraints. Each combination of (state, transition, parameters) becomes a candidate, scored by the pattern-aware scoring system.
+
+   - **Repetition Filtering (line 31)**: To encourage exploration diversity and prevent the algorithm from getting stuck in loops, repetitive operations (e.g., repeatedly adding and removing the same edge) are filtered out.
+
+   - **Beam Selection (lines 34-35)**: Candidates are sorted by score and the top k candidates are selected to form the next beam. This beam width k controls the trade-off between exploration breadth and computational efficiency.
+
+   - **Graph Transformation (lines 37-44)**: For each selected candidate, the transformation is applied to create a new graph. The algorithm verifies that constraints are still satisfied. If the new graph meets all goals, it's added to the discovered mechanisms. The new state (with updated graph and path history) is added to the next beam.
+
+3. **Termination**: The algorithm returns all discovered mechanisms that satisfy both constraints and goals.
 
 ### 1.2 Pattern-Aware Scoring System
 
@@ -76,7 +96,7 @@ def pattern_aware_scoring(operation, params, graph, goals, constraints):
     Returns:
         dynamic_score: Context-aware operation score
     """
-    
+
     # Analyze current graph state for pattern opportunities
     state_analysis = analyze_graph_state(graph)
     base_score = get_base_score(operation.name)
@@ -90,12 +110,12 @@ def pattern_aware_scoring(operation, params, graph, goals, constraints):
 
     # PHASE 2: Multi-pattern recognition
     if state_analysis.mediation_opportunity:
-        score = score_for_mediation_pattern(operation, params, score, 
+        score = score_for_mediation_pattern(operation, params, score,
                                           state_analysis, graph, constraints)
 
     if state_analysis.sharing_reduction_opportunity and has_rsi_goals(goals):
-        score = score_for_sharing_reduction_pattern(operation, params, score, 
-                                                  state_analysis, graph, 
+        score = score_for_sharing_reduction_pattern(operation, params, score,
+                                                  state_analysis, graph,
                                                   constraints, goals)
 
     # PHASE 3: Sequence recognition bonuses
@@ -106,26 +126,6 @@ def pattern_aware_scoring(operation, params, graph, goals, constraints):
 
     return score
 ```
-
-#### Algorithm Explanation
-
-**PatternAwareIsoSearch Algorithm**
-
-The main algorithm implements a beam search approach with pattern-aware scoring to discover emergent security architectures. Here's how it works:
-
-1. **Initialization Phase (lines 16-19)**: The algorithm starts with the initial graph G₀ and creates a beam containing a single initial state. Each state tracks the current graph, transformation path taken, and cumulative score. The pattern-aware scoring system is initialized to recognize security patterns.
-
-2. **Main Search Loop (lines 21-47)**: For each iteration up to max_iterations:
-   - **Candidate Generation (lines 24-28)**: For every state in the current beam, the algorithm examines all available transitions (graph transformations). For each transition, it finds all possible parameter bindings that could be applied to the current graph while respecting constraints. Each combination of (state, transition, parameters) becomes a candidate, scored by the pattern-aware scoring system.
-   
-   - **Repetition Filtering (line 31)**: To encourage exploration diversity and prevent the algorithm from getting stuck in loops, repetitive operations (e.g., repeatedly adding and removing the same edge) are filtered out.
-   
-   - **Beam Selection (lines 34-35)**: Candidates are sorted by score and the top k candidates are selected to form the next beam. This beam width k controls the trade-off between exploration breadth and computational efficiency.
-   
-   - **Graph Transformation (lines 37-44)**: For each selected candidate, the transformation is applied to create a new graph. The algorithm verifies that constraints are still satisfied. If the new graph meets all goals, it's added to the discovered mechanisms. The new state (with updated graph and path history) is added to the next beam.
-
-3. **Termination**: The algorithm returns all discovered mechanisms that satisfy both constraints and goals.
-
 **PatternAwareScoring Algorithm**
 
 The scoring system is the intelligence behind the search, dynamically adjusting operation scores based on graph context and pattern recognition:
@@ -134,13 +134,13 @@ The scoring system is the intelligence behind the search, dynamically adjusting 
 
 2. **Hierarchical Scoring Phases**:
    - **Phase 1 - Constraint Compliance (lines 67-69)**: Operations that remove constraint violations receive maximum priority (score 3.0). For example, if constraints prohibit direct PD→resource edges, removing such edges gets top priority.
-   
+
    - **Phase 2 - Pattern Recognition (lines 71-76)**: The system recognizes two primary patterns:
      - **Mediation Pattern**: When orphaned resources exist and PDs need access, operations that create mediators or establish mediation relationships receive high scores (2.5-2.9).
      - **Sharing Reduction Pattern**: When RSI (Resource Sharing Index) goals exist and shared resources are detected, operations that reduce sharing or create private alternatives receive high scores (2.8-2.9).
-   
+
    - **Phase 3 - Sequence Recognition (line 79)**: The algorithm tracks recent operations and provides bonuses for complementary sequences. For instance, after removing prohibited edges, creating infrastructure (PDs, resources) gets boosted scores.
-   
+
    - **Phase 4 - Constraint-Driven Scoring (line 82)**: Additional adjustments based on how operations help satisfy specific constraints, particularly for resources mentioned in constraints.
 
 The hierarchical structure ensures that critical security requirements (constraint compliance) always take precedence, while still guiding the search toward sophisticated multi-step patterns like mediation and sharing reduction. This enables the discovery of complex security architectures that would be impossible to find with static scoring approaches.
@@ -159,7 +159,7 @@ The algorithm employs a **hierarchical scoring strategy** that prioritizes:
 - **Dynamic goal adaptation**: Adjusts pattern focus based on metric targets (RSI, TCB, ASR)
 
 **Dynamic Structural Analysis**: The algorithm identifies key graph properties in real-time:
-- **Orphaned resource detection**: Resources with no holders become mediation opportunities  
+- **Orphaned resource detection**: Resources with no holders become mediation opportunities
 - **Shared resource analysis**: Resources with multiple holders trigger sharing reduction
 - **Original vs. new component identification**: Distinguishes between scenario-provided and algorithm-created components
 
@@ -244,7 +244,7 @@ def _infer_resource_type(self, resource):
 
 **Multi-Tier Scoring Architecture**: Four-phase scoring structure ensures critical operations receive priority without expensive score calculations:
 1. Constraint compliance (3.0) - immediate priority
-2. Pattern establishment (2.5-2.9) - context-aware scoring  
+2. Pattern establishment (2.5-2.9) - context-aware scoring
 3. Pattern completion (1.0-1.8) - goal-oriented adjustments
 4. Infrastructure building (0.2-1.5) - baseline operations
 
@@ -264,7 +264,7 @@ We evaluated the pattern-aware scoring system across multiple security scenarios
 
 **basic_sharing_primitive** (Primitive Operations Only)
 - **Configuration**: Same as basic_sharing but using only primitive graph operations
-- **Goals**: Minimize RSI[PD_1,PD_2] to 0.3, TCB[PD_1] to 0, ASR to 1.0  
+- **Goals**: Minimize RSI[PD_1,PD_2] to 0.3, TCB[PD_1] to 0, ASR to 1.0
 - **Results**: ✅ **Significant Progress** - RSI improved from 0.333 to 0.25, 10 mechanisms discovered
 - **Pattern-Aware Impact**: **Revolutionary** - Multi-pattern recognition enables sharing reduction
   - Sharing reduction scoring: 2.8 (remove shared edges), 2.9 (private alternatives)
@@ -327,7 +327,7 @@ mediation_graph = {
 
 **Discovery Sequence**:
 1. **Constraint Removal** (Score: 3.0): Remove prohibited PD_1→FILE_1_3 and PD_2→FILE_1_3 edges
-2. **Infrastructure Creation** (Score: 1.5): Create mediator PD_3 when orphaned resources detected  
+2. **Infrastructure Creation** (Score: 1.5): Create mediator PD_3 when orphaned resources detected
 3. **Mediation Establishment** (Score: 3.0): Connect PD_3 to orphaned FILE_1_3
 4. **Access Completion** (Score: 1.0): Add REQUEST edges PD_1→PD_3 and PD_2→PD_3
 
@@ -374,7 +374,7 @@ dynamic_scores = {
 # Result: Algorithm discovers both mediation and sharing reduction patterns automatically
 ```
 
-**Critical Success Factors**: 
+**Critical Success Factors**:
 1. **Dynamic component identification** - removes hardcoded PD assumptions
 2. **Multi-pattern recognition** - mediation + sharing reduction simultaneously
 3. **Resource type inference** - enables constraint-aware private alternatives
@@ -398,7 +398,7 @@ dynamic_scores = {
 ### 3.5 System Capabilities and Limitations
 
 **Current Pattern Recognition**:
-✅ **Mediation Patterns**: Complete discovery through orphaned resource detection  
+✅ **Mediation Patterns**: Complete discovery through orphaned resource detection
 ✅ **Sharing Reduction Patterns**: RSI-driven private alternative selection
 ✅ **Multi-Pattern Coordination**: Simultaneous pattern recognition and prioritization
 ✅ **Dynamic Adaptation**: No hardcoded assumptions about scenario structure
@@ -414,14 +414,14 @@ dynamic_scores = {
 
 **Current Limitations**:
 ⚠️ **Beam Width Dependency**: Pattern completion depends on sufficient beam width to maintain promising paths
-⚠️ **State Explosion**: True BFS limited by exponential growth in complex scenarios  
-⚠️ **Constraint Complexity**: System handles direct prohibition and access constraints; temporal/conditional constraints need extensions  
+⚠️ **State Explosion**: True BFS limited by exponential growth in complex scenarios
+⚠️ **Constraint Complexity**: System handles direct prohibition and access constraints; temporal/conditional constraints need extensions
 ⚠️ **Complex Multi-Resource Scenarios**: High sharing scenarios with 3+ PDs require enhanced coordination
 ⚠️ **Pattern Library Scope**: Current focus on mediation and sharing reduction patterns
 
 **Future Algorithmic Directions**:
 1. **Advanced Pattern Templates**: Delegation, capability passing, privilege escalation prevention
-2. **Adaptive Beam Management**: Dynamic beam width based on pattern complexity  
+2. **Adaptive Beam Management**: Dynamic beam width based on pattern complexity
 3. **Constraint System Expansion**: Temporal, conditional, and composite constraint types
 4. **Multi-Objective Optimization**: Simultaneous optimization across multiple security metrics
 
@@ -432,7 +432,7 @@ This research demonstrates that **multi-pattern scoring system optimization enab
 **Key Technical Contributions**:
 1. **Multi-pattern recognition architecture** - simultaneous mediation and sharing reduction pattern discovery
 2. **Dynamic structural analysis** - real-time identification of orphaned resources, shared resources, and component relationships
-3. **Generalized component identification** - eliminates hardcoded assumptions about PD names, counts, and resource types  
+3. **Generalized component identification** - eliminates hardcoded assumptions about PD names, counts, and resource types
 4. **Constraint-driven pattern prioritization** - intelligent focus on security requirements with hierarchical scoring
 5. **Goal-aware pattern selection** - RSI goals trigger sharing reduction, constraint violations trigger mediation
 6. **Dual exploration architecture** - pattern-aware beam search for guidance + enhanced True BFS for exhaustive primitive discovery
@@ -465,17 +465,17 @@ The pattern-aware scoring system implements a generalized architecture with four
 def score_operation(self, operation, candidate, graph, goals, constraints):
     # Dynamic graph state analysis
     state_analysis = self.analyze_graph_state(graph)
-    
+
     # Phase 1: Constraint compliance (3.0)
     if self._is_prohibited_edge(operation, candidate, constraints):
         return 3.0
-        
+
     # Phase 2: Multi-pattern recognition (2.5-2.9)
     if state_analysis['mediation_opportunity']:
         return self._score_for_mediation_pattern(...)
     if state_analysis['sharing_reduction_opportunity'] and has_rsi_goals(goals):
         return self._score_for_sharing_reduction_pattern(...)
-        
+
     # Phase 3: Infrastructure building (0.2-1.5)
     return self.base_scores.get(operation.name, 0.3)
 ```
@@ -487,9 +487,9 @@ def score_operation(self, operation, candidate, graph, goals, constraints):
 def _identify_original_pds(self, graph):
     # Discovers PDs by consecutive ID analysis: PD_1, PD_2, PD_3...
     # Breaks on gaps to distinguish original (scenario) vs. created (algorithm)
-    all_pds = [(int(node.split('_')[1]), node) for node in graph.nodes 
+    all_pds = [(int(node.split('_')[1]), node) for node in graph.nodes
                if node.startswith('PD_')]
-    
+
     original_pds = []
     for expected_id, (actual_id, name) in enumerate(sorted(all_pds), 1):
         if actual_id == expected_id:

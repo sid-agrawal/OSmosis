@@ -1,8 +1,8 @@
 {
   "test_summary": {
     "total_scenarios": 4,
-    "successful_tests": 2,
-    "failed_tests": 2,
+    "successful_tests": 4,
+    "failed_tests": 0,
     "compatible_scenarios": 0
   },
   "scenario_results": {
@@ -15,12 +15,14 @@
     "basic_sharing_primitive": {
       "scenario_name": "basic_sharing_primitive",
       "framework_type": "generic",
-      "error": "'NoneType' object has no attribute 'split'"
+      "mechanisms_found": 0,
+      "mechanisms": []
     },
     "mediator_test_indirect": {
       "scenario_name": "mediator_test_indirect",
       "framework_type": "generic",
-      "error": "'NoneType' object has no attribute 'split'"
+      "mechanisms_found": 0,
+      "mechanisms": []
     },
     "mediator_test_primitive": {
       "scenario_name": "mediator_test_primitive",
