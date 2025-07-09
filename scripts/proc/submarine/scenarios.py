@@ -1439,6 +1439,33 @@ def build_high_sharing_graph():
 
 
 
+def build_reduce_isolation_graph():
+    """Build a graph with mediated access: PD1 -> PD3 -> R0, PD2 -> PD4 -> R0"""
+    graph = ModelGraph()
+    
+    # Add four protection domains
+    pd1 = NodeTransformations.add_pd_node(graph, "client_1")
+    pd2 = NodeTransformations.add_pd_node(graph, "client_2") 
+    pd3 = NodeTransformations.add_pd_node(graph, "mediator_1")
+    pd4 = NodeTransformations.add_pd_node(graph, "mediator_2")
+    
+    # Add a FILE space
+    file_space = NodeTransformations.add_resource_space(graph, ResourceType.FILE)
+    
+    # Create the shared resource R0
+    r0 = NodeTransformations.add_file_resource(graph, file_space, FileType.CONFIG, "/shared/config.dat", 4096)
+    
+    # Mediators hold the resource
+    EdgeTransformations.add_hold_edge(graph, Permission.R, pd3, ResourceType.FILE, file_space, r0)
+    EdgeTransformations.add_hold_edge(graph, Permission.R, pd4, ResourceType.FILE, file_space, r0)
+    
+    # Clients request from mediators
+    EdgeTransformations.add_request_edge(graph, pd1, pd3)
+    EdgeTransformations.add_request_edge(graph, pd2, pd4)
+    
+    return graph
+
+
 def build_high_attack_surface_graph():
     """Build a graph with many attack paths (high ASR) that can be systematically reduced"""
     graph = ModelGraph()
@@ -1696,6 +1723,27 @@ SCENARIOS = {
         allowed_primitives=PRIMITIVES,  # All atomic graph operations enabled
         allowed_multistep=[],  # No multi-step allowed
         graph_builder=build_high_attack_surface_graph
+    ),
+    
+    "reduce_isolation": Scenario(
+        name="Reduce Isolation",
+        description="Transform mediated access (PD1->PD3->R0, PD2->PD4->R0) to direct access (PD1->R0, PD2->R0) by maximizing RSI",
+        goals=[
+            Goal("RSI", 0.8, "maximize", "PD_1,PD_2")   # Maximize sharing to encourage direct access
+        ],
+        constraints=[
+            # Both PDs require access to the shared resource R0 (FILE_1_1)
+            Constraint("requires_resource_access", 1, "FILE_1_1", properties={"access_type": "direct_or_indirect"}),
+            Constraint("requires_resource_access", 2, "FILE_1_1", properties={"access_type": "direct_or_indirect"}),
+            # Resource must exist
+            Constraint("requires_resource_exists", None, "FILE_1_1", properties={"mandatory": True}),
+            # Basic file access requirements
+            Constraint("requires_file_access", 1, "FILE", properties={"file_type": "any", "min_size_kb": 1}),
+            Constraint("requires_file_access", 2, "FILE", properties={"file_type": "any", "min_size_kb": 1}),
+        ],
+        allowed_primitives=PRIMITIVES,  # All primitives allowed for flexible transformation
+        allowed_multistep=[],  # No multi-step transitions
+        graph_builder=build_reduce_isolation_graph
     )
 }
 
