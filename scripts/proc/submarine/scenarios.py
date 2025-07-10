@@ -16,7 +16,7 @@ class Goal:
         self.target_value = target_value  # e.g., 0.5, 10, etc.
         self.direction = direction  # "minimize" or "maximize"
         self.target_spec = target_spec  # For targeted goals: PD for TCB, PD pair for RSI/FR, None for ASR
-    
+
     def __str__(self):
         if self.target_spec:
             return f"Goal({self.direction} {self.metric_name}[{self.target_spec}] to {self.target_value})"
@@ -32,7 +32,7 @@ class Constraint:
         self.resource_info = resource_info  # Resource specifications (type, properties, etc.)
         self.target_pd = target_pd  # For authority/communication constraints
         self.properties = properties or {}  # Additional constraint properties
-    
+
     def __str__(self):
         if self.target_pd:
             return f"Constraint({self.constraint_type} for PD_{self.pd_id} -> PD_{self.target_pd}: {self.resource_info})"
@@ -40,7 +40,7 @@ class Constraint:
             return f"Constraint({self.constraint_type} for PD_{self.pd_id}: {self.resource_info}, {self.properties})"
         else:
             return f"Constraint({self.constraint_type} for PD_{self.pd_id}: {self.resource_info})"
-    
+
     def to_dict(self):
         """Convert constraint to dictionary for JSON serialization"""
         return {
@@ -57,7 +57,7 @@ class Primitive:
     def __init__(self, operation, **params):
         self.operation = operation  # e.g., "add_pd", "remove_hold_edge"
         self.params = params  # Parameters with $ placeholders for binding
-    
+
     def bind_parameters(self, param_values):
         """Replace $ placeholders with actual values"""
         bound_params = {}
@@ -71,7 +71,7 @@ class Primitive:
             else:
                 bound_params[key] = value
         return bound_params
-    
+
     def __str__(self):
         return f"Primitive({self.operation}, {self.params})"
 
@@ -84,14 +84,14 @@ class Transition:
         self.transition_type = transition_type  # "primitive" or "multistep"
         self.primitives = primitives or []  # List of Primitive objects for multistep
         self.parameters = parameters or []  # Required parameters for multistep
-    
+
     def find_candidates(self, graph, constraints):
         """Find all valid parameter bindings for this transition"""
         if self.transition_type == "primitive":
             return self._find_primitive_candidates(graph, constraints)
         else:
             return self._find_multistep_candidates(graph, constraints)
-    
+
     def _find_primitive_candidates(self, graph, constraints):
         """Find candidates for primitive operations"""
         # Node operations
@@ -120,9 +120,9 @@ class Transition:
             return self._find_add_subset_edge_candidates(graph, constraints)
         elif self.name == "remove_subset_edge":
             return self._find_remove_subset_edge_candidates(graph, constraints)
-        
+
         return []
-    
+
     def _find_multistep_candidates(self, graph, constraints):
         """Find candidates for multi-step operations"""
         if self.name == "privatize_resource":
@@ -135,39 +135,39 @@ class Transition:
     def _find_add_pd_candidates(self, graph, constraints):
         """Find opportunities to add new PDs"""
         candidates = []
-        
+
         # Check current PD count to avoid excessive PD creation
         current_pd_count = len([node for node, data in graph.g.nodes(data=True) if data.get('type') == 'PD'])
-        
+
         constraint_relevance = 0.4  # Default relevance
         description = "add new protection domain"
-        
+
         # Reduce priority if we already have many PDs
         if current_pd_count >= 5:
             constraint_relevance *= 0.3
             description += f" (warning: {current_pd_count} PDs already exist)"
         elif current_pd_count >= 3:
             constraint_relevance *= 0.6
-        
+
         candidates.append({
             'param_values': {'pd_type': 'new_component'},
             'target_description': description,
             'constraint_relevance': constraint_relevance,
             'addresses_violation': False
         })
-        
+
         return candidates
 
     def _find_remove_pd_candidates(self, graph, constraints):
         """Find PDs that can be safely removed"""
         candidates = []
         pds = [node for node, data in graph.g.nodes(data=True) if data.get('type') == 'PD']
-        
+
         for pd in pds:
             # Check if PD has no connections (orphaned)
             has_outgoing = any(graph.g.has_edge(pd, neighbor) for neighbor in graph.g.nodes())
             has_incoming = any(graph.g.has_edge(neighbor, pd) for neighbor in graph.g.nodes())
-            
+
             if not has_outgoing and not has_incoming:
                 candidates.append({
                     'param_values': {'pd': pd},
@@ -175,50 +175,50 @@ class Transition:
                     'constraint_relevance': 0.3,
                     'addresses_violation': False
                 })
-        
+
         return candidates
 
     def _find_add_hold_edge_candidates(self, graph, constraints):
         """Find PD-resource connections to add"""
         candidates = []
-        
+
         # Find PDs and resources
         pds = [node for node, data in graph.g.nodes(data=True) if data.get('type') == 'PD']
-        resources = [node for node, data in graph.g.nodes(data=True) 
+        resources = [node for node, data in graph.g.nodes(data=True)
                     if data.get('type') == 'RESOURCE' and data.get('data') == 'FILE']
-        
+
         for pd in pds:
             current_resources = self._get_pd_held_resources(graph, pd)
-            
+
             for resource in resources:
                 if resource not in current_resources:
                     # Check if connection is prohibited
                     prohibited = self._is_connection_prohibited(pd, resource, constraints)
-                    
+
                     if not prohibited:
                         constraint_relevance = 0.4  # Standard score
                         description = f"connect {pd} to {resource}"
-                        
+
                         # Check RSI goal relevance
                         rsi_relevance = self._calculate_rsi_goal_relevance(graph, pd, resource, constraints)
                         if rsi_relevance > 0:
                             constraint_relevance = max(constraint_relevance, rsi_relevance)
                             if rsi_relevance >= 0.8:
                                 description = f"connect {pd} to {resource} (RSI goal achievement)"
-                        
+
                         # Boost for orphaned resources
                         holders = self._get_resource_holders(graph, resource)
                         if len(holders) == 0:
                             constraint_relevance = max(constraint_relevance, 0.8)
                             description = f"connect {pd} to orphaned resource {resource}"
-                        
+
                         candidates.append({
                             'param_values': {'pd': pd, 'resource': resource, 'permission': 'R'},
                             'target_description': description,
                             'constraint_relevance': constraint_relevance,
                             'addresses_violation': rsi_relevance >= 0.8
                         })
-        
+
         return candidates
 
     def _find_remove_hold_edge_candidates(self, graph, constraints):
@@ -237,9 +237,9 @@ class Transition:
     def _find_add_file_resource_candidates(self, graph, constraints):
         """Find opportunities to add new FILE resources"""
         candidates = []
-        file_spaces = [node for node, data in graph.g.nodes(data=True) 
+        file_spaces = [node for node, data in graph.g.nodes(data=True)
                       if data.get('type') == 'RESOURCE_SPACE' and data.get('data') == 'FILE']
-        
+
         for space in file_spaces:
             for file_type in ['CONFIG', 'DATABASE', 'TEMP', 'LOG']:
                 candidates.append({
@@ -248,15 +248,15 @@ class Transition:
                     'constraint_relevance': 0.1,
                     'addresses_violation': False
                 })
-        
+
         return candidates
 
     def _find_remove_file_resource_candidates(self, graph, constraints):
         """Find FILE resources that can be removed"""
         candidates = []
-        resources = [node for node, data in graph.g.nodes(data=True) 
+        resources = [node for node, data in graph.g.nodes(data=True)
                     if data.get('type') == 'RESOURCE' and data.get('data') == 'FILE']
-        
+
         for resource in resources:
             holders = self._get_resource_holders(graph, resource)
             candidates.append({
@@ -265,7 +265,7 @@ class Transition:
                 'constraint_relevance': 0.1,
                 'addresses_violation': False
             })
-        
+
         return candidates
 
     def _find_add_resource_space_candidates(self, graph, constraints):
@@ -283,11 +283,11 @@ class Transition:
         """Find resource spaces that can be removed"""
         candidates = []
         spaces = [node for node, data in graph.g.nodes(data=True) if data.get('type') == 'RESOURCE_SPACE']
-        
+
         for space in spaces:
             # Check if space has resources
-            has_resources = any(graph.g.has_edge(resource, space) 
-                               for resource in graph.g.nodes() 
+            has_resources = any(graph.g.has_edge(resource, space)
+                               for resource in graph.g.nodes()
                                if graph.g.has_edge(resource, space))
             if not has_resources:
                 candidates.append({
@@ -296,14 +296,14 @@ class Transition:
                     'constraint_relevance': 0.2,
                     'addresses_violation': False
                 })
-        
+
         return candidates
 
     def _find_add_request_edge_candidates(self, graph, constraints):
         """Find PD-PD authority relationships to add"""
         candidates = []
         pds = [node for node, data in graph.g.nodes(data=True) if data.get('type') == 'PD']
-        
+
         for from_pd in pds:
             for to_pd in pds:
                 if from_pd != to_pd and not graph.g.has_edge(from_pd, to_pd):
@@ -313,7 +313,7 @@ class Transition:
                         'constraint_relevance': 0.3,
                         'addresses_violation': False
                     })
-        
+
         return candidates
 
     def _find_remove_request_edge_candidates(self, graph, constraints):
@@ -332,7 +332,7 @@ class Transition:
         candidates = []
         resources = [node for node, data in graph.g.nodes(data=True) if data.get('type') == 'RESOURCE']
         spaces = [node for node, data in graph.g.nodes(data=True) if data.get('type') == 'RESOURCE_SPACE']
-        
+
         for resource in resources:
             for space in spaces:
                 if not graph.g.has_edge(resource, space):
@@ -342,7 +342,7 @@ class Transition:
                         'constraint_relevance': 0.2,
                         'addresses_violation': False
                     })
-        
+
         return candidates
 
     def _find_remove_subset_edge_candidates(self, graph, constraints):
@@ -386,10 +386,10 @@ class Transition:
         pd_id = int(pd.split('_')[1]) if pd.startswith('PD_') else None
         if pd_id is None:
             return False
-        
+
         for constraint in constraints:
-            if (constraint.constraint_type == "prohibit_direct_hold" and 
-                constraint.pd_id == pd_id and 
+            if (constraint.constraint_type == "prohibit_direct_hold" and
+                constraint.pd_id == pd_id and
                 constraint.resource_info == resource):
                 return True
         return False
@@ -397,16 +397,16 @@ class Transition:
     def _can_safely_remove_hold_edge(self, graph, from_pd, to_resource, constraints):
         """Check if removing a HOLD edge would violate constraints"""
         import json
-        
+
         # Check if there's a prohibit_direct_hold constraint that REQUIRES this removal
         pd_id = int(from_pd.split('_')[1]) if from_pd.startswith('PD_') else None
         if pd_id is not None:
             for constraint in constraints:
-                if (constraint.constraint_type == "prohibit_direct_hold" and 
-                    constraint.pd_id == pd_id and 
+                if (constraint.constraint_type == "prohibit_direct_hold" and
+                    constraint.pd_id == pd_id and
                     constraint.resource_info == to_resource):
                     return True  # Removal is encouraged
-        
+
         # For simplicity, allow most removals unless it would violate access requirements
         return True
 
@@ -416,24 +416,229 @@ class Transition:
         if pd in ['PD_1', 'PD_2'] and resource == 'FILE_1_1':
             other_target_pd = 'PD_2' if pd == 'PD_1' else 'PD_1'
             other_has_resource = False
-            
+
             for from_node, to_node, edge_data in graph.g.edges(data=True):
-                if (from_node == other_target_pd and to_node == resource and 
+                if (from_node == other_target_pd and to_node == resource and
                     edge_data.get('type') == 'HOLD'):
                     other_has_resource = True
                     break
-            
+
             if other_has_resource:
                 return 0.9  # Very high priority - completes RSI maximization
             else:
                 return 0.7  # High priority - first step toward RSI maximization
-        
+
         # For other cases, check if adding this connection increases sharing
         current_holders = self._get_resource_holders(graph, resource)
         if len(current_holders) >= 1:
             return 0.6  # Medium priority for increasing sharing
-        
+
         return 0.0
+
+    def apply(self, graph, param_values):
+        """Apply the transition with given parameter values"""
+        if self.transition_type == "primitive":
+            return self._apply_primitive(graph, param_values)
+        else:
+            return self._apply_multistep(graph, param_values)
+
+    def _apply_primitive(self, graph, param_values):
+        """Apply primitive operation"""
+        try:
+            if self.name == "remove_hold_edge":
+                from graph_transformations import EdgeTransformations
+                from generic_model import EdgeType
+                EdgeTransformations.remove_edge(
+                    graph,
+                    param_values['from_node'],
+                    param_values['to_node'],
+                    EdgeType.HOLD
+                )
+                return True
+            elif self.name == "add_pd":
+                from graph_transformations import NodeTransformations
+                NodeTransformations.add_pd_node(graph, param_values.get('pd_type', 'new_component'))
+                return True
+            elif self.name == "add_hold_edge":
+                from graph_transformations import EdgeTransformations
+                from generic_model import Permission, ResourceType
+
+                # Extract PD ID and resource ID for EdgeTransformations
+                pd_string = param_values['pd']
+                resource_string = param_values['resource']
+
+                # Extract numeric IDs
+                pd_id = int(pd_string.split('_')[1]) if pd_string.startswith('PD_') else 1
+                resource_id = int(resource_string.split('_')[-1]) if resource_string.startswith('FILE_') else 1
+
+                # Extract resource space ID (default to 1 for FILE_SPACE_1)
+                resource_space_id = 1
+
+                EdgeTransformations.add_hold_edge(
+                    graph,
+                    {Permission.R, Permission.W},  # Use set notation for permissions
+                    pd_id,
+                    ResourceType.FILE,  # Use enum instead of string
+                    resource_space_id,
+                    resource_id
+                )
+                return True
+            elif self.name == "add_file_resource":
+                from graph_transformations import NodeTransformations
+                from generic_model import FileType
+
+                try:
+                    file_type = getattr(FileType, param_values['file_type'])
+                except AttributeError:
+                    print(f"Error: Invalid file_type '{param_values['file_type']}'. Available: {[ft.name for ft in FileType]}")
+                    return False
+
+                # Extract file space ID from node name or param
+                if 'resource_space' in param_values:
+                    file_space_name = param_values['resource_space']
+                    if file_space_name.startswith('FILE_SPACE_'):
+                        file_space_id = int(file_space_name.split('_')[-1])
+                    else:
+                        file_space_id = 1  # Default
+                else:
+                    file_space_id = 1  # Default
+
+                # Generate default path and size based on file type
+                file_paths = {
+                    'CONFIG': '/etc/app.conf',
+                    'DATABASE': '/var/db/data.db',
+                    'TEMP': '/tmp/tempfile.tmp',
+                    'LOG': '/var/log/app.log'
+                }
+                default_path = file_paths.get(param_values['file_type'], '/tmp/default.tmp')
+
+                result = NodeTransformations.add_file_resource(
+                    graph,
+                    file_space_id,
+                    file_type,
+                    default_path,
+                    param_values.get('file_size', 1024)
+                )
+                return result is not None
+            elif self.name == "remove_file_resource":
+                from graph_transformations import NodeTransformations
+                import json
+                # Remove the resource node and its edges
+                resource = param_values['resource']
+
+                # Remove all edges connected to this resource
+                edges_to_remove = []
+                for from_node, to_node, edge_data in graph.g.edges(data=True):
+                    if from_node == resource or to_node == resource:
+                        edges_to_remove.append((from_node, to_node))
+
+                for from_node, to_node in edges_to_remove:
+                    graph.g.remove_edge(from_node, to_node)
+
+                # Remove the resource node
+                graph.g.remove_node(resource)
+                return True
+            elif self.name == "remove_pd":
+                # Remove PD node and all its edges
+                pd = param_values['pd']
+
+                # Remove all edges connected to this PD
+                edges_to_remove = []
+                for from_node, to_node, edge_data in graph.g.edges(data=True):
+                    if from_node == pd or to_node == pd:
+                        edges_to_remove.append((from_node, to_node))
+
+                for from_node, to_node in edges_to_remove:
+                    graph.g.remove_edge(from_node, to_node)
+
+                # Remove the PD node
+                graph.g.remove_node(pd)
+                return True
+            elif self.name == "add_resource_space":
+                from graph_transformations import NodeTransformations
+                from generic_model import ResourceType
+                resource_type = getattr(ResourceType, param_values['space_type'])
+                NodeTransformations.add_resource_space(graph, resource_type)
+                return True
+            elif self.name == "remove_resource_space":
+                # Remove resource space node and all its edges
+                space = param_values['resource_space']
+
+                # Remove all edges connected to this space
+                edges_to_remove = []
+                for from_node, to_node, edge_data in graph.g.edges(data=True):
+                    if from_node == space or to_node == space:
+                        edges_to_remove.append((from_node, to_node))
+
+                for from_node, to_node in edges_to_remove:
+                    graph.g.remove_edge(from_node, to_node)
+
+                # Remove the space node
+                graph.g.remove_node(space)
+                return True
+            elif self.name == "add_request_edge":
+                from graph_transformations import EdgeTransformations
+                from generic_model import ResourceType
+
+                # Extract PD IDs from PD strings
+                from_pd_string = param_values['from_pd']
+                to_pd_string = param_values['to_pd']
+                from_pd_id = int(from_pd_string.split('_')[1]) if from_pd_string.startswith('PD_') else 1
+                to_pd_id = int(to_pd_string.split('_')[1]) if to_pd_string.startswith('PD_') else 1
+
+                # Use FILE space 1 as default for REQUEST edges
+                EdgeTransformations.add_request_edge(
+                    graph,
+                    from_pd_id,
+                    to_pd_id,
+                    ResourceType.FILE,
+                    1  # space_id
+                )
+                return True
+            elif self.name == "remove_request_edge":
+                from graph_transformations import EdgeTransformations
+                from generic_model import EdgeType
+                EdgeTransformations.remove_edge(
+                    graph,
+                    param_values['from_node'],
+                    param_values['to_node'],
+                    EdgeType.REQUEST
+                )
+                return True
+            elif self.name == "add_subset_edge":
+                from graph_transformations import EdgeTransformations
+                from generic_model import EdgeType
+                EdgeTransformations.add_edge(
+                    graph,
+                    param_values['resource'],
+                    param_values['resource_space'],
+                    EdgeType.SUBSET
+                )
+                return True
+            elif self.name == "remove_subset_edge":
+                from graph_transformations import EdgeTransformations
+                from generic_model import EdgeType
+                EdgeTransformations.remove_edge(
+                    graph,
+                    param_values['from_node'],
+                    param_values['to_node'],
+                    EdgeType.SUBSET
+                )
+                return True
+            # Add other primitive implementations as needed
+            else:
+                print(f"Primitive {self.name} not yet implemented")
+                return False
+        except Exception as e:
+            print(f"Error applying primitive {self.name}: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
+
+    def _apply_multistep(self, graph, param_values):
+        """Apply sequence of primitives (not used by our 3 scenarios)"""
+        print(f"Multi-step {self.name} not yet implemented")
+        return False
 
 
 class Scenario:
@@ -446,23 +651,23 @@ class Scenario:
         self.allowed_primitives = allowed_primitives
         self.allowed_multistep = allowed_multistep
         self.graph_builder = graph_builder
-    
+
     def get_allowed_transitions(self):
         """Get all allowed transitions for this scenario"""
         transitions = []
-        
+
         # Add allowed primitives
         for primitive_name in self.allowed_primitives:
             if primitive_name in PRIMITIVES:
                 transitions.append(PRIMITIVES[primitive_name])
-        
+
         # Add allowed multi-step (none for our 3 scenarios)
         for multistep_name in self.allowed_multistep:
             # Could add MULTISTEP_TRANSITIONS here if needed
             pass
-        
+
         return transitions
-    
+
     def build_graph(self):
         """Build the initial graph for this scenario"""
         return self.graph_builder()
@@ -476,7 +681,7 @@ PRIMITIVES = {
         transition_type="primitive"
     ),
     "remove_pd": Transition(
-        name="remove_pd", 
+        name="remove_pd",
         description="Remove existing Protection Domain",
         transition_type="primitive"
     ),
@@ -537,51 +742,51 @@ PRIMITIVES = {
 def build_basic_shared_resource_graph():
     """Build a minimal graph with 2 PDs sharing 1 file only"""
     graph = ModelGraph()
-    
+
     # Add 2 PDs
     pd1_id = NodeTransformations.add_pd_node(graph, "PD_1")
     pd2_id = NodeTransformations.add_pd_node(graph, "PD_2")
-    
+
     # Add 1 resource space for files
     space_id = NodeTransformations.add_resource_space(graph, ResourceType.FILE)
-    
+
     # Add 1 shared file resource
     file_id = NodeTransformations.add_file_resource(graph, space_id, FileType.TEMP, "/tmp/shared_buffer.tmp", 2048)
-    
+
     # Both PDs hold the shared file (this creates the sharing to be reduced)
     EdgeTransformations.add_hold_edge(graph, {Permission.R, Permission.W}, pd1_id, ResourceType.FILE, space_id, file_id)
     EdgeTransformations.add_hold_edge(graph, {Permission.R, Permission.W}, pd2_id, ResourceType.FILE, space_id, file_id)
-    
+
     return graph
 
 
 def build_reduce_isolation_graph():
     """Build a graph with mediated access: PD1 -> PD3 -> R0, PD2 -> PD4 -> R0"""
     graph = ModelGraph()
-    
+
     # Add client PDs
     pd1_id = NodeTransformations.add_pd_node(graph, "PD_1")
     pd2_id = NodeTransformations.add_pd_node(graph, "PD_2")
-    
+
     # Add mediator PDs
     pd3_id = NodeTransformations.add_pd_node(graph, "PD_3")
     pd4_id = NodeTransformations.add_pd_node(graph, "PD_4")
-    
+
     # Add resource space
     space_id = NodeTransformations.add_resource_space(graph, ResourceType.FILE)
-    
+
     # Add shared resource R0 (FILE_1_1)
     file_id = NodeTransformations.add_file_resource(graph, space_id, FileType.CONFIG, "/shared/config.dat", 4096)
-    
+
     # Create mediated access pattern:
     # PD_1 requests from PD_3, PD_2 requests from PD_4
     EdgeTransformations.add_request_edge(graph, pd1_id, pd3_id, ResourceType.FILE, space_id)
     EdgeTransformations.add_request_edge(graph, pd2_id, pd4_id, ResourceType.FILE, space_id)
-    
+
     # Mediators hold the resource
     EdgeTransformations.add_hold_edge(graph, {Permission.R, Permission.W}, pd3_id, ResourceType.FILE, space_id, file_id)
     EdgeTransformations.add_hold_edge(graph, {Permission.R, Permission.W}, pd4_id, ResourceType.FILE, space_id, file_id)
-    
+
     return graph
 
 
@@ -597,16 +802,19 @@ SCENARIOS = {
         ],
         constraints=[
             # Both PDs need access to FILE_1_1 (direct or indirect) - allows for mediation
-            Constraint("requires_resource_access", 1, "FILE_1_1", properties={"access_type": "direct_or_indirect"}),
-            Constraint("requires_resource_access", 2, "FILE_1_1", properties={"access_type": "direct_or_indirect"}),
+            # Constraint("requires_resource_access", 1, "FILE_1_1", properties={"access_type": "direct_or_indirect"}),
+            # Constraint("requires_resource_access", 2, "FILE_1_1", properties={"access_type": "direct_or_indirect"}),
             # Ensure the shared file must exist
             Constraint("requires_resource_exists", None, "FILE_1_1", properties={"mandatory": True}),
+            # Both PDs need access to a TEMP file
+            Constraint("requires_file_access", 1, "FILE", properties={"file_type": "TEMP", "min_size_kb": 1}),
+            Constraint("requires_file_access", 2, "FILE", properties={"file_type": "TEMP", "min_size_kb": 1}),
         ],
         allowed_primitives=PRIMITIVES,  # All atomic graph operations
         allowed_multistep=[],  # No multi-step allowed
         graph_builder=build_basic_shared_resource_graph
     ),
-    
+
     "mediator_test_primitive": Scenario(
         name="Mediator Test Primitive",
         description="Test if primitives can achieve mediation pattern",
@@ -621,7 +829,7 @@ SCENARIOS = {
         allowed_multistep=[],  # No multi-step transitions
         graph_builder=build_basic_shared_resource_graph
     ),
-    
+
     "reduce_isolation": Scenario(
         name="Reduce Isolation",
         description="Transform mediated access (PD1->PD3->R0, PD2->PD4->R0) to direct access (PD1->R0, PD2->R0) by maximizing RSI",
