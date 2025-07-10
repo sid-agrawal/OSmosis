@@ -212,11 +212,19 @@ class Transition:
                             constraint_relevance = max(constraint_relevance, 0.8)
                             description = f"connect {pd} to orphaned resource {resource}"
 
+                        # CRITICAL FIX: Check if this connection would satisfy constraint violations
+                        constraint_satisfaction_boost = self._calculate_constraint_satisfaction_boost(
+                            graph, pd, resource, constraints)
+                        if constraint_satisfaction_boost > 0:
+                            constraint_relevance = max(constraint_relevance, constraint_satisfaction_boost)
+                            if constraint_satisfaction_boost >= 1.0:
+                                description = f"connect {pd} to {resource} (satisfies constraint violation)"
+
                         candidates.append({
                             'param_values': {'pd': pd, 'resource': resource, 'permission': 'R'},
                             'target_description': description,
                             'constraint_relevance': constraint_relevance,
-                            'addresses_violation': rsi_relevance >= 0.8
+                            'addresses_violation': rsi_relevance >= 0.8 or constraint_satisfaction_boost >= 1.0
                         })
 
         return candidates
@@ -434,6 +442,69 @@ class Transition:
             return 0.6  # Medium priority for increasing sharing
 
         return 0.0
+
+    def _calculate_constraint_satisfaction_boost(self, graph, pd, resource, constraints):
+        """Calculate how much connecting this PD to this resource would help satisfy constraint violations"""
+        import json
+        
+        # Extract PD ID from PD string
+        try:
+            pd_id = int(pd.split('_')[1]) if pd.startswith('PD_') else None
+        except (IndexError, ValueError):
+            return 0.0
+            
+        if pd_id is None:
+            return 0.0
+        
+        # Get resource file type from node data
+        node_data = graph.g.nodes.get(resource, {})
+        extra_str = node_data.get('extra', '{}')
+        try:
+            extra_data = json.loads(extra_str) if extra_str else {}
+        except (json.JSONDecodeError, TypeError):
+            extra_data = {}
+        resource_file_type = extra_data.get('file_type', 'UNKNOWN')
+        
+        # Check if this connection would satisfy any requires_file_access constraints
+        for constraint in constraints:
+            if (constraint.constraint_type == "requires_file_access" and 
+                constraint.pd_id == pd_id):
+                
+                required_file_type = constraint.properties.get('file_type', 'any')
+                
+                # Check if this resource matches the required file type
+                if (required_file_type == 'any' or 
+                    required_file_type.upper() == resource_file_type.upper()):
+                    
+                    # Check if this PD currently lacks access to this file type
+                    current_has_access = self._pd_has_access_to_file_type(graph, pd, required_file_type)
+                    
+                    if not current_has_access:
+                        return 1.5  # Maximum boost for satisfying constraint violation
+                        
+        return 0.0
+
+    def _pd_has_access_to_file_type(self, graph, pd, file_type):
+        """Check if a PD currently has access to any file of the specified type"""
+        import json
+        
+        # Get all resources currently held by this PD
+        for from_node, to_node, edge_data in graph.g.edges(data=True):
+            if from_node == pd and edge_data.get('type') == 'HOLD':
+                # Check if this resource matches the file type
+                node_data = graph.g.nodes.get(to_node, {})
+                extra_str = node_data.get('extra', '{}')
+                try:
+                    extra_data = json.loads(extra_str) if extra_str else {}
+                except (json.JSONDecodeError, TypeError):
+                    extra_data = {}
+                resource_file_type = extra_data.get('file_type', 'UNKNOWN')
+                
+                if (file_type == 'any' or 
+                    file_type.upper() == resource_file_type.upper()):
+                    return True
+                    
+        return False
 
     def apply(self, graph, param_values):
         """Apply the transition with given parameter values"""
@@ -740,7 +811,7 @@ PRIMITIVES = {
 
 # Graph builders for the 3 scenarios
 def build_basic_shared_resource_graph():
-    """Build a minimal graph with 2 PDs sharing 1 file only"""
+    """Build a minimal graph with 2 PDs sharing 1 file, plus an alternative TEMP file"""
     graph = ModelGraph()
 
     # Add 2 PDs
@@ -750,12 +821,17 @@ def build_basic_shared_resource_graph():
     # Add 1 resource space for files
     space_id = NodeTransformations.add_resource_space(graph, ResourceType.FILE)
 
-    # Add 1 shared file resource
-    file_id = NodeTransformations.add_file_resource(graph, space_id, FileType.TEMP, "/tmp/shared_buffer.tmp", 2048)
+    # Add shared file resource (FILE_1_1)
+    file1_id = NodeTransformations.add_file_resource(graph, space_id, FileType.TEMP, "/tmp/shared_buffer.tmp", 2048)
+
+    # Add alternative TEMP file (FILE_1_2) to enable isolation solutions
+    file2_id = NodeTransformations.add_file_resource(graph, space_id, FileType.TEMP, "/tmp/private_buffer.tmp", 1024)
 
     # Both PDs hold the shared file (this creates the sharing to be reduced)
-    EdgeTransformations.add_hold_edge(graph, {Permission.R, Permission.W}, pd1_id, ResourceType.FILE, space_id, file_id)
-    EdgeTransformations.add_hold_edge(graph, {Permission.R, Permission.W}, pd2_id, ResourceType.FILE, space_id, file_id)
+    EdgeTransformations.add_hold_edge(graph, {Permission.R, Permission.W}, pd1_id, ResourceType.FILE, space_id, file1_id)
+    EdgeTransformations.add_hold_edge(graph, {Permission.R, Permission.W}, pd2_id, ResourceType.FILE, space_id, file1_id)
+
+    # FILE_1_2 starts unconnected (available for isolation solutions)
 
     return graph
 
@@ -806,6 +882,8 @@ SCENARIOS = {
             # Constraint("requires_resource_access", 2, "FILE_1_1", properties={"access_type": "direct_or_indirect"}),
             # Ensure the shared file must exist
             Constraint("requires_resource_exists", None, "FILE_1_1", properties={"mandatory": True}),
+            # Ensure alternative TEMP file exists to enable isolation solutions
+            Constraint("requires_resource_exists", None, "FILE_1_2", properties={"mandatory": True, "file_type": "TEMP"}),
             # Both PDs need access to a TEMP file
             Constraint("requires_file_access", 1, "FILE", properties={"file_type": "TEMP", "min_size_kb": 1}),
             Constraint("requires_file_access", 2, "FILE", properties={"file_type": "TEMP", "min_size_kb": 1}),
