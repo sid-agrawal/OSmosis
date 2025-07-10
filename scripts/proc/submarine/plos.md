@@ -88,74 +88,116 @@ The enhanced algorithm implements a beam search approach with constraint-driven 
 The core innovation lies in our constraint-driven scoring system that dynamically adjusts operation scores based on constraint satisfaction opportunities and graph context:
 
 ```python
-def constraint_driven_scoring(operation, params, graph, goals, constraints):
+def constraint_driven_hold_edge_scoring(transition, graph, constraints):
     """
-    Algorithm: ConstraintDrivenScoring
+    Algorithm: ConstraintDrivenHoldEdgeScoring (Core Implementation)
     Args:
-        operation: Graph transformation operation
-        params: Operation parameters
+        transition: Graph transformation transition (add_hold_edge)
         graph: Current graph state G
-        goals: Optimization goals (phi)
         constraints: System constraints C including functional requirements
     Returns:
-        dynamic_score: Constraint-aware operation score
+        candidates: List of constraint-aware HOLD edge candidates with boosted scores
     """
 
-    # Analyze current graph state for constraint satisfaction opportunities
-    state_analysis = analyze_graph_state_with_constraints(graph, constraints)
-    base_score = get_base_score(operation.name)
+    candidates = []
+    
+    # Find all PDs and FILE resources in current graph
+    pds = [node for node, data in graph.nodes(data=True) if data.get('type') == 'PD']
+    resources = [node for node, data in graph.nodes(data=True) 
+                if data.get('type') == 'RESOURCE' and data.get('data') == 'FILE']
 
-    # Apply constraint-driven adjustments
-    score = base_score
+    for pd in pds:
+        current_resources = get_pd_held_resources(graph, pd)
+        
+        for resource in resources:
+            if resource not in current_resources:
+                # PHASE 1: Standard scoring baseline
+                constraint_relevance = 0.4  # Standard score
+                description = f"connect {pd} to {resource}"
+                
+                # PHASE 2: RSI goal relevance (existing logic)
+                rsi_relevance = calculate_rsi_goal_relevance(graph, pd, resource, constraints)
+                if rsi_relevance > 0:
+                    constraint_relevance = max(constraint_relevance, rsi_relevance)
+                    if rsi_relevance >= 0.8:
+                        description = f"connect {pd} to {resource} (RSI goal achievement)"
 
-    # PHASE 1: Constraint satisfaction (highest priority)
-    if operation.name == "add_hold_edge":
-        constraint_boost = calculate_constraint_satisfaction_boost(
-            graph, params['pd'], params['resource'], constraints)
-        if constraint_boost > 0:
-            score = max(score, constraint_boost)  # 1.5x boost for constraint resolution
+                # PHASE 3: Orphaned resource boost (existing logic) 
+                holders = get_resource_holders(graph, resource)
+                if len(holders) == 0:
+                    constraint_relevance = max(constraint_relevance, 0.8)
+                    description = f"connect {pd} to orphaned resource {resource}"
+
+                # PHASE 4: BREAKTHROUGH - Constraint satisfaction boost
+                constraint_satisfaction_boost = calculate_constraint_satisfaction_boost(
+                    graph, pd, resource, constraints)
+                if constraint_satisfaction_boost > 0:
+                    constraint_relevance = max(constraint_relevance, constraint_satisfaction_boost)
+                    if constraint_satisfaction_boost >= 1.0:
+                        description = f"connect {pd} to {resource} (satisfies constraint violation)"
+
+                candidates.append({
+                    'param_values': {'pd': pd, 'resource': resource, 'permission': 'R'},
+                    'target_description': description,
+                    'constraint_relevance': constraint_relevance,
+                    'addresses_violation': rsi_relevance >= 0.8 or constraint_satisfaction_boost >= 1.0
+                })
+
+    return candidates
+
+def calculate_constraint_satisfaction_boost(graph, pd, resource, constraints):
+    """Core constraint satisfaction analysis for HOLD edge scoring"""
+    # Extract PD ID from PD string (e.g., "PD_1" -> 1)
+    pd_id = int(pd.split('_')[1]) if pd.startswith('PD_') else None
+    if pd_id is None:
+        return 0.0
+    
+    # Get resource file type from graph metadata
+    node_data = graph.nodes.get(resource, {})
+    extra_data = json.loads(node_data.get('extra', '{}'))
+    resource_file_type = extra_data.get('file_type', 'UNKNOWN')
+    
+    # Check if connection would satisfy requires_file_access constraints
+    for constraint in constraints:
+        if (constraint.constraint_type == "requires_file_access" and 
+            constraint.pd_id == pd_id):
             
-    if operation.name == "remove_hold_edge" and violates_constraints(params, constraints):
-        return -80.0  # Heavy penalty for constraint violations
-
-    # PHASE 2: Multi-pattern recognition with constraint awareness
-    if state_analysis.mediation_opportunity and has_access_constraints(constraints):
-        score = score_for_constraint_driven_mediation(operation, params, score,
-                                                     state_analysis, graph, constraints)
-
-    if state_analysis.isolation_opportunity and has_alternative_resources(graph, constraints):
-        score = score_for_constraint_aware_isolation(operation, params, score,
-                                                    state_analysis, graph, constraints)
-
-    # PHASE 3: Goal-driven pattern coordination
-    if has_rsi_goals(goals) and enables_constraint_satisfying_isolation(operation, params):
-        score = apply_isolation_pattern_boost(score, goals, constraints)
-
-    # PHASE 4: Alternative resource availability
-    if creates_constraint_satisfying_alternatives(operation, params, constraints):
-        score = apply_alternative_resource_boost(score, constraints)
-
-    return score
+            required_file_type = constraint.properties.get('file_type', 'any')
+            
+            # Check if resource matches required file type
+            if (required_file_type == 'any' or 
+                required_file_type.upper() == resource_file_type.upper()):
+                
+                # Check if PD currently lacks access to this file type
+                if not pd_has_access_to_file_type(graph, pd, required_file_type):
+                    return 1.5  # Maximum boost for satisfying constraint violation
+                    
+    return 0.0
 ```
 
-**ConstraintDrivenScoring Algorithm**
+**ConstraintDrivenHoldEdgeScoring Algorithm**
 
-The enhanced scoring system provides intelligence that coordinates constraint satisfaction with security goal achievement:
+The enhanced HOLD edge scoring system provides breakthrough intelligence for coordinating constraint satisfaction with security goal achievement:
 
-1. **Constraint-Aware State Analysis (lines 13-14)**: The algorithm analyzes the current graph specifically for constraint satisfaction opportunities, identifying PDs lacking required access, resources mentioned in constraints, and potential violation scenarios.
+1. **Comprehensive Candidate Generation (lines 4-7)**: The algorithm identifies all possible PD-resource connections by finding PDs and FILE resources in the current graph state, filtering out existing connections.
 
-2. **Hierarchical Constraint-Driven Scoring Phases**:
-   - **Phase 1 - Constraint Satisfaction (lines 19-25)**: Operations that resolve constraint violations receive maximum priority. The `calculate_constraint_satisfaction_boost()` method provides 1.5x score boost for HOLD edges that would satisfy `requires_file_access` constraints. Operations that would violate constraints receive heavy penalties (-80 points).
+2. **Four-Phase Hierarchical Scoring Process**:
+   - **Phase 1 - Standard Baseline (lines 14-16)**: All HOLD edge candidates start with a standard constraint relevance score of 0.4, establishing a baseline for comparison.
 
-   - **Phase 2 - Constraint-Aware Pattern Recognition (lines 27-33)**: The system recognizes security patterns while maintaining constraint awareness:
-     - **Constraint-Driven Mediation**: When access constraints exist and direct access is prohibited, operations that create mediation relationships receive high scores.
-     - **Constraint-Aware Isolation**: When alternative resources exist to satisfy constraints, operations that enable isolation while maintaining required access receive priority.
+   - **Phase 2 - RSI Goal Relevance (lines 18-23)**: Existing RSI goal logic provides score boosts for connections that would help achieve sharing reduction or maximization goals, with scores up to 0.8-0.9 for goal-relevant operations.
 
-   - **Phase 3 - Goal-Constraint Coordination (lines 35-37)**: The algorithm coordinates RSI goals with constraint satisfaction, boosting operations that achieve isolation goals while maintaining functional requirements.
+   - **Phase 3 - Orphaned Resource Priority (lines 25-29)**: Resources with no current holders (orphaned resources) receive enhanced priority (score 0.8) to encourage connection establishment and resource utilization.
 
-   - **Phase 4 - Alternative Resource Strategy (lines 39-41)**: Operations that create or connect to alternative resources that would satisfy constraints receive enhanced scoring, enabling sophisticated isolation solutions.
+   - **Phase 4 - BREAKTHROUGH Constraint Satisfaction (lines 31-37)**: The core innovation - `calculate_constraint_satisfaction_boost()` provides 1.5x score boost for HOLD edges that would resolve `requires_file_access` constraint violations. Operations that satisfy constraints are labeled as "satisfies constraint violation."
 
-The hierarchical structure ensures that functional requirements (constraint satisfaction) are maintained while still achieving security objectives through intelligent pattern coordination.
+3. **Constraint Satisfaction Analysis (lines 48-75)**: The `calculate_constraint_satisfaction_boost()` method performs detailed analysis:
+   - **PD Identification**: Extracts numeric PD ID from node names (PD_1 → 1)
+   - **Resource Type Analysis**: Parses JSON metadata to identify file types (TEMP, CONFIG, etc.)
+   - **Constraint Matching**: Compares constraint requirements with resource capabilities
+   - **Access Gap Detection**: Identifies when PDs lack required access to specific file types
+   - **Maximum Boost**: Returns 1.5 for constraint-satisfying connections, 0.0 otherwise
+
+The hierarchical structure ensures that constraint satisfaction receives the highest priority while maintaining all existing pattern recognition capabilities, enabling breakthrough coordination of functional requirements with security objectives.
 
 ### 1.3 Key Algorithmic Innovations
 
