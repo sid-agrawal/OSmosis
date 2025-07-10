@@ -41,11 +41,19 @@ def calculate_goal_driven_score(operation_name, params, current_graph, new_graph
     # Check if this operation creates unsatisfiable constraint state
     unsatisfiable_penalty = check_unsatisfiable_state(new_graph, constraints)
     
-    # Goal improvement gets LOWER priority than constraint satisfaction
+    # ENHANCED: Goal improvement with special handling for RSI maximization
     total_improvement = 0.0
     for goal in goals:
         if goal.metric_name == "RSI":
             improvement = calculate_rsi_improvement(goal, current_metrics, new_metrics)
+            
+            # SPECIAL BOOST: For RSI maximization goals, add extra rewards for HOLD edge additions that create target sharing
+            if goal.direction == "maximize" and operation_name == "add_hold_edge":
+                # Extract the actual parameters from the candidate dictionary
+                actual_params = params.get('param_values', params) if isinstance(params, dict) else params
+                rsi_boost = calculate_rsi_maximization_boost(goal, actual_params, current_graph, new_graph)
+                improvement += rsi_boost
+                
             total_improvement += improvement
         elif goal.metric_name == "ASR":
             improvement = calculate_asr_improvement(goal, current_metrics, new_metrics)
@@ -72,8 +80,25 @@ def calculate_rsi_improvement(goal, current_metrics, new_metrics):
     target_pair = goal.target_spec  # e.g., "PD_1,PD_2"
     target_value = goal.target_value  # e.g., 0.8
     
-    current_rsi = current_metrics['RSI'].get(target_pair, 1.0)
-    new_rsi = new_metrics['RSI'].get(target_pair, 1.0)
+    # Check if the target pair exists in both current and new metrics
+    current_rsi = current_metrics['RSI'].get(target_pair)
+    new_rsi = new_metrics['RSI'].get(target_pair)
+    
+    # Handle missing PD pairs gracefully - occurs when nodes are removed
+    if current_rsi is None and new_rsi is None:
+        # Neither current nor new state has this PD pair (both nodes missing)
+        return 0.0
+    elif current_rsi is None:
+        # Current state missing pair, new state has it (nodes were added)
+        current_rsi = 1.0 if goal.direction == "minimize" else 0.0  # Worst case baseline
+    elif new_rsi is None:
+        # New state missing pair, current state had it (nodes were removed)
+        if goal.direction == "minimize":
+            # For minimization, removing the pair achieves the goal perfectly
+            return 50.0  # Large bonus for eliminating unwanted sharing
+        else:
+            # For maximization, losing the pair is bad
+            return -50.0  # Large penalty for losing target pair
     
     if goal.direction == "minimize":
         if new_rsi < current_rsi:
@@ -682,3 +707,42 @@ def calculate_diversity_bonus(operation_name, transition_history):
         return 20.0  # Extra bonus for continuing diverse exploration
     
     return 0.0
+
+
+def calculate_rsi_maximization_boost(goal, params, current_graph, new_graph):
+    """Calculate extra boost for HOLD edge additions that create target RSI sharing patterns"""
+    
+    # Extract target pair from goal (e.g., "PD_1,PD_2")
+    target_pair = goal.target_spec
+    if not target_pair or ',' not in target_pair:
+        return 0.0
+    
+    pd1, pd2 = target_pair.split(',')
+    
+    # Extract the PD and resource from the operation parameters
+    pd = params.get('pd', params.get('from_node', ''))
+    resource = params.get('resource', params.get('to_node', ''))
+    
+    # Check if this operation directly involves the target PDs
+    if pd not in [pd1, pd2]:
+        return 0.0
+    
+    # Check if this operation connects a target PD to a resource
+    other_target_pd = pd2 if pd == pd1 else pd1
+    
+    # Check if the other target PD already has access to this resource
+    other_has_resource = False
+    for from_node, to_node, edge_data in current_graph.g.edges(data=True):
+        if (from_node == other_target_pd and to_node == resource and 
+            edge_data.get('type') == 'HOLD'):
+            other_has_resource = True
+            break
+    
+    if other_has_resource:
+        # This completes the sharing pattern for RSI maximization!
+        print(f"    🎯 RSI MAXIMIZATION BOOST: {pd} -> {resource} completes sharing with {other_target_pd}")
+        return 100.0  # Massive boost for completing the target sharing pattern
+    else:
+        # This is the first step toward the sharing pattern
+        print(f"    🎯 RSI preparation: {pd} -> {resource} enables future sharing")
+        return 30.0  # Good boost for enabling the sharing pattern
