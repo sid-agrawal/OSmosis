@@ -1867,12 +1867,18 @@ def BeamSearchExploration(scenario, beam_width=3, max_depth=8):
     return explored_mechanisms
 
 
-def DesignSpaceExplorationWithVisualization(scenario, visualizer=None, tree_visualizer=None):
+def GreedyDesignSpaceExplorationWithVisualization(scenario, visualizer=None, tree_visualizer=None):
     """
-    Main IsoSearch algorithm for exploring design space with optional visualization
+    Greedy IsoSearch algorithm for exploring design space with optional visualization
+    
+    Uses a greedy search strategy that selects the locally optimal transition at each step
+    based on predicted improvement scores. Includes a small exploration factor (15% chance)
+    to occasionally select from top-3 alternatives instead of always the best candidate.
+    
     Args:
         scenario - Scenario object with goals, constraints, transitions, and graph builder
         visualizer - Optional IsoSearchVisualizer object for HTML generation
+        tree_visualizer - Optional DecisionTreeVisualizer for decision tracking
     Returns: list of explored mechanisms
     """
     # Step 1: Initialize components from scenario (from pseudocode line 2)
@@ -2545,7 +2551,7 @@ def run_scenario(scenario_name, enable_visualization=False):
             print(f"🔍 Using beam search (width={args.beam_width})")
             result = BeamSearchExploration(scenario, beam_width=args.beam_width, max_depth=args.bfs_max_depth)
         else:
-            result = DesignSpaceExplorationWithVisualization(scenario, visualizer, tree_visualizer)
+            result = GreedyDesignSpaceExplorationWithVisualization(scenario, visualizer, tree_visualizer)
 
         # Generate visualization if enabled
         if enable_visualization:
