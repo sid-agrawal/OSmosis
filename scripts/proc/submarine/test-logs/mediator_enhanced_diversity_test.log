@@ -1,0 +1,1914 @@
+
+🎯 Running scenario: mediator_test_indirect
+✓ Validated 9 constraints in scenario 'Mediator Test Indirect Access'
+🎯 Running scenario: Mediator Test Indirect Access
+   Description: Test if requiring indirect access forces mediation discovery using simplified graph
+   Goals (1): ['Goal(minimize RSI[PD_1,PD_2] to 0.0)']
+   Constraints (9): ["Constraint(prohibit_direct_hold for PD_1: FILE_1_1, {'constraint_type': 'negative'})", "Constraint(prohibit_direct_hold for PD_2: FILE_1_1, {'constraint_type': 'negative'})", "Constraint(requires_resource_access for PD_1: FILE_1_1, {'access_type': 'indirect'})", "Constraint(requires_resource_access for PD_2: FILE_1_1, {'access_type': 'indirect'})", "Constraint(requires_resource_exists for PD_None: FILE_1_1, {'mandatory': True})", "Constraint(requires_file_access for PD_None: FILE, {'min_holders': 1, 'max_holders': 1})", "Constraint(requires_pd_exists for PD_None: PD_3, {'mandatory': True})", "Constraint(requires_tcb_dependency for PD_1: PD_3, {'dependency_type': 'must_depend_on'})", "Constraint(requires_tcb_dependency for PD_2: PD_3, {'dependency_type': 'must_depend_on'})"]
+   Transitions (12): ['Transition(add_pd: Create new Protection Domain)', 'Transition(remove_pd: Remove existing Protection Domain)', 'Transition(add_file_resource: Create new FILE resource)', 'Transition(remove_file_resource: Remove FILE resource)', 'Transition(add_resource_space: Create new resource space)', 'Transition(remove_resource_space: Remove resource space)', 'Transition(add_hold_edge: Create PD → Resource relationship)', 'Transition(remove_hold_edge: Remove PD → Resource relationship)', 'Transition(add_request_edge: Create PD → PD authority relationship)', 'Transition(remove_request_edge: Remove PD → PD authority relationship)', 'Transition(add_subset_edge: Create Resource → ResourceSpace relationship)', 'Transition(remove_subset_edge: Remove Resource → ResourceSpace relationship)']
+   Starting Graph: 4 nodes, 3 edges
+
+=== Graph Details ===
+Node: PD_1 -> {'type': 'PD', 'data': 'user_process', 'extra': ''}
+Node: PD_2 -> {'type': 'PD', 'data': 'database_server', 'extra': ''}
+Node: FILE_SPACE_1 -> {'type': 'RESOURCE_SPACE', 'data': 'FILE', 'extra': ''}
+Node: FILE_1_1 -> {'type': 'RESOURCE', 'data': 'FILE', 'extra': '{"path": "/tmp/shared_buffer.tmp", "file_type": "TEMP", "size_bytes": "2048", "permissions": "rw-"}'}
+
+=== Ready for IsoSearch! ===
+
+=== Exploring Mediator Test Indirect Access ===
+🔍 Using beam search (width=5)
+🔍 Starting beam search exploration (beam_width=5)
+   Goals: 1, Constraints: 9, Transitions: 12
+
+📊 Initial graph:
+        # Graph structure:
+        # PD_1 --HOLD--> FILE_1_1 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_1 -> FILE_SPACE_1
+        #
+        # FILE_1_1 shared by: PD_1, PD_2
+
+
+============================================================
+🔍 Beam Search Iteration 1/8
+📊 Current beam size: 1
+  Beam[0]: BeamState(iter=0, score=0.000, path=)
+
+🌟 Expanding Beam[0] (score: 0.000)
+  ⚠️  Constraints violated: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1...
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_1 HOLD edge -> score: 0.400
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_1 HOLD edge -> score: 0.400
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 8 constraint violation(s)
+    Predicted improvement: 0.700
+    Considered 10 other option(s):
+      1. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      2. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.800)
+      3. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.800)
+      4. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.800)
+      5. primitive: remove PD_1 -> FILE_1_1 HOLD edge (improvement: 0.400)
+      6. primitive: remove PD_2 -> FILE_1_1 HOLD edge (improvement: 0.400)
+      7. primitive: disconnect FILE_1_1 from FILE_SPACE_1 (improvement: 0.300)
+      8. primitive: enable indirect access: PD_1 -> PD_2 (improvement: 0.200)
+      9. primitive: enable indirect access: PD_2 -> PD_1 (improvement: 0.200)
+      10. primitive: remove FILE_1_1 (holders: 2) (improvement: 0.000)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ⚠️  Applied add_pd with constraint violations: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1
+  📋 Generated 11 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_file_resource (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_pd (score: 0.700)
+  🔍 Selected 5 diverse states from 5 candidates
+
+📊 Next beam (5 states):
+  Beam[0]: BeamState(iter=1, score=0.900, path=add_file_resource(create new TEMP file in FILE_SPACE_1))
+  Beam[1]: BeamState(iter=1, score=0.800, path=add_file_resource(create new CONFIG file in FILE_SPACE_1))
+  Beam[2]: BeamState(iter=1, score=0.800, path=add_file_resource(create new DATABASE file in FILE_SPACE_1))
+  Beam[3]: BeamState(iter=1, score=0.800, path=add_file_resource(create new LOG file in FILE_SPACE_1))
+  Beam[4]: BeamState(iter=1, score=0.700, path=add_pd(add new protection domain to help resolve 8 constraint violation(s)))
+💡 Total candidates generated: 5
+🎯 Mechanisms discovered so far: 0
+
+============================================================
+🔍 Beam Search Iteration 2/8
+📊 Current beam size: 5
+  Beam[0]: BeamState(iter=1, score=0.900, path=add_file_resource(create new TEMP file in FILE_SPACE_1))
+  Beam[1]: BeamState(iter=1, score=0.800, path=add_file_resource(create new CONFIG file in FILE_SPACE_1))
+  Beam[2]: BeamState(iter=1, score=0.800, path=add_file_resource(create new DATABASE file in FILE_SPACE_1))
+  Beam[3]: BeamState(iter=1, score=0.800, path=add_file_resource(create new LOG file in FILE_SPACE_1))
+  Beam[4]: BeamState(iter=1, score=0.700, path=add_pd(add new protection domain to help resolve 8 constraint violation(s)))
+
+🌟 Expanding Beam[0] (score: 0.900)
+  ⚠️  Constraints violated: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1...
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_1 HOLD edge -> score: 0.400
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_1 HOLD edge -> score: 0.400
+  🚫 Filtered out 0 'add_file_resource(create new TEMP file in FILE_SPACE_1)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 8 constraint violation(s)
+    Predicted improvement: 0.700
+    Considered 14 other option(s):
+      1. primitive: connect PD_1 to orphaned resource FILE_1_2 (improvement: 0.900)
+      2. primitive: connect PD_2 to orphaned resource FILE_1_2 (improvement: 0.900)
+      3. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      4. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.800)
+      5. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.800)
+      6. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.800)
+      7. primitive: remove FILE_1_2 (holders: 0) (improvement: 0.400)
+      8. primitive: remove PD_1 -> FILE_1_1 HOLD edge (improvement: 0.400)
+      9. primitive: remove PD_2 -> FILE_1_1 HOLD edge (improvement: 0.400)
+      10. primitive: disconnect FILE_1_1 from FILE_SPACE_1 (improvement: 0.300)
+      ... and 4 more
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ⚠️  Applied add_pd with constraint violations: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1
+  📋 Generated 15 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5}, ASR: 1.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_hold_edge (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5}, ASR: 1.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_hold_edge (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_file_resource (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+
+🌟 Expanding Beam[1] (score: 0.800)
+  ⚠️  Constraints violated: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1...
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_1 HOLD edge -> score: 0.400
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_1 HOLD edge -> score: 0.400
+  🚫 Filtered out 0 'add_file_resource(create new CONFIG file in FILE_SPACE_1)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 8 constraint violation(s)
+    Predicted improvement: 0.700
+    Considered 14 other option(s):
+      1. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      2. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.800)
+      3. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.800)
+      4. primitive: connect PD_1 to orphaned resource FILE_1_2 (improvement: 0.700)
+      5. primitive: connect PD_2 to orphaned resource FILE_1_2 (improvement: 0.700)
+      6. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.600)
+      7. primitive: remove FILE_1_2 (holders: 0) (improvement: 0.400)
+      8. primitive: remove PD_1 -> FILE_1_1 HOLD edge (improvement: 0.400)
+      9. primitive: remove PD_2 -> FILE_1_1 HOLD edge (improvement: 0.400)
+      10. primitive: disconnect FILE_1_1 from FILE_SPACE_1 (improvement: 0.300)
+      ... and 4 more
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ⚠️  Applied add_pd with constraint violations: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1
+  📋 Generated 15 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_file_resource (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_pd (score: 0.700)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5}, ASR: 1.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_hold_edge (score: 0.700)
+
+🌟 Expanding Beam[2] (score: 0.800)
+  ⚠️  Constraints violated: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1...
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_1 HOLD edge -> score: 0.400
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_1 HOLD edge -> score: 0.400
+  🚫 Filtered out 0 'add_file_resource(create new DATABASE file in FILE_SPACE_1)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 8 constraint violation(s)
+    Predicted improvement: 0.700
+    Considered 14 other option(s):
+      1. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      2. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.800)
+      3. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.800)
+      4. primitive: connect PD_1 to orphaned resource FILE_1_2 (improvement: 0.700)
+      5. primitive: connect PD_2 to orphaned resource FILE_1_2 (improvement: 0.700)
+      6. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.600)
+      7. primitive: remove FILE_1_2 (holders: 0) (improvement: 0.400)
+      8. primitive: remove PD_1 -> FILE_1_1 HOLD edge (improvement: 0.400)
+      9. primitive: remove PD_2 -> FILE_1_1 HOLD edge (improvement: 0.400)
+      10. primitive: disconnect FILE_1_1 from FILE_SPACE_1 (improvement: 0.300)
+      ... and 4 more
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ⚠️  Applied add_pd with constraint violations: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1
+  📋 Generated 15 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_file_resource (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_pd (score: 0.700)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5}, ASR: 1.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_hold_edge (score: 0.700)
+
+🌟 Expanding Beam[3] (score: 0.800)
+  ⚠️  Constraints violated: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1...
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_1 HOLD edge -> score: 0.400
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_1 HOLD edge -> score: 0.400
+  🚫 Filtered out 0 'add_file_resource(create new LOG file in FILE_SPACE_1)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 8 constraint violation(s)
+    Predicted improvement: 0.700
+    Considered 14 other option(s):
+      1. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      2. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.800)
+      3. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.800)
+      4. primitive: connect PD_1 to orphaned resource FILE_1_2 (improvement: 0.700)
+      5. primitive: connect PD_2 to orphaned resource FILE_1_2 (improvement: 0.700)
+      6. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.600)
+      7. primitive: remove FILE_1_2 (holders: 0) (improvement: 0.400)
+      8. primitive: remove PD_1 -> FILE_1_1 HOLD edge (improvement: 0.400)
+      9. primitive: remove PD_2 -> FILE_1_1 HOLD edge (improvement: 0.400)
+      10. primitive: disconnect FILE_1_1 from FILE_SPACE_1 (improvement: 0.300)
+      ... and 4 more
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ⚠️  Applied add_pd with constraint violations: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1
+  📋 Generated 15 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_file_resource (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_pd (score: 0.700)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5}, ASR: 1.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_hold_edge (score: 0.700)
+
+🌟 Expanding Beam[4] (score: 0.700)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  ⚠️  Constraints violated: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1...
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_1 HOLD edge -> score: 0.400
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_1 HOLD edge -> score: 0.400
+  🚫 Filtered out 0 'add_pd(add new protection domain to help resolve 8 constraint violation(s))' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 7 constraint violation(s)
+    Predicted improvement: 0.700
+    Considered 16 other option(s):
+      1. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      2. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.800)
+      3. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.800)
+      4. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.800)
+      5. primitive: connect PD_3 to FILE_1_1 (improvement: 0.400)
+      6. primitive: remove PD_1 -> FILE_1_1 HOLD edge (improvement: 0.400)
+      7. primitive: remove PD_2 -> FILE_1_1 HOLD edge (improvement: 0.400)
+      8. primitive: remove empty PD_3 (improvement: 0.300)
+      9. primitive: disconnect FILE_1_1 from FILE_SPACE_1 (improvement: 0.300)
+      10. primitive: enable indirect access: PD_1 -> PD_2 (improvement: 0.200)
+      ... and 6 more
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ⚠️  Applied add_pd with constraint violations: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1
+  📋 Generated 17 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_file_resource (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_pd (score: 0.700)
+  🎯 Selected best candidate: add_hold_edge(connect PD_1 to orphaned resource FILE_1_2) (score: 0.900)
+  🌈 Selected diverse candidate: add_file_resource (diversity bonus: 1.700) - new op type (add_file_resource), new strategy (mediation_building), new constraint focus (existence_constraints)
+  🌈 Selected diverse candidate: add_hold_edge (diversity bonus: 1.400) - new op type (add_hold_edge), new strategy (edge_optimization)
+  🌈 Selected diverse candidate: add_file_resource (diversity bonus: 0.400) - repeated op (-0.2), new strategy (resource_creation)
+  🌈 Selected diverse candidate: add_pd (diversity bonus: 0.500) - new op type (add_pd), repeated strategy
+  🔍 Selected 5 diverse states from 25 candidates
+
+📊 Next beam (5 states):
+  Beam[0]: BeamState(iter=2, score=0.900, path=add_file_resource(create new TEMP file in FILE_SPACE_1) → add_hold_edge(connect PD_1 to orphaned resource FILE_1_2))
+  Beam[1]: BeamState(iter=2, score=0.900, path=add_pd(add new protection domain to help resolve 8 constraint violation(s)) → add_file_resource(create new TEMP file in FILE_SPACE_1))
+  Beam[2]: BeamState(iter=2, score=0.900, path=add_file_resource(create new TEMP file in FILE_SPACE_1) → add_hold_edge(connect PD_2 to orphaned resource FILE_1_2))
+  Beam[3]: BeamState(iter=2, score=0.900, path=add_file_resource(create new TEMP file in FILE_SPACE_1) → add_file_resource(create new TEMP file in FILE_SPACE_1))
+  Beam[4]: BeamState(iter=2, score=0.700, path=add_file_resource(create new CONFIG file in FILE_SPACE_1) → add_pd(add new protection domain to help resolve 8 constraint violation(s)))
+💡 Total candidates generated: 25
+🎯 Mechanisms discovered so far: 0
+
+============================================================
+🔍 Beam Search Iteration 3/8
+📊 Current beam size: 5
+  Beam[0]: BeamState(iter=2, score=0.900, path=add_file_resource(create new TEMP file in FILE_SPACE_1) → add_hold_edge(connect PD_1 to orphaned resource FILE_1_2))
+  Beam[1]: BeamState(iter=2, score=0.900, path=add_pd(add new protection domain to help resolve 8 constraint violation(s)) → add_file_resource(create new TEMP file in FILE_SPACE_1))
+  Beam[2]: BeamState(iter=2, score=0.900, path=add_file_resource(create new TEMP file in FILE_SPACE_1) → add_hold_edge(connect PD_2 to orphaned resource FILE_1_2))
+  Beam[3]: BeamState(iter=2, score=0.900, path=add_file_resource(create new TEMP file in FILE_SPACE_1) → add_file_resource(create new TEMP file in FILE_SPACE_1))
+  Beam[4]: BeamState(iter=2, score=0.700, path=add_file_resource(create new CONFIG file in FILE_SPACE_1) → add_pd(add new protection domain to help resolve 8 constraint violation(s)))
+
+🌟 Expanding Beam[0] (score: 0.900)
+  ⚠️  Constraints violated: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1...
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_1 HOLD edge -> score: 1.300
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_2 HOLD edge -> score: 0.500
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_1 HOLD edge -> score: 0.400
+  🚫 Filtered out 0 'add_hold_edge(connect PD_1 to orphaned resource FILE_1_2)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 8 constraint violation(s)
+    Predicted improvement: 0.700
+    Considered 13 other option(s):
+      1. primitive: remove PD_1 -> FILE_1_1 HOLD edge (improvement: 1.300)
+      2. primitive: connect PD_2 to FILE_1_2 (improvement: 0.900)
+      3. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      4. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.800)
+      5. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.800)
+      6. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.800)
+      7. primitive: remove PD_1 -> FILE_1_2 HOLD edge (improvement: 0.500)
+      8. primitive: remove PD_2 -> FILE_1_1 HOLD edge (improvement: 0.400)
+      9. primitive: disconnect FILE_1_1 from FILE_SPACE_1 (improvement: 0.300)
+      10. primitive: disconnect FILE_1_2 from FILE_SPACE_1 (improvement: 0.300)
+      ... and 3 more
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ⚠️  Applied add_pd with constraint violations: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1
+  📋 Generated 14 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0}, ASR: 1.0, TCB: {'PD_1': [], 'PD_2': []}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: remove_hold_edge (score: 1.300)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_hold_edge (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5}, ASR: 1.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_file_resource (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5}, ASR: 1.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5}, ASR: 1.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+
+🌟 Expanding Beam[1] (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  ⚠️  Constraints violated: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1...
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_1 HOLD edge -> score: 0.400
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_1 HOLD edge -> score: 0.400
+  🚫 Filtered out 0 'add_file_resource(create new TEMP file in FILE_SPACE_1)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 7 constraint violation(s)
+    Predicted improvement: 0.700
+    Considered 21 other option(s):
+      1. primitive: connect PD_1 to orphaned resource FILE_1_2 (improvement: 0.900)
+      2. primitive: connect PD_2 to orphaned resource FILE_1_2 (improvement: 0.900)
+      3. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      4. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.800)
+      5. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.800)
+      6. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.800)
+      7. primitive: remove FILE_1_2 (holders: 0) (improvement: 0.400)
+      8. primitive: connect PD_3 to FILE_1_1 (improvement: 0.400)
+      9. primitive: connect PD_3 to orphaned resource FILE_1_2 (improvement: 0.400)
+      10. primitive: remove PD_1 -> FILE_1_1 HOLD edge (improvement: 0.400)
+      ... and 11 more
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ⚠️  Applied add_pd with constraint violations: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1
+  📋 Generated 22 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_hold_edge (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_hold_edge (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_file_resource (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+
+🌟 Expanding Beam[2] (score: 0.900)
+  ⚠️  Constraints violated: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1...
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_1 HOLD edge -> score: 0.400
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_1 HOLD edge -> score: 1.300
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_2 HOLD edge -> score: 0.500
+  🚫 Filtered out 0 'add_hold_edge(connect PD_2 to orphaned resource FILE_1_2)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 8 constraint violation(s)
+    Predicted improvement: 0.700
+    Considered 13 other option(s):
+      1. primitive: remove PD_2 -> FILE_1_1 HOLD edge (improvement: 1.300)
+      2. primitive: connect PD_1 to FILE_1_2 (improvement: 0.900)
+      3. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      4. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.800)
+      5. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.800)
+      6. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.800)
+      7. primitive: remove PD_2 -> FILE_1_2 HOLD edge (improvement: 0.500)
+      8. primitive: remove PD_1 -> FILE_1_1 HOLD edge (improvement: 0.400)
+      9. primitive: disconnect FILE_1_1 from FILE_SPACE_1 (improvement: 0.300)
+      10. primitive: disconnect FILE_1_2 from FILE_SPACE_1 (improvement: 0.300)
+      ... and 3 more
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ⚠️  Applied add_pd with constraint violations: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1
+  📋 Generated 14 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0}, ASR: 1.0, TCB: {'PD_1': [], 'PD_2': []}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: remove_hold_edge (score: 1.300)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_hold_edge (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5}, ASR: 1.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_file_resource (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5}, ASR: 1.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5}, ASR: 1.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+
+🌟 Expanding Beam[3] (score: 0.900)
+  ⚠️  Constraints violated: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1...
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_1 HOLD edge -> score: 0.400
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_1 HOLD edge -> score: 0.400
+  🚫 Filtered out 0 'add_file_resource(create new TEMP file in FILE_SPACE_1)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 8 constraint violation(s)
+    Predicted improvement: 0.700
+    Considered 18 other option(s):
+      1. primitive: connect PD_1 to orphaned resource FILE_1_2 (improvement: 0.900)
+      2. primitive: connect PD_1 to orphaned resource FILE_1_3 (improvement: 0.900)
+      3. primitive: connect PD_2 to orphaned resource FILE_1_2 (improvement: 0.900)
+      4. primitive: connect PD_2 to orphaned resource FILE_1_3 (improvement: 0.900)
+      5. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      6. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.800)
+      7. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.800)
+      8. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.800)
+      9. primitive: remove FILE_1_2 (holders: 0) (improvement: 0.400)
+      10. primitive: remove FILE_1_3 (holders: 0) (improvement: 0.400)
+      ... and 8 more
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ⚠️  Applied add_pd with constraint violations: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1
+  📋 Generated 19 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5}, ASR: 1.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_hold_edge (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5}, ASR: 1.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_hold_edge (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5}, ASR: 1.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_hold_edge (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5}, ASR: 1.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_hold_edge (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_file_resource (score: 0.900)
+
+🌟 Expanding Beam[4] (score: 0.700)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  ⚠️  Constraints violated: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1...
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_1 HOLD edge -> score: 0.400
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_1 HOLD edge -> score: 0.400
+  🚫 Filtered out 0 'add_pd(add new protection domain to help resolve 8 constraint violation(s))' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 7 constraint violation(s)
+    Predicted improvement: 0.700
+    Considered 21 other option(s):
+      1. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      2. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.800)
+      3. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.800)
+      4. primitive: connect PD_1 to orphaned resource FILE_1_2 (improvement: 0.700)
+      5. primitive: connect PD_2 to orphaned resource FILE_1_2 (improvement: 0.700)
+      6. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.600)
+      7. primitive: remove FILE_1_2 (holders: 0) (improvement: 0.400)
+      8. primitive: connect PD_3 to FILE_1_1 (improvement: 0.400)
+      9. primitive: connect PD_3 to orphaned resource FILE_1_2 (improvement: 0.400)
+      10. primitive: remove PD_1 -> FILE_1_1 HOLD edge (improvement: 0.400)
+      ... and 11 more
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ⚠️  Applied add_pd with constraint violations: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1
+  📋 Generated 22 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_file_resource (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_pd (score: 0.700)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_hold_edge (score: 0.700)
+  🎯 Selected best candidate: remove_hold_edge(remove PD_1 -> FILE_1_1 HOLD edge) (score: 1.300)
+  🌈 Selected diverse candidate: remove_hold_edge (diversity bonus: 1.400) - new op type (remove_hold_edge), new strategy (edge_optimization)
+  🌈 Selected diverse candidate: add_hold_edge (diversity bonus: 1.700) - new op type (add_hold_edge), new strategy (resource_creation), new constraint focus (resource_constraints)
+  🌈 Selected diverse candidate: add_pd (diversity bonus: 1.700) - new op type (add_pd), new strategy (mediation_building), new constraint focus (existence_constraints)
+  🌈 Selected diverse candidate: add_file_resource (diversity bonus: 0.500) - new op type (add_file_resource), repeated strategy
+  🔍 Selected 5 diverse states from 25 candidates
+
+📊 Next beam (5 states):
+  Beam[0]: BeamState(iter=3, score=1.300, path=add_file_resource(create new TEMP file in FILE_SPACE_1) → add_hold_edge(connect PD_1 to orphaned resource FILE_1_2) → remove_hold_edge(remove PD_1 -> FILE_1_1 HOLD edge))
+  Beam[1]: BeamState(iter=3, score=1.300, path=add_file_resource(create new TEMP file in FILE_SPACE_1) → add_hold_edge(connect PD_2 to orphaned resource FILE_1_2) → remove_hold_edge(remove PD_2 -> FILE_1_1 HOLD edge))
+  Beam[2]: BeamState(iter=3, score=0.900, path=add_file_resource(create new TEMP file in FILE_SPACE_1) → add_file_resource(create new TEMP file in FILE_SPACE_1) → add_hold_edge(connect PD_1 to orphaned resource FILE_1_3))
+  Beam[3]: BeamState(iter=3, score=0.700, path=add_file_resource(create new CONFIG file in FILE_SPACE_1) → add_pd(add new protection domain to help resolve 8 constraint violation(s)) → add_pd(add new protection domain to help resolve 7 constraint violation(s)))
+  Beam[4]: BeamState(iter=3, score=0.900, path=add_pd(add new protection domain to help resolve 8 constraint violation(s)) → add_file_resource(create new TEMP file in FILE_SPACE_1) → add_file_resource(create new TEMP file in FILE_SPACE_1))
+💡 Total candidates generated: 25
+🎯 Mechanisms discovered so far: 0
+
+============================================================
+🔍 Beam Search Iteration 4/8
+📊 Current beam size: 5
+  Beam[0]: BeamState(iter=3, score=1.300, path=add_file_resource(create new TEMP file in FILE_SPACE_1) → add_hold_edge(connect PD_1 to orphaned resource FILE_1_2) → remove_hold_edge(remove PD_1 -> FILE_1_1 HOLD edge))
+  Beam[1]: BeamState(iter=3, score=1.300, path=add_file_resource(create new TEMP file in FILE_SPACE_1) → add_hold_edge(connect PD_2 to orphaned resource FILE_1_2) → remove_hold_edge(remove PD_2 -> FILE_1_1 HOLD edge))
+  Beam[2]: BeamState(iter=3, score=0.900, path=add_file_resource(create new TEMP file in FILE_SPACE_1) → add_file_resource(create new TEMP file in FILE_SPACE_1) → add_hold_edge(connect PD_1 to orphaned resource FILE_1_3))
+  Beam[3]: BeamState(iter=3, score=0.700, path=add_file_resource(create new CONFIG file in FILE_SPACE_1) → add_pd(add new protection domain to help resolve 8 constraint violation(s)) → add_pd(add new protection domain to help resolve 7 constraint violation(s)))
+  Beam[4]: BeamState(iter=3, score=0.900, path=add_pd(add new protection domain to help resolve 8 constraint violation(s)) → add_file_resource(create new TEMP file in FILE_SPACE_1) → add_file_resource(create new TEMP file in FILE_SPACE_1))
+
+🌟 Expanding Beam[0] (score: 1.300)
+  ⚠️  Constraints violated: PD_2 has prohibited direct hold on FILE_1_1; PD_1 lacks indirect access to FILE_1_1...
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_2 HOLD edge -> score: 0.500
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_1 HOLD edge -> score: 0.500
+  🚫 Filtered out 0 'remove_hold_edge(remove PD_1 -> FILE_1_1 HOLD edge)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 7 constraint violation(s)
+    Predicted improvement: 0.700
+    Considered 11 other option(s):
+      1. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.800)
+      2. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.800)
+      3. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.800)
+      4. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.600)
+      5. primitive: remove PD_1 -> FILE_1_2 HOLD edge (improvement: 0.500)
+      6. primitive: remove PD_2 -> FILE_1_1 HOLD edge (improvement: 0.500)
+      7. primitive: connect PD_2 to FILE_1_2 (improvement: 0.400)
+      8. primitive: disconnect FILE_1_1 from FILE_SPACE_1 (improvement: 0.300)
+      9. primitive: disconnect FILE_1_2 from FILE_SPACE_1 (improvement: 0.300)
+      10. primitive: enable indirect access: PD_1 -> PD_2 (improvement: 0.200)
+      ... and 1 more
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ⚠️  Applied add_pd with constraint violations: PD_2 has prohibited direct hold on FILE_1_1; PD_1 does not depend on PD_3 (missing TCB relationship)
+  📋 Generated 12 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0}, ASR: 1.0, TCB: {'PD_1': [], 'PD_2': []}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0}, ASR: 1.0, TCB: {'PD_1': [], 'PD_2': []}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0}, ASR: 1.0, TCB: {'PD_1': [], 'PD_2': []}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_pd (score: 0.700)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0}, ASR: 1.0, TCB: {'PD_1': [], 'PD_2': []}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_file_resource (score: 0.600)
+
+🌟 Expanding Beam[1] (score: 1.300)
+  ⚠️  Constraints violated: PD_1 has prohibited direct hold on FILE_1_1; PD_1 has direct access to FILE_1_1 (should be indirect only)...
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_1 HOLD edge -> score: 0.500
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_2 HOLD edge -> score: 0.500
+  🚫 Filtered out 0 'remove_hold_edge(remove PD_2 -> FILE_1_1 HOLD edge)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 7 constraint violation(s)
+    Predicted improvement: 0.700
+    Considered 11 other option(s):
+      1. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.800)
+      2. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.800)
+      3. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.800)
+      4. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.600)
+      5. primitive: remove PD_1 -> FILE_1_1 HOLD edge (improvement: 0.500)
+      6. primitive: remove PD_2 -> FILE_1_2 HOLD edge (improvement: 0.500)
+      7. primitive: connect PD_1 to FILE_1_2 (improvement: 0.400)
+      8. primitive: disconnect FILE_1_1 from FILE_SPACE_1 (improvement: 0.300)
+      9. primitive: disconnect FILE_1_2 from FILE_SPACE_1 (improvement: 0.300)
+      10. primitive: enable indirect access: PD_1 -> PD_2 (improvement: 0.200)
+      ... and 1 more
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ⚠️  Applied add_pd with constraint violations: PD_1 has prohibited direct hold on FILE_1_1; PD_1 does not depend on PD_3 (missing TCB relationship)
+  📋 Generated 12 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0}, ASR: 1.0, TCB: {'PD_1': [], 'PD_2': []}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0}, ASR: 1.0, TCB: {'PD_1': [], 'PD_2': []}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0}, ASR: 1.0, TCB: {'PD_1': [], 'PD_2': []}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_pd (score: 0.700)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0}, ASR: 1.0, TCB: {'PD_1': [], 'PD_2': []}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_file_resource (score: 0.600)
+
+🌟 Expanding Beam[2] (score: 0.900)
+  ⚠️  Constraints violated: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1...
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_1 HOLD edge -> score: 1.300
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_3 HOLD edge -> score: 2.000
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_1 HOLD edge -> score: 0.400
+  🚫 Filtered out 0 'add_hold_edge(connect PD_1 to orphaned resource FILE_1_3)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: remove PD_1 -> FILE_1_3 HOLD edge
+    Predicted improvement: 2.000
+    Considered 17 other option(s):
+      1. primitive: add new protection domain to help resolve 8 constraint violation(s) (improvement: 0.700)
+      2. primitive: remove PD_1 -> FILE_1_1 HOLD edge (improvement: 1.300)
+      3. primitive: connect PD_1 to orphaned resource FILE_1_2 (improvement: 0.900)
+      4. primitive: connect PD_2 to orphaned resource FILE_1_2 (improvement: 0.900)
+      5. primitive: connect PD_2 to FILE_1_3 (improvement: 0.900)
+      6. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      7. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.800)
+      8. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.800)
+      9. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.800)
+      10. primitive: remove FILE_1_2 (holders: 0) (improvement: 0.400)
+      ... and 7 more
+    ⚠️  Applied remove_hold_edge with constraint violations: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1
+  📋 Generated 18 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: remove_hold_edge (score: 2.000)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0}, ASR: 1.0, TCB: {'PD_1': [], 'PD_2': []}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: remove_hold_edge (score: 1.300)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.3333333333333333}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_hold_edge (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.3333333333333333}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_hold_edge (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_hold_edge (score: 0.900)
+
+🌟 Expanding Beam[3] (score: 0.700)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  ⚠️  Constraints violated: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1...
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_1 HOLD edge -> score: 0.400
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_1 HOLD edge -> score: 0.400
+  🚫 Filtered out 0 'add_pd(add new protection domain to help resolve 7 constraint violation(s))' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 7 constraint violation(s)
+    Predicted improvement: 0.700
+    Considered 30 other option(s):
+      1. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      2. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.800)
+      3. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.800)
+      4. primitive: connect PD_1 to orphaned resource FILE_1_2 (improvement: 0.700)
+      5. primitive: connect PD_2 to orphaned resource FILE_1_2 (improvement: 0.700)
+      6. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.600)
+      7. primitive: remove FILE_1_2 (holders: 0) (improvement: 0.400)
+      8. primitive: connect PD_3 to FILE_1_1 (improvement: 0.400)
+      9. primitive: connect PD_3 to orphaned resource FILE_1_2 (improvement: 0.400)
+      10. primitive: connect PD_4 to FILE_1_1 (improvement: 0.400)
+      ... and 20 more
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_1,PD_5': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_2,PD_5': 0.0, 'PD_3,PD_4': 0.0, 'PD_3,PD_5': 0.0, 'PD_4,PD_5': 0.0}, ASR: 0.4, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': [], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_1,PD_5': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_2,PD_5': inf, 'PD_3,PD_4': inf, 'PD_3,PD_5': inf, 'PD_4,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_1,PD_5': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_2,PD_5': 0.0, 'PD_3,PD_4': 0.0, 'PD_3,PD_5': 0.0, 'PD_4,PD_5': 0.0}, ASR: 0.4, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': [], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_1,PD_5': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_2,PD_5': inf, 'PD_3,PD_4': inf, 'PD_3,PD_5': inf, 'PD_4,PD_5': inf}
+    ⚠️  Applied add_pd with constraint violations: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1
+  📋 Generated 31 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_file_resource (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_1,PD_5': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_2,PD_5': 0.0, 'PD_3,PD_4': 0.0, 'PD_3,PD_5': 0.0, 'PD_4,PD_5': 0.0}, ASR: 0.4, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': [], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_1,PD_5': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_2,PD_5': inf, 'PD_3,PD_4': inf, 'PD_3,PD_5': inf, 'PD_4,PD_5': inf}
+    ✅ Added candidate: add_pd (score: 0.700)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.75, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_hold_edge (score: 0.700)
+
+🌟 Expanding Beam[4] (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  ⚠️  Constraints violated: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1...
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_1 HOLD edge -> score: 0.400
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_1 HOLD edge -> score: 0.400
+  🚫 Filtered out 0 'add_file_resource(create new TEMP file in FILE_SPACE_1)' candidates (avoiding repetition)
+  🎲 Exploration: selecting candidate #3 instead of best
+  Trying best transition: primitive
+    Target: connect PD_1 to orphaned resource FILE_1_3
+    Predicted improvement: 0.900
+    Considered 26 other option(s):
+      1. primitive: connect PD_1 to orphaned resource FILE_1_2 (improvement: 0.900)
+      2. primitive: connect PD_1 to orphaned resource FILE_1_3 (improvement: 0.900)
+      3. primitive: connect PD_2 to orphaned resource FILE_1_2 (improvement: 0.900)
+      4. primitive: connect PD_2 to orphaned resource FILE_1_3 (improvement: 0.900)
+      5. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      6. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.800)
+      7. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.800)
+      8. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.800)
+      9. primitive: remove FILE_1_2 (holders: 0) (improvement: 0.400)
+      10. primitive: remove FILE_1_3 (holders: 0) (improvement: 0.400)
+      ... and 16 more
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ⚠️  Applied add_hold_edge with constraint violations: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1
+  📋 Generated 27 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_hold_edge (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_hold_edge (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_hold_edge (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_hold_edge (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_file_resource (score: 0.900)
+  🎯 Selected best candidate: remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) (score: 2.000)
+  🌈 Selected diverse candidate: remove_hold_edge (diversity bonus: 1.500) - new op type (remove_hold_edge), new strategy (edge_optimization), similar path, new constraint focus (prohibition_constraints)
+  🌈 Selected diverse candidate: add_hold_edge (diversity bonus: 1.700) - new op type (add_hold_edge), new strategy (resource_creation), new constraint focus (resource_constraints)
+  🌈 Selected diverse candidate: add_file_resource (diversity bonus: 1.700) - new op type (add_file_resource), new strategy (mediation_building), new constraint focus (existence_constraints)
+  🌈 Selected diverse candidate: add_pd (diversity bonus: 0.500) - new op type (add_pd), repeated strategy
+  🔍 Selected 5 diverse states from 25 candidates
+
+📊 Next beam (5 states):
+  Beam[0]: BeamState(iter=4, score=2.000, path=add_file_resource(create new TEMP file in FILE_SPACE_1) → add_hold_edge(connect PD_1 to orphaned resource FILE_1_3) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge))
+  Beam[1]: BeamState(iter=4, score=1.300, path=add_file_resource(create new TEMP file in FILE_SPACE_1) → add_hold_edge(connect PD_1 to orphaned resource FILE_1_3) → remove_hold_edge(remove PD_1 -> FILE_1_1 HOLD edge))
+  Beam[2]: BeamState(iter=4, score=0.900, path=add_file_resource(create new TEMP file in FILE_SPACE_1) → add_file_resource(create new TEMP file in FILE_SPACE_1) → add_hold_edge(connect PD_1 to orphaned resource FILE_1_2))
+  Beam[3]: BeamState(iter=4, score=0.900, path=add_pd(add new protection domain to help resolve 8 constraint violation(s)) → add_pd(add new protection domain to help resolve 7 constraint violation(s)) → add_file_resource(create new TEMP file in FILE_SPACE_1))
+  Beam[4]: BeamState(iter=4, score=0.700, path=add_hold_edge(connect PD_1 to orphaned resource FILE_1_2) → remove_hold_edge(remove PD_1 -> FILE_1_1 HOLD edge) → add_pd(add new protection domain to help resolve 7 constraint violation(s)))
+💡 Total candidates generated: 25
+🎯 Mechanisms discovered so far: 0
+
+============================================================
+🔍 Beam Search Iteration 5/8
+📊 Current beam size: 5
+  Beam[0]: BeamState(iter=4, score=2.000, path=add_file_resource(create new TEMP file in FILE_SPACE_1) → add_hold_edge(connect PD_1 to orphaned resource FILE_1_3) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge))
+  Beam[1]: BeamState(iter=4, score=1.300, path=add_file_resource(create new TEMP file in FILE_SPACE_1) → add_hold_edge(connect PD_1 to orphaned resource FILE_1_3) → remove_hold_edge(remove PD_1 -> FILE_1_1 HOLD edge))
+  Beam[2]: BeamState(iter=4, score=0.900, path=add_file_resource(create new TEMP file in FILE_SPACE_1) → add_file_resource(create new TEMP file in FILE_SPACE_1) → add_hold_edge(connect PD_1 to orphaned resource FILE_1_2))
+  Beam[3]: BeamState(iter=4, score=0.900, path=add_pd(add new protection domain to help resolve 8 constraint violation(s)) → add_pd(add new protection domain to help resolve 7 constraint violation(s)) → add_file_resource(create new TEMP file in FILE_SPACE_1))
+  Beam[4]: BeamState(iter=4, score=0.700, path=add_hold_edge(connect PD_1 to orphaned resource FILE_1_2) → remove_hold_edge(remove PD_1 -> FILE_1_1 HOLD edge) → add_pd(add new protection domain to help resolve 7 constraint violation(s)))
+
+🌟 Expanding Beam[0] (score: 2.000)
+  ⚠️  Constraints violated: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1...
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_1 HOLD edge -> score: 0.400
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_1 HOLD edge -> score: 0.400
+  🚫 Filtered out 0 'remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 8 constraint violation(s)
+    Predicted improvement: 0.700
+    Considered 18 other option(s):
+      1. primitive: connect PD_1 to orphaned resource FILE_1_2 (improvement: 0.900)
+      2. primitive: connect PD_1 to orphaned resource FILE_1_3 (improvement: 0.900)
+      3. primitive: connect PD_2 to orphaned resource FILE_1_2 (improvement: 0.900)
+      4. primitive: connect PD_2 to orphaned resource FILE_1_3 (improvement: 0.900)
+      5. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      6. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.800)
+      7. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.800)
+      8. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.800)
+      9. primitive: remove FILE_1_2 (holders: 0) (improvement: 0.400)
+      10. primitive: remove FILE_1_3 (holders: 0) (improvement: 0.400)
+      ... and 8 more
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ⚠️  Applied add_pd with constraint violations: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1
+  📋 Generated 19 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5}, ASR: 1.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_hold_edge (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5}, ASR: 1.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_hold_edge (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5}, ASR: 1.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_hold_edge (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5}, ASR: 1.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_hold_edge (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_file_resource (score: 0.900)
+
+🌟 Expanding Beam[1] (score: 1.300)
+  ⚠️  Constraints violated: PD_2 has prohibited direct hold on FILE_1_1; PD_1 lacks indirect access to FILE_1_1...
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_3 HOLD edge -> score: 2.000
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_1 HOLD edge -> score: 0.500
+  🚫 Filtered out 0 'remove_hold_edge(remove PD_1 -> FILE_1_1 HOLD edge)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: remove PD_1 -> FILE_1_3 HOLD edge
+    Predicted improvement: 2.000
+    Considered 15 other option(s):
+      1. primitive: add new protection domain to help resolve 7 constraint violation(s) (improvement: 0.700)
+      2. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.800)
+      3. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.800)
+      4. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.800)
+      5. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.600)
+      6. primitive: remove PD_2 -> FILE_1_1 HOLD edge (improvement: 0.500)
+      7. primitive: remove FILE_1_2 (holders: 0) (improvement: 0.400)
+      8. primitive: connect PD_1 to orphaned resource FILE_1_2 (improvement: 0.400)
+      9. primitive: connect PD_2 to orphaned resource FILE_1_2 (improvement: 0.400)
+      10. primitive: connect PD_2 to FILE_1_3 (improvement: 0.400)
+      ... and 5 more
+    ⚠️  Applied remove_hold_edge with constraint violations: PD_2 has prohibited direct hold on FILE_1_1; Required Protection Domain PD_3 does not exist in the graph
+  📋 Generated 16 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0}, ASR: 0.5, TCB: {'PD_1': [], 'PD_2': []}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: remove_hold_edge (score: 2.000)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0}, ASR: 1.0, TCB: {'PD_1': [], 'PD_2': []}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0}, ASR: 1.0, TCB: {'PD_1': [], 'PD_2': []}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0}, ASR: 1.0, TCB: {'PD_1': [], 'PD_2': []}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_pd (score: 0.700)
+
+🌟 Expanding Beam[2] (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  ⚠️  Constraints violated: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1...
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_1 HOLD edge -> score: 1.300
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_2 HOLD edge -> score: 0.500
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_1 HOLD edge -> score: 0.400
+  🚫 Filtered out 0 'add_hold_edge(connect PD_1 to orphaned resource FILE_1_2)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 7 constraint violation(s)
+    Predicted improvement: 0.700
+    Considered 25 other option(s):
+      1. primitive: remove PD_1 -> FILE_1_1 HOLD edge (improvement: 1.300)
+      2. primitive: connect PD_1 to orphaned resource FILE_1_3 (improvement: 0.900)
+      3. primitive: connect PD_2 to FILE_1_2 (improvement: 0.900)
+      4. primitive: connect PD_2 to orphaned resource FILE_1_3 (improvement: 0.900)
+      5. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      6. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.800)
+      7. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.800)
+      8. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.800)
+      9. primitive: remove PD_1 -> FILE_1_2 HOLD edge (improvement: 0.500)
+      10. primitive: remove FILE_1_3 (holders: 0) (improvement: 0.400)
+      ... and 15 more
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.75, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.75, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ⚠️  Applied add_pd with constraint violations: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1
+  📋 Generated 26 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: remove_hold_edge (score: 1.300)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.3333333333333333, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.3333333333333333, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_hold_edge (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.3333333333333333, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_hold_edge (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.3333333333333333, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.3333333333333333, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_hold_edge (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_file_resource (score: 0.900)
+
+🌟 Expanding Beam[3] (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  ⚠️  Constraints violated: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1...
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_1 HOLD edge -> score: 0.400
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_1 HOLD edge -> score: 0.400
+  🚫 Filtered out 0 'add_file_resource(create new TEMP file in FILE_SPACE_1)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 7 constraint violation(s)
+    Predicted improvement: 0.700
+    Considered 36 other option(s):
+      1. primitive: connect PD_1 to orphaned resource FILE_1_3 (improvement: 0.900)
+      2. primitive: connect PD_2 to orphaned resource FILE_1_3 (improvement: 0.900)
+      3. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      4. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.800)
+      5. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.800)
+      6. primitive: connect PD_1 to orphaned resource FILE_1_2 (improvement: 0.700)
+      7. primitive: connect PD_2 to orphaned resource FILE_1_2 (improvement: 0.700)
+      8. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.600)
+      9. primitive: remove FILE_1_2 (holders: 0) (improvement: 0.400)
+      10. primitive: remove FILE_1_3 (holders: 0) (improvement: 0.400)
+      ... and 26 more
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_1,PD_5': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_2,PD_5': 0.0, 'PD_3,PD_4': 0.0, 'PD_3,PD_5': 0.0, 'PD_4,PD_5': 0.0}, ASR: 0.4, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': [], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_1,PD_5': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_2,PD_5': inf, 'PD_3,PD_4': inf, 'PD_3,PD_5': inf, 'PD_4,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_1,PD_5': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_2,PD_5': 0.0, 'PD_3,PD_4': 0.0, 'PD_3,PD_5': 0.0, 'PD_4,PD_5': 0.0}, ASR: 0.4, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': [], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_1,PD_5': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_2,PD_5': inf, 'PD_3,PD_4': inf, 'PD_3,PD_5': inf, 'PD_4,PD_5': inf}
+    ⚠️  Applied add_pd with constraint violations: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1
+  📋 Generated 37 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.75, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_hold_edge (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.75, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_hold_edge (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_file_resource (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+
+🌟 Expanding Beam[4] (score: 0.700)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  ⚠️  Constraints violated: PD_2 has prohibited direct hold on FILE_1_1; PD_1 lacks indirect access to FILE_1_1...
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_2 HOLD edge -> score: 0.500
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_1 HOLD edge -> score: 0.500
+  🚫 Filtered out 0 'add_pd(add new protection domain to help resolve 7 constraint violation(s))' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 6 constraint violation(s)
+    Predicted improvement: 0.700
+    Considered 18 other option(s):
+      1. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.800)
+      2. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.800)
+      3. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.800)
+      4. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.600)
+      5. primitive: remove PD_1 -> FILE_1_2 HOLD edge (improvement: 0.500)
+      6. primitive: remove PD_2 -> FILE_1_1 HOLD edge (improvement: 0.500)
+      7. primitive: connect PD_2 to FILE_1_2 (improvement: 0.400)
+      8. primitive: connect PD_3 to FILE_1_1 (improvement: 0.400)
+      9. primitive: connect PD_3 to FILE_1_2 (improvement: 0.400)
+      10. primitive: remove empty PD_3 (improvement: 0.300)
+      ... and 8 more
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ⚠️  Applied add_pd with constraint violations: PD_2 has prohibited direct hold on FILE_1_1; PD_1 does not depend on PD_3 (missing TCB relationship)
+  📋 Generated 19 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_pd (score: 0.700)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_file_resource (score: 0.600)
+  🎯 Selected best candidate: remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) (score: 2.000)
+  🌈 Selected diverse candidate: remove_hold_edge (diversity bonus: 1.400) - new op type (remove_hold_edge), new strategy (edge_optimization)
+  🌈 Selected diverse candidate: add_hold_edge (diversity bonus: 1.700) - new op type (add_hold_edge), new strategy (mediation_building), new constraint focus (resource_constraints)
+  🌈 Selected diverse candidate: add_file_resource (diversity bonus: 1.200) - new op type (add_file_resource), new strategy (resource_creation), similar path
+  🌈 Selected diverse candidate: add_pd (diversity bonus: 0.800) - new op type (add_pd), repeated strategy, new constraint focus (existence_constraints)
+  🔍 Selected 5 diverse states from 25 candidates
+
+📊 Next beam (5 states):
+  Beam[0]: BeamState(iter=5, score=2.000, path=add_hold_edge(connect PD_1 to orphaned resource FILE_1_3) → remove_hold_edge(remove PD_1 -> FILE_1_1 HOLD edge) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge))
+  Beam[1]: BeamState(iter=5, score=1.300, path=add_file_resource(create new TEMP file in FILE_SPACE_1) → add_hold_edge(connect PD_1 to orphaned resource FILE_1_2) → remove_hold_edge(remove PD_1 -> FILE_1_1 HOLD edge))
+  Beam[2]: BeamState(iter=5, score=0.900, path=add_pd(add new protection domain to help resolve 7 constraint violation(s)) → add_file_resource(create new TEMP file in FILE_SPACE_1) → add_hold_edge(connect PD_1 to orphaned resource FILE_1_3))
+  Beam[3]: BeamState(iter=5, score=0.900, path=add_file_resource(create new TEMP file in FILE_SPACE_1) → add_hold_edge(connect PD_1 to orphaned resource FILE_1_2) → add_file_resource(create new TEMP file in FILE_SPACE_1))
+  Beam[4]: BeamState(iter=5, score=0.700, path=remove_hold_edge(remove PD_1 -> FILE_1_1 HOLD edge) → add_pd(add new protection domain to help resolve 7 constraint violation(s)) → add_pd(add new protection domain to help resolve 6 constraint violation(s)))
+💡 Total candidates generated: 25
+🎯 Mechanisms discovered so far: 0
+
+============================================================
+🔍 Beam Search Iteration 6/8
+📊 Current beam size: 5
+  Beam[0]: BeamState(iter=5, score=2.000, path=add_hold_edge(connect PD_1 to orphaned resource FILE_1_3) → remove_hold_edge(remove PD_1 -> FILE_1_1 HOLD edge) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge))
+  Beam[1]: BeamState(iter=5, score=1.300, path=add_file_resource(create new TEMP file in FILE_SPACE_1) → add_hold_edge(connect PD_1 to orphaned resource FILE_1_2) → remove_hold_edge(remove PD_1 -> FILE_1_1 HOLD edge))
+  Beam[2]: BeamState(iter=5, score=0.900, path=add_pd(add new protection domain to help resolve 7 constraint violation(s)) → add_file_resource(create new TEMP file in FILE_SPACE_1) → add_hold_edge(connect PD_1 to orphaned resource FILE_1_3))
+  Beam[3]: BeamState(iter=5, score=0.900, path=add_file_resource(create new TEMP file in FILE_SPACE_1) → add_hold_edge(connect PD_1 to orphaned resource FILE_1_2) → add_file_resource(create new TEMP file in FILE_SPACE_1))
+  Beam[4]: BeamState(iter=5, score=0.700, path=remove_hold_edge(remove PD_1 -> FILE_1_1 HOLD edge) → add_pd(add new protection domain to help resolve 7 constraint violation(s)) → add_pd(add new protection domain to help resolve 6 constraint violation(s)))
+
+🌟 Expanding Beam[0] (score: 2.000)
+  ⚠️  Constraints violated: PD_2 has prohibited direct hold on FILE_1_1; PD_1 lacks indirect access to FILE_1_1...
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_1 HOLD edge -> score: 0.500
+  🚫 Filtered out 0 'remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 7 constraint violation(s)
+    Predicted improvement: 0.700
+    Considered 17 other option(s):
+      1. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.800)
+      2. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.800)
+      3. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.800)
+      4. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.600)
+      5. primitive: remove PD_2 -> FILE_1_1 HOLD edge (improvement: 0.500)
+      6. primitive: remove FILE_1_2 (holders: 0) (improvement: 0.400)
+      7. primitive: remove FILE_1_3 (holders: 0) (improvement: 0.400)
+      8. primitive: connect PD_1 to orphaned resource FILE_1_2 (improvement: 0.400)
+      9. primitive: connect PD_1 to orphaned resource FILE_1_3 (improvement: 0.400)
+      10. primitive: connect PD_2 to orphaned resource FILE_1_2 (improvement: 0.400)
+      ... and 7 more
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.3333333333333333, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.3333333333333333, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ⚠️  Applied add_pd with constraint violations: PD_2 has prohibited direct hold on FILE_1_1; PD_1 does not depend on PD_3 (missing TCB relationship)
+  📋 Generated 18 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0}, ASR: 0.5, TCB: {'PD_1': [], 'PD_2': []}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0}, ASR: 0.5, TCB: {'PD_1': [], 'PD_2': []}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0}, ASR: 0.5, TCB: {'PD_1': [], 'PD_2': []}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.3333333333333333, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_pd (score: 0.700)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0}, ASR: 0.5, TCB: {'PD_1': [], 'PD_2': []}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_file_resource (score: 0.600)
+
+🌟 Expanding Beam[1] (score: 1.300)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  ⚠️  Constraints violated: PD_2 has prohibited direct hold on FILE_1_1; PD_1 lacks indirect access to FILE_1_1...
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_2 HOLD edge -> score: 0.500
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_1 HOLD edge -> score: 0.500
+  🚫 Filtered out 0 'remove_hold_edge(remove PD_1 -> FILE_1_1 HOLD edge)' candidates (avoiding repetition)
+  🎲 Exploration: selecting candidate #3 instead of best
+  Trying best transition: primitive
+    Target: create new DATABASE file in FILE_SPACE_1
+    Predicted improvement: 0.800
+    Considered 23 other option(s):
+      1. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.800)
+      2. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.800)
+      3. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.800)
+      4. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.600)
+      5. primitive: remove PD_1 -> FILE_1_2 HOLD edge (improvement: 0.500)
+      6. primitive: remove PD_2 -> FILE_1_1 HOLD edge (improvement: 0.500)
+      7. primitive: remove FILE_1_3 (holders: 0) (improvement: 0.400)
+      8. primitive: connect PD_1 to orphaned resource FILE_1_3 (improvement: 0.400)
+      9. primitive: connect PD_2 to FILE_1_2 (improvement: 0.400)
+      10. primitive: connect PD_2 to orphaned resource FILE_1_3 (improvement: 0.400)
+      ... and 13 more
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ⚠️  Applied add_file_resource with constraint violations: PD_2 has prohibited direct hold on FILE_1_1; PD_1 does not depend on PD_3 (missing TCB relationship)
+  📋 Generated 24 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_pd (score: 0.700)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_file_resource (score: 0.600)
+
+🌟 Expanding Beam[2] (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.75, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.75, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  ⚠️  Constraints violated: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1...
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.75, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.75, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_1 HOLD edge -> score: 1.300
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_3 HOLD edge -> score: 2.000
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_1 HOLD edge -> score: 0.400
+  🚫 Filtered out 0 'add_hold_edge(connect PD_1 to orphaned resource FILE_1_3)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: remove PD_1 -> FILE_1_3 HOLD edge
+    Predicted improvement: 2.000
+    Considered 35 other option(s):
+      1. primitive: add new protection domain to help resolve 7 constraint violation(s) (improvement: 0.700)
+      2. primitive: remove PD_1 -> FILE_1_1 HOLD edge (improvement: 1.300)
+      3. primitive: connect PD_2 to FILE_1_3 (improvement: 0.900)
+      4. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      5. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.800)
+      6. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.800)
+      7. primitive: connect PD_1 to orphaned resource FILE_1_2 (improvement: 0.700)
+      8. primitive: connect PD_2 to orphaned resource FILE_1_2 (improvement: 0.700)
+      9. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.600)
+      10. primitive: remove FILE_1_2 (holders: 0) (improvement: 0.400)
+      ... and 25 more
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ⚠️  Applied remove_hold_edge with constraint violations: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1
+  📋 Generated 36 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: remove_hold_edge (score: 2.000)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: remove_hold_edge (score: 1.300)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_hold_edge (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.75, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_file_resource (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.75, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+
+🌟 Expanding Beam[3] (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  ⚠️  Constraints violated: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1...
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_1 HOLD edge -> score: 1.300
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_2 HOLD edge -> score: 0.500
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_1 HOLD edge -> score: 0.400
+  🚫 Filtered out 0 'add_file_resource(create new TEMP file in FILE_SPACE_1)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 7 constraint violation(s)
+    Predicted improvement: 0.700
+    Considered 30 other option(s):
+      1. primitive: remove PD_1 -> FILE_1_1 HOLD edge (improvement: 1.300)
+      2. primitive: connect PD_1 to orphaned resource FILE_1_3 (improvement: 0.900)
+      3. primitive: connect PD_1 to orphaned resource FILE_1_4 (improvement: 0.900)
+      4. primitive: connect PD_2 to FILE_1_2 (improvement: 0.900)
+      5. primitive: connect PD_2 to orphaned resource FILE_1_3 (improvement: 0.900)
+      6. primitive: connect PD_2 to orphaned resource FILE_1_4 (improvement: 0.900)
+      7. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      8. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.800)
+      9. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.800)
+      10. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.800)
+      ... and 20 more
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.75, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.75, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ⚠️  Applied add_pd with constraint violations: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1
+  📋 Generated 31 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: remove_hold_edge (score: 1.300)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.3333333333333333, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.3333333333333333, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_hold_edge (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.3333333333333333, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.3333333333333333, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_hold_edge (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.3333333333333333, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_hold_edge (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.3333333333333333, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.3333333333333333, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_hold_edge (score: 0.900)
+
+🌟 Expanding Beam[4] (score: 0.700)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  ⚠️  Constraints violated: PD_2 has prohibited direct hold on FILE_1_1; PD_1 lacks indirect access to FILE_1_1...
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_2 HOLD edge -> score: 0.500
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_1 HOLD edge -> score: 0.500
+  🚫 Filtered out 0 'add_pd(add new protection domain to help resolve 6 constraint violation(s))' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 6 constraint violation(s)
+    Predicted improvement: 0.700
+    Considered 27 other option(s):
+      1. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.800)
+      2. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.800)
+      3. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.800)
+      4. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.600)
+      5. primitive: remove PD_1 -> FILE_1_2 HOLD edge (improvement: 0.500)
+      6. primitive: remove PD_2 -> FILE_1_1 HOLD edge (improvement: 0.500)
+      7. primitive: connect PD_2 to FILE_1_2 (improvement: 0.400)
+      8. primitive: connect PD_3 to FILE_1_1 (improvement: 0.400)
+      9. primitive: connect PD_3 to FILE_1_2 (improvement: 0.400)
+      10. primitive: connect PD_4 to FILE_1_1 (improvement: 0.400)
+      ... and 17 more
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_1,PD_5': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_2,PD_5': 0.0, 'PD_3,PD_4': 0.0, 'PD_3,PD_5': 0.0, 'PD_4,PD_5': 0.0}, ASR: 0.4, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': [], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_1,PD_5': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_2,PD_5': inf, 'PD_3,PD_4': inf, 'PD_3,PD_5': inf, 'PD_4,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_1,PD_5': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_2,PD_5': 0.0, 'PD_3,PD_4': 0.0, 'PD_3,PD_5': 0.0, 'PD_4,PD_5': 0.0}, ASR: 0.4, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': [], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_1,PD_5': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_2,PD_5': inf, 'PD_3,PD_4': inf, 'PD_3,PD_5': inf, 'PD_4,PD_5': inf}
+    ⚠️  Applied add_pd with constraint violations: PD_2 has prohibited direct hold on FILE_1_1; PD_1 does not depend on PD_3 (missing TCB relationship)
+  📋 Generated 28 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_1,PD_5': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_2,PD_5': 0.0, 'PD_3,PD_4': 0.0, 'PD_3,PD_5': 0.0, 'PD_4,PD_5': 0.0}, ASR: 0.4, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': [], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_1,PD_5': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_2,PD_5': inf, 'PD_3,PD_4': inf, 'PD_3,PD_5': inf, 'PD_4,PD_5': inf}
+    ✅ Added candidate: add_pd (score: 0.700)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_file_resource (score: 0.600)
+  🎯 Selected best candidate: remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) (score: 2.000)
+  🌈 Selected diverse candidate: remove_hold_edge (diversity bonus: 1.700) - new op type (remove_hold_edge), new strategy (edge_optimization), new constraint focus (prohibition_constraints)
+  🌈 Selected diverse candidate: add_file_resource (diversity bonus: 1.700) - new op type (add_file_resource), new strategy (constraint_removal), new constraint focus (resource_constraints)
+  🌈 Selected diverse candidate: add_pd (diversity bonus: 1.700) - new op type (add_pd), new strategy (mediation_building), new constraint focus (existence_constraints)
+  🌈 Selected diverse candidate: add_hold_edge (diversity bonus: 0.300) - new op type (add_hold_edge), repeated strategy, similar path
+  🔍 Selected 5 diverse states from 25 candidates
+
+📊 Next beam (5 states):
+  Beam[0]: BeamState(iter=6, score=2.000, path=add_file_resource(create new TEMP file in FILE_SPACE_1) → add_hold_edge(connect PD_1 to orphaned resource FILE_1_3) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge))
+  Beam[1]: BeamState(iter=6, score=1.300, path=add_hold_edge(connect PD_1 to orphaned resource FILE_1_2) → add_file_resource(create new TEMP file in FILE_SPACE_1) → remove_hold_edge(remove PD_1 -> FILE_1_1 HOLD edge))
+  Beam[2]: BeamState(iter=6, score=0.800, path=remove_hold_edge(remove PD_1 -> FILE_1_1 HOLD edge) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) → add_file_resource(create new CONFIG file in FILE_SPACE_1))
+  Beam[3]: BeamState(iter=6, score=0.700, path=add_pd(add new protection domain to help resolve 7 constraint violation(s)) → add_pd(add new protection domain to help resolve 6 constraint violation(s)) → add_pd(add new protection domain to help resolve 6 constraint violation(s)))
+  Beam[4]: BeamState(iter=6, score=0.900, path=add_file_resource(create new TEMP file in FILE_SPACE_1) → add_hold_edge(connect PD_1 to orphaned resource FILE_1_3) → add_hold_edge(connect PD_2 to FILE_1_3))
+💡 Total candidates generated: 25
+🎯 Mechanisms discovered so far: 0
+
+============================================================
+🔍 Beam Search Iteration 7/8
+📊 Current beam size: 5
+  Beam[0]: BeamState(iter=6, score=2.000, path=add_file_resource(create new TEMP file in FILE_SPACE_1) → add_hold_edge(connect PD_1 to orphaned resource FILE_1_3) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge))
+  Beam[1]: BeamState(iter=6, score=1.300, path=add_hold_edge(connect PD_1 to orphaned resource FILE_1_2) → add_file_resource(create new TEMP file in FILE_SPACE_1) → remove_hold_edge(remove PD_1 -> FILE_1_1 HOLD edge))
+  Beam[2]: BeamState(iter=6, score=0.800, path=remove_hold_edge(remove PD_1 -> FILE_1_1 HOLD edge) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) → add_file_resource(create new CONFIG file in FILE_SPACE_1))
+  Beam[3]: BeamState(iter=6, score=0.700, path=add_pd(add new protection domain to help resolve 7 constraint violation(s)) → add_pd(add new protection domain to help resolve 6 constraint violation(s)) → add_pd(add new protection domain to help resolve 6 constraint violation(s)))
+  Beam[4]: BeamState(iter=6, score=0.900, path=add_file_resource(create new TEMP file in FILE_SPACE_1) → add_hold_edge(connect PD_1 to orphaned resource FILE_1_3) → add_hold_edge(connect PD_2 to FILE_1_3))
+
+🌟 Expanding Beam[0] (score: 2.000)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  ⚠️  Constraints violated: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1...
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_1 HOLD edge -> score: 0.400
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_1 HOLD edge -> score: 0.400
+  🚫 Filtered out 0 'remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 7 constraint violation(s)
+    Predicted improvement: 0.700
+    Considered 36 other option(s):
+      1. primitive: connect PD_1 to orphaned resource FILE_1_3 (improvement: 0.900)
+      2. primitive: connect PD_2 to orphaned resource FILE_1_3 (improvement: 0.900)
+      3. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      4. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.800)
+      5. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.800)
+      6. primitive: connect PD_1 to orphaned resource FILE_1_2 (improvement: 0.700)
+      7. primitive: connect PD_2 to orphaned resource FILE_1_2 (improvement: 0.700)
+      8. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.600)
+      9. primitive: remove FILE_1_2 (holders: 0) (improvement: 0.400)
+      10. primitive: remove FILE_1_3 (holders: 0) (improvement: 0.400)
+      ... and 26 more
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_1,PD_5': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_2,PD_5': 0.0, 'PD_3,PD_4': 0.0, 'PD_3,PD_5': 0.0, 'PD_4,PD_5': 0.0}, ASR: 0.4, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': [], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_1,PD_5': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_2,PD_5': inf, 'PD_3,PD_4': inf, 'PD_3,PD_5': inf, 'PD_4,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_1,PD_5': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_2,PD_5': 0.0, 'PD_3,PD_4': 0.0, 'PD_3,PD_5': 0.0, 'PD_4,PD_5': 0.0}, ASR: 0.4, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': [], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_1,PD_5': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_2,PD_5': inf, 'PD_3,PD_4': inf, 'PD_3,PD_5': inf, 'PD_4,PD_5': inf}
+    ⚠️  Applied add_pd with constraint violations: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1
+  📋 Generated 37 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.75, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_hold_edge (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.75, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_hold_edge (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_file_resource (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+
+🌟 Expanding Beam[1] (score: 1.300)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  ⚠️  Constraints violated: PD_2 has prohibited direct hold on FILE_1_1; PD_1 lacks indirect access to FILE_1_1...
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_2 HOLD edge -> score: 0.500
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_1 HOLD edge -> score: 0.500
+  🚫 Filtered out 0 'remove_hold_edge(remove PD_1 -> FILE_1_1 HOLD edge)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 6 constraint violation(s)
+    Predicted improvement: 0.700
+    Considered 28 other option(s):
+      1. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.800)
+      2. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.800)
+      3. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.800)
+      4. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.600)
+      5. primitive: remove PD_1 -> FILE_1_2 HOLD edge (improvement: 0.500)
+      6. primitive: remove PD_2 -> FILE_1_1 HOLD edge (improvement: 0.500)
+      7. primitive: remove FILE_1_3 (holders: 0) (improvement: 0.400)
+      8. primitive: remove FILE_1_4 (holders: 0) (improvement: 0.400)
+      9. primitive: connect PD_1 to orphaned resource FILE_1_3 (improvement: 0.400)
+      10. primitive: connect PD_1 to orphaned resource FILE_1_4 (improvement: 0.400)
+      ... and 18 more
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ⚠️  Applied add_pd with constraint violations: PD_2 has prohibited direct hold on FILE_1_1; PD_1 does not depend on PD_3 (missing TCB relationship)
+  📋 Generated 29 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_pd (score: 0.700)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_file_resource (score: 0.600)
+
+🌟 Expanding Beam[2] (score: 0.800)
+  ⚠️  Constraints violated: PD_2 has prohibited direct hold on FILE_1_1; PD_1 lacks indirect access to FILE_1_1...
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_1 HOLD edge -> score: 0.500
+  🚫 Filtered out 0 'add_file_resource(create new CONFIG file in FILE_SPACE_1)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 7 constraint violation(s)
+    Predicted improvement: 0.700
+    Considered 21 other option(s):
+      1. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.800)
+      2. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.800)
+      3. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.600)
+      4. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.600)
+      5. primitive: remove PD_2 -> FILE_1_1 HOLD edge (improvement: 0.500)
+      6. primitive: remove FILE_1_2 (holders: 0) (improvement: 0.400)
+      7. primitive: remove FILE_1_3 (holders: 0) (improvement: 0.400)
+      8. primitive: remove FILE_1_4 (holders: 0) (improvement: 0.400)
+      9. primitive: connect PD_1 to orphaned resource FILE_1_2 (improvement: 0.400)
+      10. primitive: connect PD_1 to orphaned resource FILE_1_3 (improvement: 0.400)
+      ... and 11 more
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.3333333333333333, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.3333333333333333, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ⚠️  Applied add_pd with constraint violations: PD_2 has prohibited direct hold on FILE_1_1; PD_1 does not depend on PD_3 (missing TCB relationship)
+  📋 Generated 22 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0}, ASR: 0.5, TCB: {'PD_1': [], 'PD_2': []}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0}, ASR: 0.5, TCB: {'PD_1': [], 'PD_2': []}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.3333333333333333, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_pd (score: 0.700)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0}, ASR: 0.5, TCB: {'PD_1': [], 'PD_2': []}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_file_resource (score: 0.600)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0}, ASR: 0.5, TCB: {'PD_1': [], 'PD_2': []}, FR: {'PD_1,PD_2': inf}
+    ✅ Added candidate: add_file_resource (score: 0.600)
+
+🌟 Expanding Beam[3] (score: 0.700)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_1,PD_5': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_2,PD_5': 0.0, 'PD_3,PD_4': 0.0, 'PD_3,PD_5': 0.0, 'PD_4,PD_5': 0.0}, ASR: 0.4, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': [], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_1,PD_5': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_2,PD_5': inf, 'PD_3,PD_4': inf, 'PD_3,PD_5': inf, 'PD_4,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_1,PD_5': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_2,PD_5': 0.0, 'PD_3,PD_4': 0.0, 'PD_3,PD_5': 0.0, 'PD_4,PD_5': 0.0}, ASR: 0.4, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': [], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_1,PD_5': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_2,PD_5': inf, 'PD_3,PD_4': inf, 'PD_3,PD_5': inf, 'PD_4,PD_5': inf}
+  ⚠️  Constraints violated: PD_2 has prohibited direct hold on FILE_1_1; PD_1 lacks indirect access to FILE_1_1...
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_1,PD_5': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_2,PD_5': 0.0, 'PD_3,PD_4': 0.0, 'PD_3,PD_5': 0.0, 'PD_4,PD_5': 0.0}, ASR: 0.4, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': [], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_1,PD_5': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_2,PD_5': inf, 'PD_3,PD_4': inf, 'PD_3,PD_5': inf, 'PD_4,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_1,PD_5': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_2,PD_5': 0.0, 'PD_3,PD_4': 0.0, 'PD_3,PD_5': 0.0, 'PD_4,PD_5': 0.0}, ASR: 0.4, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': [], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_1,PD_5': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_2,PD_5': inf, 'PD_3,PD_4': inf, 'PD_3,PD_5': inf, 'PD_4,PD_5': inf}
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_2 HOLD edge -> score: 0.500
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_1 HOLD edge -> score: 0.500
+  🚫 Filtered out 0 'add_pd(add new protection domain to help resolve 6 constraint violation(s))' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 6 constraint violation(s)
+    Predicted improvement: 0.700
+    Considered 38 other option(s):
+      1. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.800)
+      2. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.800)
+      3. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.800)
+      4. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.600)
+      5. primitive: remove PD_1 -> FILE_1_2 HOLD edge (improvement: 0.500)
+      6. primitive: remove PD_2 -> FILE_1_1 HOLD edge (improvement: 0.500)
+      7. primitive: connect PD_2 to FILE_1_2 (improvement: 0.400)
+      8. primitive: connect PD_3 to FILE_1_1 (improvement: 0.400)
+      9. primitive: connect PD_3 to FILE_1_2 (improvement: 0.400)
+      10. primitive: connect PD_4 to FILE_1_1 (improvement: 0.400)
+      ... and 28 more
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_1,PD_5': 0.0, 'PD_1,PD_6': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_2,PD_5': 0.0, 'PD_2,PD_6': 0.0, 'PD_3,PD_4': 0.0, 'PD_3,PD_5': 0.0, 'PD_3,PD_6': 0.0, 'PD_4,PD_5': 0.0, 'PD_4,PD_6': 0.0, 'PD_5,PD_6': 0.0}, ASR: 0.3333333333333333, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': [], 'PD_5': [], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_1,PD_5': inf, 'PD_1,PD_6': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_2,PD_5': inf, 'PD_2,PD_6': inf, 'PD_3,PD_4': inf, 'PD_3,PD_5': inf, 'PD_3,PD_6': inf, 'PD_4,PD_5': inf, 'PD_4,PD_6': inf, 'PD_5,PD_6': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_1,PD_5': 0.0, 'PD_1,PD_6': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_2,PD_5': 0.0, 'PD_2,PD_6': 0.0, 'PD_3,PD_4': 0.0, 'PD_3,PD_5': 0.0, 'PD_3,PD_6': 0.0, 'PD_4,PD_5': 0.0, 'PD_4,PD_6': 0.0, 'PD_5,PD_6': 0.0}, ASR: 0.3333333333333333, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': [], 'PD_5': [], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_1,PD_5': inf, 'PD_1,PD_6': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_2,PD_5': inf, 'PD_2,PD_6': inf, 'PD_3,PD_4': inf, 'PD_3,PD_5': inf, 'PD_3,PD_6': inf, 'PD_4,PD_5': inf, 'PD_4,PD_6': inf, 'PD_5,PD_6': inf}
+    ⚠️  Applied add_pd with constraint violations: PD_2 has prohibited direct hold on FILE_1_1; PD_1 does not depend on PD_3 (missing TCB relationship)
+  📋 Generated 39 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_1,PD_5': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_2,PD_5': 0.0, 'PD_3,PD_4': 0.0, 'PD_3,PD_5': 0.0, 'PD_4,PD_5': 0.0}, ASR: 0.4, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': [], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_1,PD_5': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_2,PD_5': inf, 'PD_3,PD_4': inf, 'PD_3,PD_5': inf, 'PD_4,PD_5': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_1,PD_5': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_2,PD_5': 0.0, 'PD_3,PD_4': 0.0, 'PD_3,PD_5': 0.0, 'PD_4,PD_5': 0.0}, ASR: 0.4, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': [], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_1,PD_5': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_2,PD_5': inf, 'PD_3,PD_4': inf, 'PD_3,PD_5': inf, 'PD_4,PD_5': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_1,PD_5': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_2,PD_5': 0.0, 'PD_3,PD_4': 0.0, 'PD_3,PD_5': 0.0, 'PD_4,PD_5': 0.0}, ASR: 0.4, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': [], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_1,PD_5': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_2,PD_5': inf, 'PD_3,PD_4': inf, 'PD_3,PD_5': inf, 'PD_4,PD_5': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_1,PD_5': 0.0, 'PD_1,PD_6': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_2,PD_5': 0.0, 'PD_2,PD_6': 0.0, 'PD_3,PD_4': 0.0, 'PD_3,PD_5': 0.0, 'PD_3,PD_6': 0.0, 'PD_4,PD_5': 0.0, 'PD_4,PD_6': 0.0, 'PD_5,PD_6': 0.0}, ASR: 0.3333333333333333, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': [], 'PD_5': [], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_1,PD_5': inf, 'PD_1,PD_6': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_2,PD_5': inf, 'PD_2,PD_6': inf, 'PD_3,PD_4': inf, 'PD_3,PD_5': inf, 'PD_3,PD_6': inf, 'PD_4,PD_5': inf, 'PD_4,PD_6': inf, 'PD_5,PD_6': inf}
+    ✅ Added candidate: add_pd (score: 0.700)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_1,PD_5': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_2,PD_5': 0.0, 'PD_3,PD_4': 0.0, 'PD_3,PD_5': 0.0, 'PD_4,PD_5': 0.0}, ASR: 0.4, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': [], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_1,PD_5': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_2,PD_5': inf, 'PD_3,PD_4': inf, 'PD_3,PD_5': inf, 'PD_4,PD_5': inf}
+    ✅ Added candidate: add_file_resource (score: 0.600)
+
+🌟 Expanding Beam[4] (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  ⚠️  Constraints violated: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1...
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_1 HOLD edge -> score: 1.200
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_3 HOLD edge -> score: 2.000
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_1 HOLD edge -> score: 1.200
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_3 HOLD edge -> score: 2.000
+  🚫 Filtered out 0 'add_hold_edge(connect PD_2 to FILE_1_3)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: remove PD_1 -> FILE_1_3 HOLD edge
+    Predicted improvement: 2.000
+    Considered 36 other option(s):
+      1. primitive: remove PD_2 -> FILE_1_3 HOLD edge (improvement: 2.000)
+      2. primitive: add new protection domain to help resolve 7 constraint violation(s) (improvement: 0.700)
+      3. primitive: remove PD_1 -> FILE_1_1 HOLD edge (improvement: 1.200)
+      4. primitive: remove PD_2 -> FILE_1_1 HOLD edge (improvement: 1.200)
+      5. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      6. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.800)
+      7. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.800)
+      8. primitive: connect PD_1 to orphaned resource FILE_1_2 (improvement: 0.700)
+      9. primitive: connect PD_2 to orphaned resource FILE_1_2 (improvement: 0.700)
+      10. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.600)
+      ... and 26 more
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.75, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.75, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ⚠️  Applied remove_hold_edge with constraint violations: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1
+  📋 Generated 37 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.75, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: remove_hold_edge (score: 2.000)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.75, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: remove_hold_edge (score: 2.000)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.75, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: remove_hold_edge (score: 1.200)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.75, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: remove_hold_edge (score: 1.200)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_file_resource (score: 0.900)
+  🎯 Selected best candidate: remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) (score: 2.000)
+  🌈 Selected diverse candidate: remove_hold_edge (diversity bonus: 1.200) - new op type (remove_hold_edge), new strategy (edge_optimization), similar path
+  🌈 Selected diverse candidate: add_file_resource (diversity bonus: 1.700) - new op type (add_file_resource), new strategy (resource_creation), new constraint focus (prohibition_constraints)
+  🌈 Selected diverse candidate: add_pd (diversity bonus: 1.700) - new op type (add_pd), new strategy (mediation_building), new constraint focus (existence_constraints)
+  🌈 Selected diverse candidate: add_hold_edge (diversity bonus: 0.300) - new op type (add_hold_edge), repeated strategy, similar path
+  🔍 Selected 5 diverse states from 25 candidates
+
+📊 Next beam (5 states):
+  Beam[0]: BeamState(iter=7, score=2.000, path=add_hold_edge(connect PD_1 to orphaned resource FILE_1_3) → add_hold_edge(connect PD_2 to FILE_1_3) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge))
+  Beam[1]: BeamState(iter=7, score=2.000, path=add_hold_edge(connect PD_1 to orphaned resource FILE_1_3) → add_hold_edge(connect PD_2 to FILE_1_3) → remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge))
+  Beam[2]: BeamState(iter=7, score=0.800, path=add_file_resource(create new TEMP file in FILE_SPACE_1) → remove_hold_edge(remove PD_1 -> FILE_1_1 HOLD edge) → add_file_resource(create new CONFIG file in FILE_SPACE_1))
+  Beam[3]: BeamState(iter=7, score=0.700, path=remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) → add_file_resource(create new CONFIG file in FILE_SPACE_1) → add_pd(add new protection domain to help resolve 7 constraint violation(s)))
+  Beam[4]: BeamState(iter=7, score=0.900, path=add_hold_edge(connect PD_1 to orphaned resource FILE_1_3) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) → add_hold_edge(connect PD_1 to orphaned resource FILE_1_3))
+💡 Total candidates generated: 25
+🎯 Mechanisms discovered so far: 0
+
+============================================================
+🔍 Beam Search Iteration 8/8
+📊 Current beam size: 5
+  Beam[0]: BeamState(iter=7, score=2.000, path=add_hold_edge(connect PD_1 to orphaned resource FILE_1_3) → add_hold_edge(connect PD_2 to FILE_1_3) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge))
+  Beam[1]: BeamState(iter=7, score=2.000, path=add_hold_edge(connect PD_1 to orphaned resource FILE_1_3) → add_hold_edge(connect PD_2 to FILE_1_3) → remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge))
+  Beam[2]: BeamState(iter=7, score=0.800, path=add_file_resource(create new TEMP file in FILE_SPACE_1) → remove_hold_edge(remove PD_1 -> FILE_1_1 HOLD edge) → add_file_resource(create new CONFIG file in FILE_SPACE_1))
+  Beam[3]: BeamState(iter=7, score=0.700, path=remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) → add_file_resource(create new CONFIG file in FILE_SPACE_1) → add_pd(add new protection domain to help resolve 7 constraint violation(s)))
+  Beam[4]: BeamState(iter=7, score=0.900, path=add_hold_edge(connect PD_1 to orphaned resource FILE_1_3) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) → add_hold_edge(connect PD_1 to orphaned resource FILE_1_3))
+
+🌟 Expanding Beam[0] (score: 2.000)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.75, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.75, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  ⚠️  Constraints violated: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1...
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.75, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.75, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_1 HOLD edge -> score: 0.400
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_1 HOLD edge -> score: 1.300
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_3 HOLD edge -> score: 2.000
+  🚫 Filtered out 0 'remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: remove PD_2 -> FILE_1_3 HOLD edge
+    Predicted improvement: 2.000
+    Considered 35 other option(s):
+      1. primitive: add new protection domain to help resolve 7 constraint violation(s) (improvement: 0.700)
+      2. primitive: remove PD_2 -> FILE_1_1 HOLD edge (improvement: 1.300)
+      3. primitive: connect PD_1 to FILE_1_3 (improvement: 0.900)
+      4. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      5. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.800)
+      6. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.800)
+      7. primitive: connect PD_1 to orphaned resource FILE_1_2 (improvement: 0.700)
+      8. primitive: connect PD_2 to orphaned resource FILE_1_2 (improvement: 0.700)
+      9. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.600)
+      10. primitive: remove FILE_1_2 (holders: 0) (improvement: 0.400)
+      ... and 25 more
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ⚠️  Applied remove_hold_edge with constraint violations: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1
+  📋 Generated 36 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: remove_hold_edge (score: 2.000)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: remove_hold_edge (score: 1.300)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_hold_edge (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.75, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_file_resource (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.75, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+
+🌟 Expanding Beam[1] (score: 2.000)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.75, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.75, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  ⚠️  Constraints violated: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1...
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.75, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.75, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_1 HOLD edge -> score: 1.300
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_3 HOLD edge -> score: 2.000
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_1 HOLD edge -> score: 0.400
+  🚫 Filtered out 0 'remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: remove PD_1 -> FILE_1_3 HOLD edge
+    Predicted improvement: 2.000
+    Considered 35 other option(s):
+      1. primitive: add new protection domain to help resolve 7 constraint violation(s) (improvement: 0.700)
+      2. primitive: remove PD_1 -> FILE_1_1 HOLD edge (improvement: 1.300)
+      3. primitive: connect PD_2 to FILE_1_3 (improvement: 0.900)
+      4. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      5. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.800)
+      6. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.800)
+      7. primitive: connect PD_1 to orphaned resource FILE_1_2 (improvement: 0.700)
+      8. primitive: connect PD_2 to orphaned resource FILE_1_2 (improvement: 0.700)
+      9. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.600)
+      10. primitive: remove FILE_1_2 (holders: 0) (improvement: 0.400)
+      ... and 25 more
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ⚠️  Applied remove_hold_edge with constraint violations: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1
+  📋 Generated 36 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: remove_hold_edge (score: 2.000)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: remove_hold_edge (score: 1.300)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_hold_edge (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.75, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_file_resource (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.75, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+
+🌟 Expanding Beam[2] (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  ⚠️  Constraints violated: PD_2 has prohibited direct hold on FILE_1_1; PD_1 lacks indirect access to FILE_1_1...
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_2 HOLD edge -> score: 0.500
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_1 HOLD edge -> score: 0.500
+  🚫 Filtered out 0 'add_file_resource(create new CONFIG file in FILE_SPACE_1)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 6 constraint violation(s)
+    Predicted improvement: 0.700
+    Considered 33 other option(s):
+      1. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.800)
+      2. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.800)
+      3. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.600)
+      4. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.600)
+      5. primitive: remove PD_1 -> FILE_1_2 HOLD edge (improvement: 0.500)
+      6. primitive: remove PD_2 -> FILE_1_1 HOLD edge (improvement: 0.500)
+      7. primitive: remove FILE_1_3 (holders: 0) (improvement: 0.400)
+      8. primitive: remove FILE_1_4 (holders: 0) (improvement: 0.400)
+      9. primitive: remove FILE_1_5 (holders: 0) (improvement: 0.400)
+      10. primitive: connect PD_1 to orphaned resource FILE_1_3 (improvement: 0.400)
+      ... and 23 more
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ⚠️  Applied add_pd with constraint violations: PD_2 has prohibited direct hold on FILE_1_1; PD_1 does not depend on PD_3 (missing TCB relationship)
+  📋 Generated 34 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_pd (score: 0.700)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_file_resource (score: 0.600)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_file_resource (score: 0.600)
+
+🌟 Expanding Beam[3] (score: 0.700)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.3333333333333333, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.3333333333333333, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  ⚠️  Constraints violated: PD_2 has prohibited direct hold on FILE_1_1; PD_1 lacks indirect access to FILE_1_1...
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.3333333333333333, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.3333333333333333, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_1 HOLD edge -> score: 0.500
+  🚫 Filtered out 0 'add_pd(add new protection domain to help resolve 7 constraint violation(s))' candidates (avoiding repetition)
+  🎲 Exploration: selecting candidate #2 instead of best
+  Trying best transition: primitive
+    Target: create new DATABASE file in FILE_SPACE_1
+    Predicted improvement: 0.800
+    Considered 30 other option(s):
+      1. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.800)
+      2. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.800)
+      3. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.600)
+      4. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.600)
+      5. primitive: remove PD_2 -> FILE_1_1 HOLD edge (improvement: 0.500)
+      6. primitive: remove FILE_1_2 (holders: 0) (improvement: 0.400)
+      7. primitive: remove FILE_1_3 (holders: 0) (improvement: 0.400)
+      8. primitive: remove FILE_1_4 (holders: 0) (improvement: 0.400)
+      9. primitive: connect PD_1 to orphaned resource FILE_1_2 (improvement: 0.400)
+      10. primitive: connect PD_1 to orphaned resource FILE_1_3 (improvement: 0.400)
+      ... and 20 more
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.3333333333333333, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.3333333333333333, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ⚠️  Applied add_file_resource with constraint violations: PD_2 has prohibited direct hold on FILE_1_1; PD_1 does not depend on PD_3 (missing TCB relationship)
+  📋 Generated 31 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.3333333333333333, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.3333333333333333, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.25, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_pd (score: 0.700)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.3333333333333333, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_file_resource (score: 0.600)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.3333333333333333, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    ✅ Added candidate: add_file_resource (score: 0.600)
+
+🌟 Expanding Beam[4] (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.75, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.75, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  ⚠️  Constraints violated: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1...
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.75, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.75, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_1 HOLD edge -> score: 1.300
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_3 HOLD edge -> score: 2.000
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_1 HOLD edge -> score: 0.400
+  🚫 Filtered out 0 'add_hold_edge(connect PD_1 to orphaned resource FILE_1_3)' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: remove PD_1 -> FILE_1_3 HOLD edge
+    Predicted improvement: 2.000
+    Considered 35 other option(s):
+      1. primitive: add new protection domain to help resolve 7 constraint violation(s) (improvement: 0.700)
+      2. primitive: remove PD_1 -> FILE_1_1 HOLD edge (improvement: 1.300)
+      3. primitive: connect PD_2 to FILE_1_3 (improvement: 0.900)
+      4. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.900)
+      5. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.800)
+      6. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.800)
+      7. primitive: connect PD_1 to orphaned resource FILE_1_2 (improvement: 0.700)
+      8. primitive: connect PD_2 to orphaned resource FILE_1_2 (improvement: 0.700)
+      9. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.600)
+      10. primitive: remove FILE_1_2 (holders: 0) (improvement: 0.400)
+      ... and 25 more
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ⚠️  Applied remove_hold_edge with constraint violations: PD_1 has prohibited direct hold on FILE_1_1; PD_2 has prohibited direct hold on FILE_1_1
+  📋 Generated 36 candidate(s)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: remove_hold_edge (score: 2.000)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.5, TCB: {'PD_1': [], 'PD_2': [], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: remove_hold_edge (score: 1.300)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_hold_edge (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.75, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_file_resource (score: 0.900)
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.5, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.75, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    ✅ Added candidate: add_file_resource (score: 0.800)
+  🎯 Selected best candidate: remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge) (score: 2.000)
+  🌈 Selected diverse candidate: remove_hold_edge (diversity bonus: 1.400) - new op type (remove_hold_edge), new strategy (constraint_removal)
+  🌈 Selected diverse candidate: add_file_resource (diversity bonus: 1.700) - new op type (add_file_resource), new strategy (resource_creation), new constraint focus (resource_constraints)
+  🌈 Selected diverse candidate: add_pd (diversity bonus: 1.700) - new op type (add_pd), new strategy (mediation_building), new constraint focus (existence_constraints)
+  🌈 Selected diverse candidate: add_hold_edge (diversity bonus: 1.200) - new op type (add_hold_edge), new strategy (edge_optimization), similar path
+  🔍 Selected 5 diverse states from 25 candidates
+
+📊 Next beam (5 states):
+  Beam[0]: BeamState(iter=8, score=2.000, path=add_hold_edge(connect PD_2 to FILE_1_3) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) → remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge))
+  Beam[1]: BeamState(iter=8, score=2.000, path=remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) → add_hold_edge(connect PD_1 to orphaned resource FILE_1_3) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge))
+  Beam[2]: BeamState(iter=8, score=0.800, path=remove_hold_edge(remove PD_1 -> FILE_1_1 HOLD edge) → add_file_resource(create new CONFIG file in FILE_SPACE_1) → add_file_resource(create new DATABASE file in FILE_SPACE_1))
+  Beam[3]: BeamState(iter=8, score=0.700, path=add_file_resource(create new CONFIG file in FILE_SPACE_1) → add_pd(add new protection domain to help resolve 7 constraint violation(s)) → add_pd(add new protection domain to help resolve 6 constraint violation(s)))
+  Beam[4]: BeamState(iter=8, score=0.900, path=add_hold_edge(connect PD_2 to FILE_1_3) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) → add_hold_edge(connect PD_1 to FILE_1_3))
+💡 Total candidates generated: 25
+🎯 Mechanisms discovered so far: 0
+
+🏁 Beam search complete!
+🎯 Total mechanisms discovered: 0
+
+📊 Final beam states:
+  Final[0]: BeamState(iter=8, score=2.000, path=add_hold_edge(connect PD_2 to FILE_1_3) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) → remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge))
+    Path: add_file_resource(create new CONFIG file in FILE_SPACE_1) → add_pd(add new protection domain to help resolve 8 constraint violation(s)) → add_pd(add new protection domain to help resolve 7 constraint violation(s)) → add_file_resource(create new TEMP file in FILE_SPACE_1) → add_hold_edge(connect PD_1 to orphaned resource FILE_1_3) → add_hold_edge(connect PD_2 to FILE_1_3) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) → remove_hold_edge(remove PD_2 -> FILE_1_3 HOLD edge)
+  Final[1]: BeamState(iter=8, score=2.000, path=remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) → add_hold_edge(connect PD_1 to orphaned resource FILE_1_3) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge))
+    Path: add_file_resource(create new CONFIG file in FILE_SPACE_1) → add_pd(add new protection domain to help resolve 8 constraint violation(s)) → add_pd(add new protection domain to help resolve 7 constraint violation(s)) → add_file_resource(create new TEMP file in FILE_SPACE_1) → add_hold_edge(connect PD_1 to orphaned resource FILE_1_3) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) → add_hold_edge(connect PD_1 to orphaned resource FILE_1_3) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge)
+  Final[2]: BeamState(iter=8, score=0.800, path=remove_hold_edge(remove PD_1 -> FILE_1_1 HOLD edge) → add_file_resource(create new CONFIG file in FILE_SPACE_1) → add_file_resource(create new DATABASE file in FILE_SPACE_1))
+    Path: add_pd(add new protection domain to help resolve 8 constraint violation(s)) → add_file_resource(create new TEMP file in FILE_SPACE_1) → add_file_resource(create new TEMP file in FILE_SPACE_1) → add_hold_edge(connect PD_1 to orphaned resource FILE_1_2) → add_file_resource(create new TEMP file in FILE_SPACE_1) → remove_hold_edge(remove PD_1 -> FILE_1_1 HOLD edge) → add_file_resource(create new CONFIG file in FILE_SPACE_1) → add_file_resource(create new DATABASE file in FILE_SPACE_1)
+  Final[3]: BeamState(iter=8, score=0.700, path=add_file_resource(create new CONFIG file in FILE_SPACE_1) → add_pd(add new protection domain to help resolve 7 constraint violation(s)) → add_pd(add new protection domain to help resolve 6 constraint violation(s)))
+    Path: add_file_resource(create new TEMP file in FILE_SPACE_1) → add_file_resource(create new TEMP file in FILE_SPACE_1) → add_hold_edge(connect PD_1 to orphaned resource FILE_1_3) → remove_hold_edge(remove PD_1 -> FILE_1_1 HOLD edge) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) → add_file_resource(create new CONFIG file in FILE_SPACE_1) → add_pd(add new protection domain to help resolve 7 constraint violation(s)) → add_pd(add new protection domain to help resolve 6 constraint violation(s))
+  Final[4]: BeamState(iter=8, score=0.900, path=add_hold_edge(connect PD_2 to FILE_1_3) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) → add_hold_edge(connect PD_1 to FILE_1_3))
+    Path: add_file_resource(create new CONFIG file in FILE_SPACE_1) → add_pd(add new protection domain to help resolve 8 constraint violation(s)) → add_pd(add new protection domain to help resolve 7 constraint violation(s)) → add_file_resource(create new TEMP file in FILE_SPACE_1) → add_hold_edge(connect PD_1 to orphaned resource FILE_1_3) → add_hold_edge(connect PD_2 to FILE_1_3) → remove_hold_edge(remove PD_1 -> FILE_1_3 HOLD edge) → add_hold_edge(connect PD_1 to FILE_1_3)
+
+✅ Scenario 'Mediator Test Indirect Access' complete!
+   Mechanisms discovered: 0
+
+✅ Exploration complete!

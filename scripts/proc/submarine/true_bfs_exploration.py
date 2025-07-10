@@ -81,9 +81,10 @@ def TrueBFSExploration(scenario, max_depth=8, max_states=10000):
         from isosearch import ComputeMetrics, GoalsMet
         
         try:
-            # Validate constraints
+            # Validate constraints - use exploration mode to allow temporary violations
+            # during multi-step transformations (like resource specialization)
             constraints_satisfied, violations = validate_all_constraints(
-                current_state.graph, constraints, mode="strict"
+                current_state.graph, constraints, mode="exploration"
             )
             
             if constraints_satisfied:

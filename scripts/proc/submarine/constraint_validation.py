@@ -70,6 +70,10 @@ def validate_constraint(graph, constraint):
         return validate_requires_resource_access(graph, constraint)
     elif constraint.constraint_type == "requires_resource_exists":
         return validate_requires_resource_exists(graph, constraint)
+    elif constraint.constraint_type == "requires_pd_exists":
+        return validate_requires_pd_exists(graph, constraint)
+    elif constraint.constraint_type == "requires_tcb_dependency":
+        return validate_requires_tcb_dependency(graph, constraint)
     else:
         return False, f"Unknown constraint type: {constraint.constraint_type}"
 
@@ -270,6 +274,51 @@ def validate_requires_resource_exists(graph, constraint):
         return True, f"Resource {target_resource} exists in the graph"
     else:
         return False, f"Required resource {target_resource} does not exist in the graph"
+
+
+def validate_requires_pd_exists(graph, constraint):
+    """
+    Validate that a specific PD exists in the graph
+    This forces the creation and maintenance of specific PDs like mediators
+    """
+    target_pd = constraint.resource_info  # e.g., "PD_3"
+    
+    # Check if the PD node exists in the graph
+    if target_pd in graph.g.nodes():
+        return True, f"Protection Domain {target_pd} exists in the graph"
+    else:
+        return False, f"Required Protection Domain {target_pd} does not exist in the graph"
+
+
+def validate_requires_tcb_dependency(graph, constraint):
+    """
+    Validate that a PD is in the TCB (Trusted Computing Base) of another PD
+    This forces dependency relationships that enable mediation patterns
+    """
+    dependent_pd = f"PD_{constraint.pd_id}"  # e.g., "PD_1"
+    target_pd = constraint.resource_info      # e.g., "PD_3"
+    dependency_type = constraint.properties.get('dependency_type', 'must_depend_on')
+    
+    # Check if both PDs exist
+    if dependent_pd not in graph.g.nodes():
+        return False, f"Dependent PD {dependent_pd} does not exist"
+    if target_pd not in graph.g.nodes():
+        return False, f"Target PD {target_pd} does not exist"
+    
+    # Compute metrics to get TCB information
+    from isosearch import ComputeMetrics
+    metrics = ComputeMetrics(graph)
+    tcb = metrics.get('TCB', {})
+    
+    dependent_tcb = tcb.get(dependent_pd, [])
+    
+    if dependency_type == "must_depend_on":
+        if target_pd in dependent_tcb:
+            return True, f"{dependent_pd} correctly depends on {target_pd} (TCB relationship)"
+        else:
+            return False, f"{dependent_pd} does not depend on {target_pd} (missing TCB relationship)"
+    else:
+        return False, f"Unknown dependency type: {dependency_type}"
 
 
 def check_constraints_before_transformation(graph, constraints, transformation_type, params):

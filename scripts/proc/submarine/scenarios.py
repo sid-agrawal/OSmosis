@@ -1374,7 +1374,7 @@ MULTISTEP_TRANSITIONS = {
 # Graph builder functions for different scenarios
 
 def build_basic_shared_resource_graph():
-    """Build a basic graph with 2 PDs each having 1 private FILE resource + 1 shared FILE resource"""
+    """Build a minimal graph with 2 PDs sharing 1 file only - no other files"""
     graph = ModelGraph()
     
     # Add two protection domains
@@ -1384,20 +1384,8 @@ def build_basic_shared_resource_graph():
     # Add a FILE space
     file_space = NodeTransformations.add_resource_space(graph, ResourceType.FILE)
     
-    # Create 1 private resource for PD1
-    pd1_config = NodeTransformations.add_file_resource(graph, file_space, FileType.CONFIG, "/etc/user.conf", 4096)
-    
-    # Create 1 private resource for PD2  
-    pd2_db = NodeTransformations.add_file_resource(graph, file_space, FileType.DATABASE, "/var/db/main.db", 8192)
-    
-    # Create 1 shared resource that both PDs access
+    # Create ONLY 1 shared resource that both PDs access - no private files
     shared_buffer = NodeTransformations.add_file_resource(graph, file_space, FileType.TEMP, "/tmp/shared_buffer.tmp", 2048)
-    
-    # PD1 holds its 1 private resource
-    EdgeTransformations.add_hold_edge(graph, Permission.R, pd1, ResourceType.FILE, file_space, pd1_config)
-    
-    # PD2 holds its 1 private resource
-    EdgeTransformations.add_hold_edge(graph, Permission.R, pd2, ResourceType.FILE, file_space, pd2_db)
     
     # Both PD1 and PD2 hold the shared resource (the security problem to solve)
     EdgeTransformations.add_hold_edge(graph, Permission.W, pd1, ResourceType.FILE, file_space, shared_buffer)
@@ -1567,19 +1555,18 @@ SCENARIOS = {
     
     "basic_sharing_primitive": Scenario(
         name="Basic Resource Sharing (True Primitives Only)",
-        description="Same simplified scenario as basic_sharing (1 private file + 1 shared file per PD) but using only true graph primitives",
+        description="Minimal scenario: 2 PDs sharing 1 file only, using only true graph primitives",
         goals=[
-            Goal("RSI", 0.3, "minimize", "PD_1,PD_2"),  # Target specific PD pair
+            Goal("RSI", 0.0, "minimize", "PD_1,PD_2"),  # Perfect isolation
             Goal("TCB", 0, "minimize", "PD_1"),         # Target specific PD
             Goal("ASR", 1.0, "minimize")                # System-wide goal
         ],
         constraints=[
-            # Specific FILE access requirements (same as basic_sharing)
-            Constraint("requires_file_access", 1, "FILE", properties={"file_type": "CONFIG", "min_size_kb": 1}),
-            Constraint("requires_file_access", 2, "FILE", properties={"file_type": "DATABASE", "min_size_kb": 1}),
-            # Both PDs need access to TEMP files
-            Constraint("requires_file_access", 1, "FILE", properties={"file_type": "TEMP", "min_size_kb": 1}),
-            Constraint("requires_file_access", 2, "FILE", properties={"file_type": "TEMP", "min_size_kb": 1}),
+            # Both PDs need access to TEMP files (direct or indirect) - allows for mediation
+            Constraint("requires_resource_access", 1, "FILE_1_1", properties={"access_type": "direct_or_indirect"}),
+            Constraint("requires_resource_access", 2, "FILE_1_1", properties={"access_type": "direct_or_indirect"}),
+            # Ensure the shared file must exist
+            Constraint("requires_resource_exists", None, "FILE_1_1", properties={"mandatory": True}),
         ],
         allowed_primitives=PRIMITIVES,  # All atomic graph operations
         allowed_multistep=[],  # No multi-step allowed
@@ -1657,21 +1644,25 @@ SCENARIOS = {
     
     "mediator_test_indirect": Scenario(
         name="Mediator Test Indirect Access",
-        description="Test if requiring indirect access forces mediation discovery",
+        description="Test if requiring indirect access forces mediation discovery using simplified graph",
         goals=[
-            Goal("RSI", 0.8, "minimize", "PD_1,PD_2")   # Same goal as mediator_test
+            Goal("RSI", 0.0, "minimize", "PD_1,PD_2")   # Eliminate direct sharing to force mediation
         ],
         constraints=[
-            Constraint("requires_file_access", 1, "FILE", properties={"file_type": "any", "min_size_kb": 1}),
-            Constraint("requires_file_access", 2, "FILE", properties={"file_type": "any", "min_size_kb": 1}),
-            # Prohibit direct access to the shared resource
-            Constraint("prohibit_direct_hold", 1, "FILE_1_3", properties={"constraint_type": "negative"}),
-            Constraint("prohibit_direct_hold", 2, "FILE_1_3", properties={"constraint_type": "negative"}),
-            # New constraint: Both PDs must have access to FILE_1_3 (direct or indirect)
-            Constraint("requires_resource_access", 1, "FILE_1_3", properties={"access_type": "direct_or_indirect"}),
-            Constraint("requires_resource_access", 2, "FILE_1_3", properties={"access_type": "direct_or_indirect"}),
-            # Critical constraint: FILE_1_3 must exist in the graph (prevents removal)
-            Constraint("requires_resource_exists", None, "FILE_1_3", properties={"mandatory": True}),
+            # Prohibit direct access to the shared resource - forces mediation
+            Constraint("prohibit_direct_hold", 1, "FILE_1_1", properties={"constraint_type": "negative"}),
+            Constraint("prohibit_direct_hold", 2, "FILE_1_1", properties={"constraint_type": "negative"}),
+            # STRENGTHENED: Both PDs must have INDIRECT access only (forces mediation)
+            Constraint("requires_resource_access", 1, "FILE_1_1", properties={"access_type": "indirect"}),
+            Constraint("requires_resource_access", 2, "FILE_1_1", properties={"access_type": "indirect"}),
+            # Critical constraint: FILE_1_1 must exist in the graph (prevents removal)
+            Constraint("requires_resource_exists", None, "FILE_1_1", properties={"mandatory": True}),
+            # NEW: FILE_1_1 must have exactly one holder (prevents elimination, forces mediation)
+            Constraint("requires_file_access", None, "FILE", properties={"min_holders": 1, "max_holders": 1}),
+            # FORCE MEDIATION: PD_3 must exist and be in TCB of both PD_1 and PD_2
+            Constraint("requires_pd_exists", None, "PD_3", properties={"mandatory": True}),
+            Constraint("requires_tcb_dependency", 1, "PD_3", properties={"dependency_type": "must_depend_on"}),
+            Constraint("requires_tcb_dependency", 2, "PD_3", properties={"dependency_type": "must_depend_on"}),
         ],
         allowed_primitives=PRIMITIVES,  # All primitives allowed
         allowed_multistep=[],  # No multi-step transitions
@@ -1787,7 +1778,7 @@ def get_scenario(name):
 
 def _validate_scenario_constraints(scenario):
     """Validate that all constraint types in a scenario are supported by the implementation"""
-    supported_constraint_types = {"requires_file_access", "requires_communication", "prohibit_direct_hold", "requires_indirect_access", "requires_resource_access", "requires_resource_exists"}
+    supported_constraint_types = {"requires_file_access", "requires_communication", "prohibit_direct_hold", "requires_indirect_access", "requires_resource_access", "requires_resource_exists", "requires_pd_exists", "requires_tcb_dependency"}
     
     for constraint in scenario.constraints:
         if constraint.constraint_type not in supported_constraint_types:
