@@ -6,8 +6,6 @@ IsoSearch Algorithm Implementation - Baby Steps
 from graph_transformations import NodeTransformations, EdgeTransformations
 from generic_model import ModelGraph, ResourceType, VmrType, FileType, Permission, EdgeType
 from scenarios import get_scenario, list_scenarios, SCENARIOS, Goal, Constraint, Transition
-from visualization import IsoSearchVisualizer
-from decision_tree_viz import DecisionTreeVisualizer
 
 # Goal, Constraint, and Transition classes are now imported from scenarios.py
 
@@ -1867,9 +1865,9 @@ def BeamSearchExploration(scenario, beam_width=3, max_depth=8):
     return explored_mechanisms
 
 
-def GreedyDesignSpaceExplorationWithVisualization(scenario, visualizer=None, tree_visualizer=None):
+def GreedyDesignSpaceExploration(scenario):
     """
-    Greedy IsoSearch algorithm for exploring design space with optional visualization
+    Greedy IsoSearch algorithm for exploring design space
     
     Uses a greedy search strategy that selects the locally optimal transition at each step
     based on predicted improvement scores. Includes a small exploration factor (15% chance)
@@ -1877,8 +1875,6 @@ def GreedyDesignSpaceExplorationWithVisualization(scenario, visualizer=None, tre
     
     Args:
         scenario - Scenario object with goals, constraints, transitions, and graph builder
-        visualizer - Optional IsoSearchVisualizer object for HTML generation
-        tree_visualizer - Optional DecisionTreeVisualizer for decision tracking
     Returns: list of explored mechanisms
     """
     # Step 1: Initialize components from scenario (from pseudocode line 2)
@@ -1905,14 +1901,6 @@ def GreedyDesignSpaceExplorationWithVisualization(scenario, visualizer=None, tre
     print(f"\n📊 Initial graph:")
     _print_graph_arrows(curGraph)
 
-    # Add initial state to visualization
-    if visualizer:
-        initial_metrics = ComputeMetrics(curGraph)
-        visualizer.add_iteration(0, curGraph, initial_metrics, [], None)
-
-    if tree_visualizer:
-        initial_metrics = ComputeMetrics(curGraph)
-        tree_visualizer.add_decision_node(0, curGraph, initial_metrics, [])
 
     # Step 2: Main exploration loop (from pseudocode line 8)
     maxIterations = 10  # More iterations for emergent discovery
@@ -1974,39 +1962,6 @@ def GreedyDesignSpaceExplorationWithVisualization(scenario, visualizer=None, tre
         iteration_info['mechanism_saved'] = True
         iteration_info['candidate_info']['success'] = True
 
-        # Add iteration data to visualization
-        if visualizer:
-            visualizer.add_iteration(
-                i, candidate, metrics,
-                candidate_info['all_candidates'],
-                candidate_info['selected_candidate']
-            )
-
-            # Add decision data
-            if candidate_info['selected_candidate'] and candidate_info['discarded_candidates']:
-                visualizer.add_decision(
-                    i,
-                    candidate_info['selected_candidate']['target_description'],
-                    [c['target_description'] for c in candidate_info['discarded_candidates']],
-                    f"Selected based on predicted improvement: {candidate_info['selected_candidate']['predicted_improvement']:.3f}"
-                )
-
-        # Add tree visualization data
-        if tree_visualizer:
-            # Add selected path
-            tree_visualizer.add_decision_node(
-                i, candidate, metrics,
-                candidate_info['all_candidates'],
-                candidate_info['selected_candidate'],
-                parent_id=f"iter_{i-1}_selected" if i > 1 else "root",
-                is_selected=True
-            )
-
-            # Add discarded paths
-            if candidate_info['discarded_candidates']:
-                tree_visualizer.add_discarded_paths(
-                    i, curGraph, candidate_info['discarded_candidates']
-                )
 
         # Step 7: Update current graph (from pseudocode line 18)
         curGraph = candidate
@@ -2533,13 +2488,6 @@ def run_scenario(scenario_name, enable_visualization=False):
 
         print("\n=== Ready for IsoSearch! ===")
 
-        # Initialize visualization if enabled
-        visualizer = None
-        tree_visualizer = None
-        if enable_visualization:
-            visualizer = IsoSearchVisualizer(scenario_name)
-            tree_visualizer = DecisionTreeVisualizer(scenario_name)
-            print("🎨 Visualization enabled - HTML reports will be generated")
 
         # Run the exploration
         print(f"\n=== Exploring {scenario.name} ===")
@@ -2551,16 +2499,8 @@ def run_scenario(scenario_name, enable_visualization=False):
             print(f"🔍 Using beam search (width={args.beam_width})")
             result = BeamSearchExploration(scenario, beam_width=args.beam_width, max_depth=args.bfs_max_depth)
         else:
-            result = GreedyDesignSpaceExplorationWithVisualization(scenario, visualizer, tree_visualizer)
+            result = GreedyDesignSpaceExploration(scenario)
 
-        # Generate visualization if enabled
-        if enable_visualization:
-            if visualizer:
-                viz_file = visualizer.generate_html()
-                print(f"📊 Timeline visualization saved: {viz_file}")
-            if tree_visualizer:
-                tree_file = tree_visualizer.generate_html()
-                print(f"🌳 Decision tree visualization saved: {tree_file}")
 
         print(f"\n✅ Scenario '{scenario.name}' complete!")
         print(f"   Mechanisms discovered: {len(result)}")
