@@ -873,8 +873,6 @@ SCENARIOS = {
         description="Minimal scenario: 2 PDs sharing 1 file only, using only true graph primitives",
         goals=[
             Goal("RSI", 0.0, "minimize", "PD_1,PD_2"),  # Perfect isolation
-            Goal("TCB", 0, "minimize", "PD_1"),         # Target specific PD
-            Goal("ASR", 1.0, "minimize")                # System-wide goal
         ],
         constraints=[
             # Both PDs need access to FILE_1_1 (direct or indirect) - allows for mediation
