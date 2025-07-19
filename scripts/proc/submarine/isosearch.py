@@ -40,20 +40,23 @@ def ComputeMetrics(candidate):
 
 
 def _calculate_rsi_per_pd_pair(graph, pd_nodes):
-    """Calculate RSI (Resource Sharing Index) as per PD pair metric
+    """Calculate RSI (Resource Sharing Index) as per PD pair metric - DIRECT ACCESS ONLY
 
-    RSI[PD_i, PD_j] = (Resources shared by PD_i and PD_j) / (Total resources accessed by either PD_i or PD_j)
+    RSI[PD_i, PD_j] = (Resources directly shared by PD_i and PD_j) / (Total resources directly accessed by either PD_i or PD_j)
+
+    Only considers direct HOLD edges from PDs to resources, not indirect access through mediators.
 
     Returns a dictionary mapping PD pairs to their RSI values
     """
-    # Build resource access map: PD -> set of resources
+    # Build resource access map: PD -> set of directly held resources
     pd_resources = {}
     for pd in pd_nodes:
         pd_resources[pd] = set()
 
-    # Find all HOLD edges from PDs to resources
+    # Find all DIRECT HOLD edges from PDs to resources (not through mediators)
     for from_node, to_node, edge_data in graph.g.edges(data=True):
         if edge_data.get('type') == 'HOLD' and from_node.startswith('PD_'):
+            # Only count direct access - PD directly holds the resource
             if from_node in pd_resources:
                 pd_resources[from_node].add(to_node)
 
@@ -1677,6 +1680,7 @@ def BeamSearchExploration(scenario, beam_width=3, max_depth=8):
 
     # Track all discovered mechanisms
     explored_mechanisms = []
+    found_complete_solution = False
     max_iterations = max_depth  # Use provided max_depth parameter
 
     # Step 2: Main beam search loop
@@ -1709,16 +1713,21 @@ def BeamSearchExploration(scenario, beam_width=3, max_depth=8):
                 goals_met = GoalsMet(current_metrics, goals)
 
                 if goals_met:
-                    print(f"  🎯 Goals met with constraints satisfied! Saving mechanism.")
+                    print(f"  🎯 SOLUTION FOUND! Goals met with all constraints satisfied!")
+                    print(f"  ✅ Path: {' → '.join(state.path_history)}")
                     mechanism = {
                         'graph': copy.deepcopy(state.graph),
                         'metrics': current_metrics,
                         'iteration': iteration,
                         'beam_path': state.path_history,
                         'discovery_method': 'beam_search',
-                        'constraints_satisfied': True
+                        'constraints_satisfied': True,
+                        'is_complete_solution': True
                     }
                     explored_mechanisms.append(mechanism)
+                    
+                    # Mark that we found a complete solution
+                    found_complete_solution = True
                     continue  # Don't expand states that already meet goals
 
             # Generate candidates for this state
@@ -1854,6 +1863,18 @@ def BeamSearchExploration(scenario, beam_width=3, max_depth=8):
 
     print(f"\n🏁 Beam search complete!")
     print(f"🎯 Total mechanisms discovered: {len(explored_mechanisms)}")
+    
+    # Report if we found complete solutions
+    complete_solutions = [m for m in explored_mechanisms if m.get('is_complete_solution', False)]
+    if complete_solutions:
+        print(f"\n✅ FOUND {len(complete_solutions)} COMPLETE SOLUTION(S) (goals + constraints satisfied)!")
+        for i, solution in enumerate(complete_solutions, 1):
+            print(f"\n  Solution {i}:")
+            print(f"    Iteration: {solution['iteration']}")
+            print(f"    Path: {' → '.join(solution['beam_path'])}")
+            print(f"    Metrics: RSI={solution['metrics']['RSI']}, ASR={solution['metrics']['ASR']}")
+    else:
+        print(f"\n❌ No complete solutions found (goals + constraints both satisfied)")
 
     # Show final beam states
     if current_beam:
@@ -1941,23 +1962,37 @@ def GreedyDesignSpaceExploration(scenario):
         # Step 4: Compute metrics for the candidate (from pseudocode line 11)
         metrics = ComputeMetrics(candidate)
 
-        # Step 5: Check if goals are met (from pseudocode line 12-16)
+        # Step 5: Check constraints first, then goals (strict validation)
+        from constraint_validation import validate_all_constraints
+        constraints_satisfied, violations = validate_all_constraints(candidate, constraints, mode="strict")
+        
         goals_met = GoalsMet(metrics, goals)
         iteration_info['goals_met'] = goals_met
-
-        if goals_met:
-            print("    All {} goal(s) met!".format(len(goals)))
+        
+        # Check if this is a complete solution (goals + constraints)
+        is_complete_solution = goals_met and constraints_satisfied
+        
+        if constraints_satisfied:
+            if goals_met:
+                print("  🎯 COMPLETE SOLUTION! Goals met with all constraints satisfied!")
+            else:
+                print("  ✅ Constraints satisfied, but goals not yet met")
         else:
-            print("    Goals not yet satisfied, continuing exploration")
+            if goals_met:
+                print("  ⚠️  Goals met but constraints violated: {}".format('; '.join(violations[:2])))
+            else:
+                print("  ❌ Neither goals nor constraints satisfied")
 
-        # Step 6: Save the mechanism (from pseudocode line 17)
-        print("  ✅ Mechanism saved! Total mechanisms found: {}".format(len(explored_mechanisms) + 1))
+        # Step 6: Save the mechanism (always save for exploration tracking)
+        print("  📝 Mechanism saved! Total mechanisms found: {}".format(len(explored_mechanisms) + 1))
         explored_mechanisms.append({
             'iteration': i,
             'graph': candidate,
             'metrics': metrics,
             'transformation': candidate_info['selected_candidate']['transition_type'] if candidate_info['selected_candidate'] else None,
-            'goals_met': goals_met
+            'goals_met': goals_met,
+            'constraints_satisfied': constraints_satisfied,
+            'is_complete_solution': is_complete_solution
         })
         iteration_info['mechanism_saved'] = True
         iteration_info['candidate_info']['success'] = True
@@ -1979,6 +2014,20 @@ def GreedyDesignSpaceExploration(scenario):
         print()  # Add spacing between iterations
 
     print("Exploration complete!")
+
+    # Report complete vs partial solutions
+    complete_solutions = [m for m in explored_mechanisms if m.get('is_complete_solution', False)]
+    partial_solutions = [m for m in explored_mechanisms if m.get('goals_met', False) and not m.get('is_complete_solution', False)]
+    
+    print(f"\n📊 SOLUTION SUMMARY:")
+    print(f"   ✅ Complete solutions (goals + constraints): {len(complete_solutions)}")
+    print(f"   ⚠️  Partial solutions (goals only): {len(partial_solutions)}")
+    print(f"   📝 Total mechanisms explored: {len(explored_mechanisms)}")
+    
+    if complete_solutions:
+        print(f"\n🎯 COMPLETE SOLUTIONS FOUND:")
+        for i, solution in enumerate(complete_solutions, 1):
+            print(f"  Solution {i}: Iteration {solution['iteration']} - {solution.get('transformation', 'unknown')}")
 
     # Show final graph structure
     print(f"\n🏁 Final graph:")
@@ -2058,16 +2107,26 @@ def DesignSpaceExploration(scenario):
         metrics = ComputeMetrics(candidate)
         print(f"  Metrics: {metrics}")
 
-        # Step 6: Check if goals are met (from pseudocode line 16)
+        # Step 6: Check constraints first, then goals (strict validation)
+        from constraint_validation import validate_all_constraints
+        constraints_satisfied, violations = validate_all_constraints(candidate, constraints, mode="strict")
+        
         goals_met = GoalsMet(metrics, goals)
         iteration_info['goals_met'] = goals_met
-
-        if goals_met:
-            # Step 7: Save the mechanism (from pseudocode line 17-18)
-            new_mechanism = (candidate, metrics)
+        
+        # Check if this is a complete solution (goals + constraints)
+        is_complete_solution = goals_met and constraints_satisfied
+        
+        if is_complete_solution:
+            # Step 7: Save the mechanism only if complete solution
+            new_mechanism = (candidate, metrics, {'constraints_satisfied': True, 'is_complete_solution': True})
             explored_mechanisms.append(new_mechanism)
             iteration_info['mechanism_saved'] = True
-            print(f"  ✅ Mechanism saved! Total mechanisms found: {len(explored_mechanisms)}")
+            print(f"  🎯 COMPLETE SOLUTION! Mechanism saved! Total valid solutions found: {len(explored_mechanisms)}")
+        elif goals_met and not constraints_satisfied:
+            print(f"  ⚠️  Goals met but constraints violated: {'; '.join(violations[:2])}")
+            print(f"  ❌ Not counting as solution - continuing search")
+            _explain_goal_failures(candidate, metrics, goals)
         else:
             # Explain why goals were not met
             print(f"  ❌ Goals not met - continuing search")
@@ -2088,6 +2147,22 @@ def DesignSpaceExploration(scenario):
         _print_graph_arrows(curGraph)
 
     print("Exploration complete!")
+    
+    # Report complete solutions only (strict validation)
+    complete_solutions = [m for m in explored_mechanisms if len(m) > 2 and m[2].get('is_complete_solution', False)]
+    
+    print(f"\n📊 SOLUTION SUMMARY:")
+    print(f"   ✅ Complete solutions (goals + constraints): {len(complete_solutions)}")
+    print(f"   📝 Total candidates evaluated: {len(explored_mechanisms)}")
+    
+    if complete_solutions:
+        print(f"\n🎯 COMPLETE SOLUTIONS FOUND:")
+        for i, solution in enumerate(complete_solutions, 1):
+            graph, metrics, metadata = solution
+            print(f"  Solution {i}: RSI={metrics['RSI']}, ASR={metrics['ASR']}")
+    else:
+        print(f"\n❌ No complete solutions found (need both goals AND constraints satisfied)")
+
     print(f"\n🏁 Final graph:")
     _print_graph_arrows(curGraph)
 
@@ -2107,12 +2182,14 @@ def _print_exploration_summary(summary):
     # Overall statistics
     total_iterations = len(summary['iterations'])
     mechanisms_found = sum(1 for iter_info in summary['iterations'] if iter_info['mechanism_saved'])
+    complete_solutions = sum(1 for iter_info in summary['iterations'] if iter_info.get('goals_met', False) and iter_info.get('mechanism_saved', False))
 
     print(f"Total iterations completed: {total_iterations}")
     print(f"Total transformation candidates considered: {summary['total_candidates_considered']}")
     print(f"Total transformation candidates discarded: {summary['total_candidates_discarded']}")
-    print(f"Mechanisms discovered: {mechanisms_found}")
-    print(f"Success rate: {mechanisms_found / max(total_iterations, 1) * 100:.1f}%")
+    print(f"Mechanisms explored: {mechanisms_found}")
+    print(f"Complete solutions found: {complete_solutions}")
+    print(f"Solution rate: {complete_solutions / max(total_iterations, 1) * 100:.1f}%")
 
     # Transformation type analysis
     print(f"\n🔧 Transformation Types:")

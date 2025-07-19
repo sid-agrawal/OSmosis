@@ -65,14 +65,72 @@ def calculate_goal_driven_score(operation_name, params, current_graph, new_graph
     # Calculate diversity bonus for different transition types
     diversity_bonus = calculate_diversity_bonus(operation_name, transition_history)
     
+    # Check if all goals are currently satisfied
+    goals_satisfied = check_goals_satisfied(goals, new_metrics)
+    
     # OPTION A: Weight constraint satisfaction much higher than goal achievement
-    final_score = base_score + (constraint_score * 3.0) + (total_improvement * 0.5) + unsatisfiable_penalty + diversity_bonus
+    # NEW: If goals are satisfied, massively boost constraint satisfaction score
+    if goals_satisfied:
+        # When goals are met, constraint satisfaction becomes the primary objective
+        # Heavily penalize constraint violations to force complete solutions
+        final_score = base_score + (constraint_score * 10.0) + (total_improvement * 0.1) + (unsatisfiable_penalty * 5.0) + diversity_bonus
+    else:
+        # Normal scoring when goals aren't met yet
+        final_score = base_score + (constraint_score * 3.0) + (total_improvement * 0.5) + unsatisfiable_penalty + diversity_bonus
     
     # Debug output
     if total_improvement != 0 or constraint_score != 0 or unsatisfiable_penalty != 0 or diversity_bonus != 0:
-        print(f"    🎯 {operation_name} goal: {total_improvement:.2f}, constraint: {constraint_score:.2f}, unsatisfiable: {unsatisfiable_penalty:.2f}, diversity: {diversity_bonus:.2f} → total: {final_score:.2f}")
+        goals_indicator = " [GOALS MET]" if goals_satisfied else ""
+        print(f"    🎯 {operation_name} goal: {total_improvement:.2f}, constraint: {constraint_score:.2f}, unsatisfiable: {unsatisfiable_penalty:.2f}, diversity: {diversity_bonus:.2f} → total: {final_score:.2f}{goals_indicator}")
     
     return final_score
+
+
+def check_goals_satisfied(goals, metrics):
+    """
+    Check if all goals are satisfied in the current metrics
+    
+    Args:
+        goals: List of Goal objects
+        metrics: Current metrics dictionary
+        
+    Returns:
+        bool: True if all goals are satisfied, False otherwise
+    """
+    for goal in goals:
+        if goal.metric_name == "RSI":
+            target_pair = goal.target_spec
+            current_value = metrics['RSI'].get(target_pair, 1.0)
+            
+            if goal.direction == "minimize":
+                if current_value > goal.target_value:
+                    return False
+            elif goal.direction == "maximize":
+                if current_value < goal.target_value:
+                    return False
+                    
+        elif goal.metric_name == "ASR":
+            current_value = metrics['ASR']
+            
+            if goal.direction == "minimize":
+                if current_value > goal.target_value:
+                    return False
+            elif goal.direction == "maximize":
+                if current_value < goal.target_value:
+                    return False
+                    
+        elif goal.metric_name == "TCB":
+            target_pd = goal.target_spec
+            tcb_size = len(metrics['TCB'].get(target_pd, []))
+            
+            if goal.direction == "minimize":
+                if tcb_size > goal.target_value:
+                    return False
+            elif goal.direction == "maximize":
+                if tcb_size < goal.target_value:
+                    return False
+    
+    return True
 
 
 def calculate_rsi_improvement(goal, current_metrics, new_metrics):
@@ -207,12 +265,12 @@ def calculate_constraint_score(operation_name, params, constraints, current_grap
         return violation_improvement * 15.0  # Strong penalty for creating violations
     
     # Special scoring for constraint-relevant operations
-    constraint_relevance_score = score_constraint_relevance(operation_name, params, constraints)
+    constraint_relevance_score = score_constraint_relevance(operation_name, params, constraints, current_graph)
     
     return constraint_relevance_score
 
 
-def score_constraint_relevance(operation_name, params, constraints):
+def score_constraint_relevance(operation_name, params, constraints, current_graph):
     """Score operations based on relevance to constraint requirements"""
     
     for constraint in constraints:
@@ -231,21 +289,188 @@ def score_constraint_relevance(operation_name, params, constraints):
             elif operation_name == "add_hold_edge":
                 if enables_direct_access(params, constraint):
                     return 8.0  # Lower priority for direct access (may violate other constraints)
+                    
+        elif constraint.constraint_type == "requires_indirect_access":
+            # Operations that enable indirect access get very high priority
+            if operation_name == "add_request_edge":
+                print(f"🔍 CHECKING REQUEST EDGE: {params} for constraint {constraint}")
+                if enables_indirect_access(params, constraint, current_graph):
+                    # Check if the target PD already holds the resource (direct mediation)
+                    param_values = params.get('param_values', {})
+                    to_pd = param_values.get('to_pd', '')
+                    target_resource = constraint.resource_info
+                    
+                    # Check if to_pd already holds the resource
+                    pd_holds_resource = False
+                    for from_node, to_node, edge_data in current_graph.g.edges(data=True):
+                        if from_node == to_pd and to_node == target_resource:
+                            if isinstance(edge_data, dict):
+                                for edge_instance in edge_data.values():
+                                    if isinstance(edge_instance, dict) and edge_instance.get('type') == 'HOLD':
+                                        pd_holds_resource = True
+                                        break
+                            else:
+                                if edge_data.get('type') == 'HOLD':
+                                    pd_holds_resource = True
+                                    break
+                        if pd_holds_resource:
+                            break
+                    
+                    if pd_holds_resource:
+                        print(f"🔥 DIRECT MEDIATION COMPLETION DETECTED: {params} -> 100.0 score")
+                        return 100.0  # Maximum priority for direct mediation to resource holder
+                    elif would_complete_mediation_chain(params, constraint, current_graph):
+                        print(f"🔥 MEDIATION COMPLETION DETECTED: {params} -> 50.0 score")
+                        return 50.0  # High priority for completing mediation
+                    else:
+                        print(f"🔥 MEDIATION POTENTIAL DETECTED: {params} -> 30.0 score")
+                        return 30.0  # Medium priority for potential mediation
+                else:
+                    print(f"🔍 REQUEST EDGE DOES NOT ENABLE INDIRECT ACCESS: {params}")
     
     return 0.0
+
+
+def would_break_mediation_chain(params, constraint, current_graph):
+    """Check if removing a HOLD edge would break a mediation chain for indirect access"""
+    try:
+        param_values = params.get('param_values', {})
+        from_pd = param_values.get('from_node', param_values.get('pd', ''))
+        to_resource = param_values.get('to_node', param_values.get('resource', ''))
+        
+        if not from_pd or not to_resource:
+            return False
+            
+        required_pd = f"PD_{constraint.pd_id}"
+        target_resource = constraint.resource_info
+        
+        # CRITICAL: Always prevent removal of HOLD edges to constrained resources
+        # until proper mediation chains are established
+        if to_resource == target_resource:
+            print(f"🔍 MEDIATION CHECK: removing {from_pd} -> {to_resource} for constraint {constraint}")
+            # Check if this PD is the only one holding the resource
+            holder_count = 0
+            mediator_holders = []
+            
+            for from_node, to_node, edge_data in current_graph.g.edges(data=True):
+                if to_node == target_resource:
+                    print(f"🔍 Found edge: {from_node} -> {to_node}, data: {edge_data}")
+                    if edge_data.get('type') == 'HOLD':
+                        print(f"🔍 Found HOLD edge: {from_node} -> {to_node}")
+                        holder_count += 1
+                        # Track who holds the resource
+                        if from_node != required_pd:  # Non-constrained PD = potential mediator
+                            mediator_holders.append(from_node)
+                            
+            # If removing this would leave no holders, it's definitely breaking mediation
+            if holder_count <= 1:
+                print(f"🔍 MEDIATION CHECK: only {holder_count} holders, would break mediation")
+                return True
+            
+            print(f"🔍 MEDIATION CHECK: {holder_count} holders, mediator_holders: {mediator_holders}")
+                
+            # ALLOW removal only if there are mediator PDs holding the resource
+            # AND the constrained PD has REQUEST edges to those mediators
+            if from_pd == required_pd and len(mediator_holders) > 0:
+                # Check if constrained PD has REQUEST edges to any mediator
+                has_request_to_mediator = False
+                for from_node, to_node, edge_data in current_graph.g.edges(data=True):
+                    if from_node == required_pd and to_node in mediator_holders:
+                        try:
+                            for edge_instance in edge_data.values():
+                                if isinstance(edge_instance, dict) and edge_instance.get('type') == 'REQUEST':
+                                    has_request_to_mediator = True
+                                    break
+                        except:
+                            if edge_data.get('type') == 'REQUEST':
+                                has_request_to_mediator = True
+                        if has_request_to_mediator:
+                            break
+                            
+                # Only allow removal if proper mediation is established
+                if has_request_to_mediator:
+                    print(f"🔍 MEDIATION CHECK: {required_pd} has REQUEST to mediator, allowing removal")
+                    return False  # Don't break - proper mediation exists
+                else:
+                    print(f"🔍 MEDIATION CHECK: {required_pd} has no REQUEST to mediator, blocking removal")
+                
+            # Additionally, check if the constrained PD has a REQUEST edge to the PD being removed
+            for from_node, to_node, edge_data in current_graph.g.edges(data=True):
+                if from_node == required_pd and to_node == from_pd:
+                    # Handle NetworkX edge data structure
+                    try:
+                        for edge_instance in edge_data.values():
+                            if isinstance(edge_instance, dict) and edge_instance.get('type') == 'REQUEST':
+                                return True  # This would break the mediation chain!
+                    except:
+                        if edge_data.get('type') == 'REQUEST':
+                            return True
+                            
+        return False
+    except:
+        return False
+
+
+def would_complete_mediation_chain(params, constraint, current_graph):
+    """Check if adding REQUEST edge would complete a mediation chain"""
+    try:
+        param_values = params.get('param_values', {})
+        from_pd = param_values.get('from_pd', '')
+        to_pd = param_values.get('to_pd', '')
+        
+        if from_pd and to_pd:
+            required_pd = f"PD_{constraint.pd_id}"
+            target_resource = constraint.resource_info
+            
+            # Check if we're adding REQUEST from required PD to potential mediator
+            if from_pd == required_pd and to_pd.startswith('PD_') and to_pd != required_pd:
+                # Check if the target PD already holds the resource
+                for from_node, to_node, edge_data in current_graph.g.edges(data=True):
+                    if (from_node == to_pd and to_node == target_resource and 
+                        edge_data.get('type') == 'HOLD'):
+                        return True  # This would complete the mediation chain!
+                        
+        return False
+    except:
+        return False
+
+
+def enables_indirect_access(params, constraint, current_graph=None):
+    """Check if adding REQUEST edge would enable indirect access"""
+    try:
+        # If current_graph is provided, use the more sophisticated check
+        if current_graph is not None:
+            return enables_mediation_pattern(params, constraint, current_graph)
+        
+        # Extract PD and target from parameters
+        param_values = params.get('param_values', {})
+        from_pd = param_values.get('from_pd', '')
+        to_pd = param_values.get('to_pd', '')
+        
+        if from_pd and to_pd:
+            # Check if this REQUEST edge would help satisfy the constraint
+            required_pd = f"PD_{constraint.pd_id}"
+            target_resource = constraint.resource_info
+            
+            # Case 1: Adding REQUEST from required PD to any other PD
+            # This is potentially valuable for mediation
+            if from_pd == required_pd and to_pd.startswith('PD_') and to_pd != required_pd:
+                return True  # This could enable indirect access
+                
+        return False
+    except:
+        return False
 
 
 def is_prohibited_edge(params, constraint):
     """Check if edge removal fixes a prohibited direct hold constraint"""
     try:
         # Extract PD and resource from parameters
-        if 'from_node' in params and 'to_node' in params:
-            pd_node = params['from_node']
-            resource_node = params['to_node']
-        elif 'pd' in params and 'resource' in params:
-            pd_node = params['pd']
-            resource_node = params['resource']
-        else:
+        param_values = params.get('param_values', {})
+        pd_node = param_values.get('from_node', param_values.get('pd', ''))
+        resource_node = param_values.get('to_node', param_values.get('resource', ''))
+        
+        if not pd_node or not resource_node:
             return False
             
         # Check if this matches the prohibited constraint
@@ -314,15 +539,30 @@ def calculate_enhanced_constraint_score(operation_name, params, constraints, cur
     
     violation_improvement = current_violations - new_violations
     
+    # Debug output for remove_hold_edge operations
+    if "remove_hold_edge" in operation_name and violation_improvement != 0:
+        print(f"    🔍 VIOLATION DEBUG: {operation_name} current={current_violations}, new={new_violations}, improvement={violation_improvement}")
+    
     # OPTION A: Maximum priority for fixing constraint violations
     constraint_score = 0.0
     
     if violation_improvement > 0:
         # Reward fixing violations with highest priority
-        constraint_score += violation_improvement * 30.0
+        # Extra bonus if there are still violations remaining
+        base_reward = 200.0
+        if current_violations > 0:
+            # Double the reward when actively fixing existing violations
+            base_reward = 400.0
+        constraint_score += violation_improvement * base_reward
     elif violation_improvement < 0:
-        # Strong penalty for creating new violations
-        constraint_score += violation_improvement * 20.0
+        # Massive penalty for creating new violations
+        constraint_score += violation_improvement * 100.0
+    
+    # CRITICAL: Persistent penalty for maintaining existing violations
+    # This ensures that actions that don't fix violations are heavily penalized
+    # But only apply this if the action doesn't improve violations at all
+    if new_violations > 0 and violation_improvement <= 0:
+        constraint_score -= new_violations * 5.0
     
     # Enhanced constraint-specific operation scoring
     relevance_score = score_enhanced_constraint_relevance(operation_name, params, constraints, current_graph, new_graph)
@@ -368,6 +608,22 @@ def score_enhanced_constraint_relevance(operation_name, params, constraints, cur
                 elif operation_name == "add_request_edge":
                     if enables_indirect_access(params, constraint, current_graph):
                         relevance_score += 12.0  # Medium priority for indirect access
+                        
+        elif constraint.constraint_type == "requires_indirect_access":
+            # CRITICAL: Prevent removal of HOLD edges that would break mediation chains
+            if operation_name == "remove_hold_edge":
+                if would_break_mediation_chain(params, constraint, current_graph):
+                    print(f"🔥 BREAKING MEDIATION CHAIN DETECTED: {params} -> -100.0 penalty")
+                    relevance_score -= 100.0  # Heavy penalty for breaking mediation chains
+                else:
+                    print(f"🔥 MEDIATION CHECK: remove_hold_edge {params} -> no mediation chain broken")
+            elif operation_name == "add_request_edge":
+                print(f"🔍 CHECKING REQUEST EDGE FOR INDIRECT ACCESS: {params} for constraint {constraint}")
+                if enables_indirect_access(params, constraint, current_graph):
+                    print(f"🔥 ENABLING INDIRECT ACCESS: {params} -> +15.0 score")
+                    relevance_score += 15.0  # Priority for enabling indirect access
+                else:
+                    print(f"🔍 REQUEST EDGE DOES NOT ENABLE INDIRECT ACCESS: {params}")
     
     return relevance_score
 
@@ -376,11 +632,77 @@ def score_indirect_access_enablement(operation_name, params, constraints, curren
     """Score operations that enable indirect access patterns"""
     score = 0.0
     
+    # CRITICAL: Prioritize removing direct holds that violate indirect access constraints
+    if operation_name == "remove_hold_edge":
+        # Extract parameters
+        param_values = params.get('param_values', params) if isinstance(params, dict) else params
+        from_node = param_values.get('from_node', '')
+        to_node = param_values.get('to_node', '')
+        
+        # Check if this removes a direct hold that violates indirect access requirement
+        for constraint in constraints:
+            if constraint.constraint_type == "requires_indirect_access":
+                pd_string = f"PD_{constraint.pd_id}"
+                if from_node == pd_string and to_node == constraint.resource_info:
+                    # This removes the problematic direct access!
+                    # But first check if PD has alternative access
+                    has_alternative_access = False
+                    
+                    # Check if PD has REQUEST edges to other PDs that hold the resource
+                    print(f"🔍 ALT ACCESS CHECK: Checking {pd_string} for alternative access to {to_node}")
+                    print(f"🔍 ALT ACCESS: Iterating through all edges from {pd_string}")
+                    
+                    # Use the same edge iteration pattern as the successful mediation detection
+                    for from_node_check, to_node_check, edge_data in current_graph.g.edges(data=True):
+                        if from_node_check == pd_string:
+                            print(f"🔍 ALT ACCESS: Found edge {pd_string} -> {to_node_check}, type: {edge_data.get('type')}")
+                            if edge_data.get('type') == 'REQUEST':
+                                # Check if this neighbor holds the resource and is not being removed
+                                neighbor = to_node_check
+                                print(f"🔍 ALT ACCESS: Checking if REQUEST target {neighbor} holds {to_node} (neighbor != from_node: {neighbor != from_node})")
+                                if neighbor != from_node:
+                                    # Check if neighbor has HOLD edge to the resource
+                                    for from_check2, to_check2, edge_data2 in current_graph.g.edges(data=True):
+                                        if from_check2 == neighbor and to_check2 == to_node and edge_data2.get('type') == 'HOLD':
+                                            has_alternative_access = True
+                                            print(f"🔥 ALT ACCESS FOUND: {pd_string} can access {to_node} via REQUEST to {neighbor} who HOLDs it")
+                                            break
+                                if has_alternative_access:
+                                    break
+                    
+                    # Also check if there are any mediator PDs available
+                    mediator_count = 0
+                    mediator_pds = []
+                    for node in current_graph.g.nodes():
+                        if node.startswith('PD_') and node != 'PD_1' and node != 'PD_2':
+                            # Check if this PD holds the resource
+                            if current_graph.g.has_edge(node, to_node):
+                                edge_data = current_graph.g[node][to_node]
+                                if edge_data.get('type') == 'HOLD':
+                                    mediator_count += 1
+                                    mediator_pds.append(node)
+                    
+                    if has_alternative_access:
+                        score += 100.0  # Very high priority for fixing this violation
+                        print(f"🔥 HIGH PRIORITY: Removing direct hold that violates indirect access constraint for {pd_string} (has alternative access)")
+                    elif mediator_count >= 2:  # If we have enough mediators, encourage removal
+                        score += 80.0
+                        print(f"🔥 PRIORITY: Removing direct hold for {pd_string} - {mediator_count} mediators available")
+                    else:
+                        # Slightly discourage but don't prevent if mediation infrastructure exists
+                        if mediator_count > 0:
+                            score += 20.0
+                            print(f"⚠️  CAUTION: Removing {pd_string}'s hold - limited mediators ({mediator_count} available)")
+                        else:
+                            score -= 50.0
+                            print(f"⚠️  CAUTION: Removing {pd_string}'s hold would leave it without access (no mediators)")
+    
     # Check if operation creates or improves mediation patterns
-    if operation_name == "add_request_edge":
-        # Check if this REQUEST edge enables access to resources that PDs need
-        from_pd = params.get('from_node', params.get('from_pd', ''))
-        to_pd = params.get('to_node', params.get('to_pd', ''))
+    elif operation_name == "add_request_edge":
+        # Extract parameters from the nested structure
+        param_values = params.get('param_values', {})
+        from_pd = param_values.get('from_pd', '')
+        to_pd = param_values.get('to_pd', '')
         
         if from_pd and to_pd:
             # Check if the target PD has resources that the source PD needs
@@ -392,13 +714,44 @@ def score_indirect_access_enablement(operation_name, params, constraints, curren
                         # Check if to_pd has access to required_resource
                         if new_graph.g.has_edge(to_pd, required_resource):
                             edge_data = new_graph.g[to_pd][required_resource]
-                            if edge_data.get('type') == 'HOLD':
-                                score += 18.0  # High priority for enabling indirect access
+                            # Handle nested edge data structure
+                            if isinstance(edge_data, dict):
+                                for edge_instance in edge_data.values():
+                                    if isinstance(edge_instance, dict) and edge_instance.get('type') == 'HOLD':
+                                        score += 18.0  # High priority for enabling indirect access
+                                        break
+                                
+                elif constraint.constraint_type == "requires_indirect_access":
+                    if from_pd == f"PD_{constraint.pd_id}":
+                        required_resource = constraint.resource_info
+                        
+                        # Debug output to see what's happening
+                        print(f"🔥 CHECKING MEDIATION: {from_pd} needs {required_resource}, checking if {to_pd} holds it")
+                        
+                        # Check if to_pd has access to required_resource
+                        if current_graph.g.has_edge(to_pd, required_resource):
+                            edge_data = current_graph.g[to_pd][required_resource]
+                            # Handle NetworkX AtlasView edge data structure
+                            found_hold = False
+                            try:
+                                for edge_instance in edge_data.values():
+                                    if isinstance(edge_instance, dict) and edge_instance.get('type') == 'HOLD':
+                                        print(f"🔥 MEDIATION COMPLETION: {from_pd} -> {to_pd} -> {required_resource}")
+                                        score += 50.0  # Maximum priority for completing mediation chain
+                                        found_hold = True
+                                        break
+                                if not found_hold:
+                                    print(f"🔥 MEDIATION FAIL: {to_pd} has edge to {required_resource} but not HOLD")
+                            except Exception as e:
+                                print(f"🔥 MEDIATION FAIL: Error processing edge data: {e}")
+                        else:
+                            print(f"🔥 MEDIATION FAIL: {to_pd} has no edge to {required_resource}")
     
     elif operation_name == "add_hold_edge":
         # Check if this creates a resource that can be accessed indirectly
-        pd_node = params.get('from_node', params.get('pd', ''))
-        resource_node = params.get('to_node', params.get('resource', ''))
+        param_values = params.get('param_values', {})
+        pd_node = param_values.get('from_node', param_values.get('pd', ''))
+        resource_node = param_values.get('to_node', param_values.get('resource', ''))
         
         if pd_node and resource_node:
             # Check if other PDs need this resource and could access it through this PD
@@ -410,6 +763,25 @@ def score_indirect_access_enablement(operation_name, params, constraints, curren
                         
                         if constrained_pd != pd_node and access_type in ['indirect', 'direct_or_indirect']:
                             score += 10.0  # Medium priority for creating accessible resources
+                            
+                # CRITICAL: Reward creating mediator PDs that hold required resources
+                elif constraint.constraint_type == "requires_indirect_access":
+                    if constraint.resource_info == resource_node:
+                        constrained_pd = f"PD_{constraint.pd_id}"
+                        
+                        # If this creates a potential mediator (non-constrained PD holding the resource)
+                        if constrained_pd != pd_node:
+                            print(f"🔥 MEDIATOR CREATION: {pd_node} holding {resource_node} for {constrained_pd}")
+                            score += 75.0  # Very high priority for creating mediation opportunities
+                            
+    elif operation_name == "add_pd":
+        # Reward creating new PDs that can potentially become mediators
+        for constraint in constraints:
+            if constraint.constraint_type == "requires_indirect_access":
+                # Creating a new PD opens up mediation opportunities
+                score += 25.0  # Medium priority for creating potential mediators
+                print(f"🔥 POTENTIAL MEDIATOR: New PD created for mediation opportunities")
+                break
     
     return score
 
@@ -473,22 +845,54 @@ def check_unsatisfiable_state(new_graph, constraints):
 
 def enables_mediation_pattern(params, constraint, current_graph):
     """Check if REQUEST edge enables mediation pattern for constraint"""
-    from_pd = params.get('from_node', params.get('from_pd', ''))
-    to_pd = params.get('to_node', params.get('to_pd', ''))
-    
-    if from_pd and to_pd:
-        constraint_pd = f"PD_{constraint.pd_id}"
-        required_resource = constraint.resource_info
+    try:
+        # Extract parameters properly
+        param_values = params.get('param_values', {})
+        from_pd = param_values.get('from_pd', '')
+        to_pd = param_values.get('to_pd', '')
         
-        # Check if this creates: constraint_pd -> REQUEST -> to_pd -> HOLD -> required_resource
-        if from_pd == constraint_pd:
-            # Check if to_pd has access to required_resource
-            if current_graph.g.has_edge(to_pd, required_resource):
-                edge_data = current_graph.g[to_pd][required_resource]
-                if edge_data.get('type') == 'HOLD':
+        print(f"🔍 enables_mediation_pattern called: from_pd={from_pd}, to_pd={to_pd}")
+        
+        if from_pd and to_pd:
+            constraint_pd = f"PD_{constraint.pd_id}"
+            required_resource = constraint.resource_info
+            
+            print(f"🔍 Checking mediation: constraint_pd={constraint_pd}, required_resource={required_resource}")
+            
+            # Check if this creates: constraint_pd -> REQUEST -> to_pd -> HOLD -> required_resource
+            if from_pd == constraint_pd:
+                print(f"🔍 FROM PD matches constraint PD, checking if {to_pd} holds {required_resource}")
+                
+                # Check if to_pd has HOLD edge to required_resource
+                found_hold = False
+                for from_node, to_node, edge_data in current_graph.g.edges(data=True):
+                    if from_node == to_pd and to_node == required_resource:
+                        print(f"🔍 Found edge from {from_node} to {to_node}: {edge_data}")
+                        if edge_data.get('type') == 'HOLD':
+                            print(f"🔥 MEDIATION PATTERN DETECTED: {from_pd} -> {to_pd} -> {required_resource}")
+                            found_hold = True
+                            break
+                    if found_hold:
+                        break
+                
+                if not found_hold:
+                    print(f"🔍 No HOLD edge found from {to_pd} to {required_resource}")
+                    # Check if this PD could be a mediator (even if it doesn't have the HOLD edge yet)
+                    # This enables forward-looking mediation planning
+                    if to_pd.startswith('PD_') and to_pd != constraint_pd:
+                        print(f"🔥 POTENTIAL MEDIATOR DETECTED: {to_pd} could mediate for {constraint_pd}")
+                        return True  # Give credit for potential mediation
+                    return False
+                else:
+                    print(f"🔥 DIRECT MEDIATION PATTERN DETECTED: {from_pd} -> {to_pd} -> {required_resource}")
                     return True
-    
-    return False
+            else:
+                print(f"🔍 FROM PD {from_pd} != constraint PD {constraint_pd}")
+        
+        return False
+    except Exception as e:
+        print(f"🔍 Exception in enables_mediation_pattern: {e}")
+        return False
 
 
 def creates_potential_mediator(params, constraint, current_graph):
@@ -609,6 +1013,36 @@ def count_constraint_violations(graph, constraints):
             
             if not has_access:
                 violations += 1
+                
+        elif constraint.constraint_type == "requires_indirect_access":
+            pd_node = f"PD_{constraint.pd_id}"
+            resource_node = constraint.resource_info
+            
+            # Check if PD has direct access (should not have direct access)
+            has_direct_access = False
+            if graph.g.has_edge(pd_node, resource_node):
+                edge_data = graph.g[pd_node][resource_node]
+                if edge_data.get('type') == 'HOLD':
+                    has_direct_access = True
+            
+            # Check for indirect access through REQUEST edges
+            has_indirect_access = False
+            for neighbor in graph.g.neighbors(pd_node):
+                if graph.g.has_edge(pd_node, neighbor):
+                    edge_data = graph.g[pd_node][neighbor]
+                    if edge_data.get('type') == 'REQUEST':
+                        # Check if neighbor has access to resource
+                        if graph.g.has_edge(neighbor, resource_node):
+                            neighbor_edge = graph.g[neighbor][resource_node]
+                            if neighbor_edge.get('type') == 'HOLD':
+                                has_indirect_access = True
+                                break
+            
+            # Count as violation if: has direct access OR lacks any access
+            if has_direct_access:
+                violations += 1  # Direct access when should be indirect
+            elif not has_indirect_access:
+                violations += 1  # No access at all
     
     return violations
 

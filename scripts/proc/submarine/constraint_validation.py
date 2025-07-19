@@ -165,8 +165,7 @@ def validate_requires_indirect_access(graph, constraint):
     # First, ensure PD does NOT have direct access
     has_direct_access = False
     for from_node, to_node, edge_data in graph.g.edges(data=True):
-        if (from_node == pd_string and to_node == target_resource and 
-            edge_data.get('type') == 'HOLD'):
+        if from_node == pd_string and to_node == target_resource and edge_data.get('type') == 'HOLD':
             has_direct_access = True
             break
     
@@ -174,7 +173,7 @@ def validate_requires_indirect_access(graph, constraint):
         return False, f"{pd_string} has direct access to {target_resource} (should be indirect)"
     
     # Now check for indirect access paths
-    # Path 1: PD -> REQUEST -> Mediator PD -> HOLD -> Resource
+    # Path: PD -> REQUEST -> Mediator PD -> HOLD -> Resource
     has_indirect_access = False
     
     # Find all PDs that this PD has REQUEST edges to
@@ -186,8 +185,7 @@ def validate_requires_indirect_access(graph, constraint):
     # Check if any of those PDs hold the target resource
     for mediator_pd in requested_pds:
         for from_node, to_node, edge_data in graph.g.edges(data=True):
-            if (from_node == mediator_pd and to_node == target_resource and 
-                edge_data.get('type') == 'HOLD'):
+            if from_node == mediator_pd and to_node == target_resource and edge_data.get('type') == 'HOLD':
                 has_indirect_access = True
                 break
         if has_indirect_access:

@@ -836,6 +836,27 @@ def build_basic_shared_resource_graph():
     return graph
 
 
+def build_mediator_test_graph():
+    """Build a minimal graph for mediator testing - 2 PDs sharing 1 file (no FILE_1_2)"""
+    graph = ModelGraph()
+
+    # Add 2 PDs
+    pd1_id = NodeTransformations.add_pd_node(graph, "PD_1")
+    pd2_id = NodeTransformations.add_pd_node(graph, "PD_2")
+
+    # Add 1 resource space for files
+    space_id = NodeTransformations.add_resource_space(graph, ResourceType.FILE)
+
+    # Add shared file resource (FILE_1_1) - this is the only file resource
+    file1_id = NodeTransformations.add_file_resource(graph, space_id, FileType.TEMP, "/tmp/shared_buffer.tmp", 2048)
+
+    # Both PDs hold the shared file (this creates the sharing to be reduced)
+    EdgeTransformations.add_hold_edge(graph, {Permission.R, Permission.W}, pd1_id, ResourceType.FILE, space_id, file1_id)
+    EdgeTransformations.add_hold_edge(graph, {Permission.R, Permission.W}, pd2_id, ResourceType.FILE, space_id, file1_id)
+
+    return graph
+
+
 def build_reduce_isolation_graph():
     """Build a graph with mediated access: PD1 -> PD3 -> R0, PD2 -> PD4 -> R0"""
     graph = ModelGraph()
@@ -895,15 +916,24 @@ SCENARIOS = {
         name="Mediator Test Primitive",
         description="Test if primitives can achieve mediation pattern",
         goals=[
-            Goal("RSI", 0.8, "minimize", "PD_1,PD_2")   # Same goal as mediator_test
+            Goal("RSI", 0.0, "minimize", "PD_1,PD_2")   # Complete isolation required
         ],
         constraints=[
-            Constraint("requires_file_access", 1, "FILE", properties={"file_type": "any", "min_size_kb": 1}),
-            Constraint("requires_file_access", 2, "FILE", properties={"file_type": "any", "min_size_kb": 1}),
+            # Both PDs need indirect access to the shared resource FILE_1_1
+            Constraint("requires_indirect_access", 1, "FILE_1_1", properties={"through_pd": True}),
+            Constraint("requires_indirect_access", 2, "FILE_1_1", properties={"through_pd": True}),
+            # The shared resource must exist
+            Constraint("requires_resource_exists", None, "FILE_1_1", properties={"mandatory": True}),
+            # Prohibit direct access to force mediation
+            Constraint("prohibit_direct_hold", 1, "FILE_1_1"),
+            Constraint("prohibit_direct_hold", 2, "FILE_1_1"),
+            # Basic file access requirements
+            # Constraint("requires_file_access", 1, "FILE", properties={"file_type": "any", "min_size_kb": 1}),
+            # Constraint("requires_file_access", 2, "FILE", properties={"file_type": "any", "min_size_kb": 1}),
         ],
         allowed_primitives=PRIMITIVES,  # All primitives allowed
         allowed_multistep=[],  # No multi-step transitions
-        graph_builder=build_basic_shared_resource_graph
+        graph_builder=build_mediator_test_graph
     ),
 
     "reduce_isolation": Scenario(
