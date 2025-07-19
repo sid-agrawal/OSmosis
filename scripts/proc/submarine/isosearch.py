@@ -2735,6 +2735,11 @@ Examples:
         help='Use goal-driven scoring system (default: enabled)'
     )
 
+    parser.add_argument(
+        '--output', '-o',
+        type=str,
+        help='Write output to specified file instead of stdout'
+    )
 
     parser.add_argument(
         '--version',
@@ -2790,9 +2795,24 @@ if __name__ == "__main__":
     # Make args globally available for pattern-aware scoring
     globals()['args'] = args
 
+    # Set up output redirection if --output is specified
+    import sys
+    original_stdout = sys.stdout
+    output_file = None
+    if args.output:
+        try:
+            output_file = open(args.output, 'w')
+            sys.stdout = output_file
+        except Exception as e:
+            print(f"❌ Error opening output file '{args.output}': {e}", file=original_stdout)
+            exit(1)
+
     # Handle list scenarios option
     if args.list:
         print_detailed_scenario_info()
+        if output_file:
+            output_file.close()
+            sys.stdout = original_stdout
         exit(0)
 
     # Determine which scenarios to run
@@ -2837,12 +2857,24 @@ if __name__ == "__main__":
 
     except KeyboardInterrupt:
         print(f"\n\n⚠️  Exploration interrupted by user")
+        if output_file:
+            output_file.close()
+            sys.stdout = original_stdout
         exit(1)
     except Exception as e:
         print(f"\n❌ Error during exploration: {e}")
         if args.verbose:
             import traceback
             traceback.print_exc()
+        if output_file:
+            output_file.close()
+            sys.stdout = original_stdout
         exit(1)
 
     print(f"\n✅ Exploration complete!")
+    
+    # Clean up output file if used
+    if output_file:
+        output_file.close()
+        sys.stdout = original_stdout
+        print(f"✅ Output written to: {args.output}", file=original_stdout)
