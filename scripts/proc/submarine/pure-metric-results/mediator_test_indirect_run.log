@@ -1,0 +1,1321 @@
+🔍 Verbose mode enabled - detailed exploration tracking
+📊 Using 8 maximum iterations per scenario
+
+🎯 Running scenario: mediator_test_indirect
+✓ Validated 7 constraints in scenario 'Mediator Test Indirect Access'
+🎯 Running scenario: Mediator Test Indirect Access
+   Description: Test if requiring indirect access forces mediation discovery
+   Goals (1): ['Goal(minimize RSI[PD_1,PD_2] to 0.8)']
+   Constraints (7): ["Constraint(requires_file_access for PD_1: FILE, {'file_type': 'any', 'min_size_kb': 1})", "Constraint(requires_file_access for PD_2: FILE, {'file_type': 'any', 'min_size_kb': 1})", "Constraint(prohibit_direct_hold for PD_1: FILE_1_3, {'constraint_type': 'negative'})", "Constraint(prohibit_direct_hold for PD_2: FILE_1_3, {'constraint_type': 'negative'})", "Constraint(requires_resource_access for PD_1: FILE_1_3, {'access_type': 'direct_or_indirect'})", "Constraint(requires_resource_access for PD_2: FILE_1_3, {'access_type': 'direct_or_indirect'})", "Constraint(requires_resource_exists for PD_None: FILE_1_3, {'mandatory': True})"]
+   Transitions (12): ['Transition(add_pd: Create new Protection Domain)', 'Transition(remove_pd: Remove existing Protection Domain)', 'Transition(add_file_resource: Create new FILE resource)', 'Transition(remove_file_resource: Remove FILE resource)', 'Transition(add_resource_space: Create new resource space)', 'Transition(remove_resource_space: Remove resource space)', 'Transition(add_hold_edge: Create PD → Resource relationship)', 'Transition(remove_hold_edge: Remove PD → Resource relationship)', 'Transition(add_request_edge: Create PD → PD authority relationship)', 'Transition(remove_request_edge: Remove PD → PD authority relationship)', 'Transition(add_subset_edge: Create Resource → ResourceSpace relationship)', 'Transition(remove_subset_edge: Remove Resource → ResourceSpace relationship)']
+   Starting Graph: 6 nodes, 7 edges
+
+=== Graph Details ===
+Node: PD_1 -> {'type': 'PD', 'data': 'user_process', 'extra': ''}
+Node: PD_2 -> {'type': 'PD', 'data': 'database_server', 'extra': ''}
+Node: FILE_SPACE_1 -> {'type': 'RESOURCE_SPACE', 'data': 'FILE', 'extra': ''}
+Node: FILE_1_1 -> {'type': 'RESOURCE', 'data': 'FILE', 'extra': '{"path": "/etc/user.conf", "file_type": "CONFIG", "size_bytes": "4096", "permissions": "rw-"}'}
+Node: FILE_1_2 -> {'type': 'RESOURCE', 'data': 'FILE', 'extra': '{"path": "/var/db/main.db", "file_type": "DATABASE", "size_bytes": "8192", "permissions": "rw-"}'}
+Node: FILE_1_3 -> {'type': 'RESOURCE', 'data': 'FILE', 'extra': '{"path": "/tmp/shared_buffer.tmp", "file_type": "TEMP", "size_bytes": "2048", "permissions": "rw-"}'}
+
+=== Ready for IsoSearch! ===
+
+=== Exploring Mediator Test Indirect Access ===
+Starting exploration with 1 goals, 7 constraints, 12 transitions
+
+📊 Initial graph:
+        # Graph structure:
+        # PD_1 --HOLD--> FILE_1_1 -> FILE_SPACE_1
+        # PD_1 --HOLD--> FILE_1_3 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_2 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_3 -> FILE_SPACE_1
+        #
+        # FILE_1_3 shared by: PD_1, PD_2
+
+Iteration 1/10
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.3333333333333333}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.3333333333333333, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.3333333333333333, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.3333333333333333}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.3333333333333333}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.3333333333333333}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.3333333333333333}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.3333333333333333}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.3333333333333333}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.3333333333333333}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.3333333333333333}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.3333333333333333}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.3333333333333333}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.3333333333333333}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.3333333333333333}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.3333333333333333}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.3333333333333333}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_3 HOLD edge -> score: 0.100
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.3333333333333333}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.3333333333333333}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_3 HOLD edge -> score: 0.100
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.3333333333333333}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.3333333333333333}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.3333333333333333}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.3333333333333333}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.3333333333333333}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.3333333333333333}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.3333333333333333}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.3333333333333333}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.3333333333333333}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.3333333333333333}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  🎲 Exploration: selecting candidate #1 instead of best
+  Trying best transition: primitive
+    Target: connect PD_1 to FILE_1_2
+    Predicted improvement: 3.433
+    Considered 14 other option(s):
+      1. primitive: connect PD_2 to FILE_1_1 (improvement: 3.433)
+      2. primitive: add new protection domain to help resolve 2 constraint violation(s) (improvement: 0.100)
+      3. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.100)
+      4. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.100)
+      5. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.100)
+      6. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.100)
+      7. primitive: remove FILE_1_3 (holders: 2) (improvement: 0.100)
+      8. primitive: remove PD_1 -> FILE_1_3 HOLD edge (improvement: 0.100)
+      9. primitive: remove PD_2 -> FILE_1_3 HOLD edge (improvement: 0.100)
+      10. primitive: enable indirect access: PD_1 -> PD_2 (improvement: 0.100)
+      ... and 4 more
+    ⚠️  Applied add_hold_edge with constraint violations: PD_1 has prohibited direct hold on FILE_1_3; PD_2 has prohibited direct hold on FILE_1_3
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    All 1 goals met!
+    All 1 goal(s) met!
+  ✅ Mechanism saved! Total mechanisms found: 1
+
+📊 Graph after iteration 1:
+        # Graph structure:
+        # PD_1 --HOLD--> FILE_1_1 -> FILE_SPACE_1
+        # PD_1 --HOLD--> FILE_1_3 -> FILE_SPACE_1
+        # PD_1 --HOLD--> FILE_1_2 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_2 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_3 -> FILE_SPACE_1
+        #
+        # FILE_1_3 shared by: PD_1, PD_2
+        # FILE_1_2 shared by: PD_1, PD_2
+
+
+Iteration 2/10
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 3.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_3 HOLD edge -> score: 0.100
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_3 HOLD edge -> score: 0.100
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 3.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 3.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  🚫 Filtered out 1 'add_hold_edge' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 2 constraint violation(s)
+    Predicted improvement: 0.100
+    Considered 13 other option(s):
+      1. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.100)
+      2. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.100)
+      3. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.100)
+      4. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.100)
+      5. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.100)
+      6. primitive: remove FILE_1_3 (holders: 2) (improvement: 0.100)
+      7. primitive: remove PD_1 -> FILE_1_3 HOLD edge (improvement: 0.100)
+      8. primitive: remove PD_2 -> FILE_1_3 HOLD edge (improvement: 0.100)
+      9. primitive: enable indirect access: PD_1 -> PD_2 (improvement: 0.100)
+      10. primitive: enable indirect access: PD_2 -> PD_1 (improvement: 0.100)
+      ... and 3 more
+    ⚠️  Applied add_pd with constraint violations: PD_1 has prohibited direct hold on FILE_1_3; PD_2 has prohibited direct hold on FILE_1_3
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    All 1 goals met!
+    All 1 goal(s) met!
+  ✅ Mechanism saved! Total mechanisms found: 2
+
+📊 Graph after iteration 2:
+        # Graph structure:
+        # PD_1 --HOLD--> FILE_1_1 -> FILE_SPACE_1
+        # PD_1 --HOLD--> FILE_1_3 -> FILE_SPACE_1
+        # PD_1 --HOLD--> FILE_1_2 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_2 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_3 -> FILE_SPACE_1
+        # PD_3
+        #
+        # FILE_1_3 shared by: PD_1, PD_2
+        # FILE_1_2 shared by: PD_1, PD_2
+
+
+Iteration 3/10
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 1.25, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.3333333333333333, 'PD_2,PD_3': 0.0}, ASR: 2.0, TCB: {'PD_1': ['PD_3', 'PD_2'], 'PD_2': ['PD_1'], 'PD_3': ['PD_1']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.3333333333333333, 'PD_2,PD_3': 0.5}, ASR: 2.0, TCB: {'PD_1': ['PD_2', 'PD_3'], 'PD_2': ['PD_1', 'PD_3'], 'PD_3': ['PD_1', 'PD_2']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.3333333333333333, 'PD_2,PD_3': 0.5}, ASR: 2.0, TCB: {'PD_1': ['PD_2', 'PD_3'], 'PD_2': ['PD_1', 'PD_3'], 'PD_3': ['PD_1', 'PD_2']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_3 HOLD edge -> score: 0.100
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_3 HOLD edge -> score: 0.100
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 2.0, TCB: {'PD_1': ['PD_3', 'PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_3', 'PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': ['PD_1']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': ['PD_2']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  🚫 Filtered out 1 'add_pd' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: remove empty PD_3
+    Predicted improvement: 0.100
+    Considered 21 other option(s):
+      1. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.100)
+      2. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.100)
+      3. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.100)
+      4. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.100)
+      5. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.100)
+      6. primitive: remove FILE_1_3 (holders: 2) (improvement: 0.100)
+      7. primitive: connect PD_3 to FILE_1_1 (improvement: 0.100)
+      8. primitive: connect PD_3 to FILE_1_2 (improvement: 0.100)
+      9. primitive: connect PD_3 to FILE_1_3 (improvement: 0.100)
+      10. primitive: remove PD_1 -> FILE_1_3 HOLD edge (improvement: 0.100)
+      ... and 11 more
+    ⚠️  Applied remove_pd with constraint violations: PD_1 has prohibited direct hold on FILE_1_3; PD_2 has prohibited direct hold on FILE_1_3
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    All 1 goals met!
+    All 1 goal(s) met!
+  ✅ Mechanism saved! Total mechanisms found: 3
+
+📊 Graph after iteration 3:
+        # Graph structure:
+        # PD_1 --HOLD--> FILE_1_1 -> FILE_SPACE_1
+        # PD_1 --HOLD--> FILE_1_3 -> FILE_SPACE_1
+        # PD_1 --HOLD--> FILE_1_2 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_2 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_3 -> FILE_SPACE_1
+        #
+        # FILE_1_3 shared by: PD_1, PD_2
+        # FILE_1_2 shared by: PD_1, PD_2
+
+
+Iteration 4/10
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 3.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_3 HOLD edge -> score: 0.100
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_3 HOLD edge -> score: 0.100
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 3.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 3.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  🚫 Filtered out 0 'remove_pd' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 2 constraint violation(s)
+    Predicted improvement: 0.100
+    Considered 14 other option(s):
+      1. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.100)
+      2. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.100)
+      3. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.100)
+      4. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.100)
+      5. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.100)
+      6. primitive: remove FILE_1_3 (holders: 2) (improvement: 0.100)
+      7. primitive: remove PD_1 -> FILE_1_3 HOLD edge (improvement: 0.100)
+      8. primitive: remove PD_2 -> FILE_1_3 HOLD edge (improvement: 0.100)
+      9. primitive: enable indirect access: PD_1 -> PD_2 (improvement: 0.100)
+      10. primitive: enable indirect access: PD_2 -> PD_1 (improvement: 0.100)
+      ... and 4 more
+    ⚠️  Applied add_pd with constraint violations: PD_1 has prohibited direct hold on FILE_1_3; PD_2 has prohibited direct hold on FILE_1_3
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+    All 1 goals met!
+    All 1 goal(s) met!
+  ✅ Mechanism saved! Total mechanisms found: 4
+
+📊 Graph after iteration 4:
+        # Graph structure:
+        # PD_1 --HOLD--> FILE_1_1 -> FILE_SPACE_1
+        # PD_1 --HOLD--> FILE_1_3 -> FILE_SPACE_1
+        # PD_1 --HOLD--> FILE_1_2 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_2 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_3 -> FILE_SPACE_1
+        # PD_4
+        #
+        # FILE_1_3 shared by: PD_1, PD_2
+        # FILE_1_2 shared by: PD_1, PD_2
+
+
+Iteration 5/10
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.3333333333333333, 'PD_2,PD_4': 0.0}, ASR: 2.0, TCB: {'PD_1': ['PD_4', 'PD_2'], 'PD_2': ['PD_1'], 'PD_4': ['PD_1']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.3333333333333333, 'PD_2,PD_4': 0.5}, ASR: 2.0, TCB: {'PD_1': ['PD_2', 'PD_4'], 'PD_2': ['PD_1', 'PD_4'], 'PD_4': ['PD_1', 'PD_2']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.3333333333333333, 'PD_2,PD_4': 0.5}, ASR: 2.0, TCB: {'PD_1': ['PD_2', 'PD_4'], 'PD_2': ['PD_1', 'PD_4'], 'PD_4': ['PD_1', 'PD_2']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_3 HOLD edge -> score: 0.100
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_3 HOLD edge -> score: 0.100
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 2.0, TCB: {'PD_1': ['PD_4', 'PD_2'], 'PD_2': ['PD_1'], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_4', 'PD_1'], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_4': ['PD_1']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_4': ['PD_2']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_4': 0.0, 'PD_2,PD_4': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_4': inf, 'PD_2,PD_4': inf}
+  🚫 Filtered out 1 'add_pd' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: remove empty PD_4
+    Predicted improvement: 0.100
+    Considered 21 other option(s):
+      1. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.100)
+      2. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.100)
+      3. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.100)
+      4. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.100)
+      5. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.100)
+      6. primitive: remove FILE_1_3 (holders: 2) (improvement: 0.100)
+      7. primitive: connect PD_4 to FILE_1_1 (improvement: 0.100)
+      8. primitive: connect PD_4 to FILE_1_2 (improvement: 0.100)
+      9. primitive: connect PD_4 to FILE_1_3 (improvement: 0.100)
+      10. primitive: remove PD_1 -> FILE_1_3 HOLD edge (improvement: 0.100)
+      ... and 11 more
+    ⚠️  Applied remove_pd with constraint violations: PD_1 has prohibited direct hold on FILE_1_3; PD_2 has prohibited direct hold on FILE_1_3
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    All 1 goals met!
+    All 1 goal(s) met!
+  ✅ Mechanism saved! Total mechanisms found: 5
+
+📊 Graph after iteration 5:
+        # Graph structure:
+        # PD_1 --HOLD--> FILE_1_1 -> FILE_SPACE_1
+        # PD_1 --HOLD--> FILE_1_3 -> FILE_SPACE_1
+        # PD_1 --HOLD--> FILE_1_2 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_2 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_3 -> FILE_SPACE_1
+        #
+        # FILE_1_3 shared by: PD_1, PD_2
+        # FILE_1_2 shared by: PD_1, PD_2
+
+
+Iteration 6/10
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 3.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_3 HOLD edge -> score: 0.100
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_3 HOLD edge -> score: 0.100
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 3.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 3.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  🚫 Filtered out 0 'remove_pd' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 2 constraint violation(s)
+    Predicted improvement: 0.100
+    Considered 14 other option(s):
+      1. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.100)
+      2. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.100)
+      3. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.100)
+      4. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.100)
+      5. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.100)
+      6. primitive: remove FILE_1_3 (holders: 2) (improvement: 0.100)
+      7. primitive: remove PD_1 -> FILE_1_3 HOLD edge (improvement: 0.100)
+      8. primitive: remove PD_2 -> FILE_1_3 HOLD edge (improvement: 0.100)
+      9. primitive: enable indirect access: PD_1 -> PD_2 (improvement: 0.100)
+      10. primitive: enable indirect access: PD_2 -> PD_1 (improvement: 0.100)
+      ... and 4 more
+    ⚠️  Applied add_pd with constraint violations: PD_1 has prohibited direct hold on FILE_1_3; PD_2 has prohibited direct hold on FILE_1_3
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.0, 'PD_2,PD_5': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+    All 1 goals met!
+    All 1 goal(s) met!
+  ✅ Mechanism saved! Total mechanisms found: 6
+
+📊 Graph after iteration 6:
+        # Graph structure:
+        # PD_1 --HOLD--> FILE_1_1 -> FILE_SPACE_1
+        # PD_1 --HOLD--> FILE_1_3 -> FILE_SPACE_1
+        # PD_1 --HOLD--> FILE_1_2 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_2 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_3 -> FILE_SPACE_1
+        # PD_5
+        #
+        # FILE_1_3 shared by: PD_1, PD_2
+        # FILE_1_2 shared by: PD_1, PD_2
+
+
+Iteration 7/10
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.0, 'PD_2,PD_5': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_5': 0.0, 'PD_2,PD_4': 0.0, 'PD_5,PD_4': 0.0}, ASR: 1.25, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_5': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_1,PD_4': inf, 'PD_2,PD_5': inf, 'PD_2,PD_4': inf, 'PD_5,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.0, 'PD_2,PD_5': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.0, 'PD_2,PD_5': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.0, 'PD_2,PD_5': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.0, 'PD_2,PD_5': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.0, 'PD_2,PD_5': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.0, 'PD_2,PD_5': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.0, 'PD_2,PD_5': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.0, 'PD_2,PD_5': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.0, 'PD_2,PD_5': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.0, 'PD_2,PD_5': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.0, 'PD_2,PD_5': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.0, 'PD_2,PD_5': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.0, 'PD_2,PD_5': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.0, 'PD_2,PD_5': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.0, 'PD_2,PD_5': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_5': 0.0, 'PD_2,PD_5': 0.0}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.0, 'PD_2,PD_5': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.3333333333333333, 'PD_2,PD_5': 0.0}, ASR: 2.0, TCB: {'PD_1': ['PD_5', 'PD_2'], 'PD_2': ['PD_1'], 'PD_5': ['PD_1']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.0, 'PD_2,PD_5': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.3333333333333333, 'PD_2,PD_5': 0.5}, ASR: 2.0, TCB: {'PD_1': ['PD_2', 'PD_5'], 'PD_2': ['PD_1', 'PD_5'], 'PD_5': ['PD_1', 'PD_2']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.0, 'PD_2,PD_5': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.3333333333333333, 'PD_2,PD_5': 0.5}, ASR: 2.0, TCB: {'PD_1': ['PD_2', 'PD_5'], 'PD_2': ['PD_1', 'PD_5'], 'PD_5': ['PD_1', 'PD_2']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.0, 'PD_2,PD_5': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.0, 'PD_2,PD_5': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_3 HOLD edge -> score: 0.100
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.0, 'PD_2,PD_5': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.0, 'PD_2,PD_5': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_3 HOLD edge -> score: 0.100
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.0, 'PD_2,PD_5': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.0, 'PD_2,PD_5': 0.0}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.0, 'PD_2,PD_5': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.0, 'PD_2,PD_5': 0.0}, ASR: 2.0, TCB: {'PD_1': ['PD_5', 'PD_2'], 'PD_2': ['PD_1'], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.0, 'PD_2,PD_5': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.0, 'PD_2,PD_5': 0.0}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.0, 'PD_2,PD_5': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.0, 'PD_2,PD_5': 0.0}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_5', 'PD_1'], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.0, 'PD_2,PD_5': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.0, 'PD_2,PD_5': 0.0}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_5': ['PD_1']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.0, 'PD_2,PD_5': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.0, 'PD_2,PD_5': 0.0}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_5': ['PD_2']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.0, 'PD_2,PD_5': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.0, 'PD_2,PD_5': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.0, 'PD_2,PD_5': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.0, 'PD_2,PD_5': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.0, 'PD_2,PD_5': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_5': 0.0, 'PD_2,PD_5': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_5': inf, 'PD_2,PD_5': inf}
+  🚫 Filtered out 1 'add_pd' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: remove empty PD_5
+    Predicted improvement: 0.100
+    Considered 21 other option(s):
+      1. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.100)
+      2. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.100)
+      3. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.100)
+      4. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.100)
+      5. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.100)
+      6. primitive: remove FILE_1_3 (holders: 2) (improvement: 0.100)
+      7. primitive: connect PD_5 to FILE_1_1 (improvement: 0.100)
+      8. primitive: connect PD_5 to FILE_1_2 (improvement: 0.100)
+      9. primitive: connect PD_5 to FILE_1_3 (improvement: 0.100)
+      10. primitive: remove PD_1 -> FILE_1_3 HOLD edge (improvement: 0.100)
+      ... and 11 more
+    ⚠️  Applied remove_pd with constraint violations: PD_1 has prohibited direct hold on FILE_1_3; PD_2 has prohibited direct hold on FILE_1_3
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    All 1 goals met!
+    All 1 goal(s) met!
+  ✅ Mechanism saved! Total mechanisms found: 7
+
+📊 Graph after iteration 7:
+        # Graph structure:
+        # PD_1 --HOLD--> FILE_1_1 -> FILE_SPACE_1
+        # PD_1 --HOLD--> FILE_1_3 -> FILE_SPACE_1
+        # PD_1 --HOLD--> FILE_1_2 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_2 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_3 -> FILE_SPACE_1
+        #
+        # FILE_1_3 shared by: PD_1, PD_2
+        # FILE_1_2 shared by: PD_1, PD_2
+
+
+Iteration 8/10
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 3.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_3 HOLD edge -> score: 0.100
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_3 HOLD edge -> score: 0.100
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 3.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 3.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  🚫 Filtered out 0 'remove_pd' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 2 constraint violation(s)
+    Predicted improvement: 0.100
+    Considered 14 other option(s):
+      1. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.100)
+      2. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.100)
+      3. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.100)
+      4. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.100)
+      5. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.100)
+      6. primitive: remove FILE_1_3 (holders: 2) (improvement: 0.100)
+      7. primitive: remove PD_1 -> FILE_1_3 HOLD edge (improvement: 0.100)
+      8. primitive: remove PD_2 -> FILE_1_3 HOLD edge (improvement: 0.100)
+      9. primitive: enable indirect access: PD_1 -> PD_2 (improvement: 0.100)
+      10. primitive: enable indirect access: PD_2 -> PD_1 (improvement: 0.100)
+      ... and 4 more
+    ⚠️  Applied add_pd with constraint violations: PD_1 has prohibited direct hold on FILE_1_3; PD_2 has prohibited direct hold on FILE_1_3
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.0, 'PD_2,PD_6': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+    All 1 goals met!
+    All 1 goal(s) met!
+  ✅ Mechanism saved! Total mechanisms found: 8
+
+📊 Graph after iteration 8:
+        # Graph structure:
+        # PD_1 --HOLD--> FILE_1_1 -> FILE_SPACE_1
+        # PD_1 --HOLD--> FILE_1_3 -> FILE_SPACE_1
+        # PD_1 --HOLD--> FILE_1_2 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_2 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_3 -> FILE_SPACE_1
+        # PD_6
+        #
+        # FILE_1_3 shared by: PD_1, PD_2
+        # FILE_1_2 shared by: PD_1, PD_2
+
+
+Iteration 9/10
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.0, 'PD_2,PD_6': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_6': 0.0, 'PD_2,PD_4': 0.0, 'PD_6,PD_4': 0.0}, ASR: 1.25, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_6': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_1,PD_4': inf, 'PD_2,PD_6': inf, 'PD_2,PD_4': inf, 'PD_6,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.0, 'PD_2,PD_6': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.0, 'PD_2,PD_6': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.0, 'PD_2,PD_6': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.0, 'PD_2,PD_6': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.0, 'PD_2,PD_6': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.0, 'PD_2,PD_6': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.0, 'PD_2,PD_6': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.0, 'PD_2,PD_6': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.0, 'PD_2,PD_6': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.0, 'PD_2,PD_6': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.0, 'PD_2,PD_6': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.0, 'PD_2,PD_6': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.0, 'PD_2,PD_6': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.0, 'PD_2,PD_6': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.0, 'PD_2,PD_6': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_6': 0.0, 'PD_2,PD_6': 0.0}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.0, 'PD_2,PD_6': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.3333333333333333, 'PD_2,PD_6': 0.0}, ASR: 2.0, TCB: {'PD_1': ['PD_6', 'PD_2'], 'PD_2': ['PD_1'], 'PD_6': ['PD_1']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.0, 'PD_2,PD_6': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.3333333333333333, 'PD_2,PD_6': 0.5}, ASR: 2.0, TCB: {'PD_1': ['PD_2', 'PD_6'], 'PD_2': ['PD_1', 'PD_6'], 'PD_6': ['PD_1', 'PD_2']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.0, 'PD_2,PD_6': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.3333333333333333, 'PD_2,PD_6': 0.5}, ASR: 2.0, TCB: {'PD_1': ['PD_2', 'PD_6'], 'PD_2': ['PD_1', 'PD_6'], 'PD_6': ['PD_1', 'PD_2']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.0, 'PD_2,PD_6': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.0, 'PD_2,PD_6': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_3 HOLD edge -> score: 0.100
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.0, 'PD_2,PD_6': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.0, 'PD_2,PD_6': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_3 HOLD edge -> score: 0.100
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.0, 'PD_2,PD_6': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.0, 'PD_2,PD_6': 0.0}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.0, 'PD_2,PD_6': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.0, 'PD_2,PD_6': 0.0}, ASR: 2.0, TCB: {'PD_1': ['PD_6', 'PD_2'], 'PD_2': ['PD_1'], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.0, 'PD_2,PD_6': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.0, 'PD_2,PD_6': 0.0}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.0, 'PD_2,PD_6': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.0, 'PD_2,PD_6': 0.0}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_6', 'PD_1'], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.0, 'PD_2,PD_6': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.0, 'PD_2,PD_6': 0.0}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_6': ['PD_1']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.0, 'PD_2,PD_6': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.0, 'PD_2,PD_6': 0.0}, ASR: 2.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_6': ['PD_2']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.0, 'PD_2,PD_6': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.0, 'PD_2,PD_6': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.0, 'PD_2,PD_6': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.0, 'PD_2,PD_6': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.0, 'PD_2,PD_6': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_6': 0.0, 'PD_2,PD_6': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_6': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_6': inf, 'PD_2,PD_6': inf}
+  🚫 Filtered out 1 'add_pd' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: remove empty PD_6
+    Predicted improvement: 0.100
+    Considered 21 other option(s):
+      1. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.100)
+      2. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.100)
+      3. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.100)
+      4. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.100)
+      5. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.100)
+      6. primitive: remove FILE_1_3 (holders: 2) (improvement: 0.100)
+      7. primitive: connect PD_6 to FILE_1_1 (improvement: 0.100)
+      8. primitive: connect PD_6 to FILE_1_2 (improvement: 0.100)
+      9. primitive: connect PD_6 to FILE_1_3 (improvement: 0.100)
+      10. primitive: remove PD_1 -> FILE_1_3 HOLD edge (improvement: 0.100)
+      ... and 11 more
+    ⚠️  Applied remove_pd with constraint violations: PD_1 has prohibited direct hold on FILE_1_3; PD_2 has prohibited direct hold on FILE_1_3
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    All 1 goals met!
+    All 1 goal(s) met!
+  ✅ Mechanism saved! Total mechanisms found: 9
+
+📊 Graph after iteration 9:
+        # Graph structure:
+        # PD_1 --HOLD--> FILE_1_1 -> FILE_SPACE_1
+        # PD_1 --HOLD--> FILE_1_3 -> FILE_SPACE_1
+        # PD_1 --HOLD--> FILE_1_2 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_2 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_3 -> FILE_SPACE_1
+        #
+        # FILE_1_3 shared by: PD_1, PD_2
+        # FILE_1_2 shared by: PD_1, PD_2
+
+
+Iteration 10/10
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 3.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_3 HOLD edge -> score: 0.100
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_3 HOLD edge -> score: 0.100
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 3.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 3.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666}, ASR: 2.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  🚫 Filtered out 0 'remove_pd' candidates (avoiding repetition)
+  Trying best transition: primitive
+    Target: add new protection domain to help resolve 2 constraint violation(s)
+    Predicted improvement: 0.100
+    Considered 14 other option(s):
+      1. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.100)
+      2. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.100)
+      3. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.100)
+      4. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.100)
+      5. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.100)
+      6. primitive: remove FILE_1_3 (holders: 2) (improvement: 0.100)
+      7. primitive: remove PD_1 -> FILE_1_3 HOLD edge (improvement: 0.100)
+      8. primitive: remove PD_2 -> FILE_1_3 HOLD edge (improvement: 0.100)
+      9. primitive: enable indirect access: PD_1 -> PD_2 (improvement: 0.100)
+      10. primitive: enable indirect access: PD_2 -> PD_1 (improvement: 0.100)
+      ... and 4 more
+    ⚠️  Applied add_pd with constraint violations: PD_1 has prohibited direct hold on FILE_1_3; PD_2 has prohibited direct hold on FILE_1_3
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.6666666666666666, 'PD_1,PD_7': 0.0, 'PD_2,PD_7': 0.0}, ASR: 1.6666666666666667, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_7': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_7': inf, 'PD_2,PD_7': inf}
+    All 1 goals met!
+    All 1 goal(s) met!
+  ✅ Mechanism saved! Total mechanisms found: 10
+
+📊 Graph after iteration 10:
+        # Graph structure:
+        # PD_1 --HOLD--> FILE_1_1 -> FILE_SPACE_1
+        # PD_1 --HOLD--> FILE_1_3 -> FILE_SPACE_1
+        # PD_1 --HOLD--> FILE_1_2 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_2 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_3 -> FILE_SPACE_1
+        # PD_7
+        #
+        # FILE_1_3 shared by: PD_1, PD_2
+        # FILE_1_2 shared by: PD_1, PD_2
+
+
+Exploration complete!
+
+🏁 Final graph:
+        # Graph structure:
+        # PD_1 --HOLD--> FILE_1_1 -> FILE_SPACE_1
+        # PD_1 --HOLD--> FILE_1_3 -> FILE_SPACE_1
+        # PD_1 --HOLD--> FILE_1_2 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_2 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_3 -> FILE_SPACE_1
+        # PD_7
+        #
+        # FILE_1_3 shared by: PD_1, PD_2
+        # FILE_1_2 shared by: PD_1, PD_2
+
+
+============================================================
+📊 EXPLORATION DECISION SUMMARY
+============================================================
+Total iterations completed: 10
+Total transformation candidates considered: 182
+Total transformation candidates discarded: 167
+Mechanisms discovered: 10
+Success rate: 100.0%
+
+🔧 Transformation Types:
+   Tried: primitive
+   Available but never selected: None
+
+📋 Per-Iteration Decision Breakdown:
+
+  Iteration 1:
+    ✅ SUCCESS Selected: primitive
+      Target: connect PD_1 to FILE_1_2
+      Predicted improvement: 3.433
+      Result: 🎯 GOALS MET
+    🗂️  Discarded 14 alternatives:
+      1. primitive: connect PD_2 to FILE_1_1 (improvement: 3.433)
+      2. primitive: add new protection domain to help resolve 2 constraint violation(s) (improvement: 0.100)
+      3. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.100)
+      4. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.100)
+      5. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.100)
+      ... and 9 more
+
+  Iteration 2:
+    ✅ SUCCESS Selected: primitive
+      Target: add new protection domain to help resolve 2 constraint violation(s)
+      Predicted improvement: 0.100
+      Result: 🎯 GOALS MET
+    🗂️  Discarded 13 alternatives:
+      1. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.100)
+      2. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.100)
+      3. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.100)
+      4. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.100)
+      5. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.100)
+      ... and 8 more
+
+  Iteration 3:
+    ✅ SUCCESS Selected: primitive
+      Target: remove empty PD_3
+      Predicted improvement: 0.100
+      Result: 🎯 GOALS MET
+    🗂️  Discarded 21 alternatives:
+      1. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.100)
+      2. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.100)
+      3. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.100)
+      4. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.100)
+      5. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.100)
+      ... and 16 more
+
+  Iteration 4:
+    ✅ SUCCESS Selected: primitive
+      Target: add new protection domain to help resolve 2 constraint violation(s)
+      Predicted improvement: 0.100
+      Result: 🎯 GOALS MET
+    🗂️  Discarded 14 alternatives:
+      1. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.100)
+      2. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.100)
+      3. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.100)
+      4. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.100)
+      5. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.100)
+      ... and 9 more
+
+  Iteration 5:
+    ✅ SUCCESS Selected: primitive
+      Target: remove empty PD_4
+      Predicted improvement: 0.100
+      Result: 🎯 GOALS MET
+    🗂️  Discarded 21 alternatives:
+      1. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.100)
+      2. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.100)
+      3. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.100)
+      4. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.100)
+      5. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.100)
+      ... and 16 more
+
+  Iteration 6:
+    ✅ SUCCESS Selected: primitive
+      Target: add new protection domain to help resolve 2 constraint violation(s)
+      Predicted improvement: 0.100
+      Result: 🎯 GOALS MET
+    🗂️  Discarded 14 alternatives:
+      1. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.100)
+      2. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.100)
+      3. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.100)
+      4. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.100)
+      5. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.100)
+      ... and 9 more
+
+  Iteration 7:
+    ✅ SUCCESS Selected: primitive
+      Target: remove empty PD_5
+      Predicted improvement: 0.100
+      Result: 🎯 GOALS MET
+    🗂️  Discarded 21 alternatives:
+      1. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.100)
+      2. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.100)
+      3. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.100)
+      4. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.100)
+      5. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.100)
+      ... and 16 more
+
+  Iteration 8:
+    ✅ SUCCESS Selected: primitive
+      Target: add new protection domain to help resolve 2 constraint violation(s)
+      Predicted improvement: 0.100
+      Result: 🎯 GOALS MET
+    🗂️  Discarded 14 alternatives:
+      1. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.100)
+      2. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.100)
+      3. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.100)
+      4. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.100)
+      5. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.100)
+      ... and 9 more
+
+  Iteration 9:
+    ✅ SUCCESS Selected: primitive
+      Target: remove empty PD_6
+      Predicted improvement: 0.100
+      Result: 🎯 GOALS MET
+    🗂️  Discarded 21 alternatives:
+      1. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.100)
+      2. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.100)
+      3. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.100)
+      4. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.100)
+      5. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.100)
+      ... and 16 more
+
+  Iteration 10:
+    ✅ SUCCESS Selected: primitive
+      Target: add new protection domain to help resolve 2 constraint violation(s)
+      Predicted improvement: 0.100
+      Result: 🎯 GOALS MET
+    🗂️  Discarded 14 alternatives:
+      1. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.100)
+      2. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.100)
+      3. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.100)
+      4. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.100)
+      5. primitive: remove FILE_1_2 (holders: 2) (improvement: 0.100)
+      ... and 9 more
+
+🔍 Decision Pattern Analysis:
+   Most frequently selected:
+     - primitive: 10 time(s)
+   Average predicted improvement:
+     - All candidates: 0.132
+     - Selected candidates: 0.433
+     - Discarded candidates: 0.115
+
+============================================================
+
+✅ Scenario 'Mediator Test Indirect Access' complete!
+   Mechanisms discovered: 10
+
+✅ Exploration complete!

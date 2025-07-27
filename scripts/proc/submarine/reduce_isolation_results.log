@@ -1,0 +1,205 @@
+
+🎯 Running scenario: reduce_isolation
+🎯 Running scenario: Reduce Isolation
+   Description: Transform mediated access (PD1->PD3->R0, PD2->PD4->R0) to direct access (PD1->R0, PD2->R0) by maximizing RSI
+   Goals (1): ['Goal(maximize RSI[PD_1,PD_2] to 0.8)']
+   Constraints (5): ["Constraint(requires_resource_access for PD_1: FILE_1_1, {'access_type': 'direct_or_indirect'})", "Constraint(requires_resource_access for PD_2: FILE_1_1, {'access_type': 'direct_or_indirect'})", "Constraint(requires_resource_exists for PD_None: FILE_1_1, {'mandatory': True})", "Constraint(requires_file_access for PD_1: FILE, {'file_type': 'any', 'min_size_kb': 1})", "Constraint(requires_file_access for PD_2: FILE, {'file_type': 'any', 'min_size_kb': 1})"]
+   Transitions (12): ['<scenarios.Transition object at 0x102b8b320>', '<scenarios.Transition object at 0x102b8b350>', '<scenarios.Transition object at 0x102b8b380>', '<scenarios.Transition object at 0x102b8b3b0>', '<scenarios.Transition object at 0x102b8b3e0>', '<scenarios.Transition object at 0x102b8b410>', '<scenarios.Transition object at 0x102b8b440>', '<scenarios.Transition object at 0x102b8b470>', '<scenarios.Transition object at 0x102b8b4a0>', '<scenarios.Transition object at 0x102b8b4d0>', '<scenarios.Transition object at 0x102b8b500>', '<scenarios.Transition object at 0x102b8b530>']
+   Starting Graph: 6 nodes, 5 edges
+
+=== Graph Details ===
+Node: PD_1 -> {'type': 'PD', 'data': 'PD_1', 'extra': ''}
+Node: PD_2 -> {'type': 'PD', 'data': 'PD_2', 'extra': ''}
+Node: PD_3 -> {'type': 'PD', 'data': 'PD_3', 'extra': ''}
+Node: PD_4 -> {'type': 'PD', 'data': 'PD_4', 'extra': ''}
+Node: FILE_SPACE_1 -> {'type': 'RESOURCE_SPACE', 'data': 'FILE', 'extra': ''}
+Node: FILE_1_1 -> {'type': 'RESOURCE', 'data': 'FILE', 'extra': '{"path": "/shared/config.dat", "file_type": "CONFIG", "size_bytes": "4096", "permissions": "rw-"}'}
+
+=== Ready for IsoSearch! ===
+
+=== Exploring Reduce Isolation ===
+Starting exploration with 1 goals, 5 constraints, 12 transitions
+
+📊 Initial graph:
+        # Graph structure:
+        # PD_1 --REQUEST--> PD_3
+        # PD_2 --REQUEST--> PD_4
+        # PD_3 --HOLD--> FILE_1_1 -> FILE_SPACE_1
+        # PD_4 --HOLD--> FILE_1_1 -> FILE_SPACE_1
+        #
+        # FILE_1_1 shared by: PD_3, PD_4
+
+Iteration 1/10
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_3'], 'PD_2': ['PD_4'], 'PD_3': ['PD_4'], 'PD_4': ['PD_3']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_1,PD_5': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_2,PD_5': 0.0, 'PD_3,PD_4': 1.0, 'PD_3,PD_5': 0.0, 'PD_4,PD_5': 0.0}, ASR: 0.8, TCB: {'PD_1': ['PD_3'], 'PD_2': ['PD_4'], 'PD_3': ['PD_4'], 'PD_4': ['PD_3'], 'PD_5': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_1,PD_5': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_2,PD_5': inf, 'PD_3,PD_4': inf, 'PD_3,PD_5': inf, 'PD_4,PD_5': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_3'], 'PD_2': ['PD_4'], 'PD_3': ['PD_4'], 'PD_4': ['PD_3']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_3'], 'PD_2': ['PD_4'], 'PD_3': ['PD_4'], 'PD_4': ['PD_3']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_3'], 'PD_2': ['PD_4'], 'PD_3': ['PD_4'], 'PD_4': ['PD_3']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_3'], 'PD_2': ['PD_4'], 'PD_3': ['PD_4'], 'PD_4': ['PD_3']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_3'], 'PD_2': ['PD_4'], 'PD_3': ['PD_4'], 'PD_4': ['PD_3']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_3'], 'PD_2': ['PD_4'], 'PD_3': ['PD_4'], 'PD_4': ['PD_3']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_3'], 'PD_2': ['PD_4'], 'PD_3': ['PD_4'], 'PD_4': ['PD_3']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_3'], 'PD_2': ['PD_4'], 'PD_3': ['PD_4'], 'PD_4': ['PD_3']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_3'], 'PD_2': ['PD_4'], 'PD_3': ['PD_4'], 'PD_4': ['PD_3']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_3'], 'PD_2': ['PD_4'], 'PD_3': ['PD_4'], 'PD_4': ['PD_3']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_3'], 'PD_2': ['PD_4'], 'PD_3': ['PD_4'], 'PD_4': ['PD_3']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_3'], 'PD_2': ['PD_4'], 'PD_3': ['PD_4'], 'PD_4': ['PD_3']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_3'], 'PD_2': ['PD_4'], 'PD_3': ['PD_4'], 'PD_4': ['PD_3']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 1.0, 'PD_1,PD_4': 1.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 1.25, TCB: {'PD_1': ['PD_3', 'PD_4'], 'PD_2': ['PD_4'], 'PD_3': ['PD_1', 'PD_4'], 'PD_4': ['PD_1', 'PD_3']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    🎯 RSI preparation: PD_1 -> FILE_1_1 enables future sharing
+    🎯 add_hold_edge goal: 30.00, constraint: 0.00, unsatisfiable: 0.00, diversity: 0.00 → total: 15.10
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_3'], 'PD_2': ['PD_4'], 'PD_3': ['PD_4'], 'PD_4': ['PD_3']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 1.0, 'PD_2,PD_4': 1.0, 'PD_3,PD_4': 1.0}, ASR: 1.25, TCB: {'PD_1': ['PD_3'], 'PD_2': ['PD_4', 'PD_3'], 'PD_3': ['PD_2', 'PD_4'], 'PD_4': ['PD_2', 'PD_3']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    🎯 RSI preparation: PD_2 -> FILE_1_1 enables future sharing
+    🎯 add_hold_edge goal: 30.00, constraint: 0.00, unsatisfiable: 0.00, diversity: 0.00 → total: 15.10
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_3'], 'PD_2': ['PD_4'], 'PD_3': ['PD_4'], 'PD_4': ['PD_3']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.75, TCB: {'PD_1': ['PD_3'], 'PD_2': ['PD_4'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    remove_hold_edge candidate: remove PD_3 -> FILE_1_1 HOLD edge -> score: 0.100
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_3'], 'PD_2': ['PD_4'], 'PD_3': ['PD_4'], 'PD_4': ['PD_3']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 0.0}, ASR: 0.75, TCB: {'PD_1': ['PD_3'], 'PD_2': ['PD_4'], 'PD_3': [], 'PD_4': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+    remove_hold_edge candidate: remove PD_4 -> FILE_1_1 HOLD edge -> score: 0.100
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_3'], 'PD_2': ['PD_4'], 'PD_3': ['PD_4'], 'PD_4': ['PD_3']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 1.25, TCB: {'PD_1': ['PD_3', 'PD_2'], 'PD_2': ['PD_4'], 'PD_3': ['PD_4'], 'PD_4': ['PD_3']}, FR: {'PD_1,PD_2': 3, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_3'], 'PD_2': ['PD_4'], 'PD_3': ['PD_4'], 'PD_4': ['PD_3']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 1.25, TCB: {'PD_1': ['PD_3', 'PD_4'], 'PD_2': ['PD_4'], 'PD_3': ['PD_4'], 'PD_4': ['PD_3']}, FR: {'PD_1,PD_2': 2, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_3'], 'PD_2': ['PD_4'], 'PD_3': ['PD_4'], 'PD_4': ['PD_3']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 1.25, TCB: {'PD_1': ['PD_3'], 'PD_2': ['PD_4', 'PD_1'], 'PD_3': ['PD_4'], 'PD_4': ['PD_3']}, FR: {'PD_1,PD_2': 3, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_3'], 'PD_2': ['PD_4'], 'PD_3': ['PD_4'], 'PD_4': ['PD_3']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 1.25, TCB: {'PD_1': ['PD_3'], 'PD_2': ['PD_4', 'PD_3'], 'PD_3': ['PD_4'], 'PD_4': ['PD_3']}, FR: {'PD_1,PD_2': 2, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_3'], 'PD_2': ['PD_4'], 'PD_3': ['PD_4'], 'PD_4': ['PD_3']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 1.25, TCB: {'PD_1': ['PD_3'], 'PD_2': ['PD_4'], 'PD_3': ['PD_1', 'PD_4'], 'PD_4': ['PD_3']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_3'], 'PD_2': ['PD_4'], 'PD_3': ['PD_4'], 'PD_4': ['PD_3']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 1.25, TCB: {'PD_1': ['PD_3'], 'PD_2': ['PD_4'], 'PD_3': ['PD_2', 'PD_4'], 'PD_4': ['PD_3']}, FR: {'PD_1,PD_2': 4, 'PD_1,PD_3': 3, 'PD_1,PD_4': inf, 'PD_2,PD_3': 3, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_3'], 'PD_2': ['PD_4'], 'PD_3': ['PD_4'], 'PD_4': ['PD_3']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 1.25, TCB: {'PD_1': ['PD_3'], 'PD_2': ['PD_4'], 'PD_3': ['PD_4'], 'PD_4': ['PD_3']}, FR: {'PD_1,PD_2': 3, 'PD_1,PD_3': 3, 'PD_1,PD_4': inf, 'PD_2,PD_3': 2, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_3'], 'PD_2': ['PD_4'], 'PD_3': ['PD_4'], 'PD_4': ['PD_3']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 1.25, TCB: {'PD_1': ['PD_3'], 'PD_2': ['PD_4'], 'PD_3': ['PD_4'], 'PD_4': ['PD_1', 'PD_3']}, FR: {'PD_1,PD_2': 4, 'PD_1,PD_3': inf, 'PD_1,PD_4': 3, 'PD_2,PD_3': inf, 'PD_2,PD_4': 3, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_3'], 'PD_2': ['PD_4'], 'PD_3': ['PD_4'], 'PD_4': ['PD_3']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 1.25, TCB: {'PD_1': ['PD_3'], 'PD_2': ['PD_4'], 'PD_3': ['PD_4'], 'PD_4': ['PD_2', 'PD_3']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_3'], 'PD_2': ['PD_4'], 'PD_3': ['PD_4'], 'PD_4': ['PD_3']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 1.25, TCB: {'PD_1': ['PD_3'], 'PD_2': ['PD_4'], 'PD_3': ['PD_4'], 'PD_4': ['PD_3']}, FR: {'PD_1,PD_2': 3, 'PD_1,PD_3': inf, 'PD_1,PD_4': 2, 'PD_2,PD_3': inf, 'PD_2,PD_4': 3, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_3'], 'PD_2': ['PD_4'], 'PD_3': ['PD_4'], 'PD_4': ['PD_3']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 0.75, TCB: {'PD_1': [], 'PD_2': ['PD_4'], 'PD_3': ['PD_4'], 'PD_4': ['PD_3']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_3'], 'PD_2': ['PD_4'], 'PD_3': ['PD_4'], 'PD_4': ['PD_3']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 0.75, TCB: {'PD_1': ['PD_3'], 'PD_2': [], 'PD_3': ['PD_4'], 'PD_4': ['PD_3']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_3'], 'PD_2': ['PD_4'], 'PD_3': ['PD_4'], 'PD_4': ['PD_3']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0, 'PD_1,PD_3': 0.0, 'PD_1,PD_4': 0.0, 'PD_2,PD_3': 0.0, 'PD_2,PD_4': 0.0, 'PD_3,PD_4': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_3'], 'PD_2': ['PD_4'], 'PD_3': ['PD_4'], 'PD_4': ['PD_3']}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_1,PD_4': inf, 'PD_2,PD_3': inf, 'PD_2,PD_4': inf, 'PD_3,PD_4': inf}
+  Trying best transition: primitive
+    Target: connect PD_1 to FILE_1_1
+    Predicted improvement: 15.100
+    Considered 23 other option(s):
+      1. primitive: connect PD_2 to FILE_1_1 (improvement: 15.100)
+      2. primitive: add new protection domain (improvement: 0.100)
+      3. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.100)
+      4. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.100)
+      5. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.100)
+      6. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.100)
+      7. primitive: remove FILE_1_1 (holders: 2) (improvement: 0.100)
+      8. primitive: create new FILE resource space (improvement: 0.100)
+      9. primitive: remove PD_3 -> FILE_1_1 HOLD edge (improvement: 0.100)
+      10. primitive: remove PD_4 -> FILE_1_1 HOLD edge (improvement: 0.100)
+      ... and 13 more
+    ❌ Error applying add_hold_edge: 'Transition' object has no attribute 'apply'
+  No valid candidate found, stopping exploration
+Exploration complete!
+
+🏁 Final graph:
+        # Graph structure:
+        # PD_1 --REQUEST--> PD_3
+        # PD_2 --REQUEST--> PD_4
+        # PD_3 --HOLD--> FILE_1_1 -> FILE_SPACE_1
+        # PD_4 --HOLD--> FILE_1_1 -> FILE_SPACE_1
+        #
+        # FILE_1_1 shared by: PD_3, PD_4
+
+
+============================================================
+📊 EXPLORATION DECISION SUMMARY
+============================================================
+Total iterations completed: 1
+Total transformation candidates considered: 24
+Total transformation candidates discarded: 23
+Mechanisms discovered: 0
+Success rate: 0.0%
+
+🔧 Transformation Types:
+   Tried: primitive
+   Available but never selected: None
+
+📋 Per-Iteration Decision Breakdown:
+
+  Iteration 1:
+    ❌ FAILED Selected: primitive
+      Target: connect PD_1 to FILE_1_1
+      Predicted improvement: 15.100
+      Result: 🔄 CONTINUING
+    🗂️  Discarded 23 alternatives:
+      1. primitive: connect PD_2 to FILE_1_1 (improvement: 15.100)
+      2. primitive: add new protection domain (improvement: 0.100)
+      3. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.100)
+      4. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.100)
+      5. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.100)
+      ... and 18 more
+
+🔍 Decision Pattern Analysis:
+   Most frequently selected:
+     - primitive: 1 time(s)
+   Average predicted improvement:
+     - All candidates: 1.350
+     - Selected candidates: 15.100
+     - Discarded candidates: 0.752
+
+============================================================
+
+✅ Scenario 'Reduce Isolation' complete!
+   Mechanisms discovered: 0
+
+✅ Exploration complete!

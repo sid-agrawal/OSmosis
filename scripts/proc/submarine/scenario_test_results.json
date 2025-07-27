@@ -1,0 +1,58 @@
+{
+  "test_summary": {
+    "total_scenarios": 4,
+    "successful_tests": 4,
+    "failed_tests": 0,
+    "compatible_scenarios": 0
+  },
+  "scenario_results": {
+    "basic_sharing": {
+      "scenario_name": "basic_sharing",
+      "framework_type": "generic",
+      "mechanisms_found": 0,
+      "mechanisms": []
+    },
+    "basic_sharing_primitive": {
+      "scenario_name": "basic_sharing_primitive",
+      "framework_type": "generic",
+      "mechanisms_found": 0,
+      "mechanisms": []
+    },
+    "mediator_test_indirect": {
+      "scenario_name": "mediator_test_indirect",
+      "framework_type": "generic",
+      "mechanisms_found": 0,
+      "mechanisms": []
+    },
+    "mediator_test_primitive": {
+      "scenario_name": "mediator_test_primitive",
+      "framework_type": "generic",
+      "mechanisms_found": 1,
+      "mechanisms": [
+        {
+          "mechanism_id": 1,
+          "metrics": {
+            "RSI": {
+              "PD_1,PD_2": 0.3333333333333333
+            },
+            "ASR": 2.0,
+            "TCB": {
+              "PD_1": [
+                "PD_2"
+              ],
+              "PD_2": [
+                "PD_1"
+              ]
+            },
+            "FR": {
+              "PD_1,PD_2": Infinity
+            }
+          },
+          "goals_met": true,
+          "iteration": 1,
+          "discovery_method": "beam_search"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "name": "Custom Demo Configuration",
+  "constraint_handlers": [
+    {
+      "name": "ProhibitionConstraintHandler",
+      "enabled": true,
+      "priority_level": 1,
+      "config": {
+        "violation_removal_score": 5.0
+      }
+    }
+  ],
+  "pattern_detectors": [
+    {
+      "name": "MediationPatternDetector",
+      "enabled": true,
+      "priority_level": 2,
+      "config": {
+        "mediator_creation_score": 2.0
+      }
+    }
+  ],
+  "scoring_policies": {
+    "combination_method": "weighted_sum",
+    "weights": {
+      "constraint": 0.8,
+      "pattern": 0.2
+    }
+  }
+}

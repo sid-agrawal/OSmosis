@@ -1,0 +1,149 @@
+
+🎯 Running scenario: mediator_test_primitive
+🎯 Running scenario: Mediator Test Primitive
+   Description: Test if primitives can achieve mediation pattern
+   Goals (1): ['Goal(minimize RSI[PD_1,PD_2] to 0.8)']
+   Constraints (2): ["Constraint(requires_file_access for PD_1: FILE, {'file_type': 'any', 'min_size_kb': 1})", "Constraint(requires_file_access for PD_2: FILE, {'file_type': 'any', 'min_size_kb': 1})"]
+   Transitions (12): ['<scenarios.Transition object at 0x10c75f200>', '<scenarios.Transition object at 0x10c75f230>', '<scenarios.Transition object at 0x10c75f260>', '<scenarios.Transition object at 0x10c75f290>', '<scenarios.Transition object at 0x10c75f2c0>', '<scenarios.Transition object at 0x10c75f2f0>', '<scenarios.Transition object at 0x10c75f320>', '<scenarios.Transition object at 0x10c75f350>', '<scenarios.Transition object at 0x10c75f380>', '<scenarios.Transition object at 0x10c75f3b0>', '<scenarios.Transition object at 0x10c75f3e0>', '<scenarios.Transition object at 0x10c75f410>']
+   Starting Graph: 4 nodes, 3 edges
+
+=== Graph Details ===
+Node: PD_1 -> {'type': 'PD', 'data': 'PD_1', 'extra': ''}
+Node: PD_2 -> {'type': 'PD', 'data': 'PD_2', 'extra': ''}
+Node: FILE_SPACE_1 -> {'type': 'RESOURCE_SPACE', 'data': 'FILE', 'extra': ''}
+Node: FILE_1_1 -> {'type': 'RESOURCE', 'data': 'FILE', 'extra': '{"path": "/tmp/shared_buffer.tmp", "file_type": "TEMP", "size_bytes": "2048", "permissions": "rw-"}'}
+
+=== Ready for IsoSearch! ===
+
+=== Exploring Mediator Test Primitive ===
+Starting exploration with 1 goals, 2 constraints, 12 transitions
+
+📊 Initial graph:
+        # Graph structure:
+        # PD_1 --HOLD--> FILE_1_1 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_1 -> FILE_SPACE_1
+        #
+        # FILE_1_1 shared by: PD_1, PD_2
+
+Iteration 1/10
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0, 'PD_1,PD_3': 0.0, 'PD_2,PD_3': 0.0}, ASR: 0.6666666666666666, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1'], 'PD_3': []}, FR: {'PD_1,PD_2': inf, 'PD_1,PD_3': inf, 'PD_2,PD_3': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0}, ASR: 0.5, TCB: {'PD_1': [], 'PD_2': []}, FR: {'PD_1,PD_2': inf}
+    🎯 remove_hold_edge goal: 30.00, constraint: 0.00, unsatisfiable: 0.00, diversity: 0.00 → total: 15.10
+    remove_hold_edge candidate: remove PD_1 -> FILE_1_1 HOLD edge -> score: 15.100
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 0.0}, ASR: 0.5, TCB: {'PD_1': [], 'PD_2': []}, FR: {'PD_1,PD_2': inf}
+    🎯 remove_hold_edge goal: 30.00, constraint: 0.00, unsatisfiable: 0.00, diversity: 0.00 → total: 15.10
+    remove_hold_edge candidate: remove PD_2 -> FILE_1_1 HOLD edge -> score: 15.100
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 1.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 1.5, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Computing metrics...
+    RSI: {'PD_1,PD_2': 1.0}, ASR: 1.0, TCB: {'PD_1': ['PD_2'], 'PD_2': ['PD_1']}, FR: {'PD_1,PD_2': inf}
+  Trying best transition: primitive
+    Target: remove PD_1 -> FILE_1_1 HOLD edge
+    Predicted improvement: 15.100
+    Considered 11 other option(s):
+      1. primitive: remove PD_2 -> FILE_1_1 HOLD edge (improvement: 15.100)
+      2. primitive: add new protection domain (improvement: 0.100)
+      3. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.100)
+      4. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.100)
+      5. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.100)
+      6. primitive: create new LOG file in FILE_SPACE_1 (improvement: 0.100)
+      7. primitive: remove FILE_1_1 (holders: 2) (improvement: 0.100)
+      8. primitive: create new FILE resource space (improvement: 0.100)
+      9. primitive: create PD_1 -> PD_2 REQUEST (improvement: 0.100)
+      10. primitive: create PD_2 -> PD_1 REQUEST (improvement: 0.100)
+      ... and 1 more
+    ❌ Error applying remove_hold_edge: 'Transition' object has no attribute 'apply'
+  No valid candidate found, stopping exploration
+Exploration complete!
+
+🏁 Final graph:
+        # Graph structure:
+        # PD_1 --HOLD--> FILE_1_1 -> FILE_SPACE_1
+        # PD_2 --HOLD--> FILE_1_1 -> FILE_SPACE_1
+        #
+        # FILE_1_1 shared by: PD_1, PD_2
+
+
+============================================================
+📊 EXPLORATION DECISION SUMMARY
+============================================================
+Total iterations completed: 1
+Total transformation candidates considered: 12
+Total transformation candidates discarded: 11
+Mechanisms discovered: 0
+Success rate: 0.0%
+
+🔧 Transformation Types:
+   Tried: primitive
+   Available but never selected: None
+
+📋 Per-Iteration Decision Breakdown:
+
+  Iteration 1:
+    ❌ FAILED Selected: primitive
+      Target: remove PD_1 -> FILE_1_1 HOLD edge
+      Predicted improvement: 15.100
+      Result: 🔄 CONTINUING
+    🗂️  Discarded 11 alternatives:
+      1. primitive: remove PD_2 -> FILE_1_1 HOLD edge (improvement: 15.100)
+      2. primitive: add new protection domain (improvement: 0.100)
+      3. primitive: create new CONFIG file in FILE_SPACE_1 (improvement: 0.100)
+      4. primitive: create new DATABASE file in FILE_SPACE_1 (improvement: 0.100)
+      5. primitive: create new TEMP file in FILE_SPACE_1 (improvement: 0.100)
+      ... and 6 more
+
+🔍 Decision Pattern Analysis:
+   Most frequently selected:
+     - primitive: 1 time(s)
+   Average predicted improvement:
+     - All candidates: 2.600
+     - Selected candidates: 15.100
+     - Discarded candidates: 1.464
+
+============================================================
+
+✅ Scenario 'Mediator Test Primitive' complete!
+   Mechanisms discovered: 0
+
+✅ Exploration complete!

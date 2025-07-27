@@ -57,6 +57,7 @@ class BFSParams:
     stop_at_first: bool = False               # Stop at first match per path
     return_paths: bool = True                 # Return full paths vs just end nodes
     exclude_nodes: List[str] = None           # Nodes to exclude from search
+    follow_transitive: bool = True            # Follow transitive relationships (SUBSET, etc.)
     
     def __post_init__(self):
         if self.node_filter is None:
@@ -127,7 +128,10 @@ class NetworkXBFS:
                     break
             
             # Get neighbors based on direction
-            neighbors = self._get_neighbors(current_node, params)
+            if params.follow_transitive:
+                neighbors = self._get_transitive_neighbors(current_node, params)
+            else:
+                neighbors = self._get_neighbors(current_node, params)
             
             for neighbor, edge_data in neighbors:
                 if neighbor in params.exclude_nodes:
@@ -155,6 +159,37 @@ class NetworkXBFS:
             for neighbor in self.graph.predecessors(node):
                 for edge_data in self.graph[neighbor][node].values():
                     neighbors.append((neighbor, edge_data))
+        
+        return neighbors
+    
+    def _get_transitive_neighbors(self, node: str, params: BFSParams) -> List[Tuple[str, Dict]]:
+        """Get neighbors through transitive relationships for OS resource model"""
+        neighbors = []
+        
+        # Get direct neighbors first
+        direct_neighbors = self._get_neighbors(node, params)
+        neighbors.extend(direct_neighbors)
+        
+        # Handle special transitive relationships for OS resource model
+        if params.direction in [SearchDirection.OUTGOING, SearchDirection.BOTH]:
+            # If we're at a RESOURCE_SPACE, also find resources that are SUBSET of it
+            node_data = self.graph.nodes.get(node, {})
+            if node_data.get('type') == 'RESOURCE_SPACE':
+                # Find all nodes that have SUBSET edges TO this resource space
+                for pred in self.graph.predecessors(node):
+                    for edge_data in self.graph[pred][node].values():
+                        if edge_data.get('type') == 'SUBSET':
+                            neighbors.append((pred, edge_data))
+        
+        if params.direction in [SearchDirection.INCOMING, SearchDirection.BOTH]:
+            # If we're at a RESOURCE, also find the resource space it belongs to
+            node_data = self.graph.nodes.get(node, {})
+            if node_data.get('type') == 'RESOURCE':
+                # Find RESOURCE_SPACE nodes that this resource is a SUBSET of
+                for succ in self.graph.successors(node):
+                    for edge_data in self.graph[node][succ].values():
+                        if edge_data.get('type') == 'SUBSET':
+                            neighbors.append((succ, edge_data))
         
         return neighbors
     
@@ -318,8 +353,9 @@ def find_accessible_resources(graph_or_session, pd_id: str, resource_type: str =
         max_depth=max_depth,
         direction=SearchDirection.OUTGOING,
         node_filter=[NodeFilter.RESOURCE],
-        edge_filter=[EdgeFilter.HOLD, EdgeFilter.MAP],
-        resource_type_filter=[resource_type] if resource_type else []
+        edge_filter=[EdgeFilter.HOLD, EdgeFilter.MAP, EdgeFilter.SUBSET],  # Include SUBSET for transitive search
+        resource_type_filter=[resource_type] if resource_type else [],
+        follow_transitive=True  # Enable transitive search
     )
     
     if isinstance(graph_or_session, nx.MultiDiGraph):
