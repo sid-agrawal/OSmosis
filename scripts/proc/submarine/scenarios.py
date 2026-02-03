@@ -1084,6 +1084,76 @@ def build_cache_llc_collision_graph():
     return graph
 
 
+def build_crypto_cache_isolation_graph():
+    """Build a graph modeling a crypto key server sharing hardware with untrusted web service.
+
+    Real-world scenario:
+    - TLS/crypto service handles sensitive key material
+    - Web service handles untrusted user input
+    - Both share CPU and L3 cache (vulnerable to cache timing + Spectre)
+
+    Threat model:
+    - Attacker controls PD_web via malicious input
+    - Can perform Prime+Probe cache timing attacks
+    - Can exploit speculative execution (Spectre)
+
+    Initial state (vulnerable):
+        PD_crypto -> CPU_1, PHYS_PAGE_1 (key memory) -> CACHE_SET_1
+        PD_web    -> CPU_1, PHYS_PAGE_5 (attack buffer) -> CACHE_SET_1
+
+        RSI:CPU = 1.0 (same core - Spectre risk)
+        TransitiveRSI:CACHE_SET = 1.0 (same cache set - timing attack possible)
+
+    Expected solutions:
+        1. Page coloring: Move crypto keys to different cache set
+        2. CPU pinning: Move crypto to dedicated core
+    """
+    graph = ModelGraph()
+
+    # Add 2 PDs: crypto service and web service
+    pd_crypto_id = NodeTransformations.add_pd_node(graph, "PD_crypto")
+    pd_web_id = NodeTransformations.add_pd_node(graph, "PD_web")
+
+    # Add CPU space and 2 CPU cores
+    cpu_space_id = NodeTransformations.add_resource_space(graph, ResourceType.CPU)
+    cpu1_id = NodeTransformations.add_cpu_resource(graph, cpu_space_id, 1)
+    cpu2_id = NodeTransformations.add_cpu_resource(graph, cpu_space_id, 2)
+
+    # Add cache set space and 4 cache sets (indexed 0-3)
+    cache_space_id = NodeTransformations.add_resource_space(graph, ResourceType.CACHE_SET)
+    for i in range(4):
+        NodeTransformations.add_cache_set_resource(graph, cache_space_id, i)
+
+    # Add physical page space and 8 pages
+    phys_space_id = NodeTransformations.add_resource_space(graph, ResourceType.PHYS_PAGE)
+    for i in range(1, 9):
+        NodeTransformations.add_phys_page_resource(graph, phys_space_id, i)
+
+    # Add fixed MAP edges: PHYS_PAGE -> CACHE_SET (modulo 4 mapping)
+    # Page 1 -> Set 1, Page 2 -> Set 2, Page 3 -> Set 3, Page 4 -> Set 0
+    # Page 5 -> Set 1, Page 6 -> Set 2, Page 7 -> Set 3, Page 8 -> Set 0
+    for page_id in range(1, 9):
+        cache_set_id = page_id % 4
+        EdgeTransformations.add_map_edge(
+            graph,
+            ResourceType.PHYS_PAGE, ResourceType.CACHE_SET,
+            phys_space_id, cache_space_id,
+            page_id, cache_set_id
+        )
+
+    # VULNERABLE STATE: Both PDs on same CPU
+    EdgeTransformations.add_hold_edge(graph, {Permission.R}, pd_crypto_id, ResourceType.CPU, cpu_space_id, cpu1_id)
+    EdgeTransformations.add_hold_edge(graph, {Permission.R}, pd_web_id, ResourceType.CPU, cpu_space_id, cpu1_id)
+
+    # Crypto service holds PHYS_PAGE_1 (AES keys/T-tables) -> maps to CACHE_SET_1
+    EdgeTransformations.add_hold_edge(graph, {Permission.R, Permission.W}, pd_crypto_id, ResourceType.PHYS_PAGE, phys_space_id, 1)
+
+    # Web service holds PHYS_PAGE_5 (attack buffer) -> also maps to CACHE_SET_1 (COLLISION!)
+    EdgeTransformations.add_hold_edge(graph, {Permission.R, Permission.W}, pd_web_id, ResourceType.PHYS_PAGE, phys_space_id, 5)
+
+    return graph
+
+
 # Core scenarios
 SCENARIOS = {
     "basic_sharing_primitive": Scenario(
@@ -1192,6 +1262,31 @@ SCENARIOS = {
         allowed_primitives=PRIMITIVES,
         allowed_multistep=[],
         graph_builder=build_cache_llc_collision_graph
+    ),
+
+    "crypto_cache_isolation": Scenario(
+        name="Crypto Key Server Isolation",
+        description="TLS/crypto service shares CPU and L3 cache with untrusted web service. "
+                    "Goal: prevent cache timing attacks (Prime+Probe) and speculative execution attacks (Spectre) "
+                    "by discovering page coloring and CPU pinning.",
+        goals=[
+            # Prevent cache timing attacks (Prime+Probe on AES T-tables)
+            Goal("TransitiveRSI:CACHE_SET", 0.0, "minimize", "PD_1,PD_2"),
+            # Prevent speculative execution attacks (Spectre)
+            Goal("RSI:CPU", 0.0, "minimize", "PD_1,PD_2"),
+        ],
+        constraints=[
+            # Crypto service must have memory for keys
+            Constraint("requires_resource_type", 1, "PHYS_PAGE", properties={"min_count": 1}),
+            # Web service must have memory for buffers
+            Constraint("requires_resource_type", 2, "PHYS_PAGE", properties={"min_count": 1}),
+            # Both services must be scheduled
+            Constraint("requires_resource_type", 1, "CPU", properties={"min_count": 1}),
+            Constraint("requires_resource_type", 2, "CPU", properties={"min_count": 1}),
+        ],
+        allowed_primitives=PRIMITIVES,
+        allowed_multistep=[],
+        graph_builder=build_crypto_cache_isolation_graph
     ),
 }
 
