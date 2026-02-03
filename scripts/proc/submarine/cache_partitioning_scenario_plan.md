@@ -240,11 +240,12 @@ TransitiveRSI = 1 / 1 = 1.0  (complete cache set collision!)
   - `cache_same_core_conflict`: TransitiveRSI = 1.0 → 0.33 (page coloring) → 0.0 (+ CPU migration)
   - `cache_llc_collision`: TransitiveRSI = 0.33 → 0.0 (page coloring only)
 - [x] Run full isosearch - search runs and explores candidates correctly
-  - Note: `requires_resource_type` constraint validation not implemented (future work)
+- [x] Search discovers page coloring solution at iteration 2
 
-### Remaining Work (optional)
-- [ ] Implement `requires_resource_type` constraint validation in constraint_validation.py
-- [ ] Add more comprehensive scoring for TransitiveRSI goal optimization
+### Completed Work (was optional)
+- [x] Implement `requires_resource_type` constraint validation in constraint_validation.py
+- [x] Add `requires_resource_type` handling in goal_driven_scoring.py (count_constraint_violations)
+- [x] Add TransitiveRSI handling in GoalsMet function (isosearch.py)
 
 ---
 

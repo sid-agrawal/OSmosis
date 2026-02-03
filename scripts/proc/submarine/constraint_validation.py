@@ -74,6 +74,8 @@ def validate_constraint(graph, constraint):
         return validate_requires_pd_exists(graph, constraint)
     elif constraint.constraint_type == "requires_tcb_dependency":
         return validate_requires_tcb_dependency(graph, constraint)
+    elif constraint.constraint_type == "requires_resource_type":
+        return validate_requires_resource_type(graph, constraint)
     else:
         return False, f"Unknown constraint type: {constraint.constraint_type}"
 
@@ -317,6 +319,37 @@ def validate_requires_tcb_dependency(graph, constraint):
             return False, f"{dependent_pd} does not depend on {target_pd} (missing TCB relationship)"
     else:
         return False, f"Unknown dependency type: {dependency_type}"
+
+
+def validate_requires_resource_type(graph, constraint):
+    """
+    Validate that a PD holds at least min_count resources of a specific type.
+    This enforces that PDs maintain required resources (e.g., must have a CPU, must have a PHYS_PAGE).
+
+    Constraint properties:
+        - resource_type: The type of resource required (e.g., "CPU", "PHYS_PAGE")
+        - min_count: Minimum number of resources required (default: 1)
+    """
+    import json
+
+    pd_string = f"PD_{constraint.pd_id}"
+    required_type = constraint.resource_info  # The resource type (e.g., "PHYS_PAGE", "CPU")
+    min_count = constraint.properties.get('min_count', 1)
+
+    # Count resources of the required type that this PD holds
+    resource_count = 0
+
+    for from_node, to_node, edge_data in graph.g.edges(data=True):
+        if from_node == pd_string and edge_data.get('type') == 'HOLD':
+            # Check if this is a resource of the required type
+            node_data = graph.g.nodes.get(to_node, {})
+            if node_data.get('type') == 'RESOURCE' and node_data.get('data') == required_type:
+                resource_count += 1
+
+    if resource_count < min_count:
+        return False, f"{pd_string} has only {resource_count} {required_type} resources (needs at least {min_count})"
+
+    return True, f"{pd_string} has {resource_count} {required_type} resource(s) (meets requirement of {min_count})"
 
 
 def check_constraints_before_transformation(graph, constraints, transformation_type, params):

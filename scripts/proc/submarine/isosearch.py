@@ -380,8 +380,8 @@ def GoalsMet(metrics, goals):
                         print(f"    Goal not met: TCB[{target_pd}]={tcb_count} < {goal.target_value} (dependencies: {dependencies})")
                         return False
 
-            elif goal.metric_name in ["RSI", "FR"] and isinstance(metric_value, dict):
-                # RSI or FR goal for specific PD pair
+            elif goal.metric_name in ["RSI", "FR", "TransitiveRSI"] and isinstance(metric_value, dict):
+                # RSI, FR, or TransitiveRSI goal for specific PD pair
                 target_pair = goal.target_spec
                 if target_pair not in metric_value:
                     print(f"    Warning: PD pair {target_pair} not found in {goal.metric_name} metrics")
@@ -416,7 +416,7 @@ def GoalsMet(metrics, goals):
                         print(f"    Goal not met: {goal.metric_name}={metric_value:.3f} < {goal.target_value}")
                         return False
 
-            elif goal.metric_name in ["RSI", "TCB", "FR"] and isinstance(metric_value, dict):
+            elif goal.metric_name in ["RSI", "TCB", "FR", "TransitiveRSI"] and isinstance(metric_value, dict):
                 # Non-targeted goals for dictionary metrics check all entries
                 goal_violated = False
                 for key, value in metric_value.items():

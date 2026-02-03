@@ -61,7 +61,10 @@ def calculate_goal_driven_score(operation_name, params, current_graph, new_graph
         elif goal.metric_name == "TCB":
             improvement = calculate_tcb_improvement(goal, current_metrics, new_metrics)
             total_improvement += improvement
-    
+        elif goal.metric_name == "TransitiveRSI":
+            improvement = calculate_transitive_rsi_improvement(goal, current_metrics, new_metrics)
+            total_improvement += improvement
+
     # Calculate diversity bonus for different transition types
     diversity_bonus = calculate_diversity_bonus(operation_name, transition_history)
     
@@ -122,14 +125,25 @@ def check_goals_satisfied(goals, metrics):
         elif goal.metric_name == "TCB":
             target_pd = goal.target_spec
             tcb_size = len(metrics['TCB'].get(target_pd, []))
-            
+
             if goal.direction == "minimize":
                 if tcb_size > goal.target_value:
                     return False
             elif goal.direction == "maximize":
                 if tcb_size < goal.target_value:
                     return False
-    
+
+        elif goal.metric_name == "TransitiveRSI":
+            target_pair = goal.target_spec
+            current_value = metrics.get('TransitiveRSI', {}).get(target_pair, 1.0)
+
+            if goal.direction == "minimize":
+                if current_value > goal.target_value:
+                    return False
+            elif goal.direction == "maximize":
+                if current_value < goal.target_value:
+                    return False
+
     return True
 
 
@@ -185,6 +199,57 @@ def calculate_rsi_improvement(goal, current_metrics, new_metrics):
             # Penalty for making it worse
             return -(current_rsi - new_rsi) * 10.0
     
+    return 0.0
+
+
+def calculate_transitive_rsi_improvement(goal, current_metrics, new_metrics):
+    """Calculate TransitiveRSI improvement score.
+
+    TransitiveRSI follows MAP edges to find effective resource sharing
+    (e.g., physical pages mapping to same cache set).
+    """
+    target_pair = goal.target_spec  # e.g., "PD_1,PD_2"
+    target_value = goal.target_value  # e.g., 0.0
+
+    # Get TransitiveRSI values
+    current_trsi = current_metrics.get('TransitiveRSI', {}).get(target_pair)
+    new_trsi = new_metrics.get('TransitiveRSI', {}).get(target_pair)
+
+    # Handle missing PD pairs gracefully
+    if current_trsi is None and new_trsi is None:
+        return 0.0
+    elif current_trsi is None:
+        current_trsi = 1.0 if goal.direction == "minimize" else 0.0
+    elif new_trsi is None:
+        if goal.direction == "minimize":
+            return 50.0  # Eliminating the pair achieves the goal
+        else:
+            return -50.0  # Losing the pair is bad for maximization
+
+    if goal.direction == "minimize":
+        if new_trsi < current_trsi:
+            # Reward reduction proportional to improvement
+            improvement = (current_trsi - new_trsi) * 30.0  # Higher scale for cache isolation
+
+            # Bonus if we reach the target
+            if new_trsi <= target_value:
+                improvement += 15.0  # Target achievement bonus
+
+            return improvement
+        elif new_trsi > current_trsi:
+            # Penalty for making it worse
+            return -(new_trsi - current_trsi) * 15.0
+    elif goal.direction == "maximize":
+        if new_trsi > current_trsi:
+            improvement = (new_trsi - current_trsi) * 30.0
+
+            if new_trsi >= target_value:
+                improvement += 15.0
+
+            return improvement
+        elif new_trsi < current_trsi:
+            return -(current_trsi - new_trsi) * 15.0
+
     return 0.0
 
 
@@ -1043,7 +1108,24 @@ def count_constraint_violations(graph, constraints):
                 violations += 1  # Direct access when should be indirect
             elif not has_indirect_access:
                 violations += 1  # No access at all
-    
+
+        elif constraint.constraint_type == "requires_resource_type":
+            # PD must hold at least min_count resources of the specified type
+            pd_node = f"PD_{constraint.pd_id}"
+            required_type = constraint.resource_info  # e.g., "PHYS_PAGE", "CPU"
+            min_count = constraint.properties.get('min_count', 1)
+
+            # Count resources of the required type that this PD holds
+            resource_count = 0
+            for _, to_node, edge_data in graph.g.out_edges(pd_node, data=True):
+                if edge_data.get('type') == 'HOLD':
+                    node_data = graph.g.nodes.get(to_node, {})
+                    if node_data.get('type') == 'RESOURCE' and node_data.get('data') == required_type:
+                        resource_count += 1
+
+            if resource_count < min_count:
+                violations += 1
+
     return violations
 
 
