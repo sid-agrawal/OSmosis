@@ -289,6 +289,59 @@ TransitiveRSI = 0.0 (no cache set overlap!)
 
 This is essentially **page coloring** discovered automatically!
 
+### Per-Resource-Type RSI (added later)
+
+Extended RSI to support per-resource-type filtering:
+- `RSI:CPU` - direct CPU sharing between PDs
+- `RSI:PHYS_PAGE` - physical page sharing
+- `TransitiveRSI:CACHE_SET` - cache set sharing via MAP edges
+
+Updated `cache_same_core_conflict` with dual goals:
+```python
+Goal("TransitiveRSI:CACHE_SET", 0.0, "minimize", "PD_1,PD_2")  # Page coloring
+Goal("RSI:CPU", 0.0, "minimize", "PD_1,PD_2")                   # CPU migration
+```
+
+Search now discovers both solutions in 4 iterations:
+1. Add PHYS_PAGE_3_2 to PD_1 (page in different cache set)
+2. Remove PHYS_PAGE_3_1 from PD_1 → TransitiveRSI:CACHE_SET = 0 (page coloring)
+3. Add CPU_1_2 to PD_1 (second CPU)
+4. Remove CPU_1_1 from PD_1 → RSI:CPU = 0 (CPU migration)
+
+---
+
+## Scenario C: Crypto Key Server Isolation (real-world)
+
+### Motivation
+TLS/crypto service shares hardware with untrusted web service.
+Attacker controls web service via malicious input, uses cache timing
+attacks (Prime+Probe on AES T-tables) and Spectre to extract keys.
+
+### Initial State
+```
+PD_crypto ──HOLD──> CPU_1, PHYS_PAGE_1 (keys) ──MAP──> CACHE_SET_1
+PD_web    ──HOLD──> CPU_1, PHYS_PAGE_5 (attack buffer) ──MAP──> CACHE_SET_1
+
+RSI:CPU = 1.0 (Spectre risk)
+TransitiveRSI:CACHE_SET = 1.0 (cache timing attack possible)
+```
+
+### Goals
+- `TransitiveRSI:CACHE_SET[PD_crypto,PD_web]` → 0.0 (prevent cache timing)
+- `RSI:CPU[PD_crypto,PD_web]` → 0.0 (prevent Spectre)
+
+### Expected Solutions
+1. Page coloring (Intel CAT) - remap crypto key pages to isolated cache sets
+2. CPU pinning (isolcpus) - pin crypto to dedicated core
+
+### Status
+- [x] Graph builder implemented (`build_crypto_cache_isolation_graph`)
+- [x] Scenario added to SCENARIOS dict
+- [ ] Test end-to-end search
+- [ ] Verify both solutions discovered
+
+---
+
 ### Discussion Log
 - Decided on L3 cache model
 - Using modulo-based mapping (page_id % num_sets)
@@ -298,4 +351,6 @@ This is essentially **page coloring** discovered automatically!
 - Confirmed: 4 cache sets, 8 physical pages, 2 CPUs
 - Constraints: must have physical page, must have CPU, pages are substitutable
 - Scenario names: `cache_same_core_conflict`, `cache_llc_collision`
+- Added per-resource-type RSI metrics (RSI:CPU, TransitiveRSI:CACHE_SET)
+- Added `crypto_cache_isolation` scenario (real-world TLS key isolation)
 
