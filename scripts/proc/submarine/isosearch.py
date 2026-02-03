@@ -10,9 +10,15 @@ from scenarios import get_scenario, list_scenarios, SCENARIOS, Goal, Constraint,
 # Goal, Constraint, and Transition classes are now imported from scenarios.py
 
 
-def ComputeMetrics(candidate):
+def ComputeMetrics(candidate, requested_metrics=None):
     """
     Compute metrics for a candidate graph (RSI, TransitiveRSI, FR, TCB, ASR)
+
+    Args:
+        candidate: The graph to compute metrics for
+        requested_metrics: Optional list of specific metrics to compute (for efficiency).
+                          Supports per-resource-type metrics like "RSI:CPU", "TransitiveRSI:CACHE_SET"
+
     Returns: dictionary of metric values
     """
     print("  Computing metrics...")
@@ -30,6 +36,17 @@ def ComputeMetrics(candidate):
     # (e.g., for cache scenarios: PHYS_PAGE -> CACHE_SET)
     metrics['TransitiveRSI'] = _calculate_rsi_per_pd_pair(candidate, pd_nodes, follow_map_edges=True)
 
+    # Calculate per-resource-type RSI metrics if requested
+    # Format: "RSI:CPU", "RSI:PHYS_PAGE", "TransitiveRSI:CACHE_SET", etc.
+    resource_types = ['CPU', 'PHYS_PAGE', 'FILE', 'CACHE_SET', 'VMR', 'MO']
+    for res_type in resource_types:
+        # Direct RSI per resource type (e.g., RSI:CPU = direct CPU sharing)
+        metrics[f'RSI:{res_type}'] = _calculate_rsi_per_pd_pair(
+            candidate, pd_nodes, follow_map_edges=False, resource_type_filter=res_type)
+        # Transitive RSI per resource type (e.g., TransitiveRSI:CACHE_SET)
+        metrics[f'TransitiveRSI:{res_type}'] = _calculate_rsi_per_pd_pair(
+            candidate, pd_nodes, follow_map_edges=True, resource_type_filter=res_type)
+
     # Calculate ASR (Attack Surface Ratio) - attack paths per PD
     metrics['ASR'] = _calculate_asr(candidate, pd_nodes)
 
@@ -39,11 +56,12 @@ def ComputeMetrics(candidate):
     # Calculate FR (Fault Radius) - distance to common ancestor via REQUEST edges
     metrics['FR'] = _calculate_fr(candidate, pd_nodes)
 
+    # Print summary (only base metrics to avoid clutter)
     print(f"    RSI: {metrics['RSI']}, TransitiveRSI: {metrics['TransitiveRSI']}, ASR: {metrics['ASR']}, TCB: {metrics['TCB']}, FR: {metrics['FR']}")
     return metrics
 
 
-def _calculate_rsi_per_pd_pair(graph, pd_nodes, follow_map_edges=False):
+def _calculate_rsi_per_pd_pair(graph, pd_nodes, follow_map_edges=False, resource_type_filter=None):
     """Calculate RSI (Resource Sharing Index) as per PD pair metric
 
     RSI[PD_i, PD_j] = (Resources shared by PD_i and PD_j) / (Total resources accessed by either PD_i or PD_j)
@@ -53,6 +71,7 @@ def _calculate_rsi_per_pd_pair(graph, pd_nodes, follow_map_edges=False):
         pd_nodes: List of PD node IDs
         follow_map_edges: If True, follow MAP edges transitively to find effective resources
                          (e.g., PHYS_PAGE -> CACHE_SET). If False, only count direct HOLD edges.
+        resource_type_filter: If specified, only count resources of this type (e.g., "CPU", "PHYS_PAGE", "FILE")
 
     Returns a dictionary mapping PD pairs to their RSI values
     """
@@ -66,11 +85,19 @@ def _calculate_rsi_per_pd_pair(graph, pd_nodes, follow_map_edges=False):
         if edge_data.get('type') == 'HOLD' and from_node.startswith('PD_'):
             # Only count direct access - PD directly holds the resource
             if from_node in pd_resources:
+                # Apply resource type filter if specified, BUT only for direct RSI (not transitive)
+                # For transitive RSI, we collect all resources first, then filter after following MAP edges
+                if resource_type_filter and not follow_map_edges:
+                    node_data = graph.g.nodes.get(to_node, {})
+                    node_res_type = node_data.get('data')  # e.g., "CPU", "PHYS_PAGE", "FILE"
+                    if node_res_type != resource_type_filter:
+                        continue  # Skip resources that don't match the filter
                 pd_resources[from_node].add(to_node)
 
     # If follow_map_edges is True, resolve to effective resources via MAP edges
+    # The resource_type_filter is applied AFTER following MAP edges in _resolve_transitive_resources
     if follow_map_edges:
-        pd_resources = _resolve_transitive_resources(graph, pd_resources)
+        pd_resources = _resolve_transitive_resources(graph, pd_resources, resource_type_filter)
 
     # Calculate RSI for each PD pair
     rsi_pairs = {}
@@ -98,7 +125,7 @@ def _calculate_rsi_per_pd_pair(graph, pd_nodes, follow_map_edges=False):
     return rsi_pairs
 
 
-def _resolve_transitive_resources(graph, pd_resources):
+def _resolve_transitive_resources(graph, pd_resources, resource_type_filter=None):
     """Follow MAP edges to find effective/transitive resources for each PD.
 
     For example, if PD holds PHYS_PAGE_1 which MAPs to CACHE_SET_1,
@@ -107,6 +134,7 @@ def _resolve_transitive_resources(graph, pd_resources):
     Args:
         graph: The model graph
         pd_resources: Dict mapping PD -> set of directly held resources
+        resource_type_filter: If specified, only include resources of this type in the result
 
     Returns:
         Dict mapping PD -> set of effective resources (after following MAP edges)
@@ -127,6 +155,16 @@ def _resolve_transitive_resources(graph, pd_resources):
             # Follow MAP edges transitively
             resolved = _follow_map_chain(resource, map_edges)
             effective.update(resolved)
+
+        # Apply resource type filter if specified
+        if resource_type_filter:
+            filtered = set()
+            for res in effective:
+                node_data = graph.g.nodes.get(res, {})
+                if node_data.get('data') == resource_type_filter:
+                    filtered.add(res)
+            effective = filtered
+
         pd_effective_resources[pd] = effective
 
     return pd_effective_resources
@@ -345,10 +383,26 @@ def _get_ancestors_with_distance(pd, request_graph):
 
 
 
+def _is_rsi_like_metric(metric_name):
+    """Check if a metric name is an RSI-like metric (including per-resource-type variants).
+
+    Returns True for: RSI, TransitiveRSI, FR, RSI:CPU, RSI:PHYS_PAGE, TransitiveRSI:CACHE_SET, etc.
+    """
+    base_rsi_metrics = ["RSI", "TransitiveRSI", "FR"]
+    if metric_name in base_rsi_metrics:
+        return True
+    # Check for per-resource-type variants like "RSI:CPU", "TransitiveRSI:CACHE_SET"
+    if ":" in metric_name:
+        base_metric = metric_name.split(":")[0]
+        return base_metric in ["RSI", "TransitiveRSI"]
+    return False
+
+
 def GoalsMet(metrics, goals):
     """
     Check if the computed metrics meet the specified goals
     Supports targeted goals: TCB for specific PD, RSI/FR for specific PD pairs, ASR system-wide
+    Also supports per-resource-type metrics like RSI:CPU, TransitiveRSI:CACHE_SET
     Returns: boolean indicating if all goals are satisfied
     """
     for goal in goals:
@@ -380,7 +434,7 @@ def GoalsMet(metrics, goals):
                         print(f"    Goal not met: TCB[{target_pd}]={tcb_count} < {goal.target_value} (dependencies: {dependencies})")
                         return False
 
-            elif goal.metric_name in ["RSI", "FR", "TransitiveRSI"] and isinstance(metric_value, dict):
+            elif _is_rsi_like_metric(goal.metric_name) and isinstance(metric_value, dict):
                 # RSI, FR, or TransitiveRSI goal for specific PD pair
                 target_pair = goal.target_spec
                 if target_pair not in metric_value:
@@ -416,14 +470,14 @@ def GoalsMet(metrics, goals):
                         print(f"    Goal not met: {goal.metric_name}={metric_value:.3f} < {goal.target_value}")
                         return False
 
-            elif goal.metric_name in ["RSI", "TCB", "FR", "TransitiveRSI"] and isinstance(metric_value, dict):
+            elif (goal.metric_name == "TCB" or _is_rsi_like_metric(goal.metric_name)) and isinstance(metric_value, dict):
                 # Non-targeted goals for dictionary metrics check all entries
                 goal_violated = False
                 for key, value in metric_value.items():
                     if goal.metric_name == "TCB":
                         check_value = len(value)  # TCB uses length of dependency list
                     else:
-                        check_value = value  # RSI and FR use the value directly
+                        check_value = value  # RSI-like metrics use the value directly
 
                     if goal.direction == "minimize":
                         if check_value > goal.target_value:

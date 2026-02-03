@@ -44,24 +44,29 @@ def calculate_goal_driven_score(operation_name, params, current_graph, new_graph
     # ENHANCED: Goal improvement with special handling for RSI maximization
     total_improvement = 0.0
     for goal in goals:
-        if goal.metric_name == "RSI":
+        metric_name = goal.metric_name
+        # Check for per-resource-type RSI metrics (e.g., "RSI:CPU", "TransitiveRSI:CACHE_SET")
+        is_typed_rsi = ":" in metric_name and metric_name.split(":")[0] in ["RSI", "TransitiveRSI"]
+        base_metric = metric_name.split(":")[0] if is_typed_rsi else metric_name
+
+        if base_metric == "RSI":
             improvement = calculate_rsi_improvement(goal, current_metrics, new_metrics)
-            
+
             # SPECIAL BOOST: For RSI maximization goals, add extra rewards for HOLD edge additions that create target sharing
             if goal.direction == "maximize" and operation_name == "add_hold_edge":
                 # Extract the actual parameters from the candidate dictionary
                 actual_params = params.get('param_values', params) if isinstance(params, dict) else params
                 rsi_boost = calculate_rsi_maximization_boost(goal, actual_params, current_graph, new_graph)
                 improvement += rsi_boost
-                
+
             total_improvement += improvement
-        elif goal.metric_name == "ASR":
+        elif metric_name == "ASR":
             improvement = calculate_asr_improvement(goal, current_metrics, new_metrics)
             total_improvement += improvement
-        elif goal.metric_name == "TCB":
+        elif metric_name == "TCB":
             improvement = calculate_tcb_improvement(goal, current_metrics, new_metrics)
             total_improvement += improvement
-        elif goal.metric_name == "TransitiveRSI":
+        elif base_metric == "TransitiveRSI":
             improvement = calculate_transitive_rsi_improvement(goal, current_metrics, new_metrics)
             total_improvement += improvement
 
@@ -92,37 +97,43 @@ def calculate_goal_driven_score(operation_name, params, current_graph, new_graph
 def check_goals_satisfied(goals, metrics):
     """
     Check if all goals are satisfied in the current metrics
-    
+
     Args:
         goals: List of Goal objects
         metrics: Current metrics dictionary
-        
+
     Returns:
         bool: True if all goals are satisfied, False otherwise
     """
     for goal in goals:
-        if goal.metric_name == "RSI":
+        metric_name = goal.metric_name
+        # Check for per-resource-type RSI metrics (e.g., "RSI:CPU", "TransitiveRSI:CACHE_SET")
+        is_typed_rsi = ":" in metric_name and metric_name.split(":")[0] in ["RSI", "TransitiveRSI"]
+        base_metric = metric_name.split(":")[0] if is_typed_rsi else metric_name
+
+        if base_metric == "RSI":
             target_pair = goal.target_spec
-            current_value = metrics['RSI'].get(target_pair, 1.0)
-            
+            # Use the full metric name (e.g., "RSI:CPU" or just "RSI")
+            current_value = metrics.get(metric_name, {}).get(target_pair, 1.0)
+
             if goal.direction == "minimize":
                 if current_value > goal.target_value:
                     return False
             elif goal.direction == "maximize":
                 if current_value < goal.target_value:
                     return False
-                    
-        elif goal.metric_name == "ASR":
+
+        elif metric_name == "ASR":
             current_value = metrics['ASR']
-            
+
             if goal.direction == "minimize":
                 if current_value > goal.target_value:
                     return False
             elif goal.direction == "maximize":
                 if current_value < goal.target_value:
                     return False
-                    
-        elif goal.metric_name == "TCB":
+
+        elif metric_name == "TCB":
             target_pd = goal.target_spec
             tcb_size = len(metrics['TCB'].get(target_pd, []))
 
@@ -133,9 +144,10 @@ def check_goals_satisfied(goals, metrics):
                 if tcb_size < goal.target_value:
                     return False
 
-        elif goal.metric_name == "TransitiveRSI":
+        elif base_metric == "TransitiveRSI":
             target_pair = goal.target_spec
-            current_value = metrics.get('TransitiveRSI', {}).get(target_pair, 1.0)
+            # Use the full metric name (e.g., "TransitiveRSI:CACHE_SET" or just "TransitiveRSI")
+            current_value = metrics.get(metric_name, {}).get(target_pair, 1.0)
 
             if goal.direction == "minimize":
                 if current_value > goal.target_value:
@@ -148,13 +160,17 @@ def check_goals_satisfied(goals, metrics):
 
 
 def calculate_rsi_improvement(goal, current_metrics, new_metrics):
-    """Calculate RSI improvement score"""
+    """Calculate RSI improvement score.
+
+    Supports per-resource-type RSI metrics like "RSI:CPU", "RSI:PHYS_PAGE".
+    """
     target_pair = goal.target_spec  # e.g., "PD_1,PD_2"
     target_value = goal.target_value  # e.g., 0.8
-    
+    metric_name = goal.metric_name  # e.g., "RSI" or "RSI:CPU"
+
     # Check if the target pair exists in both current and new metrics
-    current_rsi = current_metrics['RSI'].get(target_pair)
-    new_rsi = new_metrics['RSI'].get(target_pair)
+    current_rsi = current_metrics.get(metric_name, {}).get(target_pair)
+    new_rsi = new_metrics.get(metric_name, {}).get(target_pair)
     
     # Handle missing PD pairs gracefully - occurs when nodes are removed
     if current_rsi is None and new_rsi is None:
@@ -207,13 +223,16 @@ def calculate_transitive_rsi_improvement(goal, current_metrics, new_metrics):
 
     TransitiveRSI follows MAP edges to find effective resource sharing
     (e.g., physical pages mapping to same cache set).
+
+    Supports per-resource-type metrics like "TransitiveRSI:CACHE_SET".
     """
     target_pair = goal.target_spec  # e.g., "PD_1,PD_2"
     target_value = goal.target_value  # e.g., 0.0
+    metric_name = goal.metric_name  # e.g., "TransitiveRSI" or "TransitiveRSI:CACHE_SET"
 
-    # Get TransitiveRSI values
-    current_trsi = current_metrics.get('TransitiveRSI', {}).get(target_pair)
-    new_trsi = new_metrics.get('TransitiveRSI', {}).get(target_pair)
+    # Get TransitiveRSI values using the full metric name
+    current_trsi = current_metrics.get(metric_name, {}).get(target_pair)
+    new_trsi = new_metrics.get(metric_name, {}).get(target_pair)
 
     # Handle missing PD pairs gracefully
     if current_trsi is None and new_trsi is None:

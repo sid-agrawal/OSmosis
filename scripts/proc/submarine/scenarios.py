@@ -1156,9 +1156,11 @@ SCENARIOS = {
 
     "cache_same_core_conflict": Scenario(
         name="Cache Same-Core Conflict",
-        description="Two PDs on same CPU core with cache set collision. Goal: achieve cache isolation via page coloring.",
+        description="Two PDs on same CPU core with cache set collision. Goal: achieve cache isolation via page coloring AND/OR CPU migration.",
         goals=[
-            Goal("TransitiveRSI", 0.0, "minimize", "PD_1,PD_2")  # Zero cache set overlap
+            # Two goals: page coloring (cache set isolation) AND CPU migration (separate cores)
+            Goal("TransitiveRSI:CACHE_SET", 0.0, "minimize", "PD_1,PD_2"),  # Zero cache set overlap via page coloring
+            Goal("RSI:CPU", 0.0, "minimize", "PD_1,PD_2"),  # Zero CPU sharing via CPU migration
         ],
         constraints=[
             # Each PD must have at least one physical page
@@ -1177,7 +1179,7 @@ SCENARIOS = {
         name="Cache LLC Collision",
         description="Two PDs on different CPUs with shared L3 cache set collision. Goal: achieve cache isolation via page coloring.",
         goals=[
-            Goal("TransitiveRSI", 0.0, "minimize", "PD_1,PD_2")  # Zero cache set overlap
+            Goal("TransitiveRSI:CACHE_SET", 0.0, "minimize", "PD_1,PD_2"),  # Zero cache set overlap via page coloring
         ],
         constraints=[
             # Each PD must have at least one physical page
