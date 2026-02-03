@@ -60,11 +60,27 @@ class NodeTransformations:
         return graph.add_mo_node(space_id, phys_addr, n_pages)
     
     @staticmethod
-    def add_file_resource(graph: ModelGraph, space_id: int, file_type: FileType, 
+    def add_file_resource(graph: ModelGraph, space_id: int, file_type: FileType,
                          file_path: str, file_size: int = 0) -> int:
         """Add FILE resource to existing FILE space"""
         return graph.add_file_node(space_id, file_type, file_path, file_size)
-    
+
+    @staticmethod
+    def add_cpu_resource(graph: ModelGraph, space_id: int, core_id: int = None) -> int:
+        """Add CPU core resource to existing CPU space"""
+        return graph.add_cpu_node(space_id, core_id)
+
+    @staticmethod
+    def add_cache_set_resource(graph: ModelGraph, space_id: int, set_index: int = None) -> int:
+        """Add cache set resource to existing CACHE_SET space"""
+        return graph.add_cache_set_node(space_id, set_index)
+
+    @staticmethod
+    def add_phys_page_resource(graph: ModelGraph, space_id: int, page_id: int = None,
+                               phys_addr: int = None) -> int:
+        """Add physical page resource to existing PHYS_PAGE space"""
+        return graph.add_phys_page_node(space_id, page_id, phys_addr)
+
     @staticmethod
     def modify_pd_name(graph: ModelGraph, pd_id: int, new_name: str) -> bool:
         """Modify PD node name"""

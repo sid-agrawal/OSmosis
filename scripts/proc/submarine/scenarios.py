@@ -182,52 +182,109 @@ class Transition:
         """Find PD-resource connections to add"""
         candidates = []
 
-        # Find PDs and resources
+        # Find PDs
         pds = [node for node, data in graph.g.nodes(data=True) if data.get('type') == 'PD']
-        resources = [node for node, data in graph.g.nodes(data=True)
-                    if data.get('type') == 'RESOURCE' and data.get('data') == 'FILE']
+
+        # Find resources by type - FILE, CPU, PHYS_PAGE
+        resource_types = ['FILE', 'CPU', 'PHYS_PAGE']
+        resources_by_type = {}
+        for res_type in resource_types:
+            resources_by_type[res_type] = [
+                node for node, data in graph.g.nodes(data=True)
+                if data.get('type') == 'RESOURCE' and data.get('data') == res_type
+            ]
 
         for pd in pds:
             current_resources = self._get_pd_held_resources(graph, pd)
 
-            for resource in resources:
-                if resource not in current_resources:
-                    # Check if connection is prohibited
-                    prohibited = self._is_connection_prohibited(pd, resource, constraints)
+            # Process each resource type
+            for res_type, resources in resources_by_type.items():
+                for resource in resources:
+                    if resource not in current_resources:
+                        # Check if connection is prohibited
+                        prohibited = self._is_connection_prohibited(pd, resource, constraints)
 
-                    if not prohibited:
-                        constraint_relevance = 0.4  # Standard score
-                        description = f"connect {pd} to {resource}"
+                        if not prohibited:
+                            constraint_relevance = 0.4  # Standard score
+                            description = f"connect {pd} to {resource}"
 
-                        # Check RSI goal relevance
-                        rsi_relevance = self._calculate_rsi_goal_relevance(graph, pd, resource, constraints)
-                        if rsi_relevance > 0:
-                            constraint_relevance = max(constraint_relevance, rsi_relevance)
-                            if rsi_relevance >= 0.8:
-                                description = f"connect {pd} to {resource} (RSI goal achievement)"
+                            # For PHYS_PAGE: boost candidates that would reduce TransitiveRSI
+                            if res_type == 'PHYS_PAGE':
+                                trsi_improvement = self._calculate_transitive_rsi_improvement(
+                                    graph, pd, resource, constraints)
+                                if trsi_improvement > 0:
+                                    constraint_relevance = max(constraint_relevance, 0.6 + trsi_improvement * 0.4)
+                                    description = f"connect {pd} to {resource} (improves cache isolation)"
 
-                        # Boost for orphaned resources
-                        holders = self._get_resource_holders(graph, resource)
-                        if len(holders) == 0:
-                            constraint_relevance = max(constraint_relevance, 0.8)
-                            description = f"connect {pd} to orphaned resource {resource}"
+                            # For CPU: standard relevance
+                            elif res_type == 'CPU':
+                                # Check if PD needs a CPU
+                                if not any(r for r in current_resources if 'CPU_' in r):
+                                    constraint_relevance = max(constraint_relevance, 0.7)
+                                    description = f"connect {pd} to {resource} (needs CPU)"
 
-                        # CRITICAL FIX: Check if this connection would satisfy constraint violations
-                        constraint_satisfaction_boost = self._calculate_constraint_satisfaction_boost(
-                            graph, pd, resource, constraints)
-                        if constraint_satisfaction_boost > 0:
-                            constraint_relevance = max(constraint_relevance, constraint_satisfaction_boost)
-                            if constraint_satisfaction_boost >= 1.0:
-                                description = f"connect {pd} to {resource} (satisfies constraint violation)"
+                            # For FILE: existing logic
+                            else:
+                                # Check RSI goal relevance
+                                rsi_relevance = self._calculate_rsi_goal_relevance(graph, pd, resource, constraints)
+                                if rsi_relevance > 0:
+                                    constraint_relevance = max(constraint_relevance, rsi_relevance)
+                                    if rsi_relevance >= 0.8:
+                                        description = f"connect {pd} to {resource} (RSI goal achievement)"
 
-                        candidates.append({
-                            'param_values': {'pd': pd, 'resource': resource, 'permission': 'R'},
-                            'target_description': description,
-                            'constraint_relevance': constraint_relevance,
-                            'addresses_violation': rsi_relevance >= 0.8 or constraint_satisfaction_boost >= 1.0
-                        })
+                                # CRITICAL FIX: Check if this connection would satisfy constraint violations
+                                constraint_satisfaction_boost = self._calculate_constraint_satisfaction_boost(
+                                    graph, pd, resource, constraints)
+                                if constraint_satisfaction_boost > 0:
+                                    constraint_relevance = max(constraint_relevance, constraint_satisfaction_boost)
+                                    if constraint_satisfaction_boost >= 1.0:
+                                        description = f"connect {pd} to {resource} (satisfies constraint violation)"
+
+                            # Boost for orphaned resources
+                            holders = self._get_resource_holders(graph, resource)
+                            if len(holders) == 0:
+                                constraint_relevance = max(constraint_relevance, 0.8)
+                                description = f"connect {pd} to orphaned resource {resource}"
+
+                            candidates.append({
+                                'param_values': {'pd': pd, 'resource': resource, 'permission': 'R'},
+                                'target_description': description,
+                                'constraint_relevance': constraint_relevance,
+                                'addresses_violation': constraint_relevance >= 0.8
+                            })
 
         return candidates
+
+    def _calculate_transitive_rsi_improvement(self, graph, pd, resource, constraints):
+        """Calculate how much connecting this PD to this PHYS_PAGE would improve TransitiveRSI.
+
+        Returns a value between 0 and 1, where higher means better improvement.
+        """
+        # Get the cache set this physical page maps to
+        target_cache_set = None
+        for from_node, to_node, edge_data in graph.g.edges(data=True):
+            if from_node == resource and edge_data.get('type') == 'MAP':
+                target_cache_set = to_node
+                break
+
+        if target_cache_set is None:
+            return 0.0
+
+        # Find cache sets used by other PDs
+        other_pds_cache_sets = set()
+        for other_pd in [n for n, d in graph.g.nodes(data=True) if d.get('type') == 'PD' and n != pd]:
+            for from_node, to_node, edge_data in graph.g.edges(data=True):
+                if from_node == other_pd and edge_data.get('type') == 'HOLD':
+                    # Follow MAP edges from held resources
+                    for map_from, map_to, map_data in graph.g.edges(data=True):
+                        if map_from == to_node and map_data.get('type') == 'MAP':
+                            other_pds_cache_sets.add(map_to)
+
+        # If target cache set is NOT used by others, this is a good choice
+        if target_cache_set not in other_pds_cache_sets:
+            return 1.0
+        else:
+            return 0.0
 
     def _find_remove_hold_edge_candidates(self, graph, constraints):
         """Find HOLD edges that can be safely removed"""
@@ -538,18 +595,42 @@ class Transition:
                 pd_string = param_values['pd']
                 resource_string = param_values['resource']
 
-                # Extract numeric IDs
+                # Extract PD ID
                 pd_id = int(pd_string.split('_')[1]) if pd_string.startswith('PD_') else 1
-                resource_id = int(resource_string.split('_')[-1]) if resource_string.startswith('FILE_') else 1
 
-                # Extract resource space ID (default to 1 for FILE_SPACE_1)
-                resource_space_id = 1
+                # Determine resource type and extract IDs from resource string
+                # Format: TYPE_SPACEID_RESOURCEID (e.g., FILE_1_2, CPU_1_1, PHYS_PAGE_3_5)
+                if resource_string.startswith('FILE_'):
+                    res_type = ResourceType.FILE
+                    parts = resource_string.split('_')
+                    resource_space_id = int(parts[1])
+                    resource_id = int(parts[2])
+                elif resource_string.startswith('CPU_'):
+                    res_type = ResourceType.CPU
+                    parts = resource_string.split('_')
+                    resource_space_id = int(parts[1])
+                    resource_id = int(parts[2])
+                elif resource_string.startswith('PHYS_PAGE_'):
+                    res_type = ResourceType.PHYS_PAGE
+                    parts = resource_string.split('_')
+                    resource_space_id = int(parts[2])
+                    resource_id = int(parts[3])
+                elif resource_string.startswith('CACHE_SET_'):
+                    res_type = ResourceType.CACHE_SET
+                    parts = resource_string.split('_')
+                    resource_space_id = int(parts[2])
+                    resource_id = int(parts[3])
+                else:
+                    # Default to FILE for backwards compatibility
+                    res_type = ResourceType.FILE
+                    resource_space_id = 1
+                    resource_id = int(resource_string.split('_')[-1])
 
                 EdgeTransformations.add_hold_edge(
                     graph,
                     {Permission.R, Permission.W},  # Use set notation for permissions
                     pd_id,
-                    ResourceType.FILE,  # Use enum instead of string
+                    res_type,
                     resource_space_id,
                     resource_id
                 )
@@ -887,6 +968,122 @@ def build_reduce_isolation_graph():
     return graph
 
 
+def build_cache_same_core_conflict_graph():
+    """Build a graph where 2 PDs on same CPU core have cache set collision.
+
+    Structure:
+    - 2 PDs on same CPU (CPU_1)
+    - 4 cache sets
+    - 8 physical pages (2 per cache set, using modulo mapping)
+    - Both PDs use physical pages that map to the same cache set
+
+    Initial state (collision):
+        PD_1 -> CPU_1, PHYS_PAGE_1 -> CACHE_SET_1
+        PD_2 -> CPU_1, PHYS_PAGE_5 -> CACHE_SET_1 (collision!)
+    """
+    graph = ModelGraph()
+
+    # Add 2 PDs
+    pd1_id = NodeTransformations.add_pd_node(graph, "PD_1")
+    pd2_id = NodeTransformations.add_pd_node(graph, "PD_2")
+
+    # Add CPU space and 2 CPU cores
+    cpu_space_id = NodeTransformations.add_resource_space(graph, ResourceType.CPU)
+    cpu1_id = NodeTransformations.add_cpu_resource(graph, cpu_space_id, 1)
+    cpu2_id = NodeTransformations.add_cpu_resource(graph, cpu_space_id, 2)
+
+    # Add cache set space and 4 cache sets (indexed 0-3)
+    cache_space_id = NodeTransformations.add_resource_space(graph, ResourceType.CACHE_SET)
+    for i in range(4):
+        NodeTransformations.add_cache_set_resource(graph, cache_space_id, i)
+
+    # Add physical page space and 8 pages
+    phys_space_id = NodeTransformations.add_resource_space(graph, ResourceType.PHYS_PAGE)
+    for i in range(1, 9):
+        NodeTransformations.add_phys_page_resource(graph, phys_space_id, i)
+
+    # Add fixed MAP edges: PHYS_PAGE -> CACHE_SET (modulo 4 mapping)
+    # Page 1 -> Set 1, Page 2 -> Set 2, Page 3 -> Set 3, Page 4 -> Set 0
+    # Page 5 -> Set 1, Page 6 -> Set 2, Page 7 -> Set 3, Page 8 -> Set 0
+    for page_id in range(1, 9):
+        cache_set_id = page_id % 4
+        EdgeTransformations.add_map_edge(
+            graph,
+            ResourceType.PHYS_PAGE, ResourceType.CACHE_SET,
+            phys_space_id, cache_space_id,
+            page_id, cache_set_id
+        )
+
+    # Both PDs scheduled on same CPU (CPU_1)
+    EdgeTransformations.add_hold_edge(graph, {Permission.R}, pd1_id, ResourceType.CPU, cpu_space_id, cpu1_id)
+    EdgeTransformations.add_hold_edge(graph, {Permission.R}, pd2_id, ResourceType.CPU, cpu_space_id, cpu1_id)
+
+    # PD_1 holds PHYS_PAGE_1 (maps to CACHE_SET_1)
+    EdgeTransformations.add_hold_edge(graph, {Permission.R, Permission.W}, pd1_id, ResourceType.PHYS_PAGE, phys_space_id, 1)
+
+    # PD_2 holds PHYS_PAGE_5 (also maps to CACHE_SET_1 - collision!)
+    EdgeTransformations.add_hold_edge(graph, {Permission.R, Permission.W}, pd2_id, ResourceType.PHYS_PAGE, phys_space_id, 5)
+
+    return graph
+
+
+def build_cache_llc_collision_graph():
+    """Build a graph where 2 PDs on different CPU cores have LLC cache set collision.
+
+    Structure:
+    - 2 PDs on different CPUs (CPU_1 and CPU_2)
+    - 4 cache sets (shared L3/LLC)
+    - 8 physical pages (2 per cache set, using modulo mapping)
+    - Both PDs use physical pages that map to the same cache set
+
+    Initial state (LLC collision):
+        PD_1 -> CPU_1, PHYS_PAGE_1 -> CACHE_SET_1
+        PD_2 -> CPU_2, PHYS_PAGE_5 -> CACHE_SET_1 (LLC collision!)
+    """
+    graph = ModelGraph()
+
+    # Add 2 PDs
+    pd1_id = NodeTransformations.add_pd_node(graph, "PD_1")
+    pd2_id = NodeTransformations.add_pd_node(graph, "PD_2")
+
+    # Add CPU space and 2 CPU cores
+    cpu_space_id = NodeTransformations.add_resource_space(graph, ResourceType.CPU)
+    cpu1_id = NodeTransformations.add_cpu_resource(graph, cpu_space_id, 1)
+    cpu2_id = NodeTransformations.add_cpu_resource(graph, cpu_space_id, 2)
+
+    # Add cache set space and 4 cache sets (indexed 0-3)
+    cache_space_id = NodeTransformations.add_resource_space(graph, ResourceType.CACHE_SET)
+    for i in range(4):
+        NodeTransformations.add_cache_set_resource(graph, cache_space_id, i)
+
+    # Add physical page space and 8 pages
+    phys_space_id = NodeTransformations.add_resource_space(graph, ResourceType.PHYS_PAGE)
+    for i in range(1, 9):
+        NodeTransformations.add_phys_page_resource(graph, phys_space_id, i)
+
+    # Add fixed MAP edges: PHYS_PAGE -> CACHE_SET (modulo 4 mapping)
+    for page_id in range(1, 9):
+        cache_set_id = page_id % 4
+        EdgeTransformations.add_map_edge(
+            graph,
+            ResourceType.PHYS_PAGE, ResourceType.CACHE_SET,
+            phys_space_id, cache_space_id,
+            page_id, cache_set_id
+        )
+
+    # PDs on different CPUs
+    EdgeTransformations.add_hold_edge(graph, {Permission.R}, pd1_id, ResourceType.CPU, cpu_space_id, cpu1_id)
+    EdgeTransformations.add_hold_edge(graph, {Permission.R}, pd2_id, ResourceType.CPU, cpu_space_id, cpu2_id)
+
+    # PD_1 holds PHYS_PAGE_1 (maps to CACHE_SET_1)
+    EdgeTransformations.add_hold_edge(graph, {Permission.R, Permission.W}, pd1_id, ResourceType.PHYS_PAGE, phys_space_id, 1)
+
+    # PD_2 holds PHYS_PAGE_5 (also maps to CACHE_SET_1 - LLC collision!)
+    EdgeTransformations.add_hold_edge(graph, {Permission.R, Permission.W}, pd2_id, ResourceType.PHYS_PAGE, phys_space_id, 5)
+
+    return graph
+
+
 # Core scenarios
 SCENARIOS = {
     "basic_sharing_primitive": Scenario(
@@ -955,6 +1152,44 @@ SCENARIOS = {
         allowed_primitives=PRIMITIVES,  # All primitives allowed
         allowed_multistep=[],  # No multi-step transitions
         graph_builder=build_reduce_isolation_graph
+    ),
+
+    "cache_same_core_conflict": Scenario(
+        name="Cache Same-Core Conflict",
+        description="Two PDs on same CPU core with cache set collision. Goal: achieve cache isolation via page coloring.",
+        goals=[
+            Goal("TransitiveRSI", 0.0, "minimize", "PD_1,PD_2")  # Zero cache set overlap
+        ],
+        constraints=[
+            # Each PD must have at least one physical page
+            Constraint("requires_resource_type", 1, "PHYS_PAGE", properties={"min_count": 1}),
+            Constraint("requires_resource_type", 2, "PHYS_PAGE", properties={"min_count": 1}),
+            # Each PD must be scheduled on at least one CPU
+            Constraint("requires_resource_type", 1, "CPU", properties={"min_count": 1}),
+            Constraint("requires_resource_type", 2, "CPU", properties={"min_count": 1}),
+        ],
+        allowed_primitives=PRIMITIVES,
+        allowed_multistep=[],
+        graph_builder=build_cache_same_core_conflict_graph
+    ),
+
+    "cache_llc_collision": Scenario(
+        name="Cache LLC Collision",
+        description="Two PDs on different CPUs with shared L3 cache set collision. Goal: achieve cache isolation via page coloring.",
+        goals=[
+            Goal("TransitiveRSI", 0.0, "minimize", "PD_1,PD_2")  # Zero cache set overlap
+        ],
+        constraints=[
+            # Each PD must have at least one physical page
+            Constraint("requires_resource_type", 1, "PHYS_PAGE", properties={"min_count": 1}),
+            Constraint("requires_resource_type", 2, "PHYS_PAGE", properties={"min_count": 1}),
+            # Each PD must be scheduled on at least one CPU
+            Constraint("requires_resource_type", 1, "CPU", properties={"min_count": 1}),
+            Constraint("requires_resource_type", 2, "CPU", properties={"min_count": 1}),
+        ],
+        allowed_primitives=PRIMITIVES,
+        allowed_multistep=[],
+        graph_builder=build_cache_llc_collision_graph
     ),
 }
 

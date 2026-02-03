@@ -26,6 +26,9 @@ class ResourceType(Enum):
     MO = 2  # Same as PMR, a region of contiguous virtual memory
     PID = 3  # Same as PMR, a region of contiguous virtual memory
     FILE = 4  # File system resources
+    CPU = 5  # CPU cores
+    CACHE_SET = 6  # Cache sets (L1/L2/L3)
+    PHYS_PAGE = 7  # Physical memory pages
 
 
 class VmrType(Enum):
@@ -230,6 +233,55 @@ class ModelGraph:
         }
         return self.add_resource_node(
             ResourceType.FILE, space_id, None, json.dumps(extra)
+        )
+
+    def add_cpu_node(self, space_id: int, core_id: int = None) -> int:
+        """
+        Add a CPU core node to a model state graph
+
+        :param space_id: ID of the CPU space to add the core to
+        :param core_id: Optional specific core ID
+        :return: the resource ID
+        """
+        extra = {
+            "core_id": str(core_id) if core_id else "auto"
+        }
+        return self.add_resource_node(
+            ResourceType.CPU, space_id, core_id, json.dumps(extra)
+        )
+
+    def add_cache_set_node(self, space_id: int, set_index: int = None) -> int:
+        """
+        Add a cache set node to a model state graph
+
+        :param space_id: ID of the cache space to add the set to
+        :param set_index: Optional specific cache set index
+        :return: the resource ID
+        """
+        extra = {
+            "set_index": str(set_index) if set_index is not None else "auto"
+        }
+        return self.add_resource_node(
+            ResourceType.CACHE_SET, space_id, set_index, json.dumps(extra)
+        )
+
+    def add_phys_page_node(self, space_id: int, page_id: int = None, phys_addr: int = None) -> int:
+        """
+        Add a physical page node to a model state graph
+
+        :param space_id: ID of the physical memory space to add the page to
+        :param page_id: Optional specific page ID
+        :param phys_addr: Optional physical address (defaults to page_id * page_size)
+        :return: the resource ID
+        """
+        if phys_addr is None and page_id is not None:
+            phys_addr = page_id * page_size
+        extra = {
+            "page_id": str(page_id) if page_id is not None else "auto",
+            "phys_addr": hex(phys_addr) if phys_addr is not None else "auto"
+        }
+        return self.add_resource_node(
+            ResourceType.PHYS_PAGE, space_id, page_id, json.dumps(extra)
         )
 
     def add_pd_node(self, name: str, pd_id: int | None = None) -> int:

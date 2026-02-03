@@ -12,7 +12,7 @@ from scenarios import get_scenario, list_scenarios, SCENARIOS, Goal, Constraint,
 
 def ComputeMetrics(candidate):
     """
-    Compute metrics for a candidate graph (RSI, FR, TCB, IB)
+    Compute metrics for a candidate graph (RSI, TransitiveRSI, FR, TCB, ASR)
     Returns: dictionary of metric values
     """
     print("  Computing metrics...")
@@ -23,8 +23,12 @@ def ComputeMetrics(candidate):
 
     metrics = {}
 
-    # Calculate RSI (Resource Sharing Index) as per PD pair metric
-    metrics['RSI'] = _calculate_rsi_per_pd_pair(candidate, pd_nodes)
+    # Calculate RSI (Resource Sharing Index) as per PD pair metric - direct HOLD edges only
+    metrics['RSI'] = _calculate_rsi_per_pd_pair(candidate, pd_nodes, follow_map_edges=False)
+
+    # Calculate TransitiveRSI - follows MAP edges to find effective resource sharing
+    # (e.g., for cache scenarios: PHYS_PAGE -> CACHE_SET)
+    metrics['TransitiveRSI'] = _calculate_rsi_per_pd_pair(candidate, pd_nodes, follow_map_edges=True)
 
     # Calculate ASR (Attack Surface Ratio) - attack paths per PD
     metrics['ASR'] = _calculate_asr(candidate, pd_nodes)
@@ -35,20 +39,24 @@ def ComputeMetrics(candidate):
     # Calculate FR (Fault Radius) - distance to common ancestor via REQUEST edges
     metrics['FR'] = _calculate_fr(candidate, pd_nodes)
 
-    print(f"    RSI: {metrics['RSI']}, ASR: {metrics['ASR']}, TCB: {metrics['TCB']}, FR: {metrics['FR']}")
+    print(f"    RSI: {metrics['RSI']}, TransitiveRSI: {metrics['TransitiveRSI']}, ASR: {metrics['ASR']}, TCB: {metrics['TCB']}, FR: {metrics['FR']}")
     return metrics
 
 
-def _calculate_rsi_per_pd_pair(graph, pd_nodes):
-    """Calculate RSI (Resource Sharing Index) as per PD pair metric - DIRECT ACCESS ONLY
+def _calculate_rsi_per_pd_pair(graph, pd_nodes, follow_map_edges=False):
+    """Calculate RSI (Resource Sharing Index) as per PD pair metric
 
-    RSI[PD_i, PD_j] = (Resources directly shared by PD_i and PD_j) / (Total resources directly accessed by either PD_i or PD_j)
+    RSI[PD_i, PD_j] = (Resources shared by PD_i and PD_j) / (Total resources accessed by either PD_i or PD_j)
 
-    Only considers direct HOLD edges from PDs to resources, not indirect access through mediators.
+    Args:
+        graph: The model graph
+        pd_nodes: List of PD node IDs
+        follow_map_edges: If True, follow MAP edges transitively to find effective resources
+                         (e.g., PHYS_PAGE -> CACHE_SET). If False, only count direct HOLD edges.
 
     Returns a dictionary mapping PD pairs to their RSI values
     """
-    # Build resource access map: PD -> set of directly held resources
+    # Build resource access map: PD -> set of resources
     pd_resources = {}
     for pd in pd_nodes:
         pd_resources[pd] = set()
@@ -59,6 +67,10 @@ def _calculate_rsi_per_pd_pair(graph, pd_nodes):
             # Only count direct access - PD directly holds the resource
             if from_node in pd_resources:
                 pd_resources[from_node].add(to_node)
+
+    # If follow_map_edges is True, resolve to effective resources via MAP edges
+    if follow_map_edges:
+        pd_resources = _resolve_transitive_resources(graph, pd_resources)
 
     # Calculate RSI for each PD pair
     rsi_pairs = {}
@@ -84,6 +96,65 @@ def _calculate_rsi_per_pd_pair(graph, pd_nodes):
                     rsi_pairs[pair_key] = 0.0
 
     return rsi_pairs
+
+
+def _resolve_transitive_resources(graph, pd_resources):
+    """Follow MAP edges to find effective/transitive resources for each PD.
+
+    For example, if PD holds PHYS_PAGE_1 which MAPs to CACHE_SET_1,
+    the effective resource is CACHE_SET_1.
+
+    Args:
+        graph: The model graph
+        pd_resources: Dict mapping PD -> set of directly held resources
+
+    Returns:
+        Dict mapping PD -> set of effective resources (after following MAP edges)
+    """
+    # Build a map of resource -> resources it maps to
+    map_edges = {}
+    for from_node, to_node, edge_data in graph.g.edges(data=True):
+        if edge_data.get('type') == 'MAP':
+            if from_node not in map_edges:
+                map_edges[from_node] = set()
+            map_edges[from_node].add(to_node)
+
+    # For each PD, resolve held resources to their effective resources
+    pd_effective_resources = {}
+    for pd, resources in pd_resources.items():
+        effective = set()
+        for resource in resources:
+            # Follow MAP edges transitively
+            resolved = _follow_map_chain(resource, map_edges)
+            effective.update(resolved)
+        pd_effective_resources[pd] = effective
+
+    return pd_effective_resources
+
+
+def _follow_map_chain(resource, map_edges, visited=None):
+    """Follow MAP edges from a resource to find terminal resources.
+
+    Returns the set of resources at the end of MAP chains.
+    If the resource has no outgoing MAP edges, returns itself.
+    """
+    if visited is None:
+        visited = set()
+
+    # Prevent cycles
+    if resource in visited:
+        return set()
+    visited.add(resource)
+
+    # If this resource has MAP edges, follow them
+    if resource in map_edges:
+        result = set()
+        for mapped_to in map_edges[resource]:
+            result.update(_follow_map_chain(mapped_to, map_edges, visited.copy()))
+        return result
+    else:
+        # Terminal resource - no outgoing MAP edges
+        return {resource}
 
 
 def _get_resource_type(graph, resource_node):
