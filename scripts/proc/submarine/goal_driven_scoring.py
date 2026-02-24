@@ -8,6 +8,40 @@ replacing the broken metric-driven scoring that gives uniform 0.100 scores.
 from isosearch import ComputeMetrics
 
 
+def _has_hold_edge(graph, from_node, to_node):
+    """Return True if there is a HOLD edge from from_node to to_node.
+
+    Works for both DiGraph and MultiDiGraph.  In a MultiDiGraph,
+    graph[u][v] returns an AtlasView {edge_key: edge_data_dict}, so we
+    must iterate over the values to find the edge type.
+    """
+    if not graph.g.has_edge(from_node, to_node):
+        return False
+    raw = graph.g[from_node][to_node]
+    # DiGraph: raw == {'type': 'HOLD', ...}
+    # MultiDiGraph: raw == {0: {'type': 'HOLD', ...}, ...}
+    if raw.get('type') == 'HOLD':
+        return True
+    # MultiDiGraph case
+    for edge_data in raw.values():
+        if isinstance(edge_data, dict) and edge_data.get('type') == 'HOLD':
+            return True
+    return False
+
+
+def _has_request_edge(graph, from_node, to_node):
+    """Return True if there is a REQUEST edge from from_node to to_node."""
+    if not graph.g.has_edge(from_node, to_node):
+        return False
+    raw = graph.g[from_node][to_node]
+    if raw.get('type') == 'REQUEST':
+        return True
+    for edge_data in raw.values():
+        if isinstance(edge_data, dict) and edge_data.get('type') == 'REQUEST':
+            return True
+    return False
+
+
 def calculate_goal_driven_score(operation_name, params, current_graph, new_graph, goals, constraints, transition_history=None):
     """
     Calculate score based on direct goal improvement and constraint satisfaction
@@ -913,16 +947,14 @@ def check_unsatisfiable_state(new_graph, constraints):
             resource_node = constraint.resource_info
             
             # If this PD is prohibited from direct access, check if indirect access is possible
-            if new_graph.g.has_edge(pd_node, resource_node):
-                edge_data = new_graph.g[pd_node][resource_node]
-                if edge_data.get('type') == 'HOLD':
-                    # Check if there's also a requirement for this PD to access this resource
-                    for req_constraint in constraints:
-                        if (req_constraint.constraint_type == "requires_resource_access" and
-                            req_constraint.pd_id == constraint.pd_id and
-                            req_constraint.resource_info == resource_node):
-                            # This is a violation of prohibition + requirement
-                            penalty -= 25.0  # High penalty for direct violation
+            if _has_hold_edge(new_graph, pd_node, resource_node):
+                # Check if there's also a requirement for this PD to access this resource
+                for req_constraint in constraints:
+                    if (req_constraint.constraint_type == "requires_resource_access" and
+                        req_constraint.pd_id == constraint.pd_id and
+                        req_constraint.resource_info == resource_node):
+                        # This is a violation of prohibition + requirement
+                        penalty -= 25.0  # High penalty for direct violation
     
     return penalty
 
@@ -1032,95 +1064,59 @@ def count_constraint_violations(graph, constraints):
         elif constraint.constraint_type == "prohibit_direct_hold":
             pd_node = f"PD_{constraint.pd_id}"
             resource_node = constraint.resource_info
-            
-            # Check if prohibited edge exists
-            if graph.g.has_edge(pd_node, resource_node):
-                edge_data = graph.g[pd_node][resource_node]
-                if edge_data.get('type') == 'HOLD':
-                    violations += 1
-                    
+
+            # Check if prohibited HOLD edge exists (handles MultiDiGraph)
+            if _has_hold_edge(graph, pd_node, resource_node):
+                violations += 1
+
         elif constraint.constraint_type == "requires_resource_access":
             pd_node = f"PD_{constraint.pd_id}"
             resource_node = constraint.resource_info
             access_type = constraint.properties.get('access_type', 'direct_or_indirect')
-            
+
             has_access = False
-            
+
             if access_type == "direct":
-                # Check direct access only
-                if graph.g.has_edge(pd_node, resource_node):
-                    edge_data = graph.g[pd_node][resource_node]
-                    if edge_data.get('type') == 'HOLD':
-                        has_access = True
-                        
+                has_access = _has_hold_edge(graph, pd_node, resource_node)
+
             elif access_type == "indirect":
                 # Check indirect access only (no direct access allowed)
-                # First verify no direct access exists
-                if graph.g.has_edge(pd_node, resource_node):
-                    edge_data = graph.g[pd_node][resource_node]
-                    if edge_data.get('type') == 'HOLD':
-                        # Has direct access but should only have indirect - violation
-                        violations += 1
-                        continue
-                
+                if _has_hold_edge(graph, pd_node, resource_node):
+                    # Has direct access but should only have indirect - violation
+                    violations += 1
+                    continue
+
                 # Check for indirect access through REQUEST edges
                 for neighbor in graph.g.neighbors(pd_node):
-                    if graph.g.has_edge(pd_node, neighbor):
-                        edge_data = graph.g[pd_node][neighbor]
-                        if edge_data.get('type') == 'REQUEST':
-                            # Check if neighbor has access to resource
-                            if graph.g.has_edge(neighbor, resource_node):
-                                neighbor_edge = graph.g[neighbor][resource_node]
-                                if neighbor_edge.get('type') == 'HOLD':
-                                    has_access = True
-                                    break
-                                    
+                    if _has_request_edge(graph, pd_node, neighbor):
+                        if _has_hold_edge(graph, neighbor, resource_node):
+                            has_access = True
+                            break
+
             elif access_type == "direct_or_indirect":
-                # Check direct access
-                if graph.g.has_edge(pd_node, resource_node):
-                    edge_data = graph.g[pd_node][resource_node]
-                    if edge_data.get('type') == 'HOLD':
-                        has_access = True
-                
-                # Check indirect access (through REQUEST edges)
+                has_access = _has_hold_edge(graph, pd_node, resource_node)
                 if not has_access:
                     for neighbor in graph.g.neighbors(pd_node):
-                        if graph.g.has_edge(pd_node, neighbor):
-                            edge_data = graph.g[pd_node][neighbor]
-                            if edge_data.get('type') == 'REQUEST':
-                                # Check if neighbor has access to resource
-                                if graph.g.has_edge(neighbor, resource_node):
-                                    neighbor_edge = graph.g[neighbor][resource_node]
-                                    if neighbor_edge.get('type') == 'HOLD':
-                                        has_access = True
-                                        break
-            
+                        if _has_request_edge(graph, pd_node, neighbor):
+                            if _has_hold_edge(graph, neighbor, resource_node):
+                                has_access = True
+                                break
+
             if not has_access:
                 violations += 1
-                
+
         elif constraint.constraint_type == "requires_indirect_access":
             pd_node = f"PD_{constraint.pd_id}"
             resource_node = constraint.resource_info
-            
-            # Check if PD has direct access (should not have direct access)
-            has_direct_access = False
-            if graph.g.has_edge(pd_node, resource_node):
-                edge_data = graph.g[pd_node][resource_node]
-                if edge_data.get('type') == 'HOLD':
-                    has_direct_access = True
-            
-            # Check for indirect access through REQUEST edges
+
+            has_direct_access = _has_hold_edge(graph, pd_node, resource_node)
+
             has_indirect_access = False
             for neighbor in graph.g.neighbors(pd_node):
-                if graph.g.has_edge(pd_node, neighbor):
-                    edge_data = graph.g[pd_node][neighbor]
-                    if edge_data.get('type') == 'REQUEST':
-                        # Check if neighbor has access to resource
-                        if graph.g.has_edge(neighbor, resource_node):
-                            neighbor_edge = graph.g[neighbor][resource_node]
-                            if neighbor_edge.get('type') == 'HOLD':
-                                has_indirect_access = True
-                                break
+                if _has_request_edge(graph, pd_node, neighbor):
+                    if _has_hold_edge(graph, neighbor, resource_node):
+                        has_indirect_access = True
+                        break
             
             # Count as violation if: has direct access OR lacks any access
             if has_direct_access:

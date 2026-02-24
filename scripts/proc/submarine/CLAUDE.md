@@ -30,17 +30,35 @@ This directory contains the **submarine** component of the OS modeling system - 
 
 ## Submarine Usage Patterns
 
-### Running Isomorphic Search
+### Running IsoSearch
+
+Always activate the virtual environment first:
 ```bash
-# Navigate to submarine directory
-cd submarine
-
-# Run isomorphic search with specific scenario
-python isosearch.py --scenario <scenario_name>
-
-# Run with custom pattern definition
-python isosearch.py --pattern <pattern_file>
+source .venv/bin/activate
 ```
+
+Run a named scenario (greedy search, default 10 iterations):
+```bash
+python3 isosearch.py <scenario_name>
+```
+
+Run with more iterations (needed for multi-goal scenarios like privsep):
+```bash
+python3 isosearch.py privsep --max-iterations 30
+```
+
+Run quietly (compact per-iteration output):
+```bash
+python3 isosearch.py privsep --max-iterations 30 --quiet
+```
+
+Available scenarios: `mediation`, `privatization`, `sharing`, `privsep`, `cache_partitioning`, `crypto_cache_isolation`
+
+Key flags:
+- `--max-iterations N` — override iteration count (default 10; use 30 for privsep)
+- `--quiet` — suppress verbose metric dumps, show per-iteration summary only
+- `--beam-search` — use beam search instead of greedy
+- `--beam-width N` — beam width for beam search (default 12)
 
 ### Graph Analysis Workflow
 ```bash

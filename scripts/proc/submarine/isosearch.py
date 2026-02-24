@@ -565,17 +565,25 @@ def GenerateCandidate(graph, constraints, transitions, goals, last_transition_ty
             return base_improvement + constraint_relevance + 0.1
         return base_improvement
 
-    # Filter out candidates of the same type as last iteration to force exploration diversity
+    # Filter out candidates of the same type as last iteration to force exploration diversity,
+    # UNLESS those candidates are significantly better than the alternatives (e.g., removing
+    # prohibited edges when many consecutive removes are needed).
     if last_transition_type is not None:
         original_count = len(transformation_candidates)
         same_type_candidates = [c for c in transformation_candidates if c['transition_name'] == last_transition_type]
         different_type_candidates = [c for c in transformation_candidates if c['transition_name'] != last_transition_type]
 
-        if different_type_candidates:
-            # Only use different types if available
-            transformation_candidates = different_type_candidates
-            print(f"  🚫 Filtered out {len(same_type_candidates)} '{last_transition_type}' candidates (avoiding repetition)")
-        else:
+        if different_type_candidates and same_type_candidates:
+            best_same_score = max(c['predicted_improvement'] for c in same_type_candidates)
+            best_diff_score = max(c['predicted_improvement'] for c in different_type_candidates)
+            # Only filter if same-type candidates are not significantly better than alternatives
+            # Threshold: if same-type best score exceeds best alternative by > 1.0, keep them
+            if best_same_score <= best_diff_score + 1.0:
+                transformation_candidates = different_type_candidates
+                print(f"  🚫 Filtered out {len(same_type_candidates)} '{last_transition_type}' candidates (diversity; best same={best_same_score:.1f}, diff={best_diff_score:.1f})")
+            else:
+                print(f"  ✓ Keeping '{last_transition_type}' candidates (best same={best_same_score:.1f} >> diff={best_diff_score:.1f})")
+        elif not different_type_candidates:
             # If no different types available, keep all candidates
             print(f"  ⚠️  No alternatives to '{last_transition_type}', keeping all {original_count} candidates")
 
@@ -2011,16 +2019,17 @@ def BeamSearchExploration(scenario, beam_width=3, max_depth=8):
     return explored_mechanisms
 
 
-def GreedyDesignSpaceExploration(scenario):
+def GreedyDesignSpaceExploration(scenario, max_iterations=10):
     """
     Greedy IsoSearch algorithm for exploring design space
-    
+
     Uses a greedy search strategy that selects the locally optimal transition at each step
     based on predicted improvement scores. Includes a small exploration factor (15% chance)
     to occasionally select from top-3 alternatives instead of always the best candidate.
-    
+
     Args:
         scenario - Scenario object with goals, constraints, transitions, and graph builder
+        max_iterations - Maximum number of greedy iterations (default: 10)
     Returns: list of explored mechanisms
     """
     # Step 1: Initialize components from scenario (from pseudocode line 2)
@@ -2049,7 +2058,7 @@ def GreedyDesignSpaceExploration(scenario):
 
 
     # Step 2: Main exploration loop (from pseudocode line 8)
-    maxIterations = 10  # More iterations for emergent discovery
+    maxIterations = max_iterations
     last_transition_type = None  # Track last transition to avoid repetition
 
     for i in range(1, maxIterations + 1):
@@ -2663,7 +2672,7 @@ def _suggest_improvements(graph, metric_name, current_value, target_value):
 
 
 
-def run_scenario(scenario_name, enable_visualization=False):
+def run_scenario(scenario_name, enable_visualization=False, max_iterations=10):
     """
     Run IsoSearch exploration on a specific scenario
     Args:
@@ -2701,7 +2710,7 @@ def run_scenario(scenario_name, enable_visualization=False):
             print(f"🔍 Using beam search (width={args.beam_width})")
             result = BeamSearchExploration(scenario, beam_width=args.beam_width, max_depth=args.bfs_max_depth)
         else:
-            result = GreedyDesignSpaceExploration(scenario)
+            result = GreedyDesignSpaceExploration(scenario, max_iterations=max_iterations)
 
 
         print(f"\n✅ Scenario '{scenario.name}' complete!")
@@ -2975,7 +2984,7 @@ if __name__ == "__main__":
         # Run the scenarios
         if len(scenario_names) == 1:
             print(f"\n🎯 Running scenario: {scenario_names[0]}")
-            result = run_scenario(scenario_names[0], enable_visualization=args.visualize)
+            result = run_scenario(scenario_names[0], enable_visualization=args.visualize, max_iterations=args.max_iterations)
         else:
             print(f"\n🚀 Running {len(scenario_names)} scenarios: {', '.join(scenario_names)}")
             results = run_multiple_scenarios(scenario_names)

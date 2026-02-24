@@ -1154,6 +1154,73 @@ def build_crypto_cache_isolation_graph():
     return graph
 
 
+def build_privsep_graph():
+    """Build a graph modeling OpenSSH-inspired privilege separation.
+
+    Five-component decomposition (extends real OpenSSH's 2-3 process model):
+      PD_1 (PD_monitor)  - privileged root monitor: holds audit log
+      PD_2 (PD_net)      - network handler: internet-facing, unprivileged, holds TCP socket
+      PD_3 (PD_session)  - session manager: holds session state post-authentication
+      PD_4 (PD_auth)     - authentication handler: holds user credentials (PAM / pubkey)
+      PD_5 (PD_keystore) - key manager: holds SSH host private key (like ssh-agent or HSM)
+
+    Resources (all FILE type, one FILE_SPACE):
+      FILE_1_1  CONFIG    /etc/ssh/ssh_host_rsa_key  SSH host private key
+      FILE_1_2  DATABASE  /etc/shadow                User credentials
+      FILE_1_3  TEMP      /tmp/sshd_session          Session state (IPC approximation)
+      FILE_1_4  SOCKET    /var/run/sshd.sock         Network socket
+      FILE_1_5  LOG       /var/log/auth.log           Audit log
+
+    OpenSSH accuracy:
+      FILE_1_1, FILE_1_4, FILE_1_5 map directly to real OpenSSH resources.
+      FILE_1_2 simplifies /etc/shadow + authorized_keys into one credential store.
+      FILE_1_3 approximates the monitor<->child socketpair as a TEMP file.
+      The PD_auth / PD_keystore split generalizes the real monitor (which holds both)
+      to model a modern design with dedicated auth and key management services.
+
+    G_0 (monolithic baseline):
+      All 5 PDs hold all 5 resources. 25 HOLD edges. RSI = 1.0 for all 10 pairs.
+
+    Target state (privilege separated):
+      PD_1 -> FILE_1_5 only (audit log)
+      PD_2 -> FILE_1_4 only (network socket)
+      PD_3 -> FILE_1_3 only (session state)
+      PD_4 -> FILE_1_2 only (credentials)
+      PD_5 -> FILE_1_1 only (host key)
+      REQUEST edges establish mediated access between components.
+    """
+    graph = ModelGraph()
+
+    # Add 5 PDs in order — node IDs will be PD_1 through PD_5
+    # (name param is display-only; actual node key is f"PD_{counter}")
+    pd_monitor_id  = NodeTransformations.add_pd_node(graph, "PD_monitor")   # PD_1
+    pd_net_id      = NodeTransformations.add_pd_node(graph, "PD_net")        # PD_2
+    pd_session_id  = NodeTransformations.add_pd_node(graph, "PD_session")    # PD_3
+    pd_auth_id     = NodeTransformations.add_pd_node(graph, "PD_auth")       # PD_4
+    pd_keystore_id = NodeTransformations.add_pd_node(graph, "PD_keystore")   # PD_5
+
+    # Add one FILE resource space
+    space_id = NodeTransformations.add_resource_space(graph, ResourceType.FILE)
+
+    # Add 5 FILE resources — node IDs will be FILE_1_1 through FILE_1_5
+    hostkey_id     = NodeTransformations.add_file_resource(graph, space_id, FileType.CONFIG,   "/etc/ssh/ssh_host_rsa_key", 1679)  # FILE_1_1
+    cred_id        = NodeTransformations.add_file_resource(graph, space_id, FileType.DATABASE, "/etc/shadow",               4096)  # FILE_1_2
+    session_id_res = NodeTransformations.add_file_resource(graph, space_id, FileType.TEMP,     "/tmp/sshd_session",          512)  # FILE_1_3
+    socket_id      = NodeTransformations.add_file_resource(graph, space_id, FileType.SOCKET,   "/var/run/sshd.sock",           0)  # FILE_1_4
+    log_id         = NodeTransformations.add_file_resource(graph, space_id, FileType.LOG,      "/var/log/auth.log",         8192)  # FILE_1_5
+
+    # G_0: all PDs hold all resources (monolithic, fully-shared baseline)
+    pd_ids  = [pd_monitor_id, pd_net_id, pd_session_id, pd_auth_id, pd_keystore_id]
+    res_ids = [hostkey_id, cred_id, session_id_res, socket_id, log_id]
+    for pd in pd_ids:
+        for res in res_ids:
+            EdgeTransformations.add_hold_edge(
+                graph, {Permission.R, Permission.W}, pd, ResourceType.FILE, space_id, res
+            )
+
+    return graph
+
+
 # Core scenarios
 SCENARIOS = {
     "basic_sharing_primitive": Scenario(
@@ -1287,6 +1354,39 @@ SCENARIOS = {
         allowed_primitives=PRIMITIVES,
         allowed_multistep=[],
         graph_builder=build_crypto_cache_isolation_graph
+    ),
+
+    "privsep": Scenario(
+        name="Privilege Separation (OpenSSH-inspired)",
+        description=(
+            "Five-component SSH daemon starting from a fully-shared monolithic baseline. "
+            "IsoSearch must discover privilege separation: each component ends up holding "
+            "only its own resource, with sensitive material (host key, credentials) "
+            "isolated from the internet-facing network handler. "
+            "Inspired by OpenSSH privsep (Provos 2002), extended to 5 PDs for scalability."
+        ),
+        goals=[
+            # Primary: internet-facing handler must not share resources with key material
+            Goal("RSI", 0.0, "minimize", "PD_2,PD_5"),  # net (PD_2) ↔ keystore (PD_5)
+            Goal("RSI", 0.0, "minimize", "PD_2,PD_4"),  # net (PD_2) ↔ auth (PD_4)
+            # Secondary: active sessions and net handler stay isolated post-auth
+            Goal("RSI", 0.0, "minimize", "PD_2,PD_3"),  # net (PD_2) ↔ session (PD_3)
+            Goal("RSI", 0.0, "minimize", "PD_3,PD_5"),  # session (PD_3) ↔ keystore (PD_5)
+        ],
+        constraints=[
+            # Functional: each PD must retain direct access to its own resource
+            Constraint("requires_resource_access", 1, "FILE_1_5", properties={"access_type": "direct"}),  # monitor keeps audit log
+            Constraint("requires_resource_access", 2, "FILE_1_4", properties={"access_type": "direct"}),  # net keeps network socket
+            Constraint("requires_resource_access", 3, "FILE_1_3", properties={"access_type": "direct"}),  # session keeps session state
+            Constraint("requires_resource_access", 4, "FILE_1_2", properties={"access_type": "direct"}),  # auth keeps credentials
+            Constraint("requires_resource_access", 5, "FILE_1_1", properties={"access_type": "direct"}),  # keystore keeps host key
+            # Security invariants: PD_2 (net handler) must never directly hold sensitive resources
+            Constraint("prohibit_direct_hold", 2, "FILE_1_1"),  # net never holds host key
+            Constraint("prohibit_direct_hold", 2, "FILE_1_2"),  # net never holds credentials
+        ],
+        allowed_primitives=PRIMITIVES,
+        allowed_multistep=[],
+        graph_builder=build_privsep_graph
     ),
 }
 
