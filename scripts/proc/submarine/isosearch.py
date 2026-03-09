@@ -1510,69 +1510,100 @@ def _add_mediator_between_pds(graph, shared_resource, sharers):
                                            ResourceType.FILE, space_id)
 
 
+def _fast_goal_progress(graph, goals):
+    """Compute goal progress without calling the expensive full ComputeMetrics.
+
+    Only calculates RSI for the specific PD pairs referenced by RSI/TransitiveRSI
+    goals, avoiding TCB, FR, and verbose print statements.  Much faster for the
+    beam search inner loop where we evaluate hundreds of candidate states.
+
+    Returns: (goal_progress, constraint_violations_count_approx)
+    """
+    # Build PD → held resources map from HOLD edges
+    pd_resources = {}
+    g = graph.g
+    for u, v, d in g.edges(data=True):
+        if d.get('type') == 'HOLD' and u.startswith('PD_'):
+            if u not in pd_resources:
+                pd_resources[u] = set()
+            pd_resources[u].add(v)
+
+    progress = 0.0
+    for goal in goals:
+        if goal.metric_name in ("RSI", "TransitiveRSI"):
+            parts = goal.target_spec.split(',')
+            if len(parts) != 2:
+                continue
+            pd_i, pd_j = parts[0].strip(), parts[1].strip()
+            res_i = pd_resources.get(pd_i, set())
+            res_j = pd_resources.get(pd_j, set())
+            union = res_i | res_j
+            shared = res_i & res_j
+            rsi = len(shared) / len(union) if union else 0.0
+            if goal.direction == "minimize":
+                progress += max(0.0, (1.0 - rsi) * 10.0)
+            else:
+                progress += rsi * 10.0
+    return progress
+
+
+def _hold_edge_fingerprint(state):
+    """Return a frozenset of (from, to) HOLD edges for the state's graph.
+
+    Two states with identical HOLD-edge sets represent the same isolation
+    configuration regardless of how they were reached.  Used for dedup.
+    """
+    g = state.graph.g
+    edges = set()
+    for u, v, d in g.edges(data=True):
+        if isinstance(d, dict):
+            # MultiDiGraph: d is a dict of edge-key → edge-data
+            for edata in d.values():
+                if isinstance(edata, dict) and edata.get('type') == 'HOLD':
+                    edges.add((u, v))
+                    break
+            # Also handle flat edge-data dicts
+            if d.get('type') == 'HOLD':
+                edges.add((u, v))
+    return frozenset(edges)
+
+
 def _select_diverse_beam_states_enhanced(candidates, beam_width):
     """
-    Enhanced diversity enforcement for beam search selection
-    
-    Improvements over original:
-    1. Operation type diversity - ensure different beam entries explore different operation types
-    2. Strategy divergence - penalize beam entries that are becoming too similar
-    3. Constraint focus diversity - different beams focus on different constraint types
-    
+    Beam state selection: top-k by score with graph-state deduplication.
+
+    Two beam states that represent the same graph (same HOLD edges, regardless
+    of how they were reached) are treated as duplicates; only the
+    highest-scoring one is kept.  This prevents exponential blowup when the
+    same intermediate configuration is reachable via many path orderings
+    (e.g., privsep, where any permutation of 20 remove_hold_edge ops reaches
+    the same graph).
+
     Args:
         candidates: List of BeamState objects to choose from
         beam_width: Number of states to select
-        
+
     Returns:
-        List of selected BeamState objects with enhanced diversity
+        List of selected BeamState objects (top-k by score, graph-unique)
     """
-    if len(candidates) <= beam_width:
-        return sorted(candidates, key=lambda x: x.score, reverse=True)
-    
+    if not candidates:
+        return []
+
+    # Sort by score descending so we keep the best representative of each graph
+    ranked = sorted(candidates, key=lambda x: x.score, reverse=True)
+
     selected = []
-    remaining = sorted(candidates, key=lambda x: x.score, reverse=True)
-    
-    # Always take the highest scoring candidate first
-    best_candidate = remaining.pop(0)
-    selected.append(best_candidate)
-    print(f"  🎯 Selected best candidate: {best_candidate.path_description} (score: {best_candidate.score:.3f})")
-    
-    # Track operation types and strategies across selected beam states
-    selected_operation_types = set()
-    selected_strategies = set()
-    
-    # For remaining slots, enforce enhanced diversity
-    while len(selected) < beam_width and remaining:
-        best_candidate = None
-        best_adjusted_score = -1000
-        best_idx = -1
-        best_diversity_info = ""
-        
-        for i, candidate in enumerate(remaining):
-            # Calculate enhanced diversity score
-            diversity_score, diversity_reason = _calculate_enhanced_diversity_score(
-                candidate, selected, selected_operation_types, selected_strategies
-            )
-            adjusted_score = candidate.score + diversity_score
-            
-            if adjusted_score > best_adjusted_score:
-                best_adjusted_score = adjusted_score
-                best_candidate = candidate
-                best_idx = i
-                best_diversity_info = diversity_reason
-        
-        if best_candidate:
-            selected.append(remaining.pop(best_idx))
-            
-            # Update tracking sets
-            op_type = best_candidate.path_description.split('(')[0]
-            selected_operation_types.add(op_type)
-            strategy = _identify_strategy(best_candidate)
-            selected_strategies.add(strategy)
-            
-            diversity_bonus = best_adjusted_score - best_candidate.score
-            print(f"  🌈 Selected diverse candidate: {op_type} (diversity bonus: {diversity_bonus:.3f}) - {best_diversity_info}")
-    
+    seen_graphs = set()
+
+    for candidate in ranked:
+        if len(selected) >= beam_width:
+            break
+        graph_key = _hold_edge_fingerprint(candidate)
+        if graph_key not in seen_graphs:
+            seen_graphs.add(graph_key)
+            selected.append(candidate)
+            print(f"  🎯 Selected: {candidate.path_description} (score: {candidate.score:.3f})")
+
     return selected
 
 
@@ -1693,79 +1724,33 @@ def _identify_constraint_focus(beam_state):
 
 def _select_beam_specific_candidates(all_candidates, beam_idx, beam_width, existing_beam_states):
     """
-    Select candidates for a specific beam state based on its index and diversity needs
-    
-    Problem: All beam states were selecting the same top-scoring candidates, causing convergence
-    Solution: Each beam state gets a different "personality" for candidate selection
-    
+    Select candidates for a specific beam state.
+
+    Each beam state picks the top candidate by score from the full sorted list,
+    offset by its beam index so adjacent beam states explore different options.
+    This avoids the previous operation-type filtering that prevented privsep
+    (and other scenarios requiring repeated same-type operations) from converging.
+
     Args:
         all_candidates: List of all generated candidates
-        beam_idx: Index of this beam state (0 = best beam, 1 = diverse beam, etc.)
+        beam_idx: Index of this beam state (0 = best beam, 1 = second-best, etc.)
         beam_width: Total number of beam states
-        existing_beam_states: Other beam states for diversity checking
-        
+        existing_beam_states: Unused (kept for API compatibility)
+
     Returns:
-        List of candidates specifically chosen for this beam's exploration strategy
+        List with 1-3 candidates for this beam state to explore
     """
     if not all_candidates:
         return []
-    
-    # Sort candidates by predicted improvement for reference
+
     sorted_candidates = sorted(all_candidates, key=lambda x: x.get('predicted_improvement', 0), reverse=True)
-    
-    # Strategy 1: First beam (beam_idx=0) always takes top candidates (exploitation)
-    if beam_idx == 0:
-        # Take top 3 candidates for the best beam
-        return sorted_candidates[:min(3, len(sorted_candidates))]
-    
-    # Strategy 2: Other beams use different selection strategies (exploration)
-    selected = []
-    
-    if beam_idx == 1 and len(sorted_candidates) > 1:
-        # Second beam: Skip the absolute best, take next best candidates
-        # This prevents all beams from picking the same top candidate
-        start_idx = min(1, len(sorted_candidates) - 1)
-        selected = sorted_candidates[start_idx:start_idx + 3]
-        
-    elif beam_idx == 2 and len(sorted_candidates) > 2:
-        # Third beam: Focus on medium-scoring diverse operations
-        # Look for different operation types than what other beams are exploring
-        operation_types_taken = set()
-        for state in existing_beam_states:
-            if state.path_history:
-                last_op = state.path_history[-1].split('(')[0]
-                operation_types_taken.add(last_op)
-        
-        # Find candidates with different operation types
-        for candidate in sorted_candidates:
-            op_type = candidate.get('transition_name', '')
-            if op_type not in operation_types_taken and len(selected) < 3:
-                selected.append(candidate)
-                
-    elif beam_idx >= 3:
-        # Higher beams: Focus on constraint-specific or goal-specific operations
-        # Round-robin through different focus areas
-        focus_area = beam_idx % 3  # 0=constraint, 1=goal, 2=random_exploration
-        
-        if focus_area == 0:
-            # Focus on constraint violations
-            constraint_candidates = [c for c in sorted_candidates if c.get('addresses_violation', False)]
-            selected = constraint_candidates[:3] if constraint_candidates else sorted_candidates[:2]
-        elif focus_area == 1:
-            # Focus on goal-directed operations
-            goal_candidates = [c for c in sorted_candidates if c.get('predicted_improvement', 0) > 0.3]
-            selected = goal_candidates[:3] if goal_candidates else sorted_candidates[:2]
-        else:
-            # Random exploration - take lower-scoring but potentially interesting candidates
-            if len(sorted_candidates) > 4:
-                selected = sorted_candidates[2:5]  # Mid-range candidates
-    
-    # Fallback: If no specific strategy worked, take at least one candidate
-    if not selected and sorted_candidates:
-        selected = [sorted_candidates[min(beam_idx, len(sorted_candidates) - 1)]]
-    
-    # FIX 4: Increase exploration breadth now that we have proper diversity
-    return selected[:3]  # Allow up to 3 candidates per beam state for broader exploration
+
+    # All beam states take the top candidates by score.  Diversity comes from the different
+    # graph state each beam carries (different paths → different available transitions with
+    # different scores), not from artificially forcing different operation types.
+    # Taking only 1 candidate per beam keeps beam states focused and prevents one beam
+    # from polluting next_beam with multiple mediocre branches.
+    return sorted_candidates[:1]
 
 
 def BeamSearchExploration(scenario, beam_width=3, max_depth=8):
@@ -1863,118 +1848,61 @@ def BeamSearchExploration(scenario, beam_width=3, max_depth=8):
                     found_complete_solution = True
                     continue  # Don't expand states that already meet goals
 
-            # Generate candidates for this state
-            # Extract transition history for diversity scoring
+            # Enumerate ALL candidates across ALL transitions for this beam state.
+            # This matches the paper's pseudocode:
+            #   candidates = [Candidate(st, tr, nc, score) for (st, tr) in product(beam, transitions)
+            #                                              for nc in bind_params(st, tr, consts, objs)]
+            # We use GenerateCandidate to get the scored candidate list, then iterate all of them.
             transition_history = [desc.split('(')[0] for desc in state.path_history if desc != "initial"]
-            
-            candidate, candidate_info = GenerateCandidate(
+            _, candidate_info = GenerateCandidate(
                 state.graph, constraints, transitions, goals,
-                last_transition_type=state.path_history[-1] if state.path_history else None,
+                last_transition_type=None,          # No diversity filter here — scoring handles it
                 transition_history=transition_history
             )
-
-            if candidate is None:
-                print(f"  ❌ No valid candidates for Beam[{beam_idx}]")
-                continue
-
-            # Get all candidates (not just the selected one)
             all_candidates = candidate_info.get('all_candidates', [])
             print(f"  📋 Generated {len(all_candidates)} candidate(s)")
 
-            # FIX 1: Use beam-aware candidate selection instead of uniform top-k selection
-            # Problem: All beam states were selecting the same top candidates
-            # Solution: Each beam gets candidates based on its specific exploration strategy
-            beam_specific_candidates = _select_beam_specific_candidates(
-                all_candidates, beam_idx, beam_width, current_beam
-            )
-            
-            print(f"  🎯 Beam[{beam_idx}] selected {len(beam_specific_candidates)} candidates using strategy {beam_idx}")
-            for i, candidate in enumerate(beam_specific_candidates):
-                print(f"    {i+1}. {candidate.get('transition_name', 'unknown')} (score: {candidate.get('predicted_improvement', 0):.3f})")
-
-            for candidate_data in beam_specific_candidates:
-                # Apply transformation to create new state
+            for candidate_data in all_candidates:
                 try:
                     new_graph = copy.deepcopy(state.graph)
-
-                    # Find the transition and apply it
                     transition_name = candidate_data['transition_name']
                     param_values = candidate_data.get('param_values', {})
 
-                    # Find transition object
                     transition = None
                     for t in transitions:
                         if t.name == transition_name:
                             transition = t
                             break
-
                     if transition is None:
-                        print(f"    ❌ Transition {transition_name} not found")
                         continue
 
-                    # Apply transformation
                     success = transition.apply(new_graph, param_values)
+                    if not success:
+                        continue
 
-                    if success:
-                        # FIX 2: Calculate actual state quality instead of using predicted improvement
-                        # Problem: state_score was just copying predicted_improvement, ignoring actual results
-                        # Solution: Evaluate the actual graph state for goal progress and constraint satisfaction
-                        new_metrics = ComputeMetrics(new_graph)
-                        
-                        # Calculate goal progress score
-                        goal_progress = 0.0
-                        for goal in goals:
-                            if goal.metric_name == "RSI":
-                                target_pair = goal.target_spec
-                                current_rsi = new_metrics['RSI'].get(target_pair, 1.0)
-                                if goal.direction == "minimize":
-                                    # Better score for lower RSI values
-                                    goal_progress += max(0, (1.0 - current_rsi) * 10.0)
-                                elif goal.direction == "maximize":
-                                    goal_progress += current_rsi * 10.0
-                        
-                        # Calculate constraint satisfaction score
-                        from constraint_validation import validate_all_constraints
-                        constraints_satisfied, violations = validate_all_constraints(new_graph, constraints, mode="strict")
-                        constraint_score = 5.0 if constraints_satisfied else max(0, 5.0 - len(violations))
-                        
-                        # Combine scores: constraint satisfaction + goal progress + predicted improvement
-                        state_score = constraint_score + goal_progress + (candidate_data.get('predicted_improvement', 0) * 0.3)
-                        
-                        print(f"    📊 State quality: constraint={constraint_score:.1f}, goal={goal_progress:.1f}, predicted={candidate_data.get('predicted_improvement', 0):.1f} → total={state_score:.1f}")
+                    # Score the resulting state by actual graph quality using fast helpers
+                    # (avoids expensive full ComputeMetrics + verbose prints for every candidate).
+                    from constraint_validation import validate_all_constraints
+                    cs_ok, violations = validate_all_constraints(new_graph, constraints, mode="strict")
+                    constraint_score = 5.0 if cs_ok else max(0.0, 5.0 - len(violations))
+                    goal_progress = _fast_goal_progress(new_graph, goals)
 
-                        # Create new beam state
-                        new_state = BeamState(
-                            graph=new_graph,
-                            iteration=iteration,
-                            path_description=f"{transition_name}({candidate_data.get('target_description', '')})",
-                            score=state_score,
-                            parent=state
-                        )
+                    # Constraint satisfaction weighted 20× to prevent states that remove required
+                    # hold edges from scoring higher than valid partially-solved states.
+                    state_score = constraint_score * 20.0 + goal_progress
 
-                        # FIX 3: Add early diversity check to prevent duplicate operations in next_beam
-                        # Problem: Multiple beam states might generate the same operation
-                        # Solution: Check if this operation+target combination already exists in next_beam
-                        operation_signature = f"{transition_name}:{candidate_data.get('target_description', '')}"
-                        duplicate_found = False
-                        
-                        for existing_state in next_beam:
-                            existing_op = existing_state.path_description
-                            if operation_signature in existing_op:
-                                duplicate_found = True
-                                break
-                        
-                        if not duplicate_found:
-                            next_beam.append(new_state)
-                            total_candidates += 1
-                            print(f"    ✅ Added candidate: {transition_name} (score: {state_score:.3f})")
-                        else:
-                            print(f"    🔄 Skipped duplicate: {transition_name} (already in next_beam)")
-                    else:
-                        print(f"    ❌ Failed to apply {transition_name}")
+                    new_state = BeamState(
+                        graph=new_graph,
+                        iteration=iteration,
+                        path_description=f"{transition_name}({candidate_data.get('target_description', '')})",
+                        score=state_score,
+                        parent=state
+                    )
+                    next_beam.append(new_state)
+                    total_candidates += 1
 
                 except Exception as e:
-                    print(f"    ❌ Error applying candidate: {e}")
+                    print(f"    ❌ Error applying {candidate_data.get('transition_name','?')}: {e}")
                     continue
 
         # Step 4: Select top states for next beam with enhanced diversity enforcement
