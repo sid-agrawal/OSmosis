@@ -1,7 +1,34 @@
 hello*
 better-root
-tmp.csv_dir/tmp.csv_edge.csv
-tmp.csv_dir/tmp.csv_pd.csv
-tmp.csv_dir/tmp.csv_res.csv
-tmp.csv_dir/tmp.csv_rs.csv
-pyenv
+tmp.csv_dir/
+temp.csv_dir/
+dev-mem.csv_dir/
+GPIKV006.csv_dir/
+pyenv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Experiment outputs (regenerate on VM)
+outputs/
+cap_results/
+
+# pfs submodule build artifacts
+pfs/build/
+pfs/lib/*.so
+pfs/lib/libpfs.a
+pfs/out/
+pfs/CMakeCache.txt
+pfs/CMakeFiles/
+pfs/cmake_install.cmake
+pfs/Makefile
+pfs/pfs-config.cmake
+pfs/osmosis_examples/
+
+# Compiled test program binaries (built on Linux VM, not committed)
+test_programs/hello
+test_programs/hello_shared_mem
+test_programs/hello_static
+test_programs/hello_file
+test_programs/hello_new_uid_ns
+test_programs/hello_new_net_ns
