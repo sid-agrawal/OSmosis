@@ -606,6 +606,7 @@ class Process:
     pid_in_host: int = 0  # PID of the process according to host (default) PID namespace
     # The PID (in global PID namespace) will be the key of the dict this is in
     pid_mounts: list[pypfs.mount] = field(default_factory=lambda: list())
+    cgroup_path: str = ""  # cgroup v2 path for this process
 
 
 @dataclass
@@ -691,67 +692,187 @@ class ProcFsData:
                 pd_incharge=self.os_name
             )
 
+    def __has_cap_kill(self, process_info) -> bool:
+        """Check if a process has CAP_KILL set in its effective capability bitmask."""
+        CAP_KILL_BIT = 5  # CAP_KILL is bit 5 (0-indexed) in the capability bitmask
+        return bool(process_info.cap_eff & (1 << CAP_KILL_BIT))
+
     def __add_inter_process_hold_edges(self):
         """
-        # For each process
+        Add hold edges between processes based on Linux signal-sending rules:
+          - Same effective UID in same/child PID namespace, OR
+          - Root (uid_eff == 0), OR
+          - CAP_KILL set in effective capabilities
 
-          - Find every process in the same PID NS and or child NS
-          
-          - Find every process that has same uid_eff
-            - Add hold edge to it
-            
-          - Find every process that has same gid_eff
-            - Add hold edge to it
-
-          - Find every process that has same uid_eff == 0
-             - Add hold edge to every PID
+        A hold edge from PD_x to PD_y means x can send SIGKILL to y.
         """
+        namespaces_available = all(
+            hasattr(p, 'namespaces') and p.namespaces
+            for p in self.procs.values()
+        )
 
-        #    
-        default_pid_ns = self.procs[1].namespaces[NamespaceType.PID]
+        # Find the default (root) PID namespace: the one containing PID 1
+        default_pid_ns = None
+        if namespaces_available and 1 in self.procs:
+            ns_map = self.procs[1].namespaces
+            default_pid_ns = ns_map.get(NamespaceType.PID)
 
         for from_node in self.procs.values():
-            uid_eff = from_node.uid_effective
-            gid_eff = from_node.gid_effective
+            from_uid = from_node.uid_effective
 
-
-            # Check if the to_node is the same PID ns or a child NS
-            from_node_pid_ns = from_node.namespaces[NamespaceType.PID]
+            from_pid_ns = None
+            if namespaces_available:
+                from_pid_ns = from_node.namespaces.get(NamespaceType.PID)
 
             for to_node in self.procs.values():
-                add_edge = False
-                to_node_pid_ns = to_node.namespaces[NamespaceType.PID]
-
-
-                ## We are assuming only 1 level of PID NS
-                ## If we are in root PID NS, usual rules apply.
-                ## If we are in non-root PID NS, add edge to all others in the 
-                # same PID NS based on usual user based rules.
-
-                if to_node_pid_ns != from_node_pid_ns and \
-                     from_node_pid_ns != default_pid_ns :
+                if from_node is to_node:
                     continue
 
-                if to_node.uid_effective == uid_eff \
-                     or to_node.gid_effective == gid_eff:
-                    add_edge = True
-                else:
-                    continue
+                # Namespace scope check: if namespaces are known, enforce PID-NS scoping
+                if namespaces_available and from_pid_ns is not None and default_pid_ns is not None:
+                    to_pid_ns = to_node.namespaces.get(NamespaceType.PID)
+                    # A process in a non-root PID NS can only signal within its own NS
+                    if from_pid_ns != default_pid_ns and from_pid_ns != to_pid_ns:
+                        continue
 
-                if  from_node.uid_effective == 0:
-                    add_edge = True
-                else:
-                    continue
+                add_edge = (
+                    from_uid == to_node.uid_effective
+                    or from_uid == 0
+                    or self.__has_cap_kill(from_node)
+                )
 
                 if add_edge:
                     print(f"\033[92mAdding hold edge from {from_node.model_id} to {to_node.model_id}\033[0m")
-                    self.model.add_inter_pd_hold_edge(gm.perms_all, from_node.model_id,
-                                                      to_node.model_id)
+                    self.model.add_inter_pd_hold_edge(
+                        gm.perms_all, from_node.model_id, to_node.model_id
+                    )
+    def __add_file_resources(self, kernel_id: int):
+        """
+        Model mount points as FILE resources with mount namespaces as resource spaces.
+        Processes sharing the same source path (real filesystems) share the resource node.
+        """
+        # Pseudo-filesystems and read-only image layers — skip as FILE resources.
+        # These are either kernel-internal interfaces or read-only shared layers
+        # that don't represent user-writable shared data (and appear in the model
+        # as shared MO resources instead, which the VMR/MO analysis covers).
+        pseudo_fs = {
+            FileSystemType.BINFMT_MISC, FileSystemType.BPF, FileSystemType.CGROUP2,
+            FileSystemType.CONFIGFS, FileSystemType.DEBUGFS, FileSystemType.DEVPTS,
+            FileSystemType.EFIVARFS, FileSystemType.FUSECTL, FileSystemType.HUGETLBFS,
+            FileSystemType.MQUEUE, FileSystemType.NSFS, FileSystemType.PROC,
+            FileSystemType.PSTORE, FileSystemType.RAMFS, FileSystemType.SECURITYFS,
+            FileSystemType.SQUASHFS,  # read-only container image layers (Docker/Podman base images)
+            FileSystemType.SYSFS, FileSystemType.SYSTEMD_1, FileSystemType.TMPFS,
+            FileSystemType.TRACEFS, FileSystemType.UDEV,
+        }
 
-                            
-                   
+        # mnt_ns_handle -> resource space ID in the model
+        mnt_ns_to_space_id = {}
+        # (source_path, fs_type) -> resource node ID in the model
+        source_to_file_id = {}
 
-        pass
+        for pid, proc_info in self.procs.items():
+            if not proc_info.pid_mounts:
+                continue
+
+            # Determine MNT namespace handle for this process
+            mnt_ns_handle = None
+            if proc_info.namespaces:
+                ns = proc_info.namespaces.get(NamespaceType.MNT)
+                if ns is not None:
+                    mnt_ns_handle = ns.handle
+
+
+            # Create resource space for this mount namespace (if not already done)
+            if mnt_ns_handle is not None and mnt_ns_handle not in mnt_ns_to_space_id:
+                space_id = self.model.add_resource_space_node(gm.ResourceType.FILE, mnt_ns_handle)
+                mnt_ns_to_space_id[mnt_ns_handle] = space_id
+                self.model.add_hold_edge(
+                    gm.perms_all, kernel_id, gm.ResourceType.FILE, mnt_ns_handle,
+                    pd_incharge=self.os_name
+                )
+
+            space_id = mnt_ns_to_space_id.get(mnt_ns_handle)
+            if space_id is None:
+                # No MNT namespace info; use a generic shared space (space_id=0)
+                if 0 not in mnt_ns_to_space_id:
+                    sid = self.model.add_resource_space_node(gm.ResourceType.FILE)
+                    mnt_ns_to_space_id[0] = sid
+                    self.model.add_hold_edge(
+                        gm.perms_all, kernel_id, gm.ResourceType.FILE, sid,
+                        pd_incharge=self.os_name
+                    )
+                space_id = mnt_ns_to_space_id[0]
+
+            for mount in proc_info.pid_mounts:
+                fs_type_str = mount.filesystem_type.lower() if hasattr(mount, 'filesystem_type') else ""
+                fs_type = str_to_filesystem_type.get(fs_type_str)
+
+                if fs_type in pseudo_fs:
+                    continue
+
+                source = mount.source if hasattr(mount, 'source') else ""
+                point  = mount.point  if hasattr(mount, 'point')  else ""
+                root   = mount.root   if hasattr(mount, 'root')   else ""
+
+                # Key identifies a shared physical resource across processes.
+                # Two mounts are the same resource iff they expose the same data:
+                # - real FS (ext4): same block device + same sub-directory (root) within it.
+                #   Both containers bind-mounting DIFFERENT paths on the same device are NOT shared.
+                # - overlayFS: same upper+lower layer directories exposed at same point.
+                #   Each container has a unique overlay, so scope by MNT namespace handle.
+                # - All keys are scoped by MNT namespace handle so that intra-NS
+                #   sharing is detected but inter-NS coincidences (both have "/") are not.
+                effective_source = source if source and source != "none" else point
+                if fs_type == FileSystemType.OVERLAY:
+                    key = (mnt_ns_handle, point, fs_type_str)
+                else:
+                    key = (mnt_ns_handle, effective_source, root, fs_type_str)
+
+                if key not in source_to_file_id:
+                    res_id = self.model.add_resource_node(
+                        gm.ResourceType.FILE, space_id, extra=point
+                    )
+                    source_to_file_id[key] = (space_id, res_id)
+
+                file_space_id, file_res_id = source_to_file_id[key]
+
+                # Hold edge: process -> file resource (R/W based on mount flags)
+                self.model.add_hold_edge(
+                    gm.perms_all, proc_info.model_id,
+                    gm.ResourceType.FILE, file_space_id, file_res_id,
+                    pd_incharge=self.os_name
+                )
+
+    def __add_cgroup_resource_spaces(self, kernel_id: int):
+        """
+        Model cgroups as PAGE_QUOTA resource spaces.
+        Processes in the same cgroup share a resource space and can exhaust each other's quota.
+        """
+        # cgroup_path -> resource space ID
+        cgroup_to_space = {}
+
+        for proc_info in self.procs.values():
+            cpath = proc_info.cgroup_path
+            if not cpath:
+                continue
+
+            if cpath not in cgroup_to_space:
+                space_id = self.model.add_resource_space_node(gm.ResourceType.PAGE_QUOTA)
+                cgroup_to_space[cpath] = space_id
+                # Kernel holds (manages) the cgroup resource space
+                self.model.add_hold_edge(
+                    gm.perms_all, kernel_id, gm.ResourceType.PAGE_QUOTA, space_id,
+                    pd_incharge=self.os_name
+                )
+
+            space_id = cgroup_to_space[cpath]
+            # Process is subject to this cgroup's quota
+            self.model.add_hold_edge(
+                gm.perms_all, proc_info.model_id, gm.ResourceType.PAGE_QUOTA, space_id,
+                pd_incharge=self.os_name
+            )
+
     # Add the devices
     def __add_devices(self, kernel_id: int ):
         for (start, end), device_info in self.devices.items():
@@ -1095,7 +1216,9 @@ class ProcFsData:
             vmr_mapping_type=vmr_mapping_type,
             kernel_id=kernel_id,
         )
-        # self.__add_inter_process_hold_edges()
+        self.__add_inter_process_hold_edges()
+        self.__add_file_resources(kernel_id=kernel_id)
+        self.__add_cgroup_resource_spaces(kernel_id=kernel_id)
         # self.__add_pid_namespaces(kernel_id=kernel_id)
         # self.__add_mnt_namespaces(kernel_id=kernel_id)
 
