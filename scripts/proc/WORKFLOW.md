@@ -5,163 +5,202 @@
 | Component | Location |
 |-----------|----------|
 | Mac source dir | `~/Documents/OSmosis-mac/scripts/proc/` |
-| VM source dir | `~/proc/` (synced from Mac via rsync or shared dir) |
-| Shared dir (VM) | `/mnt/host` → Mac `~/Documents/OSmosis-mac/` |
+| VM source dir | `/mnt/host/scripts/proc/` (read via 9p share — edits on Mac are instant) |
+| VM Python env | `~/proc/pyenv/` |
+| VM pypfs lib | `~/proc/pfs/lib/pypfs.cpython-312-aarch64-linux-gnu.so` |
+| VM test binaries | `~/proc/test_programs/hello` etc. |
 | VM SSH | `ssh -p 2222 siagraw@localhost` |
-| VM Python env | `~/proc/pyenv/` (activate: `source ~/proc/pyenv/bin/activate`) |
 
 ---
 
-## One-Time Setup (run on VM console)
+## One-Time VM Setup
 
 ```bash
-# 1. Enable passwordless sudo (needed for /proc/pagemap access in tests)
-echo "$USER ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/nopasswd
+# On Mac: start the VM
+cd ~/Documents/OSmosis-mac/vm && ./start_vm.sh
 
-# 2. Mount shared directory (Mac -> VM)
-sudo mkdir -p /mnt/host
-sudo mount -t 9p -o trans=virtio,version=9p2000.L host0 /mnt/host
-# Make it persist across reboots:
-echo 'host0 /mnt/host 9p trans=virtio,version=9p2000.L 0 0' | sudo tee -a /etc/fstab
-
-# 3. Install all dependencies
-bash ~/vm_install.sh
-
-# 4. Verify install
-cd ~/proc && source pyenv/bin/activate
-python -m pytest tests/test_graph_queries.py -v
+# On VM (SSH in or use QEMU window):
+bash ~/vm_install.sh    # installs packages, builds pfs, builds test programs
 ```
+
+After this, all subsequent work is done remotely via SSH.
 
 ---
 
-## Sync Workflow (Mac → VM)
+## Standard Test Run Command
 
-Sync source changes from Mac to VM:
 ```bash
-rsync -avz -e "ssh -p 2222" \
-  ~/Documents/OSmosis-mac/scripts/proc/ \
-  siagraw@localhost:~/proc/ \
-  --exclude='__pycache__' --exclude='*.pyc' \
-  --exclude='pyenv' --exclude='pfs/build'
+# Run all working tests (on VM):
+ssh -p 2222 siagraw@localhost "
+cd /mnt/host/scripts/proc
+PYTHONPATH=/home/siagraw/proc/pfs/lib \
+    sudo -E ~/proc/pyenv/bin/python -m pytest \
+    tests/test_graph_queries.py \
+    tests/test_extraction.py \
+    tests/test_scenarios.py -k 'processes or docker-regular or podman' \
+    -v
+"
 ```
 
-Or just work directly on `/mnt/host/scripts/proc/` inside the VM — same files.
+**Expected: 32 passed** (14 graph queries + 13 extraction + 4 scenarios + 1 warning)
 
 ---
 
 ## Experiment Steps
 
-### Step 1 — Pure Python query tests (no root needed)
+### Step 1 — Pure Python graph query tests (no root, no VM needed)
 ```bash
 cd ~/proc && source pyenv/bin/activate
 python -m pytest tests/test_graph_queries.py -v
 ```
-**Expected**: All ~15 graph query tests pass. No /proc access.
+Tests hand-crafted NetworkX graphs — no `/proc` access.
 
 ---
 
-### Step 2 — Extraction unit tests (needs root)
+### Step 2 — Extraction unit tests (root + pypfs)
 ```bash
-cd ~/proc && sudo pyenv/bin/python -m pytest tests/test_extraction.py -v
+cd /mnt/host/scripts/proc
+PYTHONPATH=/home/siagraw/proc/pfs/lib \
+    sudo -E ~/proc/pyenv/bin/python -m pytest tests/test_extraction.py -v
 ```
-**Checks**:
-- VMR list has heap, stack, vdso entries
-- Static binary has no .so entries
-- uid_effective matches current user
-- PID and MNT namespace handles are non-zero
-- mountinfo has >5 entries
-- cgroup_path is non-empty and starts with `/`
-- Inter-PD HOLD edges exist between same-uid processes
-- FILE resource nodes exist in graph
-- PAGE_QUOTA resource spaces exist in graph
+Tests each extractor (VMR, pagemap, status/uid, namespaces, mountinfo, cgroups,
+hold edges, FILE resources, PAGE_QUOTA spaces).
 
 ---
 
-### Step 3 — Full system model extraction
+### Step 3 — Full system model + query
 ```bash
-cd ~/proc && sudo pyenv/bin/python proc_model.py --os linux --pid 0 --csv /tmp/full_model.csv
-python -c "
-from metrics import read_csv_to_graph
-from graph_queries import get_pds, get_resources, get_resource_spaces
-G = read_csv_to_graph('/tmp/full_model.csv')
-print(f'Nodes: {G.number_of_nodes()}, Edges: {G.number_of_edges()}')
-print(f'PDs: {len(get_pds(G))}')
-print(f'FILE resources: {len(get_resources(G, \"FILE\"))}')
-print(f'PAGE_QUOTA spaces: {len(get_resource_spaces(G, \"PAGE_QUOTA\"))}')
-"
-```
-Copy results to shared dir:
-```bash
-cp /tmp/full_model.csv /mnt/host/scripts/proc/outputs/full_model_$(date +%Y%m%d).csv
+# Extract all PIDs on the system:
+cd /home/siagraw/proc/test_programs
+sudo PYTHONPATH=/home/siagraw/proc/pfs/lib \
+    ~/proc/pyenv/bin/python /mnt/host/scripts/proc/proc_model.py \
+    --os linux --pid 0 --csv /tmp/full_model.csv --query all
 ```
 
 ---
 
 ### Step 4 — Baseline scenario (two plain processes)
 ```bash
-cd ~/proc && sudo pyenv/bin/python -m pytest tests/test_scenarios.py -k processes -v
+cd /home/siagraw/proc/test_programs
+sudo PYTHONPATH=/home/siagraw/proc/pfs/lib \
+    ~/proc/pyenv/bin/python /mnt/host/scripts/proc/proc_model.py \
+    --os linux --config 0 --csv /tmp/baseline.csv --query all
 ```
-**Expected**:
-- Same-uid processes hold each other (SIGKILL edges)
-- Shared FILE resources (both see same mountpoints)
-- Shared PAGE_QUOTA space (same parent cgroup)
+`run_configs[0]` = two `hello` processes. Confirms: same-UID hold edges,
+shared FILE resources, shared PAGE_QUOTA (cgroup) space.
 
 ---
 
-### Step 5 — Docker scenario (regular + rootless)
+### Step 5 — Docker regular scenario
 ```bash
-# Ensure docker is running:
+# Ensure Docker is running:
 sudo systemctl start docker
 
-# Run container tests:
-cd ~/proc && sudo pyenv/bin/python -m pytest tests/test_scenarios.py -k docker -v
+cd /home/siagraw/proc/test_programs
+sudo PYTHONPATH=/home/siagraw/proc/pfs/lib \
+    ~/proc/pyenv/bin/python /mnt/host/scripts/proc/proc_model.py \
+    --os linux --config 8 --csv /tmp/docker.csv --query all
+```
+`run_configs[8]` = two Docker ubuntu containers. Confirms: no writable
+file sharing; shared MO resources (same base image pages).
+
+Or via pytest:
+```bash
+cd /mnt/host/scripts/proc
+PYTHONPATH=/home/siagraw/proc/pfs/lib \
+    sudo -E ~/proc/pyenv/bin/python -m pytest \
+    'tests/test_scenarios.py::test_docker_regular_no_writable_file_sharing[docker-regular]' \
+    'tests/test_scenarios.py::test_docker_regular_shared_image_layers_as_mo[docker-regular]' -v
 ```
 
 ---
 
 ### Step 6 — Podman scenario
 ```bash
-cd ~/proc && sudo pyenv/bin/python -m pytest tests/test_scenarios.py -k podman -v
+cd /home/siagraw/proc/test_programs
+sudo PYTHONPATH=/home/siagraw/proc/pfs/lib \
+    ~/proc/pyenv/bin/python /mnt/host/scripts/proc/proc_model.py \
+    --os linux --config 10 --csv /tmp/podman.csv --query all
+```
+`run_configs[10]` = two Podman ubuntu containers.
+
+---
+
+### Step 7 — Apptainer scenario (requires apptainer installed)
+```bash
+sudo snap install apptainer --classic   # one-time install
+
+cd /mnt/host/scripts/proc
+PYTHONPATH=/home/siagraw/proc/pfs/lib \
+    sudo -E ~/proc/pyenv/bin/python -m pytest \
+    tests/test_scenarios.py -k apptainer -v
+```
+Expected: Apptainer silently shares home dir → FILE resources shared;
+same parent cgroup → PAGE_QUOTA shared.
+
+---
+
+### Step 8 — Kata Containers scenario (requires kata runtime)
+```bash
+cd /mnt/host/scripts/proc
+PYTHONPATH=/home/siagraw/proc/pfs/lib \
+    sudo -E ~/proc/pyenv/bin/python -m pytest \
+    tests/test_scenarios.py -k kata -v
 ```
 
 ---
 
-### Step 7 — Apptainer scenario
+### Step 9 — Docker rootless scenario (requires rootless Docker)
 ```bash
-# Install apptainer first if needed:
-sudo apt-get install -y apptainer 2>/dev/null || \
-  sudo snap install apptainer --classic
+# Setup rootless Docker first:
+dockerd-rootless-setuptool.sh install
 
-cd ~/proc && sudo pyenv/bin/python -m pytest tests/test_scenarios.py -k apptainer -v
+cd /mnt/host/scripts/proc
+PYTHONPATH=/home/siagraw/proc/pfs/lib \
+    sudo -E ~/proc/pyenv/bin/python -m pytest \
+    tests/test_scenarios.py -k docker-rootless -v
 ```
 
 ---
 
-### Step 8 — Discovery / insight tests
-```bash
-cd ~/proc && sudo pyenv/bin/python -m pytest tests/test_analysis.py -v
-```
-**Key insights to confirm**:
-1. Apptainer silently shares home dir → FILE resources shared
-2. Docker provides stronger file isolation → FILE resources NOT shared
-3. Rootless Docker: one shared slirp4netns provider
-4. Podman: per-container slirp4netns
-5. Apptainer: no cgroup isolation; Docker: per-container cgroup
+## proc_model.py Flags Reference
 
----
+| Flag | Description |
+|------|-------------|
+| `--pid 0` | Extract all running processes |
+| `--pid N` | Extract one specific PID |
+| `--pids N,M,...` | Extract multiple specific PIDs into one model |
+| `--config N` | Use `run_configs[N]` to start/extract/kill (see table below) |
+| `--query Q` | Run graph queries after extraction (`all`, `hold-edges`, `shared-files`, `shared-cgroups`, `shared-vmr`, `can-control`) |
+| `--csv PATH` | Output CSV path |
+| `--os linux` | Required for Linux extraction |
 
-## Full Test Run (all steps)
-```bash
-cd ~/proc && sudo pyenv/bin/python -m pytest tests/ -v \
-  --tb=short \
-  --ignore=tests/test_scenarios.py \   # remove to include container tests
-  2>&1 | tee /mnt/host/scripts/proc/outputs/test_results_$(date +%Y%m%d).log
-```
+**run_configs index:**
+
+| Index | Description |
+|-------|-------------|
+| 0 | Two `hello` processes |
+| 2 | Two `hello_mmap` (shared memory) processes |
+| 3 | Two `hello_static` processes (different binaries) |
+| 8 | Two Docker ubuntu containers |
+| 10 | Two Podman ubuntu containers |
 
 ---
 
 ## Results Location
 
-All output CSVs and test logs go to:
-- VM: `/tmp/` or `/mnt/host/scripts/proc/outputs/`
-- Mac (auto-synced via share): `~/Documents/OSmosis-mac/scripts/proc/outputs/`
+- CSV and query output: `/tmp/*.csv` on VM
+- Copy to Mac (via shared dir): `cp /tmp/result.csv /mnt/host/scripts/proc/outputs/`
+
+---
+
+## Sync Workflow
+
+Changes on the Mac are visible immediately on the VM via the 9p share at `/mnt/host`.
+The VM runs `proc_model.py` and tests directly from `/mnt/host/scripts/proc/`.
+No rsync needed.
+
+The only VM-local artifacts:
+- Python venv: `~/proc/pyenv/`
+- Compiled pypfs: `~/proc/pfs/lib/`
+- Compiled test programs: `~/proc/test_programs/hello*`
