@@ -71,6 +71,7 @@ class ProcessStartType(Enum):
                     # The mapping of the host path to ns-path can be found with
                     # ls -la /proc/PID/root
     DOCKER = 4      # Start a docker command
+    PODMAN = 5      # Start a podman container
 
 
 program_names: EasyDict = EasyDict(
@@ -83,6 +84,7 @@ program_names: EasyDict = EasyDict(
     hello_file = "hello_file",
     python_passthrough = "passthrough.py",
     docker_ubuntu_bash = "ubuntu",
+    podman_ubuntu_bash = "ubuntu",
     kv_app_in_vm = "kv_app_in_vm"
 )
 
@@ -139,9 +141,16 @@ run_configs = [
     [
         (program_names.kv_app_in_vm, ProcessStartType.NORMAL),
     ],
+    # 10: Podman ubuntu bash (two containers)
+    [
+        (program_names.podman_ubuntu_bash + " osmosis-podman-app " + "bash",
+         ProcessStartType.PODMAN),
+        (program_names.podman_ubuntu_bash + " osmosis-podman-kvs " + "bash",
+         ProcessStartType.PODMAN),
+    ],
 ]
 
-to_run = run_configs[3]
+to_run = run_configs[3]  # default; overridden by --config at runtime
 
 
 def log(msg):
@@ -214,6 +223,26 @@ def run_process(name: str, start_type: ProcessStartType = False) -> tuple[int, i
 
         # Docker Inspect to get the PID
         inspect_output = docker_cmd("inspect", container_name)
+        inspect_json_dict = json.loads(inspect_output)
+        pid = inspect_json_dict[0]["State"]["Pid"]
+        assert (pid != 0) and (pid is not None)
+
+        return pid
+
+    elif start_type == ProcessStartType.PODMAN:
+        args_list = name.split()
+        assert len(args_list) == 3
+        image = args_list[0]
+        container_name = args_list[1]
+        cmd = args_list[2]
+
+        subprocess.run(["podman", "rm", "-f", container_name],
+                       capture_output=True)
+        subprocess.run(["podman", "run", "--rm", "-id",
+                        "--name", container_name, image, cmd],
+                       capture_output=True)
+        inspect_output = subprocess.check_output(
+            ["podman", "inspect", container_name], text=True)
         inspect_json_dict = json.loads(inspect_output)
         pid = inspect_json_dict[0]["State"]["Pid"]
         assert (pid != 0) and (pid is not None)
@@ -351,12 +380,26 @@ def extract_mountinfo_for_pid(data: ProcFsData, pid: int, should_print: bool = F
     data.procs[pid].pid_mounts = read_mountinfo_file(pid, True)
 
 def extract_cgroups_for_pid(data: ProcFsData, pid: int, should_print: bool = False):
-
+    """
+    Extract the cgroup v2 path for a process and store it in data.procs[pid].cgroup_path.
+    Falls back to cgroup v1 memory controller path if unified hierarchy is not available.
+    """
     task = pfs_obj.get_task(pid)
-    x = task.get_cgroups()
-    for y in x:
-        print(f"{y.pathname} {y.hierarchy} . {y.controllers}")
-    pass
+    cgroups = task.get_cgroups()
+    cgroup_path = ""
+    for cg in cgroups:
+        # Unified cgroup v2 hierarchy has hierarchy id == 0
+        if cg.hierarchy == 0:
+            cgroup_path = cg.pathname
+            break
+        # Fallback: use the memory controller path from cgroup v1
+        if "memory" in (cg.controllers if hasattr(cg, 'controllers') else []):
+            cgroup_path = cg.pathname
+
+    data.procs[pid].cgroup_path = cgroup_path
+
+    if should_print:
+        print(f"PID {pid} cgroup: {cgroup_path}")
 
 # Unsused
 def extract_namespaces_for_pid(data: ProcFsData, pid: int, should_print: bool = False):
@@ -387,9 +430,15 @@ def extract_namespaces_for_pid(data: ProcFsData, pid: int, should_print: bool = 
             assert (
                 data.namespaces[handle].type == namespace_type
             ), "duplicate handle for different ns"
-            namespaces[namespace_type] = data.namespaces[handle]
+            ns_obj = data.namespaces[handle]
+            if pid not in ns_obj.host_pids:
+                ns_obj.host_pids.append(pid)
+            namespaces[namespace_type] = ns_obj
         else:
-            namespace = Namespace(namespace_type, handle)
+            namespace = Namespace(
+                type=namespace_type, handle=handle, host_pids=[pid],
+                generic_data={}
+            )
             namespaces[namespace_type] = namespace
             data.namespaces[handle] = namespace
 
@@ -666,9 +715,9 @@ def extract_process_data(data: ProcFsData, pid: int, name: str, should_print=Fal
 
     extract_from_status(data, pid, should_print)
     extract_memory_data(data, pid, should_print)
-    # extract_cgroups_for_pid(data, pid, should_print)
-    # extract_namespaces_for_pid(data, pid, should_print)
-    #extract_mountinfo_for_pid(data, pid, should_print)
+    extract_cgroups_for_pid(data, pid, should_print)
+    extract_namespaces_for_pid(data, pid, should_print)
+    extract_mountinfo_for_pid(data, pid, should_print)
 
 
 def terminate_process(pid: int):
@@ -745,6 +794,40 @@ def extract_user_groups(data_main, username, should_print=False):
         data_main.user_groups[username] = user_groups
     except Exception as e:
         print(f"Error extracting groups for user {username}: {e}")
+
+def detect_network_providers(data_main: ProcFsData) -> dict:
+    """
+    Detect which process provides networking for each NET namespace.
+    Returns a map: net_ns_handle -> provider_pid
+      - kernel (None) for host-network or regular containers
+      - slirp4netns/passt/pasta PID for rootless containers
+    """
+    NETWORK_DAEMONS = {"slirp4netns", "pasta", "passt", "rootlesskit"}
+    net_ns_to_provider = {}  # net_ns_handle -> pid (None means kernel)
+
+    # First pass: find known network daemon processes
+    for pid, proc_info in data_main.procs.items():
+        if proc_info.name in NETWORK_DAEMONS:
+            net_ns_handle = None
+            if proc_info.namespaces:
+                ns = proc_info.namespaces.get(NamespaceType.NET)
+                if ns is not None:
+                    net_ns_handle = ns.handle
+            if net_ns_handle is not None:
+                net_ns_to_provider[net_ns_handle] = pid
+
+    # Second pass: for processes not served by a daemon, default to kernel (None)
+    for pid, proc_info in data_main.procs.items():
+        net_ns_handle = None
+        if proc_info.namespaces:
+            ns = proc_info.namespaces.get(NamespaceType.NET)
+            if ns is not None:
+                net_ns_handle = ns.handle
+        if net_ns_handle is not None and net_ns_handle not in net_ns_to_provider:
+            net_ns_to_provider[net_ns_handle] = None  # kernel provides
+
+    return net_ns_to_provider
+
 
 # Get all namespaces in the systems YY
 def extract_all_namespaces(data_main, should_print=False):
@@ -848,6 +931,90 @@ def extract_all_namespaces(data_main, should_print=False):
         print("\n\n")
 
 
+def run_queries(G, query_type: str):
+    """
+    Run a set of graph queries on the extracted model graph G (nx.MultiDiGraph).
+    Called automatically when --query is passed.
+
+    query_type: 'hold-edges' | 'shared-files' | 'shared-cgroups' |
+                'shared-vmr'  | 'can-control'  | 'all'
+    """
+    from graph_queries import (
+        get_pds, shared_resources, shared_resource_spaces, can_control, controlled_by
+    )
+
+    pds = get_pds(G)
+    pd_names = {pd: G.nodes[pd].get('data', pd) for pd in pds}
+
+    def header(title):
+        print(f"\n{'='*60}")
+        print(f"  {title}")
+        print('='*60)
+
+    run_all = (query_type == 'all')
+
+    if run_all or query_type == 'hold-edges':
+        header("Inter-PD HOLD Edges (can signal/terminate)")
+        found = False
+        for pd in pds:
+            targets = can_control(G, pd)
+            if targets:
+                found = True
+                for t in sorted(targets):
+                    print(f"  {pd_names[pd]:30s} -> {pd_names.get(t, t)}")
+        if not found:
+            print("  (none)")
+
+    if run_all or query_type == 'can-control':
+        header("TCB: Processes that can terminate each PD")
+        for pd in pds:
+            holders = controlled_by(G, pd)
+            if holders:
+                names = [pd_names.get(h, h) for h in sorted(holders)]
+                print(f"  {pd_names[pd]:30s} controlled by: {names}")
+
+    if run_all or query_type == 'shared-files':
+        header("Shared FILE Resources Between PD Pairs")
+        found = False
+        for i, pd1 in enumerate(pds):
+            for pd2 in pds[i+1:]:
+                shared = shared_resources(G, pd1, pd2, 'FILE')
+                if shared:
+                    found = True
+                    extras = [G.nodes[r].get('extra', r) for r in sorted(shared)]
+                    print(f"  {pd_names[pd1]:25s} <-> {pd_names[pd2]:25s}: {len(shared)} FILE(s)")
+                    for e in extras[:5]:
+                        print(f"    {e}")
+        if not found:
+            print("  (no shared FILE resources)")
+
+    if run_all or query_type == 'shared-cgroups':
+        header("Shared PAGE_QUOTA (Cgroup) Spaces Between PD Pairs")
+        found = False
+        for i, pd1 in enumerate(pds):
+            for pd2 in pds[i+1:]:
+                shared = shared_resource_spaces(G, pd1, pd2, 'PAGE_QUOTA')
+                if shared:
+                    found = True
+                    print(f"  {pd_names[pd1]:25s} <-> {pd_names[pd2]:25s}: {len(shared)} cgroup(s)")
+        if not found:
+            print("  (no shared cgroup spaces)")
+
+    if run_all or query_type == 'shared-vmr':
+        header("Shared VMR/MO Resources Between PD Pairs")
+        found = False
+        for i, pd1 in enumerate(pds):
+            for pd2 in pds[i+1:]:
+                vmr = shared_resources(G, pd1, pd2, 'VMR')
+                mo  = shared_resources(G, pd1, pd2, 'MO')
+                if vmr or mo:
+                    found = True
+                    print(f"  {pd_names[pd1]:25s} <-> {pd_names[pd2]:25s}: "
+                          f"{len(vmr)} VMR(s), {len(mo)} MO(s)")
+        if not found:
+            print("  (no shared VMR/MO resources)")
+
+
 def do_proc_model(args):
     # PIDs when this script starts them
     pids = []
@@ -867,7 +1034,14 @@ def do_proc_model(args):
     #############################################
     # Get PID by either running or from args.
     #############################################
-    if args.pid is not None:
+    if getattr(args, 'config', None) is not None:
+        # --config: select a run_config, start its processes, extract, then kill
+        selected = run_configs[args.config]
+        print(f"Using run_config[{args.config}]: {selected}")
+        pids = [run_process(name, start_type) for (name, start_type) in selected]
+    elif getattr(args, 'pids', None):
+        print(f"PIDs provided: {args.pids}")
+    elif args.pid is not None:
         print(f"PID provided: {args.pid}")
     else:
         print("Starting processes from this script")
@@ -876,21 +1050,33 @@ def do_proc_model(args):
     #############################################
     # Extract Info for all the PIDs
     #############################################
-    # This is system Wide
-    # extract_all_namespaces(data_main, True)
+    # This is system Wide — only needed when extracting all PIDs
+    if args.pid == 0:
+        extract_all_namespaces(data_main)
     # extract_all_users(data_main, True)
     # extract_all_groups(data_main, True)
     # extract_all_user_groups(data_main, True)
-    # exit(1)
 
     # This is for the processe of interest
     try:
-        if args.pid == 0:
-            print ("Extracing info for all PIDs")
+        if getattr(args, 'pids', None):
+            pid_list = [int(p.strip()) for p in args.pids.split(',') if p.strip()]
+            print(f"Extracting specific PIDs: {pid_list}")
+            for pid in pid_list:
+                p = psutil.Process(pid)
+                extract_process_data(data_main, pid, p.name(), False)
+        elif args.pid == 0:
+            print("Extracing info for all PIDs")
             extract_all_process_data(data_main, False)
         elif args.pid is not None and args.pid > 0:
             p = psutil.Process(args.pid)
             extract_process_data(data_main, args.pid, p.name(), False)
+        elif getattr(args, 'config', None) is not None:
+            # processes were started above; pids list is populated
+            time.sleep(2)
+            selected = run_configs[args.config]
+            for (name, _), pid in zip(selected, pids):
+                extract_process_data(data_main, pid, name, False)
         else:
             # We add this delay so that the gettimeofday call in hello_static
             # gets a chance to run
@@ -913,14 +1099,19 @@ def do_proc_model(args):
     #############################################
     # Convert to the model
     #############################################
-    data_main.to_generic_model(
+    model = data_main.to_generic_model(
         MappingType.CONTIGUOUS,
         MappingType.CO_CONTIGUOUS,
         args.guest,
-        # MappingType.PER_PAGE, MappingType.PER_PAGE, args.id_offset
-    ).to_csv(args.csv)
-
+    )
+    model.to_csv(args.csv)
     print(f"Output CSV is at {args.csv}")
+
+    #############################################
+    # Run queries on the model graph (optional)
+    #############################################
+    if getattr(args, 'query', None):
+        run_queries(model.g, args.query)
 
 
 def do_cellulos_model(args):
@@ -986,7 +1177,21 @@ if __name__ == "__main__":
         description="OSmosis Model state from multiple subsystems"
     )
     parser.add_argument(
-        "--pid", type=int, help="PID of the process to extract data for"
+        "--pid", type=int, help="PID of the process to extract data for (0 = all)"
+    )
+    parser.add_argument(
+        "--pids", type=str, help="Comma-separated list of PIDs to extract (e.g. 1234,5678)"
+    )
+    parser.add_argument(
+        "--config", type=int, default=None,
+        help=f"run_configs index to start+extract+kill (0=two hello, 8=docker, etc). "
+             f"Overrides --pid. Available: 0..{len(run_configs)-1}"
+    )
+    parser.add_argument(
+        "--query", type=str, default=None,
+        choices=["hold-edges", "shared-files", "shared-cgroups", "shared-vmr",
+                 "can-control", "all"],
+        help="Run graph queries after extraction and print results"
     )
     parser.add_argument(
         "--csv", type=str, required=True, help="CSV to output the model state in"

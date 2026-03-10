@@ -27,16 +27,6 @@ configurations = [
     {'file': 'outputs/cellulos/March_1_2025/GPITH003.csv', 'pd1': 'PD_3', 'pd2': 'PD_2'}
 ]
 
-parser = argparse.ArgumentParser("metrics")
-parser.add_argument("config", help="Which configuration index to use", type=int)
-args = parser.parse_args()
-
-config = configparser.ConfigParser()   
-config.read("config.txt")
-
-URI = config.get("neo4j", "url")
-AUTH = (config.get("neo4j", "user"), config.get("neo4j", "pass"))
-
 # The MO extras field is of the format 0xaddr_pages_sizebits
 mo_extra_pages_regex = r'(?<=_)\d+(?=_)'
 
@@ -258,11 +248,19 @@ def calc_fr(filename, pd1, pd2):
     print(f"FR: {fr}")
 
 if __name__ == "__main__":
-    config = configurations[args.config]
-    pd1 = config['pd1']
-    pd2 = config['pd2']
-    file = config['file']
-    
+    import argparse, configparser
+    parser = argparse.ArgumentParser("metrics")
+    parser.add_argument("config", help="Which configuration index to use", type=int)
+    args = parser.parse_args()
+
+    cfg = configparser.ConfigParser()
+    cfg.read("config.txt")
+
+    conf = configurations[args.config]
+    pd1 = conf['pd1']
+    pd2 = conf['pd2']
+    file = conf['file']
+
     print(f"Calculating metrics for '{file}' ({pd1},{pd2})")
     # calc_rsi(pd1, pd2)
     calc_fr(file, pd1, pd2)
