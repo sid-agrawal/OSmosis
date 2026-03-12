@@ -817,17 +817,17 @@ class ProcFsData:
 
                 # Key identifies a shared physical resource across processes.
                 # Two mounts are the same resource iff they expose the same data:
-                # - real FS (ext4): same block device + same sub-directory (root) within it.
-                #   Both containers bind-mounting DIFFERENT paths on the same device are NOT shared.
-                # - overlayFS: same upper+lower layer directories exposed at same point.
-                #   Each container has a unique overlay, so scope by MNT namespace handle.
-                # - All keys are scoped by MNT namespace handle so that intra-NS
-                #   sharing is detected but inter-NS coincidences (both have "/") are not.
+                # - real FS (ext4/xfs/…): same block device + same sub-path (root).
+                #   Scoped by block device, NOT MNT namespace, so that cross-namespace
+                #   bind mounts of the same host path (e.g. Apptainer's home-dir mount)
+                #   are correctly detected as shared resources.
+                # - overlayFS: each container has a unique overlay upper/lower dir, so
+                #   scope by MNT namespace handle to prevent false positives.
                 effective_source = source if source and source != "none" else point
                 if fs_type == FileSystemType.OVERLAY:
                     key = (mnt_ns_handle, point, fs_type_str)
                 else:
-                    key = (mnt_ns_handle, effective_source, root, fs_type_str)
+                    key = (effective_source, root, fs_type_str)
 
                 if key not in source_to_file_id:
                     res_id = self.model.add_resource_node(
@@ -872,6 +872,49 @@ class ProcFsData:
                 gm.perms_all, proc_info.model_id, gm.ResourceType.PAGE_QUOTA, space_id,
                 pd_incharge=self.os_name
             )
+
+    def __add_net_namespace_spaces(self, kernel_id: int):
+        """
+        Model NET namespaces as NET resource spaces.
+        Processes sharing the same NET namespace share a resource space.
+        """
+        net_ns_to_space = {}
+        for proc_info in self.procs.values():
+            ns = proc_info.namespaces.get(NamespaceType.NET) if proc_info.namespaces else None
+            if ns is None:
+                continue
+            handle = ns.handle
+            if handle not in net_ns_to_space:
+                space_id = self.model.add_resource_space_node(gm.ResourceType.NET, handle)
+                net_ns_to_space[handle] = space_id
+                self.model.add_hold_edge(
+                    gm.perms_all, kernel_id, gm.ResourceType.NET, handle,
+                    pd_incharge=self.os_name
+                )
+            self.model.add_hold_edge(
+                gm.perms_all, proc_info.model_id,
+                gm.ResourceType.NET, net_ns_to_space[handle],
+                pd_incharge=self.os_name
+            )
+
+    def __add_service_request_edges(self, connections: list, kernel_id: int):
+        """
+        Add REQUEST edges for detected TCP connections between known processes.
+        client_pid -> server_pid via the server's NET namespace resource space.
+        """
+        for client_pid, server_pid in connections:
+            if client_pid not in self.procs or server_pid not in self.procs:
+                continue
+            client_pd = self.procs[client_pid].model_id
+            server_pd = self.procs[server_pid].model_id
+            ns = (self.procs[server_pid].namespaces.get(NamespaceType.NET)
+                  if self.procs[server_pid].namespaces else None)
+            if ns:
+                self.model.add_request_edge(
+                    client_pd, server_pd,
+                    gm.ResourceType.NET, ns.handle,
+                    pd_incharge=self.os_name
+                )
 
     # Add the devices
     def __add_devices(self, kernel_id: int ):
@@ -1193,6 +1236,7 @@ class ProcFsData:
         vmr_mapping_type: MappingType,
         pmr_mapping_type: MappingType,
         guest: bool = False,
+        connections: list | None = None,
     ) -> gm.ModelGraph:
         """
         Convert the ProcFsData to a generic model state
@@ -1219,8 +1263,10 @@ class ProcFsData:
         self.__add_inter_process_hold_edges()
         self.__add_file_resources(kernel_id=kernel_id)
         self.__add_cgroup_resource_spaces(kernel_id=kernel_id)
+        self.__add_net_namespace_spaces(kernel_id=kernel_id)
+        if connections:
+            self.__add_service_request_edges(connections, kernel_id=kernel_id)
         # self.__add_pid_namespaces(kernel_id=kernel_id)
         # self.__add_mnt_namespaces(kernel_id=kernel_id)
-
 
         return self.model

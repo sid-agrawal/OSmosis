@@ -8,10 +8,13 @@ Requires: Docker (regular + rootless), Podman, Apptainer installed.
 
 import os
 import sys
+import shutil
 import pytest
 
 PROC_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, PROC_DIR)
+
+apptainer_available = shutil.which("apptainer") is not None
 
 from graph_queries import (
     get_pds,
@@ -63,6 +66,7 @@ def test_vdso_in_static_binary(scenario_graph):
 # Apptainer silently shares home vs Docker doesn't
 # ---------------------------------------------------------------------------
 
+@pytest.mark.skipif(not apptainer_available, reason="apptainer not installed")
 @pytest.mark.parametrize("scenario_graph", ["apptainer"], indirect=True)
 def test_apptainer_silently_shares_home(scenario_graph):
     """Apptainer's default home-dir bind mount creates unexpected file sharing."""
@@ -118,16 +122,19 @@ def test_docker_rootless_shared_slirp(scenario_graph):
 
 
 # ---------------------------------------------------------------------------
-# Cgroup isolation: Apptainer shares, Docker doesn't
+# Cgroup isolation: Singularity-CE 4.x creates per-instance cgroups
 # ---------------------------------------------------------------------------
 
+@pytest.mark.skipif(not apptainer_available, reason="apptainer not installed")
 @pytest.mark.parametrize("scenario_graph", ["apptainer"], indirect=True)
-def test_apptainer_cgroup_shared(scenario_graph):
-    """Apptainer does not create separate cgroups → PAGE_QUOTA space shared."""
+def test_apptainer_cgroup_isolated(scenario_graph):
+    """Singularity-CE 4.x creates per-instance cgroups (singularity-<PID>.scope).
+    Each instance gets its own PAGE_QUOTA resource space — PAGE_QUOTA is isolated,
+    unlike the FILE resource (home dir) which is still shared."""
     G, pids = scenario_graph
     app_pd, kvs_pd = _scenario_pds(G, pids)
-    assert len(shared_resource_spaces(G, app_pd, kvs_pd, "PAGE_QUOTA")) > 0, \
-        "Apptainer instances should share a cgroup (PAGE_QUOTA) resource space"
+    assert len(shared_resource_spaces(G, app_pd, kvs_pd, "PAGE_QUOTA")) == 0, \
+        "Singularity-CE 4.x apptainer instances should have separate per-instance cgroup scopes"
 
 
 @pytest.mark.parametrize("scenario_graph", ["docker-regular"], indirect=True)

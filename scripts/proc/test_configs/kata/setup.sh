@@ -1,24 +1,9 @@
 #!/usr/bin/env bash
-# setup.sh — Start App + KVS using Kata Containers runtime via Docker.
+# setup.sh — Kata Containers scenario setup.
 # Requires containerd + kata-runtime configured.
+# Delegates start/extract/kill to proc_model.py run_configs[13].
 
 set -euo pipefail
 
-APP_NAME="osmosis-kata-app"
-KVS_NAME="osmosis-kata-kvs"
-
-docker rm -f "$APP_NAME" "$KVS_NAME" 2>/dev/null || true
-
-docker run -d --name "$APP_NAME" \
-    --runtime=io.containerd.kata.v2 \
-    ubuntu:22.04 sleep 3600
-
-docker run -d --name "$KVS_NAME" \
-    --runtime=io.containerd.kata.v2 \
-    ubuntu:22.04 sleep 3600
-
-APP_PID=$(docker inspect --format '{{.State.Pid}}' "$APP_NAME")
-KVS_PID=$(docker inspect --format '{{.State.Pid}}' "$KVS_NAME")
-
-echo "APP_PID=$APP_PID"
-echo "KVS_PID=$KVS_PID"
+# proc_model.py run_configs[13] starts two Kata containers
+echo "CONFIG=13"

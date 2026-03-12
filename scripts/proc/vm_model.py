@@ -438,6 +438,83 @@ def get_cellulos_vm_state(get_host: bool, guest_file: str, g2h_file: str, host_f
     mapping_graph.add_request_edge_raw("PD_10001", "PD_1", "PD_1")
     mapping_graph.to_csv(g2h_file, only_edge=True)
 
+def _find_pfs_lib() -> str:
+    """Search for the pypfs .so library directory."""
+    candidates = [
+        os.path.expanduser("~/proc/pfs/lib"),
+        os.path.join(os.path.dirname(__file__), "pfs", "lib"),
+    ]
+    for c in candidates:
+        if os.path.isdir(c) and any(f.endswith(".so") for f in os.listdir(c)):
+            return c
+    raise FileNotFoundError("pypfs library not found; set PYTHONPATH or place it under ~/proc/pfs/lib")
+
+
+def _try_kata_g2h_mapping(container_name: str, guest_file: str,
+                           host_file: str, g2h_file: str):
+    """
+    Attempt GPA→HPA translation using kata's QEMU QMP socket.
+    QMP socket is at /run/vc/vm/<sandbox_id>/qmp.sock.
+    Writes empty g2h_file if QMP is not accessible.
+    TODO: implement full translation (mirrors get_qemu_vm_state logic).
+    """
+    import glob
+    qmp_socks = glob.glob("/run/vc/vm/*/qmp.sock")
+    mapping_graph = gm.ModelGraph(id_offset=10000*10000)
+    mapping_graph.to_csv(g2h_file, only_edge=True)
+    print(f"[kata] GPA→HPA mapping not yet implemented; empty g2h written to {g2h_file}")
+    print(f"[kata] TODO: connect to QMP socket {qmp_socks} for full translation")
+
+
+def get_kata_vm_state(container_name: str, guest_file: str,
+                      host_file: str, g2h_file: str):
+    """
+    Extract two-level model state for a running kata container.
+    - guest_file: proc_model output from INSIDE the kata VM (via docker exec)
+    - host_file:  proc_model output of the QEMU process on the host
+    - g2h_file:   GPA→HPA mapping edges (via kata's QMP socket, if accessible)
+    """
+    import subprocess
+
+    # 1. Get the QEMU PID on the host
+    inspect = json.loads(
+        subprocess.check_output(["docker", "inspect", container_name], text=True))
+    qemu_pid = inspect[0]["State"]["Pid"]
+    assert qemu_pid != 0, "kata container QEMU PID is 0 — container not running?"
+
+    # 2. Extract host QEMU state (reuses existing get_host_state)
+    get_host_state(qemu_pid, host_file=host_file)
+
+    # 3. Push pypfs + proc_model.py into the container
+    pfs_lib = _find_pfs_lib()
+    proc_dir = os.path.dirname(os.path.abspath(__file__))
+    subprocess.check_call(
+        ["docker", "exec", container_name, "mkdir", "-p",
+         "/tmp/lintool/pfs/lib", "/tmp/lintool"])
+    subprocess.check_call(
+        ["docker", "cp", pfs_lib + "/.", f"{container_name}:/tmp/lintool/pfs/lib/"])
+    for f in ["proc_model.py", "procfs_data.py", "generic_model.py",
+              "utils.py", "read_pagemap.py", "get_ns_info.py"]:
+        src = os.path.join(proc_dir, f)
+        if os.path.exists(src):
+            subprocess.check_call(["docker", "cp", src,
+                                   f"{container_name}:/tmp/lintool/{f}"])
+
+    # 4. Run proc_model.py inside the kata VM
+    subprocess.check_call([
+        "docker", "exec",
+        "-e", "PYTHONPATH=/tmp/lintool/pfs/lib",
+        container_name,
+        "python3", "/tmp/lintool/proc_model.py",
+        "--os", "linux", "--csv", "/tmp/guest.csv", "-g", "--pid", "0"
+    ])
+    subprocess.check_call(
+        ["docker", "cp", f"{container_name}:/tmp/guest.csv", guest_file])
+
+    # 5. Memory address translation via QMP (optional)
+    _try_kata_g2h_mapping(container_name, guest_file, host_file, g2h_file)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Extract the model state from the Qemu guest and merge it with the model state"
@@ -465,9 +542,15 @@ def main():
     parser.add_argument(
         "--vmm",
         type=str,
-        choices=["qemu-x86", "cellulos"],
+        choices=["qemu-x86", "cellulos", "kata"],
         required=True,
-        help="Qemu or CellulOS(on Qemu) as the VMM "
+        help="Qemu, CellulOS(on Qemu), or kata as the VMM"
+    )
+    parser.add_argument(
+        "--container",
+        type=str,
+        default=None,
+        help="Container name for --vmm kata (e.g. osmosis-kata-app)"
     )
     parser.add_argument(
         "--clean",
@@ -508,12 +591,16 @@ def main():
         get_qemu_vm_state(
             get_host=True, guest_file=guest_file, g2h_file=g2h_file, host_file=host_file
         )
-    elif  args.vmm == "cellulos":
+    elif args.vmm == "cellulos":
         assert is_cellulos_aarch64_buildroot_osm_dir_updated()
         get_cellulos_vm_state(
             get_host=True, guest_file=guest_file, g2h_file=g2h_file, host_file=host_file
         )
-    else: 
+    elif args.vmm == "kata":
+        assert is_root(), "kata extraction requires root"
+        assert args.container, "--container required for --vmm kata"
+        get_kata_vm_state(args.container, guest_file, host_file, g2h_file)
+    else:
         raise ValueError("Invalid VMM")
 
     if args.load_csv:

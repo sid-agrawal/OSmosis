@@ -72,6 +72,8 @@ class ProcessStartType(Enum):
                     # ls -la /proc/PID/root
     DOCKER = 4      # Start a docker command
     PODMAN = 5      # Start a podman container
+    APPTAINER = 6   # Start an Apptainer (SingularityCE) instance
+    KATA = 7        # Start a Docker container with the Kata runtime
 
 
 program_names: EasyDict = EasyDict(
@@ -147,6 +149,18 @@ run_configs = [
          ProcessStartType.PODMAN),
         (program_names.podman_ubuntu_bash + " osmosis-podman-kvs " + "bash",
          ProcessStartType.PODMAN),
+    ],
+    # 11: Two Apptainer instances (SIF image path set via APPTAINER_SIF env or default)
+    [
+        ("/tmp/ubuntu22.sif osmosis-app", ProcessStartType.APPTAINER),
+        ("/tmp/ubuntu22.sif osmosis-kvs", ProcessStartType.APPTAINER),
+    ],
+    # 12: Reserved (gRPC Docker — use test_configs/grpc-docker/setup.sh with APP_PID= instead)
+    [],
+    # 13: Two Kata Containers (same image/cmd as Docker but with kata runtime)
+    [
+        ("ubuntu osmosis-kata-app bash", ProcessStartType.KATA),
+        ("ubuntu osmosis-kata-kvs bash", ProcessStartType.KATA),
     ],
 ]
 
@@ -247,6 +261,39 @@ def run_process(name: str, start_type: ProcessStartType = False) -> tuple[int, i
         pid = inspect_json_dict[0]["State"]["Pid"]
         assert (pid != 0) and (pid is not None)
 
+        return pid
+
+    elif start_type == ProcessStartType.APPTAINER:
+        args_list = name.split()
+        assert len(args_list) == 2
+        image, instance_name = args_list[0], args_list[1]
+        subprocess.run(["apptainer", "instance", "stop", instance_name], capture_output=True)
+        subprocess.run(["apptainer", "instance", "start", image, instance_name],
+                       capture_output=True)
+        time.sleep(2)
+        list_output = subprocess.check_output(["apptainer", "instance", "list"], text=True)
+        for line in list_output.splitlines():
+            parts = line.split()
+            if len(parts) >= 2 and parts[0] == instance_name:
+                pid = int(parts[1])
+                break
+        assert pid is not None and pid != 0
+        return pid
+
+    elif start_type == ProcessStartType.KATA:
+        args_list = name.split()
+        assert len(args_list) == 3
+        image, container_name, cmd = args_list[0], args_list[1], args_list[2]
+        subprocess.run(["docker", "rm", "-f", container_name], capture_output=True)
+        subprocess.run(["docker", "run", "--rm", "-id",
+                        "--runtime=io.containerd.kata.v2",
+                        "--name", container_name, image, cmd],
+                       capture_output=True)
+        inspect_output = subprocess.check_output(
+            ["docker", "inspect", container_name], text=True)
+        inspect_json = json.loads(inspect_output)
+        pid = inspect_json[0]["State"]["Pid"]
+        assert pid != 0 and pid is not None
         return pid
 
     else:
@@ -829,6 +876,52 @@ def detect_network_providers(data_main: ProcFsData) -> dict:
     return net_ns_to_provider
 
 
+def detect_tcp_connections(data_main: ProcFsData) -> list:
+    """
+    Detect ESTABLISHED TCP connections between known processes.
+    Reads /proc/pid/net/tcp and /proc/pid/net/tcp6 for each PID.
+    Matches by server listening port: if a process listens on port P and another
+    process has an ESTABLISHED outbound connection to port P, they are connected.
+    Returns list of (client_pid, server_pid) tuples.
+    """
+    listening_by_port = {}   # port_hex -> server_pid
+    established_by_pid = {}  # pid -> set of remote_port_hex
+
+    for pid in data_main.procs:
+        for tcp_file in (f"/proc/{pid}/net/tcp", f"/proc/{pid}/net/tcp6"):
+            try:
+                with open(tcp_file) as f:
+                    lines = f.readlines()[1:]  # skip header
+            except (FileNotFoundError, PermissionError):
+                continue
+            for line in lines:
+                parts = line.split()
+                if len(parts) < 4:
+                    continue
+                local = parts[1]
+                state = parts[3]
+                local_port = local.rsplit(":", 1)[-1]
+                if state == '0A':  # LISTEN
+                    listening_by_port[local_port] = pid
+                elif state == '01':  # ESTABLISHED
+                    remote = parts[2]
+                    remote_port = remote.rsplit(":", 1)[-1]
+                    established_by_pid.setdefault(pid, set()).add(remote_port)
+
+    connections = []
+    seen = set()
+    for client_pid, remote_ports in established_by_pid.items():
+        for port in remote_ports:
+            if port in listening_by_port:
+                server_pid = listening_by_port[port]
+                if server_pid != client_pid:
+                    pair = (client_pid, server_pid)
+                    if pair not in seen:
+                        connections.append(pair)
+                        seen.add(pair)
+    return connections
+
+
 # Get all namespaces in the systems YY
 def extract_all_namespaces(data_main, should_print=False):
     """
@@ -1014,6 +1107,18 @@ def run_queries(G, query_type: str):
         if not found:
             print("  (no shared VMR/MO resources)")
 
+    if run_all or query_type == 'service-deps':
+        header("Service Dependencies (TCP-detected REQUEST edges between PDs)")
+        found = False
+        for pd in pds:
+            for _, target, data in G.out_edges(pd, data=True):
+                if (data.get("type") == "REQUEST"
+                        and G.nodes.get(target, {}).get("type") == "PD"):
+                    found = True
+                    print(f"  {pd_names[pd]:30s} -> {pd_names.get(target, target)}")
+        if not found:
+            print("  (no service-dependency REQUEST edges detected)")
+
 
 def do_proc_model(args):
     # PIDs when this script starts them
@@ -1097,12 +1202,20 @@ def do_proc_model(args):
 
 
     #############################################
+    # Detect TCP connections between known processes
+    #############################################
+    connections = detect_tcp_connections(data_main)
+    if connections:
+        print(f"Detected {len(connections)} TCP connection(s) between known processes")
+
+    #############################################
     # Convert to the model
     #############################################
     model = data_main.to_generic_model(
         MappingType.CONTIGUOUS,
         MappingType.CO_CONTIGUOUS,
         args.guest,
+        connections=connections,
     )
     model.to_csv(args.csv)
     print(f"Output CSV is at {args.csv}")
@@ -1190,7 +1303,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--query", type=str, default=None,
         choices=["hold-edges", "shared-files", "shared-cgroups", "shared-vmr",
-                 "can-control", "all"],
+                 "can-control", "service-deps", "all"],
         help="Run graph queries after extraction and print results"
     )
     parser.add_argument(

@@ -252,6 +252,57 @@ def test_cgroup_space_created(loaded_graph):
     assert len(cgroup_spaces) > 0, "No PAGE_QUOTA resource spaces found; check cgroup extraction"
 
 
+def test_net_namespace_space_created(loaded_graph):
+    """At least one NET resource space exists in the graph."""
+    G = loaded_graph
+    net_spaces = [n for n, d in G.nodes(data=True)
+                  if d.get("type") == "RESOURCE_SPACE" and d.get("data") == "NET"]
+    assert len(net_spaces) > 0, "No NET resource spaces found; check namespace extraction"
+
+
+def test_net_namespace_shared(tmp_path):
+    """Two processes in the same NET namespace share a NET resource space."""
+    try:
+        import pypfs  # noqa: F401
+    except ImportError:
+        pytest.skip("pypfs not available")
+
+    from procfs_data import ProcFsData, MappingType
+    import proc_model
+    from metrics import read_csv_to_graph
+
+    hello_bin = os.path.join(TEST_PROGRAMS_DIR, "hello")
+    if not os.path.exists(hello_bin):
+        pytest.skip("hello binary not built")
+
+    p1 = subprocess.Popen([hello_bin])
+    p2 = subprocess.Popen([hello_bin])
+    import time
+    time.sleep(0.5)
+    try:
+        data = ProcFsData()
+        data.os_name = "Host Linux"
+        proc_model.extract_process_data(data, p1.pid, "hello")
+        proc_model.extract_process_data(data, p2.pid, "hello")
+        csv = str(tmp_path / "net_test.csv")
+        data.to_generic_model(MappingType.CONTIGUOUS, MappingType.CO_CONTIGUOUS).to_csv(csv)
+        G = read_csv_to_graph(csv)
+
+        app_pd = f"PD_{p1.pid}"
+        kvs_pd = f"PD_{p2.pid}"
+        from graph_queries import shared_resource_spaces
+        net_shared = shared_resource_spaces(G, app_pd, kvs_pd, "NET")
+        assert len(net_shared) > 0, \
+            "Two host processes should share the same NET namespace resource space"
+    finally:
+        for p in (p1, p2):
+            try:
+                p.send_signal(signal.SIGTERM)
+                p.wait(timeout=2)
+            except Exception:
+                pass
+
+
 def test_root_holds_all(tmp_path):
     """Root PD (uid 0) has a HOLD edge to every non-root PD."""
     if os.getuid() != 0:
