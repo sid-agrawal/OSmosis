@@ -170,11 +170,14 @@ def scenario_graph(tmp_path, request):
         pytest.skip(f"No setup script for scenario '{config_name}'")
 
     # setup.sh outputs either:
-    #   CONFIG=<n>          → let proc_model.py start/extract/kill via run_configs[n]
-    #   APP_PID=<n> KVS_PID=<n>  → external processes; extract by PID
+    #   CONFIG=<n>                        → let proc_model.py start/extract/kill via run_configs[n]
+    #   APP_PID=<n> KVS_PID=<n>          → external processes; extract by PID
+    #   WITH_ANCESTORS=true               → also extract parent chain (--with-ancestors)
     out = subprocess.check_output(["bash", setup_script], text=True)
+    setup_lines = out.splitlines()
     lines = {k: v for k, v in
-             (line.split("=", 1) for line in out.splitlines() if "=" in line)}
+             (line.split("=", 1) for line in setup_lines if "=" in line)}
+    with_ancestors = lines.get("WITH_ANCESTORS", "").strip().lower() == "true"
 
     csv_path = str(tmp_path / f"{config_name}.csv")
     proc_model_py = os.path.join(PROC_DIR, "proc_model.py")
@@ -202,10 +205,18 @@ def scenario_graph(tmp_path, request):
         pids = [int(m.split()[2].rstrip(":"))
                 for m in out2.splitlines() if m.startswith("Extracting process")]
     else:
-        # External processes already running; extract by PID list
+        # External processes already running; extract by PID list.
+        # APP_PID / KVS_PID → container PIDs returned to tests as pids[0], pids[1].
+        # EXTRA_PIDS        → additional PIDs to extract (e.g. dockerd, containerd) but
+        #                     NOT returned to tests — tests look them up by name in G.
         pids = [int(v) for k, v in lines.items() if k.endswith("PID")]
-        pids_str = ",".join(str(p) for p in pids)
-        subprocess.check_call(sudo_cmd + ["--pids", pids_str])
+        extra_pid_str = lines.get("EXTRA_PIDS", "")
+        extra_pids = [int(p.strip()) for p in extra_pid_str.split(",")
+                      if p.strip().isdigit()]
+        all_pids = pids + [p for p in extra_pids if p not in pids]
+        pids_str = ",".join(str(p) for p in all_pids)
+        extra_args = ["--with-ancestors"] if with_ancestors else []
+        subprocess.check_call(sudo_cmd + ["--pids", pids_str] + extra_args)
 
     G = read_csv_to_graph(csv_path)
     yield G, pids

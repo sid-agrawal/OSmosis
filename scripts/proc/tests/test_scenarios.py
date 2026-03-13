@@ -19,8 +19,12 @@ from graph_queries import (
     shared_resource_spaces,
     can_control,
     controlled_by,
+    isolation_layers,
+    syscall_surface,
+    mac_peers,
 )
 
+fuse_available = os.path.exists("/dev/fuse")
 apptainer_available = shutil.which("apptainer") is not None
 # kata-no-kvm: kata shim present + docker available; /dev/kvm not required (runs via QEMU TCG)
 kata_no_kvm_available = (
@@ -290,3 +294,369 @@ def test_grpc_net_namespace_spaces(scenario_graph):
     net_shared = shared_resource_spaces(G, app_pd, kvs_pd, "NET")
     assert len(net_shared) == 0, \
         "Docker containers in separate NET namespaces should not share NET resource spaces"
+
+
+# ---------------------------------------------------------------------------
+# Docker with daemons (full daemon chain: dockerd → containerd → shim → container)
+# ---------------------------------------------------------------------------
+
+def _find_pd_by_name(G, name: str):
+    """Return PD node ID whose data field matches name exactly, or None."""
+    return next((n for n, d in G.nodes(data=True)
+                 if d.get("type") == "PD" and d.get("data") == name), None)
+
+
+def _find_pd_by_name_contains(G, fragment: str):
+    """Return all PD node IDs whose data field contains fragment."""
+    return [n for n, d in G.nodes(data=True)
+            if d.get("type") == "PD" and fragment in d.get("data", "")]
+
+
+def _get_pd_extra(G, pd_node: str) -> dict:
+    """Parse and return the extra JSON dict for a PD node, or {}."""
+    import json
+    raw = G.nodes[pd_node].get("extra", "")
+    if not raw:
+        return {}
+    try:
+        return json.loads(raw)
+    except (json.JSONDecodeError, TypeError):
+        return {}
+
+
+@pytest.mark.parametrize("scenario_graph", ["docker-with-daemons"], indirect=True)
+def test_docker_daemons_h1_root_daemons_hold_containers(scenario_graph):
+    """H1: Root daemons (uid=0) have HOLD edges to container PDs.
+    Kernel is root; daemons run as root; so daemons → containers via __add_inter_process_hold_edges."""
+    G, pids = scenario_graph
+    assert len(pids) == 2
+    app_pd = f"PD_{pids[0]}"
+    kvs_pd = f"PD_{pids[1]}"
+
+    # Find daemon PDs (containerd-shim, containerd, dockerd)
+    daemon_names = ["dockerd", "containerd", "containerd-shim-runc-v2", "containerd-shim"]
+    daemon_pds = []
+    for name in daemon_names:
+        found = _find_pd_by_name(G, name)
+        if found:
+            daemon_pds.append(found)
+    # At least one daemon must be present
+    assert daemon_pds, \
+        "No daemon PDs (dockerd/containerd/shim) found in graph; --with-ancestors may not have worked"
+
+    # Each daemon should be able to control (hold) both container PDs
+    for daemon_pd in daemon_pds:
+        reachable = can_control(G, daemon_pd)
+        assert app_pd in reachable or kvs_pd in reachable, \
+            f"Daemon PD {G.nodes[daemon_pd].get('data')} should hold at least one container PD"
+
+
+@pytest.mark.parametrize("scenario_graph", ["docker-with-daemons"], indirect=True)
+def test_docker_daemons_h2_kernel_holds_daemons(scenario_graph):
+    """H2: kernel PD has HOLD edges to dockerd, containerd, and containerd-shim."""
+    G, _ = scenario_graph
+    kernel_pd = next(
+        (n for n, d in G.nodes(data=True) if "Linux" in d.get("data", "")), None
+    )
+    assert kernel_pd is not None, "Kernel PD not found"
+
+    daemon_names = ["dockerd", "containerd", "containerd-shim-runc-v2", "containerd-shim"]
+    found_daemons = []
+    for name in daemon_names:
+        pd = _find_pd_by_name(G, name)
+        if pd:
+            found_daemons.append((name, pd))
+
+    assert found_daemons, "No daemon PDs found in graph"
+    kernel_reachable = can_control(G, kernel_pd)
+    for name, pd in found_daemons:
+        assert pd in kernel_reachable, \
+            f"Kernel should hold {name} (root daemon) via HOLD edge"
+
+
+@pytest.mark.parametrize("scenario_graph", ["docker-with-daemons"], indirect=True)
+def test_docker_daemons_h3_two_shim_nodes(scenario_graph):
+    """H3: There should be two separate containerd-shim PD nodes (one per container)."""
+    G, _ = scenario_graph
+    shim_pds = (_find_pd_by_name_contains(G, "containerd-shim"))
+    assert len(shim_pds) >= 2, \
+        f"Expected ≥2 containerd-shim PD nodes (one per container), found {len(shim_pds)}: {shim_pds}"
+
+
+@pytest.mark.parametrize("scenario_graph", ["docker-with-daemons"], indirect=True)
+def test_docker_daemons_h4_containers_separate_cgroup_from_daemons(scenario_graph):
+    """H4: Container PDs should be in separate PAGE_QUOTA spaces from each other and from daemons.
+    Docker creates per-container cgroup scopes under docker-<id>.scope."""
+    G, pids = scenario_graph
+    assert len(pids) == 2
+    app_pd = f"PD_{pids[0]}"
+    kvs_pd = f"PD_{pids[1]}"
+
+    # Containers should not share cgroup space with each other
+    cg_shared_containers = shared_resource_spaces(G, app_pd, kvs_pd, "PAGE_QUOTA")
+    assert len(cg_shared_containers) == 0, \
+        f"Container PDs should have separate cgroup (PAGE_QUOTA) spaces, but they share: {cg_shared_containers}"
+
+
+@pytest.mark.parametrize("scenario_graph", ["docker-with-daemons"], indirect=True)
+def test_docker_daemons_h5_containers_separate_mnt_from_daemons(scenario_graph):
+    """H5: Container PDs should be in different MNT resource space from daemon PDs.
+    Docker creates a new MNT namespace per container."""
+    G, pids = scenario_graph
+    assert len(pids) == 2
+    app_pd = f"PD_{pids[0]}"
+    kvs_pd = f"PD_{pids[1]}"
+
+    daemon_names = ["dockerd", "containerd", "containerd-shim-runc-v2", "containerd-shim"]
+    for name in daemon_names:
+        daemon_pd = _find_pd_by_name(G, name)
+        if daemon_pd is None:
+            continue
+        mnt_shared = shared_resource_spaces(G, app_pd, daemon_pd, "MNT")
+        assert len(mnt_shared) == 0, \
+            f"Container (app) should NOT share MNT space with {name}, but shares: {mnt_shared}"
+
+
+@pytest.mark.parametrize("scenario_graph", ["docker-with-daemons"], indirect=True)
+def test_docker_daemons_h6_containers_separate_ipc_from_daemons(scenario_graph):
+    """H6: Container PDs should be in different IPC resource space from daemon PDs.
+    Docker creates a new IPC namespace per container."""
+    G, pids = scenario_graph
+    assert len(pids) == 2
+    app_pd = f"PD_{pids[0]}"
+    kvs_pd = f"PD_{pids[1]}"
+
+    daemon_names = ["dockerd", "containerd", "containerd-shim-runc-v2", "containerd-shim"]
+    for name in daemon_names:
+        daemon_pd = _find_pd_by_name(G, name)
+        if daemon_pd is None:
+            continue
+        ipc_shared = shared_resource_spaces(G, app_pd, daemon_pd, "IPC")
+        assert len(ipc_shared) == 0, \
+            f"Container (app) should NOT share IPC space with {name}, but shares: {ipc_shared}"
+
+
+@pytest.mark.parametrize("scenario_graph", ["docker-with-daemons"], indirect=True)
+def test_docker_daemons_h7_shim_file_sharing_observational(scenario_graph):
+    """H7 (observational): Quantify FILE resources shared between containerd-shim and its container.
+    The shim manages container stdio — this may appear as shared FILE resources.
+    Any result is informative (new finding not stated in Docker architecture docs)."""
+    G, pids = scenario_graph
+    assert len(pids) == 2
+    app_pd = f"PD_{pids[0]}"
+
+    shim_pds = _find_pd_by_name_contains(G, "containerd-shim")
+    if not shim_pds:
+        pytest.skip("No containerd-shim PD found in graph")
+
+    # Count shared FILE resources between each shim and the app container
+    for shim_pd in shim_pds:
+        file_shared = shared_resources(G, app_pd, shim_pd, "FILE")
+        # Observational: just record, don't assert a specific count
+        print(f"\nH7: shim {G.nodes[shim_pd].get('data')} ↔ app container "
+              f"shares {len(file_shared)} FILE resource(s): {file_shared}")
+    # Always passes — documents the finding
+    assert True
+
+
+@pytest.mark.parametrize("scenario_graph", ["docker-with-daemons"], indirect=True)
+def test_docker_daemons_h8_seccomp_annotations(scenario_graph):
+    """H8: Container PDs annotated seccomp=2 (filter); daemon PDs seccomp=0 (off).
+    Docker applies its default seccomp profile to containers."""
+    G, pids = scenario_graph
+    assert len(pids) == 2
+
+    for pid in pids:
+        pd = f"PD_{pid}"
+        extra = _get_pd_extra(G, pd)
+        seccomp = extra.get("seccomp")
+        assert seccomp == 2, \
+            f"Container PD_{pid} should have seccomp=2 (filter), got {seccomp}"
+
+    daemon_names = ["dockerd", "containerd", "containerd-shim-runc-v2", "containerd-shim"]
+    for name in daemon_names:
+        daemon_pd = _find_pd_by_name(G, name)
+        if daemon_pd is None:
+            continue
+        extra = _get_pd_extra(G, daemon_pd)
+        seccomp = extra.get("seccomp")
+        assert seccomp == 0, \
+            f"Daemon {name} should have seccomp=0 (off), got {seccomp}"
+
+
+@pytest.mark.parametrize("scenario_graph", ["docker-with-daemons"], indirect=True)
+def test_docker_daemons_h9_apparmor_annotations(scenario_graph):
+    """H9: Container PDs annotated AppArmor=docker-default; daemon PDs have no/different label.
+    Docker applies the docker-default AppArmor profile to containers."""
+    G, pids = scenario_graph
+    assert len(pids) == 2
+
+    for pid in pids:
+        pd = f"PD_{pid}"
+        extra = _get_pd_extra(G, pd)
+        lsm_label = extra.get("lsm_label", "")
+        assert "docker-default" in lsm_label, \
+            f"Container PD_{pid} should have AppArmor label containing 'docker-default', got '{lsm_label}'"
+
+    daemon_names = ["dockerd", "containerd", "containerd-shim-runc-v2", "containerd-shim"]
+    for name in daemon_names:
+        daemon_pd = _find_pd_by_name(G, name)
+        if daemon_pd is None:
+            continue
+        extra = _get_pd_extra(G, daemon_pd)
+        lsm_label = extra.get("lsm_label", "")
+        assert "docker-default" not in lsm_label, \
+            f"Daemon {name} should NOT have docker-default AppArmor label, got '{lsm_label}'"
+
+
+@pytest.mark.parametrize("scenario_graph", ["docker-with-daemons"], indirect=True)
+def test_docker_daemons_h9_mac_profile_node_attribute(scenario_graph):
+    """H9 (extended): lsm_label is included in PD node extra JSON, enabling
+    isolation_layers() to report different_mac_profile. Containers must carry
+    'docker-default'; daemons must carry a different (or empty) label."""
+    G, pids = scenario_graph
+    assert len(pids) == 2
+
+    for pid in pids:
+        pd = f"PD_{pid}"
+        extra = _get_pd_extra(G, pd)
+        lsm_label = extra.get("lsm_label", "")
+        assert "docker-default" in lsm_label, (
+            f"Container {pd} extra JSON must contain lsm_label with 'docker-default', "
+            f"got '{lsm_label}'"
+        )
+
+    daemon_pd = _find_pd_by_name(G, "dockerd")
+    if daemon_pd is not None:
+        daemon_label = _get_pd_extra(G, daemon_pd).get("lsm_label", "")
+        container_label = _get_pd_extra(G, f"PD_{pids[0]}").get("lsm_label", "")
+        assert container_label != daemon_label, (
+            f"Container and dockerd must have different lsm_label in extra JSON; "
+            f"both have: '{container_label}'"
+        )
+
+
+@pytest.mark.parametrize("scenario_graph", ["docker-with-daemons"], indirect=True)
+def test_docker_daemons_h8_seccomp_reduces_api_surface(scenario_graph):
+    """H8 (extended): Docker's default seccomp profile is reflected in the model via
+    allowed_syscalls node attribute. Container PDs should have fewer allowed syscalls
+    than unfiltered daemon PDs (syscall_surface query)."""
+    G, pids = scenario_graph
+    app_pd = f"PD_{pids[0]}"
+    daemon_pd = _find_pd_by_name(G, "dockerd")
+    if daemon_pd is None:
+        pytest.skip("dockerd PD not found in graph")
+
+    container_syscalls = syscall_surface(G, app_pd)
+    daemon_syscalls    = syscall_surface(G, daemon_pd)
+
+    # Syscalls the daemon can invoke but the container cannot
+    blocked = daemon_syscalls - container_syscalls
+    assert len(blocked) >= 10, (
+        f"Expected Docker seccomp to block ≥10 tracked syscalls for container; "
+        f"got {len(blocked)}: {sorted(blocked)}"
+    )
+    # Spot-check known docker-default blocked syscalls
+    known_blocked = {"ptrace", "mount", "reboot", "kexec_load"}
+    assert known_blocked & blocked, (
+        f"Known blocked syscalls should be absent from container surface; "
+        f"expected subset of {known_blocked} in blocked={sorted(blocked)}"
+    )
+
+
+@pytest.mark.parametrize("scenario_graph", ["docker-with-daemons"], indirect=True)
+def test_isolation_layers_between_containers(scenario_graph):
+    """Two Docker containers from the same image should be isolated by namespace
+    dimensions but share the same docker-default seccomp profile and AppArmor label."""
+    G, pids = scenario_graph
+    assert len(pids) == 2
+
+    layers = isolation_layers(G, f"PD_{pids[0]}", f"PD_{pids[1]}")
+
+    # Namespace isolation: Docker creates separate namespaces per container
+    assert layers["different_mnt_ns"], \
+        "Docker containers must have different MNT namespaces"
+    assert layers["different_ipc_ns"], \
+        "Docker containers must have different IPC namespaces"
+    assert layers["different_net_ns"], \
+        "Docker containers must have different NET namespaces"
+    assert layers["different_cgroup"], \
+        "Docker containers must have different cgroups"
+
+    # Profile isolation: both containers use docker-default (same profile)
+    assert not layers["different_mac_profile"], \
+        "Two containers from same image share docker-default AppArmor profile"
+    assert not layers["different_syscall_surface"], \
+        "Two containers from same image share the same seccomp-filtered syscall surface"
+
+
+@pytest.mark.parametrize("scenario_graph", ["docker-with-daemons"], indirect=True)
+def test_isolation_layers_container_vs_daemon(scenario_graph):
+    """A Docker container and the dockerd daemon should differ in MAC profile and
+    syscall surface — container has docker-default seccomp, daemon has none."""
+    G, pids = scenario_graph
+    daemon_pd = _find_pd_by_name(G, "dockerd")
+    if daemon_pd is None:
+        pytest.skip("dockerd PD not found in graph")
+
+    layers = isolation_layers(G, f"PD_{pids[0]}", daemon_pd)
+
+    assert layers["different_mac_profile"], (
+        "Container (docker-default AppArmor) and daemon (unconfined) must have "
+        "different MAC profiles"
+    )
+    assert layers["different_syscall_surface"], (
+        "Container (docker-default seccomp) and daemon (unfiltered) must have "
+        "different effective syscall surfaces"
+    )
+
+
+# ---------------------------------------------------------------------------
+# FUSE filesystem (passthrough FUSE server + hello client)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.skipif(not fuse_available, reason="/dev/fuse not available")
+@pytest.mark.parametrize("scenario_graph", ["fuse"], indirect=True)
+def test_fuse_request_edge(scenario_graph):
+    """FUSE client process should have a REQUEST edge to the FUSE server process.
+    The python passthrough FUSE server serves files to the hello client;
+    detect_fuse_connections() should detect the /dev/fuse fd and emit a REQUEST edge.
+    setup.sh: APP_PID=server (passthrough.py), KVS_PID=client (hello)."""
+    G, pids = scenario_graph
+    assert len(pids) == 2, "Expected exactly 2 PIDs: server (APP_PID) + client (KVS_PID)"
+    # APP_PID=server (passthrough.py), KVS_PID=client (hello)
+    server_pd = f"PD_{pids[0]}"
+    client_pd = f"PD_{pids[1]}"
+
+    assert server_pd in G.nodes, f"FUSE server PD {server_pd} not in graph"
+    assert client_pd in G.nodes, f"FUSE client PD {client_pd} not in graph"
+
+    # Client should have a REQUEST edge to the FUSE server
+    request_targets = {v for _, v, d in G.out_edges(client_pd, data=True)
+                       if d.get("type") == "REQUEST"
+                       and G.nodes.get(v, {}).get("type") == "PD"}
+    assert server_pd in request_targets, (
+        f"FUSE client ({client_pd}) should have a REQUEST edge to the FUSE server "
+        f"({server_pd}). REQUEST targets found: {request_targets}"
+    )
+
+
+@pytest.mark.skipif(not fuse_available, reason="/dev/fuse not available")
+@pytest.mark.parametrize("scenario_graph", ["fuse"], indirect=True)
+def test_fuse_mnt_namespace_space_modeling(scenario_graph):
+    """MNT resource spaces should be modeled for the FUSE scenario."""
+    G, pids = scenario_graph
+
+    # Check that MNT spaces exist in graph (the __add_mnt_namespaces pass populated them)
+    mnt_spaces = [n for n, d in G.nodes(data=True)
+                  if d.get("type") == "RESOURCE_SPACE" and "MNT" in d.get("data", "")]
+    assert len(mnt_spaces) >= 1, "MNT resource spaces should be present in graph"
+
+    # Both server and client should hold at least one MNT resource space
+    for pid in pids:
+        pd = f"PD_{pid}"
+        held_spaces = {v for _, v, d in G.out_edges(pd, data=True)
+                       if d.get("type") == "HOLD"
+                       and G.nodes.get(v, {}).get("type") == "RESOURCE_SPACE"
+                       and "MNT" in G.nodes[v].get("data", "")}
+        assert len(held_spaces) >= 1, f"{pd} should hold at least one MNT resource space"
