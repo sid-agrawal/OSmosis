@@ -663,6 +663,81 @@ def extract_memory_data(data: ProcFsData, pid: int, should_print=False):
         print("\n\n")
 
 
+def extract_host_uid(pid: int) -> int:
+    """Return host-level effective UID, accounting for user namespace mapping."""
+    try:
+        with open(f"/proc/{pid}/uid_map") as f:
+            parts = f.readline().split()
+            if len(parts) < 3:
+                raise ValueError("unexpected uid_map format")
+            in_start, host_start, count = int(parts[0]), int(parts[1]), int(parts[2])
+        with open(f"/proc/{pid}/status") as f:
+            uid = next(int(ln.split()[1]) for ln in f if ln.startswith("Uid:"))
+        if in_start <= uid < in_start + count:
+            return host_start + (uid - in_start)
+    except (FileNotFoundError, StopIteration, ValueError):
+        pass
+    return uid  # fallback: no mapping, uid is already host-level
+
+
+def collect_ancestor_pids(pid: int) -> list:
+    """Walk /proc/<pid>/status PPid: chain up to PID 1, returning ancestor PIDs."""
+    ancestors, current, seen = [], pid, set()
+    while True:
+        if current in seen:
+            break
+        seen.add(current)
+        try:
+            with open(f"/proc/{current}/status") as f:
+                ppid = next(int(ln.split()[1]) for ln in f if ln.startswith("PPid:"))
+        except (FileNotFoundError, StopIteration):
+            break
+        if ppid <= 1:
+            break
+        ancestors.append(ppid)
+        current = ppid
+    return ancestors
+
+
+def load_seccomp_profile(path: str) -> set:
+    """Load a seccomp profile JSON and return the set of blocked syscall names.
+
+    Supports Docker-style profiles:
+    - Whitelist (defaultAction=SCMP_ACT_KILL/ERRNO, syscalls list ALLOW): blocked = all - allowed
+    - Blocklist (defaultAction=SCMP_ACT_ALLOW, syscalls list KILL/ERRNO): blocked = listed
+
+    Returns an empty set on error (over-approximation: no filtering).
+    """
+    import json as _json
+    try:
+        with open(path) as f:
+            profile = _json.load(f)
+    except Exception as e:
+        print(f"Warning: could not load seccomp profile from {path}: {e}. No filtering applied.")
+        return set()
+
+    default_action = profile.get("defaultAction", "")
+    syscalls = profile.get("syscalls", [])
+
+    if "ALLOW" in default_action:
+        # Whitelist format: defaultAction blocks; listed entries are allowed.
+        allowed = {
+            s for entry in syscalls
+            for s in entry.get("names", [])
+            if "ALLOW" in entry.get("action", "")
+        }
+        # We only track docker-security-critical syscalls, not all ~350 Linux syscalls.
+        from procfs_data import docker_seccomp_blocked_syscalls_set
+        return docker_seccomp_blocked_syscalls_set - allowed
+    else:
+        # Blocklist format: listed entries with KILL/ERRNO actions are blocked.
+        return {
+            s for entry in syscalls
+            for s in entry.get("names", [])
+            if any(act in entry.get("action", "") for act in ("KILL", "ERRNO", "TRAP"))
+        }
+
+
 def extract_from_status(data: ProcFsData, pid: int, should_print=False):
     status = read_status_file(pid, should_print)
     assert (
@@ -678,6 +753,27 @@ def extract_from_status(data: ProcFsData, pid: int, should_print=False):
     data.procs[pid].gid_effective = status.gid.effective
 
     data.procs[pid].cap_eff = status.cap_eff.raw
+
+    # Host-level UID (accounts for user namespace mapping)
+    data.procs[pid].uid_host = extract_host_uid(pid)
+
+    # Seccomp mode and PPid: read from /proc/PID/status
+    try:
+        with open(f"/proc/{pid}/status") as f:
+            for ln in f:
+                if ln.startswith("Seccomp:"):
+                    data.procs[pid].seccomp_mode = int(ln.split()[1])
+                elif ln.startswith("PPid:"):
+                    data.procs[pid].ppid = int(ln.split()[1])
+    except (FileNotFoundError, StopIteration, ValueError):
+        pass
+
+    # LSM label (AppArmor/SELinux) from /proc/PID/attr/current
+    try:
+        with open(f"/proc/{pid}/attr/current") as f:
+            data.procs[pid].lsm_label = f.read().strip()
+    except (FileNotFoundError, PermissionError):
+        data.procs[pid].lsm_label = ""
 
     print(data.procs[pid].pid_in_ns)
     print(data.procs[pid].uid_effective)
@@ -874,6 +970,92 @@ def detect_network_providers(data_main: ProcFsData) -> dict:
             net_ns_to_provider[net_ns_handle] = None  # kernel provides
 
     return net_ns_to_provider
+
+
+def detect_fuse_connections(data_main: ProcFsData) -> list:
+    """
+    Detect FUSE filesystem relationships between server and client processes.
+
+    A FUSE server opens /dev/fuse and serves filesystem requests in user space.
+    A FUSE client accesses files on a FUSE-mounted filesystem.
+
+    Detection:
+      1. For each known process, scan its pid_mounts for fuse* entries (not fusectl).
+         Extract the minor device number from the "major:minor" device field (always 0:N for FUSE).
+         Build: minor → set(pids that have this FUSE mount visible)
+      2. For each known process, scan /proc/<pid>/fd/ for symlinks to /dev/fuse.
+         Such processes are FUSE server candidates.
+      3. For each server candidate, intersect its own visible FUSE mounts (from step 1)
+         with the full minor→clients map to find which clients it serves.
+      4. Emit (client_pid, server_pid, minor) tuples.
+
+    Limitation: only detects connections where the server can see its own FUSE mount
+    (typical for sshfs, rclone, s3fs run directly). Containers mounting FUSE via
+    a separate fusermount helper may not be detected.
+
+    Returns list of (client_pid, server_pid, minor) tuples.
+    """
+    import os as _os
+
+    # Step 1: build minor → set(pids) and pid → set(fuse_minors) from pid_mounts
+    minor_to_pids = {}    # fuse minor (int) → set of pids that see this mount
+    pid_to_fuse_minors = {}  # pid → set of fuse minors visible in its mountinfo
+
+    for pid, proc_info in data_main.procs.items():
+        for mount in proc_info.pid_mounts:
+            fstype = (getattr(mount, 'filesystem_type', '') or '').lower()
+            if not fstype.startswith('fuse') or fstype == 'fusectl':
+                continue
+            device = getattr(mount, 'device', None)
+            try:
+                if isinstance(device, int):
+                    # pypfs stores FUSE device as the kernel device number.
+                    # For FUSE, major is always 0, so device == minor directly.
+                    minor = device
+                else:
+                    major_str, minor_str = str(device).split(':')
+                    if int(major_str) != 0:
+                        continue
+                    minor = int(minor_str)
+            except (ValueError, AttributeError, TypeError):
+                continue
+            minor_to_pids.setdefault(minor, set()).add(pid)
+            pid_to_fuse_minors.setdefault(pid, set()).add(minor)
+
+    if not minor_to_pids:
+        return []
+
+    # Step 2: find FUSE server candidates — processes with /dev/fuse open
+    server_pids = set()
+    for pid in data_main.procs:
+        fd_dir = f"/proc/{pid}/fd"
+        try:
+            fds = _os.listdir(fd_dir)
+        except (FileNotFoundError, PermissionError):
+            continue
+        for fd in fds:
+            try:
+                target = _os.readlink(f"{fd_dir}/{fd}")
+                if target == '/dev/fuse':
+                    server_pids.add(pid)
+                    break
+            except (FileNotFoundError, PermissionError, OSError):
+                continue
+
+    # Step 3 & 4: match servers to clients via shared minor numbers
+    connections = []
+    seen = set()
+    for server_pid in server_pids:
+        owned_minors = pid_to_fuse_minors.get(server_pid, set())
+        for minor in owned_minors:
+            for client_pid in minor_to_pids.get(minor, set()):
+                if client_pid == server_pid:
+                    continue
+                triple = (client_pid, server_pid, minor)
+                if triple not in seen:
+                    connections.append(triple)
+                    seen.add(triple)
+    return connections
 
 
 def detect_tcp_connections(data_main: ProcFsData) -> list:
@@ -1166,10 +1348,26 @@ def do_proc_model(args):
     try:
         if getattr(args, 'pids', None):
             pid_list = [int(p.strip()) for p in args.pids.split(',') if p.strip()]
+            if getattr(args, 'with_ancestors', False):
+                extra_ancestors = []
+                for pid in pid_list:
+                    extra_ancestors.extend(collect_ancestor_pids(pid))
+                # dedup, preserve order (explicit PIDs first, then ancestors)
+                seen_pids = set()
+                merged = []
+                for pid in pid_list + extra_ancestors:
+                    if pid not in seen_pids:
+                        seen_pids.add(pid)
+                        merged.append(pid)
+                pid_list = merged
+                print(f"With ancestors: {pid_list}")
             print(f"Extracting specific PIDs: {pid_list}")
             for pid in pid_list:
-                p = psutil.Process(pid)
-                extract_process_data(data_main, pid, p.name(), False)
+                try:
+                    p = psutil.Process(pid)
+                    extract_process_data(data_main, pid, p.name(), False)
+                except psutil.NoSuchProcess:
+                    print(f"Warning: PID {pid} no longer exists; skipping")
         elif args.pid == 0:
             print("Extracing info for all PIDs")
             extract_all_process_data(data_main, False)
@@ -1194,19 +1392,27 @@ def do_proc_model(args):
         exit(1)
 
     #############################################
-    # Terminate the processes
-    #############################################
-    for pid in pids:
-        print (f"Terminating PID {pid}")
-        terminate_process(pid)
-
-
-    #############################################
     # Detect TCP connections between known processes
+    # (must run BEFORE terminating processes so /proc/<pid>/ is still accessible)
     #############################################
     connections = detect_tcp_connections(data_main)
     if connections:
         print(f"Detected {len(connections)} TCP connection(s) between known processes")
+
+    #############################################
+    # Detect FUSE connections between known processes
+    # (must run BEFORE terminating processes so /proc/<pid>/fd/ is still accessible)
+    #############################################
+    fuse_connections = detect_fuse_connections(data_main)
+    if fuse_connections:
+        print(f"Detected {len(fuse_connections)} FUSE connection(s) between known processes")
+
+    #############################################
+    # Terminate the processes (after all live /proc queries are done)
+    #############################################
+    for pid in pids:
+        print (f"Terminating PID {pid}")
+        terminate_process(pid)
 
     #############################################
     # Convert to the model
@@ -1216,6 +1422,8 @@ def do_proc_model(args):
         MappingType.CO_CONTIGUOUS,
         args.guest,
         connections=connections,
+        fuse_connections=fuse_connections,
+        seccomp_profile=getattr(args, "seccomp_profile", None),
     )
     model.to_csv(args.csv)
     print(f"Output CSV is at {args.csv}")
@@ -1296,6 +1504,10 @@ if __name__ == "__main__":
         "--pids", type=str, help="Comma-separated list of PIDs to extract (e.g. 1234,5678)"
     )
     parser.add_argument(
+        "--with-ancestors", action="store_true", default=False,
+        help="Also extract all ancestor processes (parent chain up to PID 1) for each given PID"
+    )
+    parser.add_argument(
         "--config", type=int, default=None,
         help=f"run_configs index to start+extract+kill (0=two hello, 8=docker, etc). "
              f"Overrides --pid. Available: 0..{len(run_configs)-1}"
@@ -1322,6 +1534,13 @@ if __name__ == "__main__":
         choices=["linux", "cellulos"],
         required=True,
         help="Linux or CellulOS(on Qemu) as the OS",
+    )
+    parser.add_argument(
+        "--seccomp-profile",
+        type=str,
+        default=None,
+        help="Path to a seccomp profile JSON file. If not provided, the Docker default "
+             "profile is applied automatically to processes with AppArmor label 'docker-default'.",
     )
     parser.add_argument(
         "-l",

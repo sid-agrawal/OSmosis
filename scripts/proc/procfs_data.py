@@ -567,6 +567,44 @@ kernel_interface_file_systems = [
     FileSystemType.UDEV,
 ]
 
+# ---------------------------------------------------------------------------
+# Docker security profile constants (module-level, wired into the model)
+# ---------------------------------------------------------------------------
+
+# Syscalls blocked by Docker's default seccomp profile (docker/moby default.json).
+# Used by __add_processes() to compute allowed_syscalls node attribute.
+docker_seccomp_blocked_syscalls_set = frozenset([
+    "acct", "add_key", "adjtimex", "bpf", "clock_adjtime", "clock_settime",
+    "create_module", "delete_module", "finit_module", "get_kernel_syms",
+    "get_mempolicy", "init_module", "ioperm", "iopl", "kcmp",
+    "kexec_file_load", "kexec_load", "keyctl", "lookup_dcookie", "mbind",
+    "mount", "move_pages", "name_to_handle_at", "nfsservctl",
+    "open_by_handle_at", "perf_event_open", "personality", "pivot_root",
+    "process_vm_readv", "process_vm_writev", "ptrace", "query_module",
+    "quotactl", "reboot", "request_key", "set_mempolicy", "setns",
+    "settimeofday", "stime", "swapoff", "swapon", "sysfs", "syslog",
+    "umount2", "unshare", "uselib", "userfaultfd", "ustat", "vm86", "vm86old",
+])
+
+# Paths that Docker's default AppArmor profile denies write access to.
+# Source: moby/moby profiles/apparmor/template.go
+# NOTE: /proc and /sys paths are already filtered by the pseudo_fs set in
+# __add_file_resources(), so this constant is used for documentation and
+# future fine-grained path modeling.
+docker_apparmor_denied_paths = frozenset([
+    "/proc/sys",
+    "/proc/sysrq-trigger",
+    "/proc/acpi",
+    "/proc/kcore",
+    "/proc/keys",
+    "/proc/timer_list",
+    "/proc/timer_stats",
+    "/proc/sched_debug",
+    "/sys/firmware",
+    "/proc/scsi",
+])
+
+
 @dataclass
 class Namespace:
     type: NamespaceType
@@ -588,6 +626,7 @@ class Process:
     name: str  # Name of the process
 
     uid_effective: int = 0
+    uid_host: int = 0      # host-level UID after uid_map lookup (same as uid_effective if no user ns)
     gid_effective: int = 0
 
     cap_inh: int = 0
@@ -595,6 +634,9 @@ class Process:
     cap_eff: int = 0
     cap_bnd: int = 0
     cap_amb: int = 0
+
+    lsm_label: str = ""    # AppArmor/SELinux label from /proc/PID/attr/current
+    seccomp_mode: int = 0  # 0=off, 1=strict, 2=filter (from /proc/PID/status Seccomp:)
 
     ads: ProcAddressSpace = field(
         default_factory=lambda: ProcAddressSpace()
@@ -607,6 +649,7 @@ class Process:
     # The PID (in global PID namespace) will be the key of the dict this is in
     pid_mounts: list[pypfs.mount] = field(default_factory=lambda: list())
     cgroup_path: str = ""  # cgroup v2 path for this process
+    ppid: int = 0          # Parent PID in host namespace (from /proc/PID/status PPid:)
 
 
 @dataclass
@@ -692,20 +735,35 @@ class ProcFsData:
                 pd_incharge=self.os_name
             )
 
+    def __has_cap(self, process_info, cap_bit: int) -> bool:
+        """Check if a process has a given capability bit set in its effective bitmask."""
+        return bool(process_info.cap_eff & (1 << cap_bit))
+
     def __has_cap_kill(self, process_info) -> bool:
         """Check if a process has CAP_KILL set in its effective capability bitmask."""
         CAP_KILL_BIT = 5  # CAP_KILL is bit 5 (0-indexed) in the capability bitmask
-        return bool(process_info.cap_eff & (1 << CAP_KILL_BIT))
+        return self.__has_cap(process_info, CAP_KILL_BIT)
 
-    def __add_inter_process_hold_edges(self):
+    def __add_inter_process_hold_edges(self, kernel_id: int = None):
         """
         Add hold edges between processes based on Linux signal-sending rules:
           - Same effective UID in same/child PID namespace, OR
           - Root (uid_eff == 0), OR
           - CAP_KILL set in effective capabilities
 
+        Also adds kernel PD → every process PD HOLD edge, reflecting that
+        the kernel can terminate any process unconditionally.
+
         A hold edge from PD_x to PD_y means x can send SIGKILL to y.
         """
+        # Kernel can hold (terminate) every process
+        if kernel_id is not None:
+            for proc_info in self.procs.values():
+                self.model.add_inter_pd_hold_edge(
+                    gm.perms_all, kernel_id, proc_info.model_id,
+                    pd_incharge=self.os_name
+                )
+
         namespaces_available = all(
             hasattr(p, 'namespaces') and p.namespaces
             for p in self.procs.values()
@@ -718,7 +776,10 @@ class ProcFsData:
             default_pid_ns = ns_map.get(NamespaceType.PID)
 
         for from_node in self.procs.values():
-            from_uid = from_node.uid_effective
+            # Use host-level UID for HOLD edge decisions (accounts for user namespace mapping).
+            # uid_host is set by extract_host_uid() which falls back to uid_effective if no mapping.
+            # Fall back to uid_effective if uid_host was never populated (e.g., kernel PD).
+            from_uid = from_node.uid_host if from_node.uid_host > 0 or from_node.uid_effective == 0 else from_node.uid_effective
 
             from_pid_ns = None
             if namespaces_available:
@@ -735,8 +796,9 @@ class ProcFsData:
                     if from_pid_ns != default_pid_ns and from_pid_ns != to_pid_ns:
                         continue
 
+                to_uid = to_node.uid_host if to_node.uid_host > 0 or to_node.uid_effective == 0 else to_node.uid_effective
                 add_edge = (
-                    from_uid == to_node.uid_effective
+                    from_uid == to_uid
                     or from_uid == 0
                     or self.__has_cap_kill(from_node)
                 )
@@ -746,6 +808,19 @@ class ProcFsData:
                     self.model.add_inter_pd_hold_edge(
                         gm.perms_all, from_node.model_id, to_node.model_id
                     )
+    def _mac_denies_path(self, proc_info, point: str) -> bool:
+        """Return True if this process's MAC profile denies access to mount point.
+
+        Currently implements the Docker default AppArmor profile which denies access
+        to sensitive /proc and /sys sub-paths. In practice these paths are already
+        filtered by pseudo_fs in __add_file_resources(), so this serves as a
+        defense-in-depth guard and documentation of the AppArmor policy.
+        """
+        label = (proc_info.lsm_label or "").strip()
+        if "docker-default" not in label:
+            return False
+        return any(point.startswith(denied) for denied in docker_apparmor_denied_paths)
+
     def __add_file_resources(self, kernel_id: int):
         """
         Model mount points as FILE resources with mount namespaces as resource spaces.
@@ -838,6 +913,9 @@ class ProcFsData:
                 file_space_id, file_res_id = source_to_file_id[key]
 
                 # Hold edge: process -> file resource (R/W based on mount flags)
+                # Skip if the process's MAC profile denies access to this path.
+                if self._mac_denies_path(proc_info, point):
+                    continue
                 self.model.add_hold_edge(
                     gm.perms_all, proc_info.model_id,
                     gm.ResourceType.FILE, file_space_id, file_res_id,
@@ -896,6 +974,29 @@ class ProcFsData:
                 gm.ResourceType.NET, net_ns_to_space[handle],
                 pd_incharge=self.os_name
             )
+
+    def __add_fuse_request_edges(self, fuse_connections: list, kernel_id: int):
+        """
+        Add REQUEST edges for detected FUSE connections between known processes.
+        client_pid → server_pid via the client's MNT namespace resource space.
+
+        fuse_connections: list of (client_pid, server_pid, minor) tuples
+        """
+        for client_pid, server_pid, minor in fuse_connections:
+            if client_pid not in self.procs or server_pid not in self.procs:
+                continue
+            client_pd = self.procs[client_pid].model_id
+            server_pd = self.procs[server_pid].model_id
+            # Use the client's MNT namespace as the resource space for this REQUEST edge,
+            # since the FUSE mount lives in the client's mount namespace.
+            mnt_ns = (self.procs[client_pid].namespaces.get(NamespaceType.MNT)
+                      if self.procs[client_pid].namespaces else None)
+            if mnt_ns:
+                self.model.add_request_edge(
+                    client_pd, server_pd,
+                    gm.ResourceType.MNT, mnt_ns.handle,
+                    pd_incharge=self.os_name
+                )
 
     def __add_service_request_edges(self, connections: list, kernel_id: int):
         """
@@ -966,9 +1067,37 @@ class ProcFsData:
                         vmr_mapping_type: MappingType, 
                         kernel_id: int):
 
+        import json as _json
         for process_info in self.procs.values():
+            # Compute allowed_syscalls: the subset of docker-security-critical syscalls
+            # that this process is allowed to call.
+            # - seccomp=off (mode 0): all tracked syscalls are allowed (full reference set)
+            # - docker-default profile (seccomp=2 + lsm_label contains 'docker-default'):
+            #   all tracked syscalls are blocked by the docker-default seccomp profile
+            # - unknown filter (seccomp=2, unknown profile): treat as unfiltered (conservative)
+            is_docker_container = (
+                process_info.seccomp_mode == 2
+                and "docker-default" in (process_info.lsm_label or "")
+            )
+            if is_docker_container:
+                allowed_syscalls = []  # docker-default blocks all tracked syscalls
+            else:
+                # Unfiltered or unknown: all docker-security-critical syscalls are accessible.
+                allowed_syscalls = sorted(docker_seccomp_blocked_syscalls_set)
+
+            # Build extra metadata for the PD node.
+            # allowed_syscalls is included here so it survives the CSV round-trip
+            # (to_csv() only persists type/data/extra fields).
+            pd_extra = _json.dumps({
+                "uid_effective": process_info.uid_effective,
+                "uid_host": process_info.uid_host,
+                "cap_eff": hex(process_info.cap_eff),
+                "seccomp": process_info.seccomp_mode,
+                "lsm_label": process_info.lsm_label,
+                "allowed_syscalls": allowed_syscalls,
+            })
             # Add the PD
-            pd_id = self.model.add_pd_node(process_info.name, process_info.pid_in_host)
+            pd_id = self.model.add_pd_node(process_info.name, process_info.pid_in_host, extra=pd_extra)
             process_info.model_id = pd_id
 
             # Add the address space
@@ -1227,9 +1356,53 @@ class ProcFsData:
                     pid_ns_handle,
                     child_ns_pid)
     
-    # Add All MNT Namespaces
     def __add_mnt_namespaces(self, kernel_id: int):
-        pass
+        """
+        Model MNT namespaces as MNT resource spaces.
+        Processes sharing the same MNT namespace share a resource space.
+        """
+        mnt_ns_to_space = {}
+        for proc_info in self.procs.values():
+            ns = proc_info.namespaces.get(NamespaceType.MNT) if proc_info.namespaces else None
+            if ns is None:
+                continue
+            handle = ns.handle
+            if handle not in mnt_ns_to_space:
+                space_id = self.model.add_resource_space_node(gm.ResourceType.MNT, handle)
+                mnt_ns_to_space[handle] = space_id
+                self.model.add_hold_edge(
+                    gm.perms_all, kernel_id, gm.ResourceType.MNT, handle,
+                    pd_incharge=self.os_name
+                )
+            self.model.add_hold_edge(
+                gm.perms_all, proc_info.model_id,
+                gm.ResourceType.MNT, mnt_ns_to_space[handle],
+                pd_incharge=self.os_name
+            )
+
+    def __add_ipc_namespace_spaces(self, kernel_id: int):
+        """
+        Model IPC namespaces as IPC resource spaces.
+        Processes sharing the same IPC namespace share a resource space.
+        """
+        ipc_ns_to_space = {}
+        for proc_info in self.procs.values():
+            ns = proc_info.namespaces.get(NamespaceType.IPC) if proc_info.namespaces else None
+            if ns is None:
+                continue
+            handle = ns.handle
+            if handle not in ipc_ns_to_space:
+                space_id = self.model.add_resource_space_node(gm.ResourceType.IPC, handle)
+                ipc_ns_to_space[handle] = space_id
+                self.model.add_hold_edge(
+                    gm.perms_all, kernel_id, gm.ResourceType.IPC, handle,
+                    pd_incharge=self.os_name
+                )
+            self.model.add_hold_edge(
+                gm.perms_all, proc_info.model_id,
+                gm.ResourceType.IPC, ipc_ns_to_space[handle],
+                pd_incharge=self.os_name
+            )
 
     def to_generic_model(
         self,
@@ -1237,12 +1410,17 @@ class ProcFsData:
         pmr_mapping_type: MappingType,
         guest: bool = False,
         connections: list | None = None,
+        fuse_connections: list | None = None,
+        seccomp_profile: str | None = None,
     ) -> gm.ModelGraph:
         """
         Convert the ProcFsData to a generic model state
 
         :param vmr_mapping_type: Option controls how to generate VMR nodes from the VMR regions
         :param pmr_mapping_type: Option controls how to generate PMR nodes from the PMR regions
+        :param seccomp_profile: Optional path to a custom seccomp profile JSON file.
+            If provided, overrides the built-in docker-default detection for all
+            processes with seccomp_mode=2.
         :return: The generic model state generated from this data
         """
 
@@ -1260,13 +1438,16 @@ class ProcFsData:
             vmr_mapping_type=vmr_mapping_type,
             kernel_id=kernel_id,
         )
-        self.__add_inter_process_hold_edges()
+        self.__add_inter_process_hold_edges(kernel_id=kernel_id)
         self.__add_file_resources(kernel_id=kernel_id)
         self.__add_cgroup_resource_spaces(kernel_id=kernel_id)
         self.__add_net_namespace_spaces(kernel_id=kernel_id)
+        self.__add_mnt_namespaces(kernel_id=kernel_id)
+        self.__add_ipc_namespace_spaces(kernel_id=kernel_id)
         if connections:
             self.__add_service_request_edges(connections, kernel_id=kernel_id)
+        if fuse_connections:
+            self.__add_fuse_request_edges(fuse_connections, kernel_id=kernel_id)
         # self.__add_pid_namespaces(kernel_id=kernel_id)
-        # self.__add_mnt_namespaces(kernel_id=kernel_id)
 
         return self.model

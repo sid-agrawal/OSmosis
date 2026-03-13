@@ -31,6 +31,9 @@ class ResourceType(Enum):
     PHYS_PAGE = 7  # Physical memory pages
     PAGE_QUOTA = 8  # Cgroup memory quota / resource budget space
     NET = 9  # Network namespace / networking resource
+    MNT = 10  # Mount namespace resource space
+    IPC = 11  # IPC namespace resource space
+    APPARMOR_PROFILE = 12  # AppArmor/SELinux MAC profile space
 
 
 class VmrType(Enum):
@@ -286,13 +289,14 @@ class ModelGraph:
             ResourceType.PHYS_PAGE, space_id, page_id, json.dumps(extra)
         )
 
-    def add_pd_node(self, name: str, pd_id: int | None = None) -> int:
+    def add_pd_node(self, name: str, pd_id: int | None = None, extra: str = "") -> int:
         """
         Add a PD node to a model state graph
 
         :param name: The PD's name
         :param pd_id: The PD's unique ID
             Optional: if None, a new ID will be assigned
+        :param extra: Optional JSON string with extra metadata (e.g. seccomp, lsm_label)
         :return: the PD ID
         """
 
@@ -301,7 +305,7 @@ class ModelGraph:
             pd_id = self.pd_counter
 
         string_id = self.__pd_string_id(pd_id)
-        self.g.add_node(string_id, type=NodeType.PD.name, data=name, extra="")
+        self.g.add_node(string_id, type=NodeType.PD.name, data=name, extra=extra)
 
         return pd_id
 
