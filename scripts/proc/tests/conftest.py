@@ -173,7 +173,15 @@ def scenario_graph(tmp_path, request):
     #   CONFIG=<n>                        → let proc_model.py start/extract/kill via run_configs[n]
     #   APP_PID=<n> KVS_PID=<n>          → external processes; extract by PID
     #   WITH_ANCESTORS=true               → also extract parent chain (--with-ancestors)
-    out = subprocess.check_output(["bash", setup_script], text=True)
+    # If setup.sh exits non-zero and prints "SKIP=<reason>" to stderr, the test is skipped.
+    result = subprocess.run(["bash", setup_script], capture_output=True, text=True)
+    if result.returncode != 0:
+        skip_line = next((l for l in result.stderr.splitlines() if l.startswith("SKIP=")), None)
+        if skip_line:
+            pytest.skip(skip_line[len("SKIP="):])
+        raise subprocess.CalledProcessError(result.returncode, ["bash", setup_script],
+                                            result.stdout, result.stderr)
+    out = result.stdout
     setup_lines = out.splitlines()
     lines = {k: v for k, v in
              (line.split("=", 1) for line in setup_lines if "=" in line)}

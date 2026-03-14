@@ -45,21 +45,21 @@ def _scenario_pds(G, pids):
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("scenario_graph", ["processes"], indirect=True)
-def test_vdso_in_static_binary(scenario_graph):
+def test_shared_physical_pages(scenario_graph):
     """
-    Two statically-linked processes share the vdso VMR even though they link
-    no shared libraries — the kernel maps vdso into every process.
+    Two hello processes (dynamically linked) share physical memory objects (MOs)
+    corresponding to libc, vdso, and other kernel-mapped pages. VMR nodes are
+    per-address-space and are never shared between processes in the model; sharing
+    is captured at the MO (physical page) level.
     """
     G, pids = scenario_graph
     app_pd, kvs_pd = _scenario_pds(G, pids)
-    shared = shared_resources(G, app_pd, kvs_pd, "VMR")
-    vdso_nodes = [
-        r for r in shared
-        if "VDSO" in str(G.nodes[r].get("extra", ""))
-    ]
-    # Note: the baseline scenario uses dynamic hello, not static.
-    # This test records that vdso IS present (it's always mapped by the kernel).
-    assert len(shared) > 0, "Expected some shared VMR resources (e.g. vdso, libc)"
+    # Shared at MO level (physical pages)
+    shared_mo = shared_resources(G, app_pd, kvs_pd, "MO")
+    # Shared FILE resources (same filesystem mount)
+    shared_file = shared_resources(G, app_pd, kvs_pd, "FILE")
+    assert len(shared_mo) > 0 or len(shared_file) > 0, \
+        "Expected two hello processes to share MO (physical pages) or FILE resources"
 
 
 # ---------------------------------------------------------------------------

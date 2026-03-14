@@ -7,6 +7,12 @@ set -euo pipefail
 # Point at the rootless Docker socket for the current user
 export DOCKER_HOST="unix://${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/docker.sock"
 
+# Require rootless Docker socket to be present
+if ! [ -S "$DOCKER_HOST" ]; then
+    echo "SKIP=rootless Docker socket not found at $DOCKER_HOST" >&2
+    exit 1
+fi
+
 APP_NAME="osmosis-rootless-app"
 KVS_NAME="osmosis-rootless-kvs"
 

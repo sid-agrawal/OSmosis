@@ -27,17 +27,19 @@ def pathname_to_vmr_type(pathname: str):
         return gm.VmrType.HEAP
     elif pathname == "[stack]":
         return gm.VmrType.STACK
-    elif pathname == "[vvar]":  # what is this?
+    elif pathname in ("[vvar]", "[vvar_vclock]"):  # kernel virtual var pages
         return gm.VmrType.VVAR
-    elif pathname == "[vdso]":  # what is this?
+    elif pathname == "[vdso]":  # kernel virtual dynamic shared object
         return gm.VmrType.VDSO
-    elif pathname == "[vsyscall]":  # what is this?
+    elif pathname == "[vsyscall]":  # legacy x86 syscall page
         return gm.VmrType.VSYSCALL
     elif (
         pathname.startswith("OSmosis/scripts/proc")
         or "/host/bin" in pathname
         or pathname.startswith("/root/proc")
         or pathname.startswith("/usr/bin")
+        or "/proc/test_programs/" in pathname  # any user's test_programs dir
+        or pathname.startswith("/home/")       # executables in any home dir
     ):
         return gm.VmrType.PROGRAM  # I don't think code and data are separated
     elif pathname.startswith("/dev/shm"):
