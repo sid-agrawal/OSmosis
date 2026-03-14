@@ -430,18 +430,33 @@ def extract_cgroups_for_pid(data: ProcFsData, pid: int, should_print: bool = Fal
     """
     Extract the cgroup v2 path for a process and store it in data.procs[pid].cgroup_path.
     Falls back to cgroup v1 memory controller path if unified hierarchy is not available.
+    Handles non-standard cgroup paths (e.g. kata-containers qemu processes use
+    '0::/system.slice:docker:{id}' with colon-separated path components).
     """
-    task = pfs_obj.get_task(pid)
-    cgroups = task.get_cgroups()
     cgroup_path = ""
-    for cg in cgroups:
-        # Unified cgroup v2 hierarchy has hierarchy id == 0
-        if cg.hierarchy == 0:
-            cgroup_path = cg.pathname
-            break
-        # Fallback: use the memory controller path from cgroup v1
-        if "memory" in (cg.controllers if hasattr(cg, 'controllers') else []):
-            cgroup_path = cg.pathname
+    try:
+        task = pfs_obj.get_task(pid)
+        cgroups = task.get_cgroups()
+        for cg in cgroups:
+            # Unified cgroup v2 hierarchy has hierarchy id == 0
+            if cg.hierarchy == 0:
+                cgroup_path = cg.pathname
+                break
+            # Fallback: use the memory controller path from cgroup v1
+            if "memory" in (cg.controllers if hasattr(cg, 'controllers') else []):
+                cgroup_path = cg.pathname
+    except RuntimeError:
+        # pypfs can't parse non-standard cgroup paths (e.g. kata-containers uses colons
+        # in the path: '0::/system.slice:docker:{id}'). Fall back to reading directly.
+        try:
+            with open(f"/proc/{pid}/cgroup") as f:
+                for line in f:
+                    parts = line.strip().split(":", 2)  # split at most twice
+                    if len(parts) == 3 and parts[0] == "0":
+                        cgroup_path = parts[2]
+                        break
+        except OSError:
+            pass
 
     data.procs[pid].cgroup_path = cgroup_path
 
