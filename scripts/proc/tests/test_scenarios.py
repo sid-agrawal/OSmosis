@@ -147,14 +147,19 @@ def test_docker_rootless_slirp_shared(scenario_graph):
 
 @pytest.mark.parametrize("scenario_graph", ["podman"], indirect=True)
 def test_podman_no_writable_file_sharing(scenario_graph):
-    """Podman containers should NOT share writable file resources by default."""
+    """Podman containers should NOT share writable user-data file resources by default.
+    Pseudo-device files (/dev/null, /dev/random, etc.) are always shared across
+    containers as kernel-provided endpoints; those are excluded from this check."""
     G, pids = scenario_graph
     assert len(pids) == 2
     app_pd = f"PD_{pids[0]}"
     kvs_pd = f"PD_{pids[1]}"
-    file_shared = shared_resources(G, app_pd, kvs_pd, "FILE")
-    assert len(file_shared) == 0, \
-        f"Podman containers should not share writable FILE resources, found: {file_shared}"
+    file_shared_writable = shared_resources(G, app_pd, kvs_pd, "FILE", access_mode="W")
+    # Exclude kernel pseudo-device bind-mounts (/dev/null, /dev/random, etc.)
+    user_shared = {r for r in file_shared_writable
+                   if not G.nodes[r].get("extra", "").startswith("/dev/")}
+    assert len(user_shared) == 0, \
+        f"Podman containers should not share writable user-data FILE resources, found: {user_shared}"
 
 
 # ---------------------------------------------------------------------------

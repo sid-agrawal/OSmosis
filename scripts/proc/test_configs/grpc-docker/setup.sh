@@ -4,6 +4,8 @@
 # Outputs APP_PID (client) and KVS_PID (server) for proc_model.py --pids mode.
 
 set -euo pipefail
+# Always use the rootful Docker daemon.
+export DOCKER_HOST=unix:///var/run/docker.sock
 
 NET="grpc-net"
 docker network create "$NET" 2>/dev/null || true

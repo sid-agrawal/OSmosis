@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# Always use the rootful Docker daemon, regardless of any user's default context.
+export DOCKER_HOST=unix:///var/run/docker.sock
 docker rm -f osmosis-docker-app osmosis-docker-kvs 2>/dev/null || true
 docker run -d --rm --name osmosis-docker-app ubuntu:22.04 sleep 3600
 docker run -d --rm --name osmosis-docker-kvs ubuntu:22.04 sleep 3600

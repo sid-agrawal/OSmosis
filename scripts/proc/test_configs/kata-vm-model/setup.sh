@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Starts a single kata container; vm_model.py will extract guest+host state.
 set -euo pipefail
+# Always use the rootful Docker daemon (kata runtime is configured there).
+export DOCKER_HOST=unix:///var/run/docker.sock
 docker rm -f osmosis-kata-app 2>/dev/null || true
 docker run -d --rm --runtime=io.containerd.kata.v2 \
     --name osmosis-kata-app ubuntu:22.04 sleep 3600
