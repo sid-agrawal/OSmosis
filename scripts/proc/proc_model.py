@@ -25,7 +25,8 @@ from procfs_data import (
     Namespace,
     NamespaceType,
     MappingType,
-    str_to_namespace_type
+    str_to_namespace_type,
+    load_seccomp_profile,
 )
 import sys
 import argparse
@@ -712,45 +713,6 @@ def collect_ancestor_pids(pid: int) -> list:
         ancestors.append(ppid)
         current = ppid
     return ancestors
-
-
-def load_seccomp_profile(path: str) -> set:
-    """Load a seccomp profile JSON and return the set of blocked syscall names.
-
-    Supports Docker-style profiles:
-    - Whitelist (defaultAction=SCMP_ACT_KILL/ERRNO, syscalls list ALLOW): blocked = all - allowed
-    - Blocklist (defaultAction=SCMP_ACT_ALLOW, syscalls list KILL/ERRNO): blocked = listed
-
-    Returns an empty set on error (over-approximation: no filtering).
-    """
-    import json as _json
-    try:
-        with open(path) as f:
-            profile = _json.load(f)
-    except Exception as e:
-        print(f"Warning: could not load seccomp profile from {path}: {e}. No filtering applied.")
-        return set()
-
-    default_action = profile.get("defaultAction", "")
-    syscalls = profile.get("syscalls", [])
-
-    if "ALLOW" in default_action:
-        # Whitelist format: defaultAction blocks; listed entries are allowed.
-        allowed = {
-            s for entry in syscalls
-            for s in entry.get("names", [])
-            if "ALLOW" in entry.get("action", "")
-        }
-        # We only track docker-security-critical syscalls, not all ~350 Linux syscalls.
-        from procfs_data import docker_seccomp_blocked_syscalls_set
-        return docker_seccomp_blocked_syscalls_set - allowed
-    else:
-        # Blocklist format: listed entries with KILL/ERRNO actions are blocked.
-        return {
-            s for entry in syscalls
-            for s in entry.get("names", [])
-            if any(act in entry.get("action", "") for act in ("KILL", "ERRNO", "TRAP"))
-        }
 
 
 def extract_from_status(data: ProcFsData, pid: int, should_print=False):

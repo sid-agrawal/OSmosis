@@ -607,6 +607,44 @@ docker_apparmor_denied_paths = frozenset([
 ])
 
 
+def load_seccomp_profile(path: str) -> set:
+    """Load a seccomp profile JSON and return the set of blocked syscall names.
+
+    Supports Docker-style profiles:
+    - Whitelist (defaultAction=SCMP_ACT_KILL/ERRNO, syscalls list ALLOW): blocked = all - allowed
+    - Blocklist (defaultAction=SCMP_ACT_ALLOW, syscalls list KILL/ERRNO): blocked = listed
+
+    Returns an empty set on error (over-approximation: no filtering).
+    """
+    import json as _json
+    try:
+        with open(path) as f:
+            profile = _json.load(f)
+    except Exception as e:
+        print(f"Warning: could not load seccomp profile from {path}: {e}. No filtering applied.")
+        return set()
+
+    default_action = profile.get("defaultAction", "")
+    syscalls = profile.get("syscalls", [])
+
+    if "ALLOW" in default_action:
+        # Whitelist format: defaultAction blocks; listed entries are allowed.
+        allowed = {
+            s for entry in syscalls
+            for s in entry.get("names", [])
+            if "ALLOW" in entry.get("action", "")
+        }
+        # We only track docker-security-critical syscalls, not all ~350 Linux syscalls.
+        return docker_seccomp_blocked_syscalls_set - allowed
+    else:
+        # Blocklist format: listed entries with KILL/ERRNO actions are blocked.
+        return {
+            s for entry in syscalls
+            for s in entry.get("names", [])
+            if any(act in entry.get("action", "") for act in ("KILL", "ERRNO", "TRAP"))
+        }
+
+
 @dataclass
 class Namespace:
     type: NamespaceType
@@ -1064,28 +1102,34 @@ class ProcFsData:
                     )
 
     # Add the processes
-    def __add_processes(self, 
-                        pmr_mapping_type: MappingType, 
-                        vmr_mapping_type: MappingType, 
-                        kernel_id: int):
+    def __add_processes(self,
+                        pmr_mapping_type: MappingType,
+                        vmr_mapping_type: MappingType,
+                        kernel_id: int,
+                        custom_blocked_syscalls: set | None = None):
 
         import json as _json
         for process_info in self.procs.values():
             # Compute allowed_syscalls: the subset of docker-security-critical syscalls
             # that this process is allowed to call.
             # - seccomp=off (mode 0): all tracked syscalls are allowed (full reference set)
+            # - custom profile (--seccomp-profile): applied to all seccomp=2 processes
             # - docker-default profile (seccomp=2 + lsm_label contains 'docker-default'):
             #   all tracked syscalls are blocked by the docker-default seccomp profile
             # - unknown filter (seccomp=2, unknown profile): treat as unfiltered (conservative)
-            is_docker_container = (
-                process_info.seccomp_mode == 2
-                and "docker-default" in (process_info.lsm_label or "")
-            )
-            if is_docker_container:
-                allowed_syscalls = []  # docker-default blocks all tracked syscalls
+            if process_info.seccomp_mode == 2 and custom_blocked_syscalls is not None:
+                # Custom profile overrides built-in heuristic for all filtered processes.
+                allowed_syscalls = sorted(docker_seccomp_blocked_syscalls_set - custom_blocked_syscalls)
             else:
-                # Unfiltered or unknown: all docker-security-critical syscalls are accessible.
-                allowed_syscalls = sorted(docker_seccomp_blocked_syscalls_set)
+                is_docker_container = (
+                    process_info.seccomp_mode == 2
+                    and "docker-default" in (process_info.lsm_label or "")
+                )
+                if is_docker_container:
+                    allowed_syscalls = []  # docker-default blocks all tracked syscalls
+                else:
+                    # Unfiltered or unknown: all docker-security-critical syscalls are accessible.
+                    allowed_syscalls = sorted(docker_seccomp_blocked_syscalls_set)
 
             # Build extra metadata for the PD node.
             # allowed_syscalls is included here so it survives the CSV round-trip
@@ -1435,10 +1479,12 @@ class ProcFsData:
         kernel_id = self.model.add_pd_node(self.os_name)
         self.__add_devices(kernel_id=kernel_id)
         self.__add_PMRS(pmr_mapping_type=pmr_mapping_type, kernel_id=kernel_id)
+        custom_blocked = load_seccomp_profile(seccomp_profile) if seccomp_profile else None
         self.__add_processes(
             pmr_mapping_type=pmr_mapping_type,
             vmr_mapping_type=vmr_mapping_type,
             kernel_id=kernel_id,
+            custom_blocked_syscalls=custom_blocked,
         )
         self.__add_inter_process_hold_edges(kernel_id=kernel_id)
         self.__add_file_resources(kernel_id=kernel_id)
