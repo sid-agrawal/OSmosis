@@ -298,6 +298,20 @@ def _different_syscall_surface(G: nx.MultiDiGraph, pd1: str, pd2: str) -> bool:
     return syscall_surface(G, pd1) != syscall_surface(G, pd2)
 
 
+# Known hypervisor process name substrings (case-insensitive).
+_HYPERVISOR_NAMES = ("qemu", "kvmtool", "firecracker", "cloud-hypervisor")
+
+
+def _is_hypervisor(G: nx.MultiDiGraph, pd: str) -> bool:
+    """True if pd is a hypervisor process (inferred from process name).
+
+    Detects QEMU, Firecracker, kvmtool, and cloud-hypervisor by name.
+    Can be extended to check for KVM device HOLD edges in the graph.
+    """
+    name = G.nodes.get(pd, {}).get("data", "").lower()
+    return any(h in name for h in _HYPERVISOR_NAMES)
+
+
 def isolation_layers(G: nx.MultiDiGraph, pd1: str, pd2: str) -> dict:
     """Count how many isolation mechanisms separate pd1 from pd2.
 
@@ -305,12 +319,14 @@ def isolation_layers(G: nx.MultiDiGraph, pd1: str, pd2: str) -> dict:
     that dimension (no shared resource space / different profile / etc.).
 
     Keys:
-      different_mnt_ns        — separate mount namespaces
-      different_ipc_ns        — separate IPC namespaces
-      different_net_ns        — separate network namespaces
-      different_cgroup        — separate cgroup hierarchies
-      different_mac_profile   — different AppArmor/SELinux label
+      different_mnt_ns          — separate mount namespaces
+      different_ipc_ns          — separate IPC namespaces
+      different_net_ns          — separate network namespaces
+      different_cgroup          — separate cgroup hierarchies
+      different_mac_profile     — different AppArmor/SELinux label
       different_syscall_surface — different effective syscall surfaces
+      vm_boundary               — at least one PD is a hypervisor process,
+                                  indicating a VM isolation boundary
     """
     return {
         "different_mnt_ns":
@@ -325,4 +341,6 @@ def isolation_layers(G: nx.MultiDiGraph, pd1: str, pd2: str) -> dict:
             _different_mac_profile(G, pd1, pd2),
         "different_syscall_surface":
             _different_syscall_surface(G, pd1, pd2),
+        "vm_boundary":
+            _is_hypervisor(G, pd1) or _is_hypervisor(G, pd2),
     }
