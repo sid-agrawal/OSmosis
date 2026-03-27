@@ -29,3 +29,8 @@ scripts/proc/submarine/ploss.html
 scripts/proc/submarine/sosp.pdf_ind.html
 scripts/proc/submarine/sosp.pdf.html
 scripts/proc/submarine/sosp.pdfs.html
+
+# VM large binary files
+vm/*.qcow2
+vm/*.iso
+vm/efi_vars.fd
