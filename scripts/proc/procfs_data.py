@@ -1450,6 +1450,37 @@ class ProcFsData:
                 pd_incharge=self.os_name
             )
 
+    def __add_mac_profile_spaces(self, kernel_id: int):
+        """
+        Model AppArmor/SELinux profiles as APPARMOR_PROFILE resource spaces.
+        Processes sharing the same MAC label share a resource space, making
+        MAC isolation boundaries visible to graph queries.
+
+        Processes with no label (or 'unconfined') are grouped into a shared
+        'unconfined' space.  The kernel PD is also added to the unconfined
+        space since it operates without a MAC profile.
+        """
+        label_to_space: dict[str, int] = {}
+
+        for proc_info in self.procs.values():
+            label = (proc_info.lsm_label or "unconfined").strip()
+            if label not in label_to_space:
+                space_id = self.model.add_resource_space_node(
+                    gm.ResourceType.APPARMOR_PROFILE, extra=label
+                )
+                label_to_space[label] = space_id
+                # Kernel holds every MAC profile space (it enforces them)
+                self.model.add_hold_edge(
+                    gm.perms_all, kernel_id,
+                    gm.ResourceType.APPARMOR_PROFILE, space_id,
+                    pd_incharge=self.os_name,
+                )
+            self.model.add_hold_edge(
+                gm.perms_all, proc_info.model_id,
+                gm.ResourceType.APPARMOR_PROFILE, label_to_space[label],
+                pd_incharge=self.os_name,
+            )
+
     def to_generic_model(
         self,
         vmr_mapping_type: MappingType,
@@ -1492,6 +1523,7 @@ class ProcFsData:
         self.__add_net_namespace_spaces(kernel_id=kernel_id)
         self.__add_mnt_namespaces(kernel_id=kernel_id)
         self.__add_ipc_namespace_spaces(kernel_id=kernel_id)
+        self.__add_mac_profile_spaces(kernel_id=kernel_id)
         if connections:
             self.__add_service_request_edges(connections, kernel_id=kernel_id)
         if fuse_connections:

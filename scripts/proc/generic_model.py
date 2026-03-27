@@ -310,7 +310,7 @@ class ModelGraph:
         return pd_id
 
     def add_resource_space_node(
-        self, res_type: ResourceType, space_id: int = None
+        self, res_type: ResourceType, space_id: int = None, extra: str = ""
     ) -> int:
         """
         Add a resource node to a model state graph, including the subset edge to the resource space
@@ -318,6 +318,7 @@ class ModelGraph:
         :param res_type: The resource space's type
         :param space_id: The resource space's unique ID
                 Optional: if None, a new ID will be assigned
+        :param extra: Optional extra metadata string (e.g. AppArmor profile label)
         :return: the space ID
         """
 
@@ -329,7 +330,7 @@ class ModelGraph:
 
         string_id = self.__space_string_id(res_type, space_id)
         self.g.add_node(
-            string_id, type=NodeType.RESOURCE_SPACE.name, data=res_type.name, extra=""
+            string_id, type=NodeType.RESOURCE_SPACE.name, data=res_type.name, extra=extra
         )
 
         return space_id
