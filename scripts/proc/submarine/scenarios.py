@@ -472,6 +472,14 @@ class Transition:
                     constraint.resource_info == to_resource):
                     return True  # Removal is encouraged
 
+        # Block removal if resource has only 1 holder and requires_resource_held applies
+        for constraint in constraints:
+            if (constraint.constraint_type == "requires_resource_held" and
+                    constraint.resource_info == to_resource):
+                holders = self._get_resource_holders(graph, to_resource)
+                if len(holders) <= 1:
+                    return False  # Would leave resource unowned
+
         # For simplicity, allow most removals unless it would violate access requirements
         return True
 
@@ -524,21 +532,33 @@ class Transition:
         
         # Check if this connection would satisfy any requires_file_access constraints
         for constraint in constraints:
-            if (constraint.constraint_type == "requires_file_access" and 
+            if (constraint.constraint_type == "requires_file_access" and
                 constraint.pd_id == pd_id):
-                
+
                 required_file_type = constraint.properties.get('file_type', 'any')
-                
+
                 # Check if this resource matches the required file type
-                if (required_file_type == 'any' or 
+                if (required_file_type == 'any' or
                     required_file_type.upper() == resource_file_type.upper()):
-                    
+
                     # Check if this PD currently lacks access to this file type
                     current_has_access = self._pd_has_access_to_file_type(graph, pd, required_file_type)
-                    
+
                     if not current_has_access:
                         return 1.5  # Maximum boost for satisfying constraint violation
-                        
+
+        # Boost for requires_resource_held violations: connecting any PD to an unowned resource
+        for constraint in constraints:
+            if constraint.constraint_type == "requires_resource_held":
+                if constraint.resource_info == resource:
+                    # Check if this resource currently has no holders
+                    has_holder = any(
+                        v == resource and d.get('type') == 'HOLD'
+                        for _, v, d in graph.g.edges(data=True)
+                    )
+                    if not has_holder:
+                        return 1.5  # Maximum boost: resource needs a holder
+
         return 0.0
 
     def _pd_has_access_to_file_type(self, graph, pd, file_type):
@@ -1154,7 +1174,7 @@ def build_crypto_cache_isolation_graph():
     return graph
 
 
-def build_privsep_graph():
+def build_ssh_prune_graph():
     """Build a graph modeling OpenSSH-inspired privilege separation.
 
     Five-component decomposition (extends real OpenSSH's 2-3 process model):
@@ -1221,15 +1241,15 @@ def build_privsep_graph():
     return graph
 
 
-def build_privsep_discovery_graph():
-    """G0 for privsep discovery: 5 PDs exist, but only PD_1 holds all resources.
+def build_ssh_assign_graph():
+    """G0 for ssh_assign: 5 PDs exist, but only PD_1 holds all resources.
     PDs 2-5 are unassigned (no HOLD edges). IsoSearch must discover the correct
     resource assignment by adding hold edges to PDs 2-5 and removing PD_1's excess holds.
 
-    Same PD names/IDs and resources as build_privsep_graph(), so goals/constraints
+    Same PD names/IDs and resources as build_ssh_prune_graph(), so goals/constraints
     reference the same PD_2..PD_5 strings — but the starting topology is different:
-      privsep:           25 HOLD edges (all PDs × all resources)
-      privsep_discovery:  5 HOLD edges (PD_1 only)
+      ssh_prune:  25 HOLD edges (all PDs × all resources)
+      ssh_assign:  5 HOLD edges (PD_1 only)
     """
     graph = ModelGraph()
 
@@ -1247,6 +1267,37 @@ def build_privsep_discovery_graph():
     log_id         = NodeTransformations.add_file_resource(graph, space_id, FileType.LOG,      "/var/log/auth.log",         8192)
 
     # G0: ONLY PD_1 (monitor) holds all 5 resources — PDs 2-5 are empty
+    for res in [hostkey_id, cred_id, session_id_res, socket_id, log_id]:
+        EdgeTransformations.add_hold_edge(
+            graph, {Permission.R, Permission.W}, pd_monitor_id, ResourceType.FILE, space_id, res)
+
+    return graph
+
+
+def build_ssh_discover_graph():
+    """G0 for ssh_discover: a single PD holds all 5 resources.
+
+    No PD names, no resource-to-PD assignments are pre-specified.
+    IsoSearch must discover both the PD count and resource assignment purely
+    from prohibit_co_hold constraints (which resources cannot share a PD)
+    and a GlobalRSI minimization goal.
+
+    Starting topology:
+      1 PD (PD_1 / PD_monitor), 5 HOLD edges
+      10 co-hold constraint violations (all critical pairs violated by PD_1)
+      GlobalRSI = 1.0 (single-PD worst case)
+    """
+    graph = ModelGraph()
+
+    pd_monitor_id = NodeTransformations.add_pd_node(graph, "PD_monitor")  # PD_1 only
+
+    space_id = NodeTransformations.add_resource_space(graph, ResourceType.FILE)
+    hostkey_id     = NodeTransformations.add_file_resource(graph, space_id, FileType.CONFIG,   "/etc/ssh/ssh_host_rsa_key", 1679)  # FILE_1_1
+    cred_id        = NodeTransformations.add_file_resource(graph, space_id, FileType.DATABASE, "/etc/shadow",               4096)  # FILE_1_2
+    session_id_res = NodeTransformations.add_file_resource(graph, space_id, FileType.TEMP,     "/tmp/sshd_session",          512)  # FILE_1_3
+    socket_id      = NodeTransformations.add_file_resource(graph, space_id, FileType.SOCKET,   "/var/run/sshd.sock",           0)  # FILE_1_4
+    log_id         = NodeTransformations.add_file_resource(graph, space_id, FileType.LOG,      "/var/log/auth.log",         8192)  # FILE_1_5
+
     for res in [hostkey_id, cred_id, session_id_res, socket_id, log_id]:
         EdgeTransformations.add_hold_edge(
             graph, {Permission.R, Permission.W}, pd_monitor_id, ResourceType.FILE, space_id, res)
@@ -1389,8 +1440,8 @@ SCENARIOS = {
         graph_builder=build_crypto_cache_isolation_graph
     ),
 
-    "privsep": Scenario(
-        name="Privilege Separation (OpenSSH-inspired)",
+    "ssh_prune": Scenario(
+        name="SSH Privilege Separation — Pruning",
         description=(
             "Five-component SSH daemon starting from a fully-shared monolithic baseline. "
             "IsoSearch must discover privilege separation: each component ends up holding "
@@ -1419,11 +1470,11 @@ SCENARIOS = {
         ],
         allowed_primitives=PRIMITIVES,
         allowed_multistep=[],
-        graph_builder=build_privsep_graph
+        graph_builder=build_ssh_prune_graph
     ),
 
-    "privsep_discovery": Scenario(
-        name="Privilege Separation Discovery (Unassigned Start)",
+    "ssh_assign": Scenario(
+        name="SSH Privilege Separation — Assignment",
         description=(
             "Five-component SSH daemon. PDs 2-5 exist but hold no resources at start; "
             "only PD_1 holds all 5 resources. IsoSearch must discover the correct resource "
@@ -1450,7 +1501,41 @@ SCENARIOS = {
         ],
         allowed_primitives=PRIMITIVES,
         allowed_multistep=[],
-        graph_builder=build_privsep_discovery_graph
+        graph_builder=build_ssh_assign_graph
+    ),
+
+    "ssh_discover": Scenario(
+        name="SSH Privilege Separation — Full Discovery",
+        description=(
+            "Single-PD SSH daemon start. IsoSearch must discover both the PD count and "
+            "resource assignment using only co-hold prohibitions and a global RSI goal — "
+            "no PD names, no resource-to-PD assignments pre-specified. "
+            "Directly answers MIS's question: can IsoSearch discover the 5-PD structure from scratch?"
+        ),
+        goals=[
+            Goal("GlobalRSI", 0.0, "minimize"),  # minimize mean RSI across all PD pairs
+        ],
+        constraints=[
+            # 4 critical co-hold prohibitions (same security invariants as ssh_prune/ssh_assign):
+            Constraint("prohibit_co_hold", None, "FILE_1_4,FILE_1_1"),  # socket ↔ hostkey  (net↔key)
+            Constraint("prohibit_co_hold", None, "FILE_1_4,FILE_1_2"),  # socket ↔ creds    (net↔auth)
+            Constraint("prohibit_co_hold", None, "FILE_1_4,FILE_1_3"),  # socket ↔ session  (net↔sess)
+            Constraint("prohibit_co_hold", None, "FILE_1_3,FILE_1_1"),  # session ↔ hostkey (sess↔key)
+            # Each resource must remain held by at least one PD (prevents orphaning)
+            Constraint("requires_resource_held", None, "FILE_1_1"),
+            Constraint("requires_resource_held", None, "FILE_1_2"),
+            Constraint("requires_resource_held", None, "FILE_1_3"),
+            Constraint("requires_resource_held", None, "FILE_1_4"),
+            Constraint("requires_resource_held", None, "FILE_1_5"),
+        ],
+        # Restrict to additive primitives only — resource/PD deletion would trivially
+        # satisfy co-hold constraints by removing resources rather than redistributing them.
+        allowed_primitives=[
+            "add_pd", "add_hold_edge", "remove_hold_edge",
+            "add_request_edge", "remove_request_edge",
+        ],
+        allowed_multistep=[],
+        graph_builder=build_ssh_discover_graph
     ),
 }
 

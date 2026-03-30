@@ -82,6 +82,13 @@ def ComputeMetrics(candidate, requested_metrics=None):
     # Calculate total memory consumption (sum of file sizes + page memory held by any PD)
     metrics['MemoryConsumption'] = _calculate_memory_consumption(candidate)
 
+    # Calculate GlobalRSI: mean RSI across all PD pairs (1.0 when <2 PDs)
+    pd_resources = {}
+    for u, v, d in candidate.g.edges(data=True):
+        if d.get('type') == 'HOLD' and u.startswith('PD_'):
+            pd_resources.setdefault(u, set()).add(v)
+    metrics['GlobalRSI'] = _compute_global_rsi(pd_resources)
+
     # Print summary (only base metrics to avoid clutter)
     print(f"    RSI: {metrics['RSI']}, TransitiveRSI: {metrics['TransitiveRSI']}, ASR: {metrics['ASR']}, TCB: {metrics['TCB']}, FR: {metrics['FR']}, Mem: {metrics['MemoryConsumption']}B")
     return metrics
@@ -1536,6 +1543,29 @@ def _add_mediator_between_pds(graph, shared_resource, sharers):
                                            ResourceType.FILE, space_id)
 
 
+def _compute_global_rsi(pd_resources):
+    """Compute mean RSI across all PD pairs.
+
+    When fewer than 2 PDs exist (no pairs), returns 1.0 — the worst-case
+    isolation score.  This ensures the GlobalRSI goal creates drive toward
+    creating more PDs rather than appearing trivially satisfied.
+    """
+    from itertools import combinations
+    pds = list(pd_resources.keys())
+    if len(pds) < 2:
+        return 1.0  # single PD = worst isolation
+    total, count = 0.0, 0
+    for pd_i, pd_j in combinations(pds, 2):
+        res_i = pd_resources.get(pd_i, set())
+        res_j = pd_resources.get(pd_j, set())
+        union = res_i | res_j
+        shared = res_i & res_j
+        rsi = len(shared) / len(union) if union else 0.0
+        total += rsi
+        count += 1
+    return total / count
+
+
 def _fast_goal_progress(graph, goals):
     """Compute goal progress without calling the expensive full ComputeMetrics.
 
@@ -1570,6 +1600,12 @@ def _fast_goal_progress(graph, goals):
                 progress += max(0.0, (1.0 - rsi) * 10.0)
             else:
                 progress += rsi * 10.0
+        elif goal.metric_name == "GlobalRSI":
+            global_rsi = _compute_global_rsi(pd_resources)
+            if goal.direction == "minimize":
+                progress += max(0.0, (1.0 - global_rsi) * 10.0)
+            else:
+                progress += global_rsi * 10.0
         elif goal.metric_name == "MemoryConsumption":
             mem = _calculate_memory_consumption(graph)
             target = goal.target_value

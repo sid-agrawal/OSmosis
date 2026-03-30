@@ -78,6 +78,10 @@ def validate_constraint(graph, constraint):
         return validate_requires_resource_type(graph, constraint)
     elif constraint.constraint_type == "max_memory_bytes":
         return validate_max_memory_bytes(graph, constraint)
+    elif constraint.constraint_type == "prohibit_co_hold":
+        return validate_prohibit_co_hold(graph, constraint)
+    elif constraint.constraint_type == "requires_resource_held":
+        return validate_requires_resource_held(graph, constraint)
     else:
         return False, f"Unknown constraint type: {constraint.constraint_type}"
 
@@ -453,3 +457,37 @@ def validate_max_memory_bytes(graph, constraint):
     if total > limit:
         return False, f"MemoryConsumption={total}B exceeds limit={int(limit)}B"
     return True, f"MemoryConsumption={total}B within limit={int(limit)}B"
+
+def validate_prohibit_co_hold(graph, constraint):
+    """No single PD may simultaneously hold both specified resources.
+
+    constraint.resource_info = "RES_A,RES_B" (comma-separated pair)
+    constraint.pd_id = None (global constraint, not PD-specific)
+    """
+    parts = constraint.resource_info.split(',')
+    if len(parts) != 2:
+        return False, f"prohibit_co_hold: expected 'RES_A,RES_B', got '{constraint.resource_info}'"
+    res_a, res_b = parts[0].strip(), parts[1].strip()
+    pd_holds = {}
+    for u, v, d in graph.g.edges(data=True):
+        if d.get('type') == 'HOLD' and u.startswith('PD_'):
+            pd_holds.setdefault(u, set()).add(v)
+    for pd, held in pd_holds.items():
+        if res_a in held and res_b in held:
+            return False, f"{pd} co-holds prohibited pair ({res_a}, {res_b})"
+    return True, f"No PD co-holds ({res_a}, {res_b})"
+
+
+def validate_requires_resource_held(graph, constraint):
+    """A resource must have at least one PD holding it.
+
+    Prevents resources from becoming unowned as hold edges are redistributed.
+
+    constraint.resource_info = resource node ID (e.g. "FILE_1_3")
+    constraint.pd_id = None (global constraint)
+    """
+    res_id = constraint.resource_info
+    for u, v, d in graph.g.edges(data=True):
+        if d.get('type') == 'HOLD' and v == res_id:
+            return True, f"{res_id} is held by {u}"
+    return False, f"{res_id} has no holder"

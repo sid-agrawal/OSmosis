@@ -73,8 +73,9 @@ PAPER_SCENARIOS = [
     ('Mediation',        'mediator_test_primitive', 12, 10),
     ('Privatization',    'basic_sharing_primitive', 12, 10),   # minimize RSI
     ('Increase Sharing', 'reduce_isolation',        12, 10),   # maximize RSI
-    ('Priv Sep',         'privsep',                 12, 13),
-    ('Priv Sep (disc.)', 'privsep_discovery',       12, 15),   # unassigned-start experiment
+    ('Priv Sep (Prune)', 'ssh_prune',               12, 13),
+    ('Priv Sep (Assign)','ssh_assign',              12, 15),   # unassigned-start experiment
+    ('Priv Sep (Disc.)', 'ssh_discover',            12, 15),   # full discovery: 1-PD start
 ]
 
 
