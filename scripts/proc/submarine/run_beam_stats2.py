@@ -74,6 +74,7 @@ PAPER_SCENARIOS = [
     ('Privatization',    'basic_sharing_primitive', 12, 10),   # minimize RSI
     ('Increase Sharing', 'reduce_isolation',        12, 10),   # maximize RSI
     ('Priv Sep',         'privsep',                 12, 13),
+    ('Priv Sep (disc.)', 'privsep_discovery',       12, 15),   # unassigned-start experiment
 ]
 
 

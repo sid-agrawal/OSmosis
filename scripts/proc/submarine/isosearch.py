@@ -10,6 +10,29 @@ from scenarios import get_scenario, list_scenarios, SCENARIOS, Goal, Constraint,
 # Goal, Constraint, and Transition classes are now imported from scenarios.py
 
 
+def _calculate_memory_consumption(graph):
+    """Sum size_bytes for FILE resources (+ pages*size for VMR/PHYS_PAGE) held by any PD.
+    Counts each physical resource node once even if held by multiple PDs."""
+    import json
+    total = 0
+    seen = set()
+    for u, v, d in graph.g.edges(data=True):
+        if d.get('type') == 'HOLD' and u.startswith('PD_') and v not in seen:
+            seen.add(v)
+            node = graph.g.nodes.get(v, {})
+            rtype = node.get('data', '')
+            extra_str = node.get('extra', '{}') or '{}'
+            try:
+                extra = json.loads(extra_str)
+            except Exception:
+                extra = {}
+            if rtype == 'FILE':
+                total += int(extra.get('size_bytes', 0))
+            elif rtype in ('VMR', 'MO', 'PHYS_PAGE'):
+                total += int(extra.get('num_pages', 0)) * int(extra.get('page_size', 4096))
+    return total
+
+
 def ComputeMetrics(candidate, requested_metrics=None):
     """
     Compute metrics for a candidate graph (RSI, TransitiveRSI, FR, TCB, ASR)
@@ -56,8 +79,11 @@ def ComputeMetrics(candidate, requested_metrics=None):
     # Calculate FR (Fault Radius) - distance to common ancestor via REQUEST edges
     metrics['FR'] = _calculate_fr(candidate, pd_nodes)
 
+    # Calculate total memory consumption (sum of file sizes + page memory held by any PD)
+    metrics['MemoryConsumption'] = _calculate_memory_consumption(candidate)
+
     # Print summary (only base metrics to avoid clutter)
-    print(f"    RSI: {metrics['RSI']}, TransitiveRSI: {metrics['TransitiveRSI']}, ASR: {metrics['ASR']}, TCB: {metrics['TCB']}, FR: {metrics['FR']}")
+    print(f"    RSI: {metrics['RSI']}, TransitiveRSI: {metrics['TransitiveRSI']}, ASR: {metrics['ASR']}, TCB: {metrics['TCB']}, FR: {metrics['FR']}, Mem: {metrics['MemoryConsumption']}B")
     return metrics
 
 
@@ -1544,6 +1570,14 @@ def _fast_goal_progress(graph, goals):
                 progress += max(0.0, (1.0 - rsi) * 10.0)
             else:
                 progress += rsi * 10.0
+        elif goal.metric_name == "MemoryConsumption":
+            mem = _calculate_memory_consumption(graph)
+            target = goal.target_value
+            if target > 0:
+                if goal.direction == "minimize":
+                    progress += max(0.0, (1.0 - mem / target) * 10.0)
+                else:
+                    progress += min(1.0, mem / target) * 10.0
     return progress
 
 
@@ -1753,7 +1787,9 @@ def _select_beam_specific_candidates(all_candidates, beam_idx, beam_width, exist
     return sorted_candidates[:1]
 
 
-def BeamSearchExploration(scenario, beam_width=3, max_depth=8):
+def BeamSearchExploration(scenario, beam_width=3, max_depth=8,
+                          early_stop_on_convergence=True,
+                          plateau_patience=3, plateau_delta=0.01):
     """
     Beam search implementation for design space exploration
     Explores multiple promising paths simultaneously instead of greedy single-path
@@ -1762,6 +1798,9 @@ def BeamSearchExploration(scenario, beam_width=3, max_depth=8):
         scenario - Scenario object with goals, constraints, transitions, and graph builder
         beam_width - Number of top states to keep at each iteration (default: 3)
         max_depth - Maximum number of iterations to run (default: 8)
+        early_stop_on_convergence - Stop when all beam states have found solutions (default: True)
+        plateau_patience - Stop after this many iterations without score improvement (default: 3, 0=disabled)
+        plateau_delta - Minimum score improvement to not count as plateau (default: 0.01)
     Returns: list of explored mechanisms
     """
     import copy
@@ -1801,8 +1840,13 @@ def BeamSearchExploration(scenario, beam_width=3, max_depth=8):
     found_complete_solution = False
     max_iterations = max_depth  # Use provided max_depth parameter
 
+    # Convergence tracking
+    prev_mean_score = None
+    plateau_count = 0
+
     # Step 2: Main beam search loop
     for iteration in range(1, max_iterations + 1):
+        solutions_this_iteration = 0
         print(f"\n{'='*60}")
         print(f"🔍 Beam Search Iteration {iteration}/{max_iterations}")
         print(f"📊 Current beam size: {len(current_beam)}")
@@ -1843,9 +1887,10 @@ def BeamSearchExploration(scenario, beam_width=3, max_depth=8):
                         'is_complete_solution': True
                     }
                     explored_mechanisms.append(mechanism)
-                    
+
                     # Mark that we found a complete solution
                     found_complete_solution = True
+                    solutions_this_iteration += 1
                     continue  # Don't expand states that already meet goals
 
             # Enumerate ALL candidates across ALL transitions for this beam state.
@@ -1912,8 +1957,25 @@ def BeamSearchExploration(scenario, beam_width=3, max_depth=8):
 
         # Apply enhanced diversity enforcement to prevent beam convergence
         current_beam = _select_diverse_beam_states_enhanced(next_beam, beam_width)
-        
+
         print(f"  🔍 Selected {len(current_beam)} diverse states from {len(next_beam)} candidates")
+
+        # --- Early termination: full-beam convergence ---
+        if early_stop_on_convergence and solutions_this_iteration == len(current_beam) and solutions_this_iteration > 0:
+            print(f"  🏁 All {solutions_this_iteration} beam states found solutions — converged, stopping early.")
+            break
+
+        # --- Early termination: plateau detection ---
+        if plateau_patience > 0 and current_beam:
+            mean_score = sum(s.score for s in current_beam) / len(current_beam)
+            if prev_mean_score is not None and (mean_score - prev_mean_score) < plateau_delta:
+                plateau_count += 1
+                if plateau_count >= plateau_patience:
+                    print(f"  🏁 Score plateau for {plateau_patience} iterations (improvement < {plateau_delta}), stopping early.")
+                    break
+            else:
+                plateau_count = 0
+            prev_mean_score = mean_score
 
         print(f"\n📊 Next beam ({len(current_beam)} states):")
         for i, state in enumerate(current_beam):

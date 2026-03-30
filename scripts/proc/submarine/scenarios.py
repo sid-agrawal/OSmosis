@@ -1221,6 +1221,39 @@ def build_privsep_graph():
     return graph
 
 
+def build_privsep_discovery_graph():
+    """G0 for privsep discovery: 5 PDs exist, but only PD_1 holds all resources.
+    PDs 2-5 are unassigned (no HOLD edges). IsoSearch must discover the correct
+    resource assignment by adding hold edges to PDs 2-5 and removing PD_1's excess holds.
+
+    Same PD names/IDs and resources as build_privsep_graph(), so goals/constraints
+    reference the same PD_2..PD_5 strings — but the starting topology is different:
+      privsep:           25 HOLD edges (all PDs × all resources)
+      privsep_discovery:  5 HOLD edges (PD_1 only)
+    """
+    graph = ModelGraph()
+
+    pd_monitor_id  = NodeTransformations.add_pd_node(graph, "PD_monitor")   # PD_1
+    pd_net_id      = NodeTransformations.add_pd_node(graph, "PD_net")        # PD_2
+    pd_session_id  = NodeTransformations.add_pd_node(graph, "PD_session")    # PD_3
+    pd_auth_id     = NodeTransformations.add_pd_node(graph, "PD_auth")       # PD_4
+    pd_keystore_id = NodeTransformations.add_pd_node(graph, "PD_keystore")   # PD_5
+
+    space_id = NodeTransformations.add_resource_space(graph, ResourceType.FILE)
+    hostkey_id     = NodeTransformations.add_file_resource(graph, space_id, FileType.CONFIG,   "/etc/ssh/ssh_host_rsa_key", 1679)
+    cred_id        = NodeTransformations.add_file_resource(graph, space_id, FileType.DATABASE, "/etc/shadow",               4096)
+    session_id_res = NodeTransformations.add_file_resource(graph, space_id, FileType.TEMP,     "/tmp/sshd_session",          512)
+    socket_id      = NodeTransformations.add_file_resource(graph, space_id, FileType.SOCKET,   "/var/run/sshd.sock",           0)
+    log_id         = NodeTransformations.add_file_resource(graph, space_id, FileType.LOG,      "/var/log/auth.log",         8192)
+
+    # G0: ONLY PD_1 (monitor) holds all 5 resources — PDs 2-5 are empty
+    for res in [hostkey_id, cred_id, session_id_res, socket_id, log_id]:
+        EdgeTransformations.add_hold_edge(
+            graph, {Permission.R, Permission.W}, pd_monitor_id, ResourceType.FILE, space_id, res)
+
+    return graph
+
+
 # Core scenarios
 SCENARIOS = {
     "basic_sharing_primitive": Scenario(
@@ -1387,6 +1420,37 @@ SCENARIOS = {
         allowed_primitives=PRIMITIVES,
         allowed_multistep=[],
         graph_builder=build_privsep_graph
+    ),
+
+    "privsep_discovery": Scenario(
+        name="Privilege Separation Discovery (Unassigned Start)",
+        description=(
+            "Five-component SSH daemon. PDs 2-5 exist but hold no resources at start; "
+            "only PD_1 holds all 5 resources. IsoSearch must discover the correct resource "
+            "assignment: add hold edges to PDs 2-5 and remove PD_1's excess holds. "
+            "Answers MIS's question: can IsoSearch discover the privilege-separated "
+            "assignment from an unassigned starting point?"
+        ),
+        goals=[
+            Goal("RSI", 0.0, "minimize", "PD_2,PD_5"),  # net ↔ keystore
+            Goal("RSI", 0.0, "minimize", "PD_2,PD_4"),  # net ↔ auth
+            Goal("RSI", 0.0, "minimize", "PD_2,PD_3"),  # net ↔ session
+            Goal("RSI", 0.0, "minimize", "PD_3,PD_5"),  # session ↔ keystore
+        ],
+        constraints=[
+            # Each PD must retain direct access to its designated resource
+            Constraint("requires_resource_access", 1, "FILE_1_5", properties={"access_type": "direct"}),  # monitor keeps audit log
+            Constraint("requires_resource_access", 2, "FILE_1_4", properties={"access_type": "direct"}),  # net keeps network socket
+            Constraint("requires_resource_access", 3, "FILE_1_3", properties={"access_type": "direct"}),  # session keeps session state
+            Constraint("requires_resource_access", 4, "FILE_1_2", properties={"access_type": "direct"}),  # auth keeps credentials
+            Constraint("requires_resource_access", 5, "FILE_1_1", properties={"access_type": "direct"}),  # keystore keeps host key
+            # Security invariants: PD_2 (net handler) must never directly hold sensitive resources
+            Constraint("prohibit_direct_hold", 2, "FILE_1_1"),  # net never holds host key
+            Constraint("prohibit_direct_hold", 2, "FILE_1_2"),  # net never holds credentials
+        ],
+        allowed_primitives=PRIMITIVES,
+        allowed_multistep=[],
+        graph_builder=build_privsep_discovery_graph
     ),
 }
 

@@ -76,6 +76,8 @@ def validate_constraint(graph, constraint):
         return validate_requires_tcb_dependency(graph, constraint)
     elif constraint.constraint_type == "requires_resource_type":
         return validate_requires_resource_type(graph, constraint)
+    elif constraint.constraint_type == "max_memory_bytes":
+        return validate_max_memory_bytes(graph, constraint)
     else:
         return False, f"Unknown constraint type: {constraint.constraint_type}"
 
@@ -425,3 +427,29 @@ def suggest_constraint_fixing_operations(graph, constraints):
             ))
     
     return suggestions
+
+
+def validate_max_memory_bytes(graph, constraint):
+    """Total memory (file sizes) held by any PD must not exceed properties['limit_bytes'].
+    Counts each physical resource node once even if held by multiple PDs."""
+    import json
+    limit = constraint.properties.get('limit_bytes', float('inf'))
+    total = 0
+    seen = set()
+    for u, v, d in graph.g.edges(data=True):
+        if d.get('type') == 'HOLD' and u.startswith('PD_') and v not in seen:
+            seen.add(v)
+            node = graph.g.nodes.get(v, {})
+            rtype = node.get('data', '')
+            extra_str = node.get('extra', '{}') or '{}'
+            try:
+                extra = json.loads(extra_str)
+            except Exception:
+                extra = {}
+            if rtype == 'FILE':
+                total += int(extra.get('size_bytes', 0))
+            elif rtype in ('VMR', 'MO', 'PHYS_PAGE'):
+                total += int(extra.get('num_pages', 0)) * int(extra.get('page_size', 4096))
+    if total > limit:
+        return False, f"MemoryConsumption={total}B exceeds limit={int(limit)}B"
+    return True, f"MemoryConsumption={total}B within limit={int(limit)}B"
