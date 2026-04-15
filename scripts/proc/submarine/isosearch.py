@@ -1825,7 +1825,8 @@ def _select_beam_specific_candidates(all_candidates, beam_idx, beam_width, exist
 
 def BeamSearchExploration(scenario, beam_width=3, max_depth=8,
                           early_stop_on_convergence=True,
-                          plateau_patience=3, plateau_delta=0.01):
+                          plateau_patience=3, plateau_delta=0.01,
+                          constraint_weight=20.0):
     """
     Beam search implementation for design space exploration
     Explores multiple promising paths simultaneously instead of greedy single-path
@@ -1837,6 +1838,7 @@ def BeamSearchExploration(scenario, beam_width=3, max_depth=8,
         early_stop_on_convergence - Stop when all beam states have found solutions (default: True)
         plateau_patience - Stop after this many iterations without score improvement (default: 3, 0=disabled)
         plateau_delta - Minimum score improvement to not count as plateau (default: 0.01)
+        constraint_weight - Weight multiplier for constraint_score in the scoring formula (default: 20.0)
     Returns: list of explored mechanisms
     """
     import copy
@@ -1968,9 +1970,9 @@ def BeamSearchExploration(scenario, beam_width=3, max_depth=8,
                     constraint_score = 5.0 if cs_ok else max(0.0, 5.0 - len(violations))
                     goal_progress = _fast_goal_progress(new_graph, goals)
 
-                    # Constraint satisfaction weighted 20× to prevent states that remove required
+                    # Constraint satisfaction weighted heavily to prevent states that remove required
                     # hold edges from scoring higher than valid partially-solved states.
-                    state_score = constraint_score * 20.0 + goal_progress
+                    state_score = constraint_score * constraint_weight + goal_progress
 
                     new_state = BeamState(
                         graph=new_graph,
