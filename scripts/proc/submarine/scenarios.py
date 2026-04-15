@@ -1305,6 +1305,39 @@ def build_ssh_discover_graph():
     return graph
 
 
+def build_ml_tenant_graph():
+    """G0 for ml_tenant: a single monolithic ML server PD holds the model and all KV-caches.
+
+    Real-world grounding: multi-tenant ML inference (SageMaker multi-model endpoints /
+    shared GPU cluster). Each PD carries 50MB process overhead (runtime, stack, CUDA).
+    The 320MB memory budget allows exactly 3 tenant PDs (3×50MB + 160MB = 310MB ≤ 320MB).
+    A 4th PD would cost 360MB — violating the budget.
+
+    Starting topology:
+      1 PD (PD_1 / PD_server), 4 HOLD edges
+      3 co-hold constraint violations (all cache pairs held by PD_server)
+      Memory at G0: 50MB (PD overhead) + 160MB (resources) = 210MB
+    """
+    import json
+    graph = ModelGraph()
+
+    server_id = NodeTransformations.add_pd_node(graph, "PD_server")   # PD_1
+    # Set 50MB process overhead on the initial PD node
+    graph.g.nodes[f"PD_{server_id}"]['extra'] = json.dumps({"pd_overhead_bytes": 50_000_000})
+
+    space_id  = NodeTransformations.add_resource_space(graph, ResourceType.FILE)
+    model_id  = NodeTransformations.add_file_resource(graph, space_id, FileType.CONFIG, "ml_model.bin",    100_000_000)  # FILE_1_1 ~100MB
+    cache1_id = NodeTransformations.add_file_resource(graph, space_id, FileType.TEMP,   "kv_cache_t1.bin",  20_000_000)  # FILE_1_2 ~20MB
+    cache2_id = NodeTransformations.add_file_resource(graph, space_id, FileType.TEMP,   "kv_cache_t2.bin",  20_000_000)  # FILE_1_3 ~20MB
+    cache3_id = NodeTransformations.add_file_resource(graph, space_id, FileType.TEMP,   "kv_cache_t3.bin",  20_000_000)  # FILE_1_4 ~20MB
+
+    for res in [model_id, cache1_id, cache2_id, cache3_id]:
+        EdgeTransformations.add_hold_edge(
+            graph, {Permission.R, Permission.W}, server_id, ResourceType.FILE, space_id, res)
+
+    return graph
+
+
 # Core scenarios
 SCENARIOS = {
     "basic_sharing_primitive": Scenario(
@@ -1536,6 +1569,45 @@ SCENARIOS = {
         ],
         allowed_multistep=[],
         graph_builder=build_ssh_discover_graph
+    ),
+
+    "ml_tenant": Scenario(
+        name="Multi-Tenant ML Inference",
+        description=(
+            "Monolithic ML server → 3 tenant PDs with private KV-caches. "
+            "Each PD carries 50MB process overhead; the 320MB memory budget permits exactly "
+            "3 PDs (310MB), preventing a fully-isolated 4-PD design (360MB). "
+            "IsoSearch discovers the budget-constrained optimum: GlobalRSI = 1/3."
+        ),
+        goals=[
+            Goal("GlobalRSI", 0.5, "minimize"),  # target 0.5; achievable at 1/3 with 3 PDs
+        ],
+        constraints=[
+            # Tenant KV-caches must be in separate PDs (cross-tenant cache access = data leak)
+            Constraint("prohibit_co_hold", None, "FILE_1_2,FILE_1_3"),  # cache_t1 ↔ cache_t2
+            Constraint("prohibit_co_hold", None, "FILE_1_2,FILE_1_4"),  # cache_t1 ↔ cache_t3
+            Constraint("prohibit_co_hold", None, "FILE_1_3,FILE_1_4"),  # cache_t2 ↔ cache_t3
+            # All resources must remain held by at least one PD
+            Constraint("requires_resource_held", None, "FILE_1_1"),  # model
+            Constraint("requires_resource_held", None, "FILE_1_2"),  # cache_t1
+            Constraint("requires_resource_held", None, "FILE_1_3"),  # cache_t2
+            Constraint("requires_resource_held", None, "FILE_1_4"),  # cache_t3
+            # Memory budget: 320MB total; 50MB per-PD process overhead
+            # 3 PDs: 3×50 + 160 = 310MB ✓   4 PDs: 4×50 + 160 = 360MB ✗
+            Constraint("max_memory_bytes", None, None, properties={
+                "limit_bytes":       320_000_000,
+                "pd_overhead_bytes":  50_000_000,
+            }),
+        ],
+        # Restrict to hold-edge primitives only.
+        # Deletion primitives removed: remove_file_resource would trivially satisfy
+        # co-hold constraints by deleting caches; remove_pd allows thrashing.
+        # Request-edge primitives removed: irrelevant for cache isolation (no request
+        # edges in the optimal solution), and they generate many score-90 lateral states
+        # that crowd out useful score-89 intermediates in the beam.
+        allowed_primitives=["add_pd", "add_hold_edge", "remove_hold_edge"],
+        allowed_multistep=[],
+        graph_builder=build_ml_tenant_graph
     ),
 }
 

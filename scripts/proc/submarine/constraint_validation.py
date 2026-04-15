@@ -434,11 +434,24 @@ def suggest_constraint_fixing_operations(graph, constraints):
 
 
 def validate_max_memory_bytes(graph, constraint):
-    """Total memory (file sizes) held by any PD must not exceed properties['limit_bytes'].
-    Counts each physical resource node once even if held by multiple PDs."""
+    """Total memory held by any PD must not exceed properties['limit_bytes'].
+    Counts each physical resource node once even if held by multiple PDs.
+    Optionally counts per-PD process overhead via properties['pd_overhead_bytes']
+    (applied to PDs whose extra field doesn't override it)."""
     import json
     limit = constraint.properties.get('limit_bytes', float('inf'))
+    pd_overhead_default = constraint.properties.get('pd_overhead_bytes', 0)
     total = 0
+    # Count per-PD process overhead
+    for n, data in graph.g.nodes(data=True):
+        if data.get('type') == 'PD':
+            extra_str = data.get('extra', '{}') or '{}'
+            try:
+                extra = json.loads(extra_str)
+            except Exception:
+                extra = {}
+            total += int(extra.get('pd_overhead_bytes', pd_overhead_default))
+    # Count held resources once each
     seen = set()
     for u, v, d in graph.g.edges(data=True):
         if d.get('type') == 'HOLD' and u.startswith('PD_') and v not in seen:

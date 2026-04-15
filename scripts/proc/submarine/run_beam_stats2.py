@@ -1,5 +1,5 @@
 """
-Run all 4 paper scenarios with BeamSearchExploration and extract clean stats.
+Run all 7 paper scenarios with BeamSearchExploration and extract clean stats.
 Uses direct result inspection + regex on verbose output.
 """
 import sys
@@ -76,6 +76,7 @@ PAPER_SCENARIOS = [
     ('Priv Sep (Prune)', 'ssh_prune',               12, 13),
     ('Priv Sep (Assign)','ssh_assign',              12, 15),   # unassigned-start experiment
     ('Priv Sep (Disc.)', 'ssh_discover',            12, 15),   # full discovery: 1-PD start
+    ('ML Tenant',        'ml_tenant',               12, 12),   # RSI vs memory tradeoff
 ]
 
 
