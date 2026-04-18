@@ -73,14 +73,12 @@ PAPER_SCENARIOS = [
     ('Mediation',        'mediator_test_primitive', 12, 10),
     ('Privatization',    'basic_sharing_primitive', 12, 10),   # minimize RSI
     ('Increase Sharing', 'reduce_isolation',        12, 10),   # maximize RSI
-    ('Priv Sep (Prune)', 'ssh_prune',               12, 13),
-    ('Priv Sep (Assign)','ssh_assign',              12, 15),   # unassigned-start experiment
-    ('Priv Sep (Disc.)', 'ssh_discover',            12, 15),   # full discovery: 1-PD start
     ('ML Tenant',        'ml_tenant',               12, 12),   # RSI vs memory tradeoff
+    ('DB Trust Tiers',   'db_trust',                12, 25),   # Pattern B: +1 step for add_request_edge
 ]
 
 
-_real_print("Running all 4 paper scenarios with BeamSearchExploration (beam_width=12)")
+_real_print("Running all 5 paper scenarios with BeamSearchExploration (beam_width=12)")
 _real_print("=" * 70)
 
 results_table = []

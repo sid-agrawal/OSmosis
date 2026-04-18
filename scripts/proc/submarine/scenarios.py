@@ -1338,6 +1338,89 @@ def build_ml_tenant_graph():
     return graph
 
 
+def build_db_trust_graph():
+    """G0 for db_trust: an over-provisioned PostgreSQL-like deployment with 8 violations.
+
+    Real-world grounding: a naive deployment over-provisions PD_frontend with direct
+    access to tls_key and auth_hba (resources it should never hold directly), while
+    PD_backend holds tls_key alongside datadir and wal. Eight constraint violations must
+    be resolved. IsoSearch discovers the signing-oracle pattern (Pattern B): PD_frontend
+    must reach tls_key only through a REQUEST edge to a dedicated PD_tls.
+
+    Starting topology (3 PDs, 9 resources, 8 violations):
+      PD_1 (PD_frontend): conn.sock, query_pipe, txn_temp, tls_key, auth_hba
+        - co-hold(conn.sock,  tls_key)         VIOLATED [A]
+        - co-hold(txn_temp,   tls_key)         VIOLATED [B]
+        - co-hold(tls_key,    auth_hba)        VIOLATED [C]
+        - prohibit_direct_hold(PD_1, tls_key)  VIOLATED [F]
+        - requires_indirect_access(PD_1, auth_hba) VIOLATED [G] — held directly
+        - requires_indirect_access(PD_1, tls_key)  VIOLATED [P] — held directly, no REQUEST chain
+      PD_2 (PD_backend):  datadir, wal, tls_key (shared with PD_1)
+        - co-hold(datadir, tls_key)            VIOLATED [H]
+        - co-hold(wal, tls_key)                VIOLATED [I]
+      PD_3 (PD_admin):    auth_hba (shared with PD_1), audit_log, admin_sock
+      REQUEST: PD_1 -> PD_3  (pre-added; satisfies indirect_access(auth_hba) once direct hold removed)
+
+    TCB(PD_1) = {PD_2 [tls_key shared], PD_3 [REQUEST]} = 2
+    TCB(PD_2) = {PD_1 [tls_key shared]}                 = 1
+    Memory at G0: 3x30MB + 350MB = 440MB (budget = 530MB; max 6 PDs)
+
+    Path to solution (~6 steps):
+      1. remove_hold(PD_1, tls_key):       +4 (fixes A, B, C, F)
+      2. remove_hold(PD_1, auth_hba):      +1 (fixes G: not held directly, REQUEST chain exists)
+      3. remove_hold(PD_2, tls_key):       net +1 (fixes H, I; creates resource_held violation)
+      4. add_pd + add_hold(PD_4, tls_key): +1 (resource_held fixed)
+      5. add_request_edge(PD_1 -> PD_4):   +1 (fixes P: indirect_access tls_key satisfied)
+      → 0 violations remaining; TCB(PD_1)=2 {PD_3,PD_4}, TCB(PD_2)=0, solution found
+    """
+    import json
+    graph = ModelGraph()
+
+    PD_OVERHEAD = 30_000_000  # 30 MB per PD
+
+    # Three PDs
+    frontend_id = NodeTransformations.add_pd_node(graph, "PD_frontend")   # PD_1
+    graph.g.nodes[f"PD_{frontend_id}"]['extra'] = json.dumps({"pd_overhead_bytes": PD_OVERHEAD})
+
+    backend_id  = NodeTransformations.add_pd_node(graph, "PD_backend")    # PD_2
+    graph.g.nodes[f"PD_{backend_id}"]['extra']  = json.dumps({"pd_overhead_bytes": PD_OVERHEAD})
+
+    admin_id    = NodeTransformations.add_pd_node(graph, "PD_admin")      # PD_3
+    graph.g.nodes[f"PD_{admin_id}"]['extra']    = json.dumps({"pd_overhead_bytes": PD_OVERHEAD})
+
+    space_id = NodeTransformations.add_resource_space(graph, ResourceType.FILE)
+
+    conn_sock_id  = NodeTransformations.add_file_resource(graph, space_id, FileType.SOCKET,   "conn.sock",        0)          # FILE_1_1
+    query_pipe_id = NodeTransformations.add_file_resource(graph, space_id, FileType.SOCKET,   "query_pipe",       0)          # FILE_1_2
+    txn_temp_id   = NodeTransformations.add_file_resource(graph, space_id, FileType.TEMP,     "txn_temp",  50_000_000)        # FILE_1_3 50MB
+    datadir_id    = NodeTransformations.add_file_resource(graph, space_id, FileType.DATABASE, "datadir",  200_000_000)        # FILE_1_4 200MB
+    wal_id        = NodeTransformations.add_file_resource(graph, space_id, FileType.DATABASE, "wal",      100_000_000)        # FILE_1_5 100MB
+    tls_key_id    = NodeTransformations.add_file_resource(graph, space_id, FileType.CONFIG,   "tls_key",        4_096)        # FILE_1_6
+    auth_hba_id   = NodeTransformations.add_file_resource(graph, space_id, FileType.CONFIG,   "auth_hba",       4_096)        # FILE_1_7
+    audit_log_id  = NodeTransformations.add_file_resource(graph, space_id, FileType.LOG,      "audit_log",      8_192)        # FILE_1_8
+    admin_sock_id = NodeTransformations.add_file_resource(graph, space_id, FileType.SOCKET,   "admin_sock",         0)        # FILE_1_9
+
+    # PD_frontend: over-provisioned — holds tls_key and auth_hba in addition to its own resources
+    for res in [conn_sock_id, query_pipe_id, txn_temp_id, tls_key_id, auth_hba_id]:
+        EdgeTransformations.add_hold_edge(graph, {Permission.R, Permission.W}, frontend_id, ResourceType.FILE, space_id, res)
+
+    # PD_backend: holds datadir + wal + tls_key (shared with PD_1)
+    # txn_temp intentionally NOT in PD_2 — it is a PD_1-only resource at G0
+    for res in [datadir_id, wal_id, tls_key_id]:
+        EdgeTransformations.add_hold_edge(graph, {Permission.R, Permission.W}, backend_id,  ResourceType.FILE, space_id, res)
+
+    # PD_admin: holds auth_hba (shared with frontend) + audit_log + admin_sock
+    for res in [auth_hba_id, audit_log_id, admin_sock_id]:
+        EdgeTransformations.add_hold_edge(graph, {Permission.R, Permission.W}, admin_id,    ResourceType.FILE, space_id, res)
+
+    # Pre-add REQUEST edge PD_frontend -> PD_admin so that once the direct hold on
+    # auth_hba is removed from PD_frontend, requires_indirect_access is satisfied.
+    graph.g.add_edge(f"PD_{frontend_id}", f"PD_{admin_id}",
+                     type='REQUEST', extra='{}')
+
+    return graph
+
+
 # Core scenarios
 SCENARIOS = {
     "basic_sharing_primitive": Scenario(
@@ -1608,6 +1691,70 @@ SCENARIOS = {
         allowed_primitives=["add_pd", "add_hold_edge", "remove_hold_edge"],
         allowed_multistep=[],
         graph_builder=build_ml_tenant_graph
+    ),
+
+    "db_trust": Scenario(
+        name="DB Trust Tiers (PostgreSQL-like)",
+        description=(
+            "Over-provisioned 3-PD PostgreSQL-like deployment → trust-tiered design with "
+            "signing-oracle pattern (Pattern B). PD_frontend must reach tls_key only via "
+            "a REQUEST edge to PD_tls (signing oracle), and auth_hba only via REQUEST to "
+            "PD_admin. A 530 MB budget caps PD count at 6. IsoSearch minimizes "
+            "TCB(PD_frontend)≤2, TCB(PD_backend)=0, and GlobalRSI simultaneously using "
+            "all five constraint types."
+        ),
+        goals=[
+            Goal("TCB",       2,   "minimize", "PD_1"),   # TCB(frontend) = 2: PD_admin (auth) + PD_tls (key)
+            Goal("TCB",       0,   "minimize", "PD_2"),   # TCB(backend) = 0: fully isolated storage
+            Goal("GlobalRSI", 0.3, "minimize"),            # reduce global resource sharing index
+        ],
+        constraints=[
+            # Co-hold prohibitions — no single PD may hold both resources simultaneously.
+            # tls_key (FILE_1_6) must be isolated from all other sensitive resources.
+            # Five co-holds involving tls_key ensure each removal of tls_key from a PD
+            # fixes multiple violations at once, giving the scoring strong positive signal.
+            Constraint("prohibit_co_hold", None, "FILE_1_4,FILE_1_6"),  # datadir <-> tls_key [VIOLATED: PD_2]
+            Constraint("prohibit_co_hold", None, "FILE_1_5,FILE_1_6"),  # wal <-> tls_key [VIOLATED: PD_2]
+            Constraint("prohibit_co_hold", None, "FILE_1_3,FILE_1_6"),  # txn_temp <-> tls_key [VIOLATED: PD_1]
+            Constraint("prohibit_co_hold", None, "FILE_1_1,FILE_1_6"),  # conn.sock <-> tls_key [VIOLATED: PD_1]
+            Constraint("prohibit_co_hold", None, "FILE_1_6,FILE_1_7"),  # tls_key <-> auth_hba [VIOLATED: PD_1]
+            # Direct-hold prohibition: PD_frontend must never directly hold tls_key [VIOLATED at G0]
+            Constraint("prohibit_direct_hold", 1, "FILE_1_6"),
+            # Indirect access (auth): PD_frontend must reach auth_hba through a mediator.
+            # The PD_1->PD_3 REQUEST edge is pre-wired in G0; once the direct hold on
+            # auth_hba is removed from PD_1, this constraint becomes satisfied. [VIOLATED at G0]
+            Constraint("requires_indirect_access", 1, "FILE_1_7"),
+            # Indirect access (TLS key / Pattern B): PD_frontend must reach tls_key through
+            # a mediator — the signing-oracle pattern. PD_frontend sends raw TLS bytes to
+            # PD_tls via REQUEST; PD_tls performs crypto and returns the result.
+            # Requires: PD_1 not hold FILE_1_6 directly AND PD_1→REQUEST→PD_tls→HOLD→FILE_1_6.
+            # [VIOLATED at G0: PD_1 holds FILE_1_6 directly; no REQUEST chain exists]
+            Constraint("requires_indirect_access", 1, "FILE_1_6"),
+            # All 9 resources must remain held by at least one PD
+            Constraint("requires_resource_held", None, "FILE_1_1"),
+            Constraint("requires_resource_held", None, "FILE_1_2"),
+            Constraint("requires_resource_held", None, "FILE_1_3"),
+            Constraint("requires_resource_held", None, "FILE_1_4"),
+            Constraint("requires_resource_held", None, "FILE_1_5"),
+            Constraint("requires_resource_held", None, "FILE_1_6"),
+            Constraint("requires_resource_held", None, "FILE_1_7"),
+            Constraint("requires_resource_held", None, "FILE_1_8"),
+            Constraint("requires_resource_held", None, "FILE_1_9"),
+            # Memory budget: 530 MB -> max 6 PDs (6x30 + 350 = 530MB; 7th PD would need 560MB)
+            Constraint("max_memory_bytes", None, None, properties={
+                "limit_bytes":       530_000_000,
+                "pd_overhead_bytes":  30_000_000,
+            }),
+        ],
+        # Hold-edge and add_request_edge primitives. add_request_edge is needed so the
+        # algorithm can wire PD_1→REQUEST→PD_tls (Pattern B / signing oracle).
+        # remove_request_edge is excluded: the pre-wired PD_1→PD_3 REQUEST edge is load-bearing
+        # for requires_indirect_access(PD_1, auth_hba) and must not be removable.
+        # Flood control: spurious REQUEST edges increase TCB(PD_1), directly penalising the
+        # minimize-TCB goal; only the two mandated edges (PD_admin, PD_tls) hit TCB=2.
+        allowed_primitives=["add_pd", "add_hold_edge", "remove_hold_edge", "add_request_edge"],
+        allowed_multistep=[],
+        graph_builder=build_db_trust_graph
     ),
 }
 
