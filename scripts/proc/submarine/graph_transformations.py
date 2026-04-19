@@ -215,14 +215,20 @@ class GraphValidator:
     
     @staticmethod
     def validate_resource_hierarchy(graph: ModelGraph) -> bool:
-        """Ensure resources belong to exactly one resource space via SUBSET edges"""
-        resource_nodes = [n for n, d in graph.g.nodes(data=True) 
+        """Ensure resources belong to exactly one resource space via SUBSET edges
+        and are held by at least one PD (formal model well-formedness invariant)."""
+        resource_nodes = [n for n, d in graph.g.nodes(data=True)
                          if d.get('type') == NodeType.RESOURCE.name]
-        
+
         for resource in resource_nodes:
             subset_edges = [e for e in graph.g.out_edges(resource, data=True)
                            if e[2].get('type') == EdgeType.SUBSET.name]
             if len(subset_edges) != 1:
+                return False
+            # Every resource must be held by at least one PD (model invariant)
+            hold_edges = [e for e in graph.g.in_edges(resource, data=True)
+                         if e[2].get('type') == 'HOLD']
+            if len(hold_edges) == 0:
                 return False
         return True
     
