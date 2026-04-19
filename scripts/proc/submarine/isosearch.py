@@ -1566,14 +1566,45 @@ def _compute_global_rsi(pd_resources):
     return total / count
 
 
+def _fast_tcb(graph, target_pd):
+    """Fast O(edges) TCB approximation for beam scoring.
+
+    Counts (1) PDs that share at least one HOLD target with target_pd
+    (resource co-holders) and (2) PDs that target_pd sends a REQUEST edge to
+    (i.e. have authority over target_pd).  Matches the two main TCB sources
+    in _calculate_tcb without the full traversal.
+    """
+    g = graph.g
+    tcb = set()
+
+    # Resources held by target PD
+    target_resources = set()
+    for u, v, d in g.edges(data=True):
+        if u == target_pd and d.get('type') == 'HOLD':
+            target_resources.add(v)
+
+    # Other PDs that hold the same resources (co-holders)
+    for u, v, d in g.edges(data=True):
+        if u != target_pd and u.startswith('PD_') and d.get('type') == 'HOLD' and v in target_resources:
+            tcb.add(u)
+
+    # PDs with REQUEST authority over target_pd
+    for u, v, d in g.edges(data=True):
+        if u == target_pd and d.get('type') == 'REQUEST' and v.startswith('PD_'):
+            tcb.add(v)
+
+    return len(tcb)
+
+
 def _fast_goal_progress(graph, goals):
     """Compute goal progress without calling the expensive full ComputeMetrics.
 
-    Only calculates RSI for the specific PD pairs referenced by RSI/TransitiveRSI
-    goals, avoiding TCB, FR, and verbose print statements.  Much faster for the
-    beam search inner loop where we evaluate hundreds of candidate states.
+    Calculates RSI for specific PD pairs, GlobalRSI, MemoryConsumption, and
+    TCB for specific PDs — avoiding FR and verbose print statements.  Much
+    faster for the beam search inner loop where we evaluate hundreds of
+    candidate states per iteration.
 
-    Returns: (goal_progress, constraint_violations_count_approx)
+    Returns: goal_progress score (float)
     """
     # Build PD → held resources map from HOLD edges
     pd_resources = {}
@@ -1614,6 +1645,17 @@ def _fast_goal_progress(graph, goals):
                     progress += max(0.0, (1.0 - mem / target) * 10.0)
                 else:
                     progress += min(1.0, mem / target) * 10.0
+        elif goal.metric_name == "TCB":
+            target_pd = goal.target_spec
+            if target_pd:
+                tcb = _fast_tcb(graph, target_pd)
+                pd_count = sum(1 for n, d in graph.g.nodes(data=True)
+                               if d.get('type') == 'PD')
+                if pd_count > 1:
+                    if goal.direction == "minimize":
+                        progress += max(0.0, (1.0 - tcb / (pd_count - 1)) * 10.0)
+                    else:
+                        progress += min(1.0, tcb / (pd_count - 1)) * 10.0
     return progress
 
 
