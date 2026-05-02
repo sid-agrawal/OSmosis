@@ -34,11 +34,11 @@ else:
 
 from metrics import read_csv_to_graph
 
-# Test programs may be compiled in a separate writable directory (e.g. on VM)
-# when the source tree is on a read-only shared mount.
+# Test programs may be compiled in a separate writable directory.
 _TEST_PROGRAMS_CANDIDATES = [
-    os.path.join(PROC_DIR, "test_programs"),                  # source tree (Mac or writable)
-    os.path.expanduser("~/proc/test_programs"),               # VM-local compiled copy
+    os.path.join(PROC_DIR, "pfs", "build", "out"),            # cmake build output (native Linux)
+    os.path.join(PROC_DIR, "test_programs"),                  # source tree fallback
+    os.path.expanduser("~/proc/test_programs"),               # old VM-local compiled copy
 ]
 TEST_PROGRAMS_DIR = next(
     (d for d in _TEST_PROGRAMS_CANDIDATES
@@ -189,18 +189,29 @@ def scenario_graph(tmp_path, request):
 
     csv_path = str(tmp_path / f"{config_name}.csv")
     proc_model_py = os.path.join(PROC_DIR, "proc_model.py")
-    python_bin = os.path.join(PROC_DIR, "pyenv", "bin", "python")
-    if not os.path.exists(python_bin):
+    # Prefer venv in the source tree, then old VM-local pyenv, then sys.executable.
+    real_home = os.path.expanduser(f"~{os.environ.get('SUDO_USER', os.environ.get('USER', 'siagraw'))}")
+    for _py in [
+        os.path.join(PROC_DIR, "venv", "bin", "python"),
+        os.path.join(real_home, "proc", "pyenv", "bin", "python"),
+    ]:
+        if os.path.exists(_py):
+            python_bin = _py
+            break
+    else:
         python_bin = sys.executable
     env = os.environ.copy()
-    # Use SUDO_USER's home to find the pfs lib, not root's home
-    real_home = os.path.expanduser(f"~{os.environ.get('SUDO_USER', os.environ.get('USER', 'siagraw'))}")
-    pfs_lib = os.path.join(real_home, "proc", "pfs", "lib")
+    # Resolve pfs lib: prefer source-tree build, fall back to old VM-local path.
+    pfs_lib = next(
+        (c for c in _pfs_lib_candidates
+         if os.path.isdir(c) and any(f.endswith(".so") for f in os.listdir(c))),
+        os.path.join(PROC_DIR, "pfs", "lib"),
+    )
     env["PYTHONPATH"] = pfs_lib
 
     # proc_model.py launches binaries via './name' relative to CWD.
-    # Run it from the test_programs directory so binaries are found.
-    bindir = os.path.join(real_home, "proc", "test_programs")
+    # Run it from the directory that contains the compiled binaries.
+    bindir = TEST_PROGRAMS_DIR
     sudo_cmd = ["sudo", f"PYTHONPATH={pfs_lib}", python_bin, proc_model_py,
                 "--os", "linux", "--csv", csv_path]
 
