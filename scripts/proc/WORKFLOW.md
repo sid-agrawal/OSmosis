@@ -121,16 +121,3 @@ Available scenarios and their paper claims:
 
 CSVs and query output go to `outputs/$(hostname)/<scenario>/`.
 Commit these alongside code changes in the OSmosis repo (`lintool` branch).
-
----
-
-## Lockstep Paper↔Code Workflow
-
-The paper (`~/Documents/osmosis_papers/eurosys-2026-osmosis-compare/`, `lintool` branch) is the **deliverable**. Code is the **evidence**.
-
-1. Paper claim changes → update test in `tests/test_scenarios.py`
-2. Run test → produces output in `outputs/$(hostname)/`
-3. Commit code + results in `~/OSmosis` (lintool branch)
-4. Update paper text/figures → commit in `osmosis_papers` (lintool branch)
-
-Both repos use the `lintool` branch. Commit them together when a paper claim and its experimental evidence change simultaneously.
