@@ -41,3 +41,4 @@
 [submodule "scripts/proc/pfs"]
 	path = scripts/proc/pfs
 	url = git@github.com:sid-agrawal/pfs.git
+	branch = lintool
