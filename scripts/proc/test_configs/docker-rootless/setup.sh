@@ -28,11 +28,13 @@ docker run -d --name "$KVS_NAME" ubuntu:22.04 sleep 3600
 APP_PID=$(docker inspect --format '{{.State.Pid}}' "$APP_NAME")
 KVS_PID=$(docker inspect --format '{{.State.Pid}}' "$KVS_NAME")
 
-# Include the rootlesskit and slirp4netns daemons so the model shows shared networking.
+# Include rootless dockerd, rootlesskit, and slirp4netns so the model shows the full TCB.
+ROOTLESS_DOCKERD_PID=$(pgrep -u "$ROOTLESS_UID" -x dockerd | head -1 || true)
 ROOTLESSKIT_PID=$(pgrep -u "$ROOTLESS_UID" -x rootlesskit | head -1 || true)
 SLIRP_PID=$(pgrep -u "$ROOTLESS_UID" -x slirp4netns | head -1 || true)
 EXTRA=""
-[ -n "$ROOTLESSKIT_PID" ] && EXTRA="$ROOTLESSKIT_PID"
+[ -n "$ROOTLESS_DOCKERD_PID" ] && EXTRA="$ROOTLESS_DOCKERD_PID"
+[ -n "$ROOTLESSKIT_PID" ] && EXTRA="${EXTRA:+$EXTRA,}$ROOTLESSKIT_PID"
 [ -n "$SLIRP_PID" ] && EXTRA="${EXTRA:+$EXTRA,}$SLIRP_PID"
 
 echo "APP_PID=$APP_PID"
