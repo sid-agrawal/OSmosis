@@ -299,7 +299,7 @@ def _different_syscall_surface(G: nx.MultiDiGraph, pd1: str, pd2: str) -> bool:
 
 
 # Known hypervisor process name substrings (case-insensitive).
-_HYPERVISOR_NAMES = ("qemu", "kvmtool", "firecracker", "cloud-hypervisor")
+_HYPERVISOR_NAMES = ("qemu", "kvmtool", "firecracker", "cloud-hypervisor", "runsc")
 
 
 def _is_hypervisor(G: nx.MultiDiGraph, pd: str) -> bool:

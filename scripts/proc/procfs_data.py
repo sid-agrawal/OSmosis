@@ -1116,6 +1116,8 @@ class ProcFsData:
             # - custom profile (--seccomp-profile): applied to all seccomp=2 processes
             # - docker-default profile (seccomp=2 + lsm_label contains 'docker-default'):
             #   all tracked syscalls are blocked by the docker-default seccomp profile
+            # - gVisor Sentry (seccomp=2 + process name contains 'runsc'):
+            #   Sentry enforces its own syscall allowlist; treat as fully restricted
             # - unknown filter (seccomp=2, unknown profile): treat as unfiltered (conservative)
             if process_info.seccomp_mode == 2 and custom_blocked_syscalls is not None:
                 # Custom profile overrides built-in heuristic for all filtered processes.
@@ -1125,8 +1127,12 @@ class ProcFsData:
                     process_info.seccomp_mode == 2
                     and "docker-default" in (process_info.lsm_label or "")
                 )
-                if is_docker_container:
-                    allowed_syscalls = []  # docker-default blocks all tracked syscalls
+                is_gvisor_sentry = (
+                    process_info.seccomp_mode == 2
+                    and "runsc" in (process_info.name or "").lower()
+                )
+                if is_docker_container or is_gvisor_sentry:
+                    allowed_syscalls = []  # docker-default / gVisor: blocks all tracked syscalls
                 else:
                     # Unfiltered or unknown: all docker-security-critical syscalls are accessible.
                     allowed_syscalls = sorted(docker_seccomp_blocked_syscalls_set)

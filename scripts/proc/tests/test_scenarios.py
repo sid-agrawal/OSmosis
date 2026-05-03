@@ -37,6 +37,8 @@ kata_kvm_available = (
     and shutil.which("docker") is not None
     and os.path.exists("/dev/kvm")
 )
+# gVisor: runsc binary present and registered as a Docker runtime
+gvisor_available = shutil.which("runsc") is not None
 
 
 # ---------------------------------------------------------------------------
@@ -280,6 +282,68 @@ def test_kata_vm_model_guest_processes_isolated(scenario_graph):
     # The host PD represents the QEMU process
     qemu_pd = f"PD_{pids[0]}"
     assert G.has_node(qemu_pd), "QEMU PD should exist in host model"
+
+
+# ---------------------------------------------------------------------------
+# gVisor (runsc) — user-space kernel sandbox
+# ---------------------------------------------------------------------------
+
+@pytest.mark.skipif(not gvisor_available, reason="runsc not installed")
+@pytest.mark.parametrize("scenario_graph", ["gvisor"], indirect=True)
+def test_gvisor_host_visible_as_runsc(scenario_graph):
+    """From the host, gVisor containers are visible as runsc-sandbox (Sentry) processes.
+    The in-sandbox workloads are opaque to host /proc — only the Sentry is extracted."""
+    G, pids = scenario_graph
+    assert len(pids) == 2
+    app_name = G.nodes.get(f"PD_{pids[0]}", {}).get("data", "")
+    assert "runsc" in app_name.lower(), (
+        f"gVisor container PD should be named runsc-sandbox (Sentry), got '{app_name}'"
+    )
+
+
+@pytest.mark.skipif(not gvisor_available, reason="runsc not installed")
+@pytest.mark.parametrize("scenario_graph", ["gvisor"], indirect=True)
+def test_gvisor_vm_boundary(scenario_graph):
+    """runsc is a user-space kernel (Sentry); isolation_layers() reports vm_boundary=True.
+    This is the novel dimension vs regular Docker containers (vm_boundary=False)."""
+    G, pids = scenario_graph
+    il = isolation_layers(G, f"PD_{pids[0]}", f"PD_{pids[1]}")
+    assert il["vm_boundary"], (
+        "gVisor Sentry (runsc-sandbox) should be detected as a hypervisor "
+        "via _is_hypervisor(); 'runsc' must be in _HYPERVISOR_NAMES"
+    )
+
+
+@pytest.mark.skipif(not gvisor_available, reason="runsc not installed")
+@pytest.mark.parametrize("scenario_graph", ["gvisor"], indirect=True)
+def test_gvisor_namespace_isolation(scenario_graph):
+    """gVisor containers should be isolated in MNT, IPC, NET, and cgroup dimensions.
+    Unlike Kata (which loses IPC), gVisor Sentries get separate IPC namespaces too."""
+    G, pids = scenario_graph
+    app_pd, kvs_pd = f"PD_{pids[0]}", f"PD_{pids[1]}"
+    for ns in ("MNT", "IPC", "NET", "PAGE_QUOTA"):
+        shared = shared_resource_spaces(G, app_pd, kvs_pd, ns)
+        assert len(shared) == 0, (
+            f"gVisor containers should have separate {ns} resource spaces, "
+            f"but share: {shared}"
+        )
+
+
+@pytest.mark.skipif(not gvisor_available, reason="runsc not installed")
+@pytest.mark.parametrize("scenario_graph", ["gvisor"], indirect=True)
+def test_gvisor_isolation_layers_score(scenario_graph):
+    """gVisor should score 5/7 on isolation_layers: MNT+IPC+NET+cgroup+vm_boundary.
+    MAC profile and syscall surface between siblings are both '--' (same profile/filter)."""
+    G, pids = scenario_graph
+    il = isolation_layers(G, f"PD_{pids[0]}", f"PD_{pids[1]}")
+    score = sum(1 for v in il.values() if v)
+    assert score >= 5, (
+        f"gVisor expected ≥5/7 isolation dimensions, got {score}/7: {il}"
+    )
+    # VM boundary specifically must be True (novel vs Docker)
+    assert il["vm_boundary"]
+    # IPC must be isolated (novel vs Kata which shows IPC--)
+    assert il["different_ipc_ns"]
 
 
 # ---------------------------------------------------------------------------

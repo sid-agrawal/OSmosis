@@ -27,6 +27,7 @@ incorrect PAGE_QUOTA sharing. Always use: `sudo proc_model.py --pids ...`
 | 9 | docker-with-daemons | ✓ | ✓ | ✓ (setup bug fixed) | done |
 | 10 | grpc-docker | ✓ | ✓ | ✓ | done |
 | 11 | fuse | ✓ | ✓ | ✓ | done |
+| 12 | gvisor | ✓ | ✓ | ✓ (novel row) | done |
 
 ---
 
@@ -47,6 +48,9 @@ incorrect PAGE_QUOTA sharing. Always use: `sudo proc_model.py --pids ...`
   the Docker image+name string as the PD label. `_is_hypervisor()` requires "qemu" in the name,
   so `vm_boundary` was always False for kata until fixed (commit c4b076d). Now uses
   `psutil.Process(pid).name()` — same as the `--pids` path.
+- **gVisor Sentry appears as `exe`**: gVisor's Sentry binary is memfd-mapped; `/proc/comm`
+  shows `exe` not `runsc`. Fixed via `_meaningful_process_name()` in proc_model.py: falls back
+  to `os.path.basename(cmdline[0])` = `runsc-sandbox` when name is `exe`.
 
 ---
 
@@ -615,6 +619,65 @@ dependencies without kernel extensions — purely from `/proc/<pid>/fd` inspecti
 The hello client's REQUEST edge to the FUSE server means the server is in the
 client's TCB: a FUSE server bug could corrupt files the client reads.
 Three separate REQUEST edges (not one) likely reflect three distinct fd/mount entries.
+
+---
+
+### 12. gvisor
+
+**Setup:** Two gVisor containers via Docker `--runtime=runsc`. Each container runs inside
+a gVisor Sentry (user-space kernel process). From the host, the PD is the Sentry process.
+**CSV:** `outputs/thinkpad/audit/gvisor.csv`
+
+**Recon findings (before code changes):**
+- Process name: `exe` (gVisor's Sentry is a memfd-mapped binary; `/proc/comm` shows `exe`)
+- cmdline[0]: `runsc-sandbox ...` — clearly identifies the process
+- AppArmor: `unconfined` (no gVisor-specific AppArmor profile)
+- seccomp_mode: 2 (Sentry IS seccomp-filtered)
+- Namespaces: each Sentry gets its own MNT, IPC, NET namespaces (unlike Kata: IPC is isolated!)
+
+**Code changes made:**
+1. `proc_model.py`: Added `_meaningful_process_name()` — uses `cmdline[0]` when `/proc/comm`
+   is `exe`; PD label becomes `runsc-sandbox` instead of `exe`
+2. `graph_queries.py`: Added `"runsc"` to `_HYPERVISOR_NAMES` → `vm_boundary: True`
+3. `procfs_data.py`: Added `is_gvisor_sentry` branch (seccomp=2 + name contains "runsc")
+   → `allowed_syscalls=[]`, same treatment as docker-default containers
+
+**Queries and results:**
+```
+Layer 1 – PDs
+  PD_1: Host Linux
+  PD_N: runsc-sandbox (app Sentry)
+  PD_M: runsc-sandbox (kvs Sentry)
+  Only 3 PDs — in-sandbox workloads opaque to host /proc
+
+Layer 3 – Resource Spaces (siblings)
+  MNT: 0 shared    ← separate overlay per Sentry ✓
+  IPC: 0 shared    ← separate IPC namespace (NOVEL vs Kata which shows 1!) ✓
+  NET: 0 shared    ← gVisor has own netstack per sandbox ✓
+  PAGE_QUOTA: 0    ← per-container cgroup ✓
+
+Layer 5 – isolation_layers
+  different_mnt_ns:          ✓
+  different_ipc_ns:          ✓  ← novel vs Kata (False)
+  different_net_ns:          ✓
+  different_cgroup:          ✓
+  different_mac_profile:     --  (unconfined for all Sentries)
+  different_syscall_surface: --  (same empty allowed_syscalls for both siblings)
+  vm_boundary:               ✓  ← novel vs Docker (False)
+  Score: 5/7   ← highest in Tab. 2
+```
+
+**Paper claims:**
+| Claim | Expected | Actual | Match |
+|-------|----------|--------|-------|
+| Sentry visible as runsc process | ✓ | ✓ | ✓ |
+| vm_boundary | ✓ | ✓ | ✓ |
+| MNT/IPC/NET/cgroup all isolated | all ✓ | all ✓ | ✓ |
+| gVisor scores 5/7 (highest) | 5/7 | 5/7 | ✓ |
+
+**Key insight for paper:** gVisor combines full namespace isolation (4/7 like Docker) with
+a VM-like boundary (like Kata), scoring 5/7. The distinguishing dimension vs Kata is IPC:
+gVisor Sentries get separate IPC namespaces; Kata QEMU processes share the host IPC.
 
 ---
 

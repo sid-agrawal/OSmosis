@@ -820,6 +820,20 @@ def extract_all_process_data(data: ProcFsData, should_print=False):
 
 
 
+def _meaningful_process_name(p) -> str:
+    """Return a descriptive process name, falling back to cmdline[0] when /proc/comm
+    is the generic 'exe' (as seen with gVisor's memfd-mapped Sentry binary)."""
+    name = p.name()
+    if name == "exe":
+        try:
+            cmd = p.cmdline()
+            if cmd:
+                return os.path.basename(cmd[0])
+        except Exception:
+            pass
+    return name
+
+
 def extract_process_data(data: ProcFsData, pid: int, name: str, should_print=False):
     """
     Extract data from procfs for a particular process
@@ -1342,7 +1356,8 @@ def do_proc_model(args):
             for pid in pid_list:
                 try:
                     p = psutil.Process(pid)
-                    extract_process_data(data_main, pid, p.name(), False)
+                    name = _meaningful_process_name(p)
+                    extract_process_data(data_main, pid, name, False)
                 except psutil.NoSuchProcess:
                     print(f"Warning: PID {pid} no longer exists; skipping")
         elif args.pid == 0:
@@ -1350,7 +1365,7 @@ def do_proc_model(args):
             extract_all_process_data(data_main, False)
         elif args.pid is not None and args.pid > 0:
             p = psutil.Process(args.pid)
-            extract_process_data(data_main, args.pid, p.name(), False)
+            extract_process_data(data_main, args.pid, _meaningful_process_name(p), False)
         elif getattr(args, 'config', None) is not None:
             # processes were started above; pids list is populated
             time.sleep(2)
