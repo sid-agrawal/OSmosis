@@ -39,6 +39,11 @@ kata_kvm_available = (
 )
 # gVisor: runsc binary present and registered as a Docker runtime
 gvisor_available = shutil.which("runsc") is not None
+# Firecracker: binary present and KVM available
+firecracker_available = (
+    shutil.which("firecracker") is not None
+    and os.path.exists("/dev/kvm")
+)
 
 
 # ---------------------------------------------------------------------------
@@ -344,6 +349,61 @@ def test_gvisor_isolation_layers_score(scenario_graph):
     assert il["vm_boundary"]
     # IPC must be isolated (novel vs Kata which shows IPC--)
     assert il["different_ipc_ns"]
+
+
+# ---------------------------------------------------------------------------
+# Firecracker (standalone VMM — no container runtime wrapper)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.skipif(not firecracker_available, reason="firecracker not installed")
+@pytest.mark.parametrize("scenario_graph", ["firecracker"], indirect=True)
+def test_firecracker_host_visible_as_firecracker(scenario_graph):
+    """From the host, Firecracker VMMs are visible as 'firecracker' processes.
+    No container runtime wraps them — they run directly in host namespaces."""
+    G, pids = scenario_graph
+    assert len(pids) == 2
+    app_name = G.nodes[f"PD_{pids[0]}"].get("data", "")
+    assert "firecracker" in app_name.lower(), (
+        f"FC PD should be named 'firecracker', got '{app_name}'"
+    )
+
+
+@pytest.mark.skipif(not firecracker_available, reason="firecracker not installed")
+@pytest.mark.parametrize("scenario_graph", ["firecracker"], indirect=True)
+def test_firecracker_vm_boundary(scenario_graph):
+    """Standalone Firecracker: vm_boundary=True (binary name in _HYPERVISOR_NAMES)."""
+    G, pids = scenario_graph
+    il = isolation_layers(G, f"PD_{pids[0]}", f"PD_{pids[1]}")
+    assert il["vm_boundary"], "Firecracker must be detected as hypervisor via _is_hypervisor()"
+
+
+@pytest.mark.skipif(not firecracker_available, reason="firecracker not installed")
+@pytest.mark.parametrize("scenario_graph", ["firecracker"], indirect=True)
+def test_firecracker_no_namespace_isolation(scenario_graph):
+    """Standalone FC runs directly in host namespaces — no container runtime wraps it.
+    Contrast with Kata (4/7): Kata's QEMU runs inside Docker's namespace isolation.
+    FC has vm_boundary=True but MNT/IPC/NET namespace dimensions are all False."""
+    G, pids = scenario_graph
+    app_pd, kvs_pd = f"PD_{pids[0]}", f"PD_{pids[1]}"
+    il = isolation_layers(G, app_pd, kvs_pd)
+    assert il["vm_boundary"], "FC must have vm_boundary"
+    assert not il["different_mnt_ns"], "Both FC processes share host MNT namespace"
+    assert not il["different_net_ns"], "Both FC processes share host NET namespace"
+    assert not il["different_ipc_ns"], "Both FC processes share host IPC namespace"
+
+
+@pytest.mark.skipif(not firecracker_available, reason="firecracker not installed")
+@pytest.mark.parametrize("scenario_graph", ["firecracker"], indirect=True)
+def test_firecracker_isolation_layers_score(scenario_graph):
+    """Standalone FC scores 1/7: only vm_boundary=True.
+    Novel row in Tab. 2 — same vm_boundary as Kata but no namespace isolation
+    because no container runtime creates namespace wrappers around the FC process."""
+    G, pids = scenario_graph
+    il = isolation_layers(G, f"PD_{pids[0]}", f"PD_{pids[1]}")
+    true_dims = [k for k, v in il.items() if v]
+    assert true_dims == ["vm_boundary"], (
+        f"Expected only vm_boundary=True for standalone FC, got: {true_dims}"
+    )
 
 
 # ---------------------------------------------------------------------------
