@@ -21,12 +21,12 @@ incorrect PAGE_QUOTA sharing. Always use: `sudo proc_model.py --pids ...`
 | 3 | docker-rootless | ✓ | ✓ | ✓ w/gap | done |
 | 4 | podman | ✓ | ✓ | ✓ w/gap | done |
 | 5 | apptainer | ✓ | ✓ | ✓ | done |
-| 6 | kata-no-kvm | | | | pending |
-| 7 | kata-kvm | | | | pending |
-| 8 | kata-vm-model | | | | pending |
-| 9 | docker-with-daemons | | | | pending |
-| 10 | grpc-docker | | | | pending |
-| 11 | fuse | | | | pending |
+| 6 | kata-no-kvm | ✓ | ✓ | ✓ (bug fixed) | done |
+| 7 | kata-kvm | ✓ | ✓ | ✓ | done |
+| 8 | kata-vm-model | ✓ | ✓ | ✓ | done |
+| 9 | docker-with-daemons | ✓ | ✓ | ✓ (setup bug fixed) | done |
+| 10 | grpc-docker | ✓ | ✓ | ✓ | done |
+| 11 | fuse | ✓ | ✓ | ✓ | done |
 
 ---
 
@@ -43,6 +43,10 @@ incorrect PAGE_QUOTA sharing. Always use: `sudo proc_model.py --pids ...`
   the session cgroup and give wrong PAGE_QUOTA results.
 - **syscall_surface discrepancy in rootless Docker**: `isolation_layers → different_syscall_surface: --`
   even though container seccomp=2 and daemon seccomp=0. Needs investigation.
+- **CONFIG mode used binary label for PD name (fixed)**: `proc_model.py --config` previously stored
+  the Docker image+name string as the PD label. `_is_hypervisor()` requires "qemu" in the name,
+  so `vm_boundary` was always False for kata until fixed (commit c4b076d). Now uses
+  `psutil.Process(pid).name()` — same as the `--pids` path.
 
 ---
 
@@ -349,16 +353,272 @@ in the paper and could be an additional finding.
 
 ---
 
-## Scenarios Remaining (6–11)
+### 6. kata-no-kvm
 
-| # | Scenario | Notes |
-|---|----------|-------|
-| 6 | kata-no-kvm | Requires kata shim; run via Docker with --runtime kata |
-| 7 | kata-kvm | Same + /dev/kvm available ✓ |
-| 8 | kata-vm-model | Guest-side extraction via vm_model.py |
-| 9 | docker-with-daemons | Most thorough; H1-H9 tests + isolation_layers |
-| 10 | grpc-docker | REQUEST edge detection across container boundary |
-| 11 | fuse | REQUEST edge via /dev/fuse fd detection |
+**Setup:** Two Kata containers via Docker `--runtime=io.containerd.kata.v2` (QEMU TCG,
+no KVM). Each container runs inside a separate QEMU VM. From the host, the PDs are the
+QEMU processes. Uses `proc_model.py --config 13`.
+**CSV:** `outputs/thinkpad/audit/kata-no-kvm.csv`
+
+**Bug found and fixed:** Before the fix, `proc_model.py` used the Docker image+name string
+("ubuntu osmosis-kata-app bash") as the PD label in CONFIG mode. `_is_hypervisor()` checks
+for "qemu" in the name — so `vm_boundary` was always False. Fixed by reading the actual
+binary name via `psutil.Process(pid).name()` → PD label is now "qemu-system-x86_64".
+
+**Queries and results (post-fix):**
+```
+Layer 1 – PDs
+  PD_1: Host Linux
+  PD_N: qemu-system-x86_64   (kata-app)
+  PD_M: qemu-system-x86_64   (kata-kvs)
+  Only 3 PDs — in-VM processes are opaque to host /proc
+
+Layer 2 – File / Memory
+  shared FILE:               6      ← QEMU processes both in host MNT namespace
+  shared NET:                0
+
+Layer 3 – Resource Spaces
+  shared MNT:                0      ← different overlay mounts for each QEMU
+  shared IPC:                1      ← QEMU processes share host IPC namespace
+  shared NET:                0
+  shared PAGE_QUOTA:         0
+
+Layer 4 – Services in TCB
+  common_ancestors:          1 (Host Linux only)
+
+Layer 5 – isolation_layers
+  different_mnt_ns:          ✓
+  different_ipc_ns:          --     ← QEMU processes share host IPC namespace
+  different_net_ns:          ✓
+  different_cgroup:          ✓
+  different_mac_profile:     --     (no AppArmor for QEMU processes)
+  different_syscall_surface: --     (no seccomp profile for QEMU)
+  vm_boundary:               ✓     ← qemu-system-x86_64 detected as hypervisor
+  Score: 4/7
+```
+
+**Paper claims (Tab. 2, Kata column):**
+| Claim | Expected | Actual | Match |
+|-------|----------|--------|-------|
+| MNT namespace | ✓ | ✓ | ✓ |
+| IPC namespace | -- | -- | ✓ |
+| NET namespace | ✓ | ✓ | ✓ |
+| Cgroup | ✓ | ✓ | ✓ |
+| MAC profile | -- | -- | ✓ |
+| Syscall surface | -- | -- | ✓ |
+| VM boundary | ✓ | ✓ | ✓ (after fix) |
+| Total score | 4/7 | 4/7 | ✓ |
+
+**Note:** Paper (lines 287-289) correctly states "QEMU host processes share the host IPC
+namespace (IPC --)". The isolation_layers() result matches exactly after the binary-name fix.
+
+---
+
+### 7. kata-kvm
+
+**Setup:** Same as kata-no-kvm but with KVM acceleration (`/dev/kvm` available on this
+machine). Identical CONFIG=13; the difference is the QEMU command line uses accel=kvm.
+**CSV:** `outputs/thinkpad/audit/kata-kvm.csv`
+
+**Queries and results:** Identical to kata-no-kvm (host-side model is the same structure):
+```
+isolation_layers:
+  different_mnt_ns:          ✓
+  different_ipc_ns:          --
+  different_net_ns:          ✓
+  different_cgroup:          ✓
+  different_mac_profile:     --
+  different_syscall_surface: --
+  vm_boundary:               ✓
+  Score: 4/7
+```
+
+**Paper claims:** Same as kata-no-kvm (host-side model is identical; KVM vs TCG
+is unobservable via /proc namespace queries).
+
+**Test-specific assertion (kata-kvm only):** QEMU cmdline should NOT contain `accel=tcg`.
+The test reads `/proc/<pid>/cmdline` directly and passes.
+
+---
+
+### 8. kata-vm-model
+
+**Setup:** Single kata container (`osmosis-kata-app`); vm_model.py extracts both the
+host-side QEMU process AND the in-guest processes. The host graph's APP_PID is the
+QEMU process PID (binary: `qemu-system-x86_64`).
+
+**Key finding:** When extracted by `--pids <qemu_pid>`, the PD label is
+`qemu-system-x86_64` (psutil reads actual binary name), and
+`_is_hypervisor(G, qemu_pd) = True`. This confirms the fix was correct and that
+the guest extraction (vm_model) path was never affected by the naming bug.
+
+**Test assertion:** Host model has ≥1 PD (QEMU), and the QEMU PD node exists. Passes.
+
+**Note:** vm_model.py also produces a guest CSV (in-VM processes), but the audit
+focuses on the host-side model. Guest-side isolation properties would require
+running queries on the guest CSV.
+
+---
+
+### 9. docker-with-daemons
+
+**Setup:** Two rootful Docker containers (`osmosis-docker-app`, `osmosis-docker-kvs`) plus the
+full daemon chain (dockerd → containerd → 2× containerd-shim) extracted with `--with-ancestors`.
+**CSV:** `outputs/thinkpad/audit/docker-with-daemons.csv`
+
+**Setup bug found and fixed:** `pgrep -x dockerd | head -1` picked the rootless dockerd
+(PID 1802, uid=1000) instead of the rootful one (uid=0) because the rootless instance has
+a lower PID. Fixed to `pgrep -x dockerd -u root | head -1` (commit in setup.sh).
+
+**PDs extracted (post-fix):**
+```
+sleep (app, uid=0)       lsm='docker-default (enforce)'  seccomp=2  allowed_syscalls=[]
+sleep (kvs, uid=0)       lsm='docker-default (enforce)'  seccomp=2  allowed_syscalls=[]
+dockerd (rootful, uid=0) lsm='unconfined'                seccomp=0  allowed_syscalls=[50]
+containerd (uid=1000)    lsm='rootlesskit (unconfined)'  seccomp=0  allowed_syscalls=[50]
+shim×2 (uid=0)           lsm='unconfined'                seccomp=0  allowed_syscalls=[50]
+```
+
+**Queries and results:**
+```
+Layer 1 – Hold chain
+  H1: daemon PDs hold containers: ✓ (via shim uid=0 → containers uid=0)
+  H2: kernel holds daemons: ✓
+  H3: two shim PD nodes: ✓ (2 containerd-shim-runc-v2 PDs)
+
+Layer 3 – Resource Spaces
+  H4 (siblings, PAGE_QUOTA shared): 0 ← per-container cgroup ✓
+  H5 (container vs daemon, MNT shared): 0 ✓
+  H6 (container vs daemon, IPC shared): 0 ✓
+
+Layer 4 – FILE sharing (shim ↔ container)
+  H7 (observational): some shared FILE resources via stdio management
+
+Layer 5 – isolation_layers (siblings)
+  different_mnt_ns:          ✓
+  different_ipc_ns:          ✓
+  different_net_ns:          ✓
+  different_cgroup:          ✓
+  different_mac_profile:     --  (both docker-default)
+  different_syscall_surface: --  (both allowed_syscalls=[])
+  vm_boundary:               --
+  Score: 4/7
+
+Layer 5 – isolation_layers (container vs rootful dockerd)
+  different_mnt_ns:          ✓
+  different_ipc_ns:          ✓
+  different_net_ns:          ✓
+  different_cgroup:          ✓
+  different_mac_profile:     ✓  (docker-default vs unconfined)
+  different_syscall_surface: ✓  ([] vs [50 tracked syscalls])
+  vm_boundary:               --
+  Score: 6/7
+
+Layer 6 – syscall_surface
+  H8 (seccomp):  container allowed_syscalls=0, dockerd=50, blocked=50 ✓
+  Known blocked: ptrace, mount, reboot, kexec_load ✓
+```
+
+**Paper claims:**
+| Claim | Expected | Actual | Match |
+|-------|----------|--------|-------|
+| Sibling isolation score | 4/7 | 4/7 | ✓ |
+| Container vs dockerd score | 6/7 | 6/7 | ✓ |
+| docker-default AppArmor on containers | ✓ | ✓ | ✓ |
+| dockerd unconfined (different MAC) | ✓ | ✓ | ✓ |
+| seccomp blocks 44+ syscalls for containers | ≥44 | 50 | ✓ |
+| Two shim PDs | 2 | 2 | ✓ |
+| Per-container cgroups | 0 shared | 0 | ✓ |
+
+**Note on allowed_syscalls semantics:**
+- Container with docker-default seccomp: `allowed_syscalls=[]` (empty — all 50 tracked syscalls blocked)
+- Daemon (unconfined): `allowed_syscalls=[50 syscalls]` (full set of security-critical syscalls)
+- `syscall_surface(container)={}`, `syscall_surface(daemon)={50}`, `blocked=50 ≥ 10` ✓
+
+---
+
+### 10. grpc-docker
+
+**Setup:** gRPC server and client in separate rootful Docker containers on a shared bridge
+network. Server runs `server.py`; client runs `client.py grpc-server`. TCP connection
+established before extraction.
+**CSV:** `outputs/thinkpad/audit/grpc-docker.csv`
+
+**Queries and results:**
+```
+PDs: Host Linux, python (grpc-client), python (grpc-server)
+
+REQUEST edges from grpc-client:
+  → Host Linux
+  → grpc-server (python)    ← TCP connection detected ✓
+
+shared_resource_spaces:
+  MNT: 0, IPC: 0, NET: 0   ← Docker bridge; separate NET namespaces ✓
+
+isolation_layers:
+  different_mnt_ns:          ✓
+  different_ipc_ns:          ✓
+  different_net_ns:          ✓
+  different_cgroup:          ✓
+  different_mac_profile:     --  (no AppArmor in this extraction; no EXTRA_PIDS)
+  different_syscall_surface: --
+  vm_boundary:               --
+  Score: 4/7
+```
+
+**Paper claims:**
+| Claim | Expected | Actual | Match |
+|-------|----------|--------|-------|
+| Client→server REQUEST edge | ✓ | ✓ | ✓ |
+| Separate NET namespaces | 0 shared | 0 | ✓ |
+
+**Note:** isolation_layers shows 4/7 here (no AppArmor/seccomp annotations since
+dockerd and shims not included as EXTRA_PIDS). The key finding is REQUEST edge detection
+via TCP connection — `detect_tcp_connections()` finds the TCP socket pair and creates the
+REQUEST edge. This is the only scenario that tests cross-container REQUEST edges via TCP.
+
+---
+
+### 11. fuse
+
+**Setup:** FUSE passthrough server (`passthrough.py`) and `hello` client in the same
+host mount namespace. The hello process sees the FUSE-mounted directory; Lintool
+detects the `/dev/fuse` fd on the server and emits REQUEST edges to it.
+**CSV:** `outputs/thinkpad/audit/fuse.csv`
+
+**Queries and results:**
+```
+PDs: Host Linux, python (FUSE server), hello (FUSE client)
+
+REQUEST edges from hello (client):
+  → Host Linux
+  → python (FUSE server) ×3   ← 3 REQUEST edges via /dev/fuse fd detection ✓
+
+HOLD edges:
+  python →[HOLD]→ hello   ← same uid mutual hold
+  hello →[HOLD]→ python
+
+shared_resource_spaces(MNT): 1  ← same host MNT namespace (bare processes)
+
+isolation_layers:
+  ALL False (0/7)    ← plain processes, same user, no isolation
+```
+
+**Paper claims:**
+| Claim | Expected | Actual | Match |
+|-------|----------|--------|-------|
+| Client has REQUEST edge to FUSE server | ✓ | ✓ | ✓ |
+| Both hold ≥1 MNT resource space | ✓ | ✓ | ✓ |
+
+**Note:** The FUSE finding (§6.3) demonstrates that Lintool can detect FUSE service
+dependencies without kernel extensions — purely from `/proc/<pid>/fd` inspection.
+The hello client's REQUEST edge to the FUSE server means the server is in the
+client's TCB: a FUSE server bug could corrupt files the client reads.
+Three separate REQUEST edges (not one) likely reflect three distinct fd/mount entries.
+
+---
+
+## All Scenarios Complete
 
 ---
 

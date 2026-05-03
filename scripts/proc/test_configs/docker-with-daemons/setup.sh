@@ -8,7 +8,7 @@ docker run -d --rm --name osmosis-docker-kvs ubuntu:22.04 sleep 3600
 sleep 1
 APP_PID=$(docker inspect --format '{{.State.Pid}}' osmosis-docker-app)
 KVS_PID=$(docker inspect --format '{{.State.Pid}}' osmosis-docker-kvs)
-DOCKERD_PID=$(pgrep -x dockerd | head -1)
+DOCKERD_PID=$(pgrep -x dockerd -u root | head -1)
 CONTAINERD_PID=$(pgrep -x containerd | head -1)
 echo "APP_PID=$APP_PID"
 echo "KVS_PID=$KVS_PID"
