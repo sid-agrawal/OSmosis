@@ -1355,8 +1355,13 @@ def do_proc_model(args):
             # processes were started above; pids list is populated
             time.sleep(2)
             selected = run_configs[args.config]
-            for (name, _), pid in zip(selected, pids):
-                extract_process_data(data_main, pid, name, False)
+            for (_, start_type), pid in zip(selected, pids):
+                # Use actual binary name so _is_hypervisor() can detect QEMU for kata.
+                try:
+                    actual_name = psutil.Process(pid).name()
+                except psutil.NoSuchProcess:
+                    actual_name = f"pid_{pid}"
+                extract_process_data(data_main, pid, actual_name, False)
         else:
             # We add this delay so that the gettimeofday call in hello_static
             # gets a chance to run
