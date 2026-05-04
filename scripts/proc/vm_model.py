@@ -438,6 +438,11 @@ def get_cellulos_vm_state(get_host: bool, guest_file: str, g2h_file: str, host_f
     mapping_graph.add_request_edge_raw("PD_10001", "PD_1", "PD_1")
     mapping_graph.to_csv(g2h_file, only_edge=True)
 
+# Force rootful Docker daemon for all vm_model docker calls (avoids rootless context
+# being picked up when sudo -E preserves HOME pointing to the user's docker config).
+_DOCKER_ENV = {**os.environ, "DOCKER_HOST": "unix:///var/run/docker.sock"}
+
+
 def _find_pfs_lib() -> str:
     """Search for the pypfs .so library directory."""
     candidates = [
@@ -494,31 +499,143 @@ def _build_host_maps(host_file: str) -> tuple:
     return hPA_to_MO, hVA_to_VMR
 
 
-def _push_and_run_proc_model(container_name: str, guest_file: str):
-    """Push proc_model.py + pypfs into a container, run it, copy guest CSV out."""
+def _docker_tar_push(container_name: str, src_dir: str, dest_dir: str):
+    """Push a directory into a container via tar pipe (works with gVisor, docker cp does not)."""
     import subprocess
+    # -h: dereference symlinks so that symlinked .so files arrive as real files
+    tar_out = subprocess.Popen(
+        ["tar", "-hC", src_dir, "-cf", "-", "."],
+        stdout=subprocess.PIPE)
+    tar_in = subprocess.Popen(
+        ["docker", "exec", "-i", container_name,
+         "tar", "-C", dest_dir, "-xf", "-"],
+        stdin=tar_out.stdout, env=_DOCKER_ENV)
+    tar_out.stdout.close()
+    tar_in.communicate()
+    tar_out.wait()
+    if tar_in.returncode != 0:
+        raise RuntimeError(f"tar push into {container_name}:{dest_dir} failed")
+
+
+def _docker_tar_pull(container_name: str, src_path: str, dest_path: str):
+    """Pull a single file out of a container via tar pipe (works with gVisor)."""
+    import subprocess, tempfile, shutil
+    dest_dir = os.path.dirname(dest_path)
+    fname = os.path.basename(src_path)
+    src_dir = os.path.dirname(src_path)
+    tar_out = subprocess.Popen(
+        ["docker", "exec", "-i", container_name,
+         "tar", "-C", src_dir, "-cf", "-", fname],
+        stdout=subprocess.PIPE, env=_DOCKER_ENV)
+    with tempfile.TemporaryDirectory() as tmp:
+        tar_in = subprocess.Popen(
+            ["tar", "-C", tmp, "-xf", "-"],
+            stdin=tar_out.stdout)
+        tar_out.stdout.close()
+        tar_in.communicate()
+        tar_out.wait()
+        if tar_in.returncode != 0:
+            raise RuntimeError(f"tar pull of {container_name}:{src_path} failed")
+        shutil.copy(os.path.join(tmp, fname), dest_path)
+
+
+def _push_and_run_proc_model(container_name: str, guest_file: str):
+    """Push proc_model.py + pypfs into a container, run it, pull guest CSV out.
+
+    Uses tar pipes instead of docker cp — docker cp bypasses the Sentry and
+    fails for gVisor containers; tar-via-docker-exec works for all runtimes.
+    """
+    import subprocess, tempfile, re, shutil
     pfs_lib = _find_pfs_lib()
     proc_dir = os.path.dirname(os.path.abspath(__file__))
+
+    # Detect the Python version required by the pypfs .so (e.g. cpython-312 → "python3.12")
+    so_files = [f for f in os.listdir(pfs_lib) if f.endswith(".so")]
+    m = re.search(r"cpython-(\d)(\d+)", so_files[0]) if so_files else None
+    if m:
+        py_maj, py_min = m.group(1), m.group(2)
+        py_cmd = f"python{py_maj}.{py_min}"   # e.g. "python3.12"
+        py_ver = f"{py_maj}.{py_min}"
+    else:
+        py_cmd, py_ver = "python3", None
+
+    # Create destination dirs inside the container
     subprocess.check_call(
         ["docker", "exec", container_name, "mkdir", "-p",
-         "/tmp/lintool/pfs/lib", "/tmp/lintool"])
-    subprocess.check_call(
-        ["docker", "cp", pfs_lib + "/.", f"{container_name}:/tmp/lintool/pfs/lib/"])
-    for f in ["proc_model.py", "procfs_data.py", "generic_model.py",
-              "utils.py", "read_pagemap.py", "get_ns_info.py"]:
-        src = os.path.join(proc_dir, f)
-        if os.path.exists(src):
-            subprocess.check_call(["docker", "cp", src,
-                                   f"{container_name}:/tmp/lintool/{f}"])
+         "/tmp/lintool/pfs/lib", "/tmp/lintool"], env=_DOCKER_ENV)
+
+    # Push pypfs .so library
+    _docker_tar_push(container_name, pfs_lib, "/tmp/lintool/pfs/lib")
+
+    # Push proc_model.py and supporting modules
+    py_files = ["proc_model.py", "procfs_data.py", "generic_model.py",
+                "utils.py", "read_pagemap.py", "get_ns_info.py"]
+    with tempfile.TemporaryDirectory() as staging:
+        for f in py_files:
+            src = os.path.join(proc_dir, f)
+            if os.path.exists(src):
+                shutil.copy(src, os.path.join(staging, f))
+        _docker_tar_push(container_name, staging, "/tmp/lintool")
+
+    # Ensure the right Python version + required packages are available.
+    # The pypfs .so encodes the ABI version (e.g. cpython-312); we must run
+    # proc_model.py with that exact interpreter version.
+    # Install packages to /tmp/py-pkgs (--target) to isolate from system
+    # site-packages — avoids ABI conflicts when the container has an older Python.
+    pkgs_dir = f"/tmp/py{py_ver.replace('.', '')}-pkgs" if py_ver else "/tmp/py-pkgs"
+    r = subprocess.run(
+        ["docker", "exec", container_name, "sh", "-c",
+         f"PYTHONPATH={pkgs_dir} {py_cmd} -c 'import networkx, psutil, pexpect'"],
+        env=_DOCKER_ENV, capture_output=True)
+    if r.returncode != 0:
+        print(f"[vm_model] Installing {py_cmd} + deps in {container_name}...")
+        if py_ver and py_ver != "3":
+            # Strategy: try system repos first (works on ubuntu:24.04 where python3.12
+            # is in main); fall back to deadsnakes PPA only if needed (ubuntu:22.04).
+            # libstdc++6 upgrade: pypfs requires GLIBCXX_3.4.32; ubuntu:22.04 ships
+            # GCC 12 (3.4.30) so we upgrade via toolchain PPA if available.
+            # DEBIAN_FRONTEND=noninteractive: prevents tzdata interactive prompt.
+            install_script = (
+                "export DEBIAN_FRONTEND=noninteractive && "
+                "apt-get update -qq && "
+                "apt-get install -y -qq curl && "
+                # Try system repos; if python3.X is not there, add deadsnakes PPA
+                f"( apt-get install -y -qq python{py_ver} 2>/dev/null || "
+                f"  ( apt-get install -y -qq software-properties-common && "
+                f"    add-apt-repository -y ppa:deadsnakes/ppa && "
+                f"    apt-get update -qq && "
+                f"    apt-get install -y -qq python{py_ver} ) ) && "
+                # Upgrade libstdc++ if the toolchain PPA is reachable (best-effort)
+                "( apt-get install -y -qq software-properties-common 2>/dev/null && "
+                "  add-apt-repository -y ppa:ubuntu-toolchain-r/test 2>/dev/null && "
+                "  apt-get update -qq 2>/dev/null && "
+                "  apt-get install -y -qq libstdc++6 2>/dev/null ) || true && "
+                # Bootstrap pip if not present, then install packages to isolated dir
+                f"( python{py_ver} -m ensurepip --upgrade 2>/dev/null || "
+                f"  ( curl -s https://bootstrap.pypa.io/get-pip.py | python{py_ver} ) ) && "
+                f"python{py_ver} -m pip install --target {pkgs_dir} --break-system-packages --quiet networkx psutil pexpect"
+            )
+        else:
+            install_script = (
+                "export DEBIAN_FRONTEND=noninteractive && "
+                "apt-get update -qq && "
+                "apt-get install -y -qq python3 python3-networkx python3-psutil"
+            )
+        subprocess.check_call(
+            ["docker", "exec", container_name, "sh", "-c", install_script],
+            env=_DOCKER_ENV)
+
+    # Run proc_model.py inside the container
     subprocess.check_call([
         "docker", "exec",
-        "-e", "PYTHONPATH=/tmp/lintool/pfs/lib",
+        "-e", f"PYTHONPATH={pkgs_dir}:/tmp/lintool/pfs/lib",
         container_name,
-        "python3", "/tmp/lintool/proc_model.py",
+        py_cmd, "/tmp/lintool/proc_model.py",
         "--os", "linux", "--csv", "/tmp/guest.csv", "-g", "--pid", "0"
-    ])
-    subprocess.check_call(
-        ["docker", "cp", f"{container_name}:/tmp/guest.csv", guest_file])
+    ], env=_DOCKER_ENV)
+
+    # Pull the CSV back out via tar
+    _docker_tar_pull(container_name, "/tmp/guest.csv", guest_file)
 
 
 # ---------------------------------------------------------------------------
@@ -565,7 +682,7 @@ def _kata_qmp_sock(container_name: str) -> str | None:
     import subprocess, glob
     full_id = subprocess.check_output(
         ["docker", "inspect", "--format", "{{.Id}}", container_name],
-        text=True).strip()
+        text=True, env=_DOCKER_ENV).strip()
     direct = f"/run/vc/vm/{full_id}/qmp.sock"
     if os.path.exists(direct):
         return direct
@@ -624,7 +741,8 @@ def get_kata_vm_state(container_name: str, guest_file: str,
 
     # 1. Get the QEMU PID on the host
     inspect = json.loads(
-        subprocess.check_output(["docker", "inspect", container_name], text=True))
+        subprocess.check_output(["docker", "inspect", container_name],
+                                text=True, env=_DOCKER_ENV))
     qemu_pid = inspect[0]["State"]["Pid"]
     assert qemu_pid != 0, "kata container QEMU PID is 0 — container not running?"
 
@@ -683,7 +801,7 @@ def get_gvisor_vm_state(container_name: str, guest_file: str,
     # 1. Get the Sentry PID
     sentry_pid = int(subprocess.check_output(
         ["docker", "inspect", "--format", "{{.State.Pid}}", container_name],
-        text=True).strip())
+        text=True, env=_DOCKER_ENV).strip())
     assert sentry_pid != 0, "gVisor Sentry PID is 0 — container not running?"
     print(f"[gVisor] Sentry PID: {sentry_pid}")
 

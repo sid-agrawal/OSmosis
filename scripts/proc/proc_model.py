@@ -577,7 +577,11 @@ def read_pagemap_file(pid: int, should_print: bool = False) -> list[PageMapObj]:
     :param should_print: if true, prints the raw and parsed file
     :return: a list of objects representing the VA and VA->PA regions in the process' address space
     """
-    results = get_va_pa_mappings(pid)
+    try:
+        results = get_va_pa_mappings(pid)
+    except FileNotFoundError:
+        # gVisor's virtual /proc does not expose pagemap
+        return []
 
     # understanding_pagemap(results)
 
@@ -717,13 +721,14 @@ def collect_ancestor_pids(pid: int) -> list:
 
 def extract_from_status(data: ProcFsData, pid: int, should_print=False):
     status = read_status_file(pid, should_print)
+    ns_pid = status.ns_pid if status.ns_pid else [pid]
     assert (
-        pid == status.ns_pid[0]
+        pid == ns_pid[0]
     ), "PID from status should have been the same as the given PID"
     # Assuming only 1 level of PID NS.
     # Then ns_pid[0] is for the root PID NS
     # and  ns_pid[1] is for the child PID NS
-    data.procs[pid].pid_in_ns = status.ns_pid[1] if len(status.ns_pid) == 2 else pid
+    data.procs[pid].pid_in_ns = ns_pid[1] if len(ns_pid) == 2 else pid
     data.procs[pid].pid_in_host = pid
 
     data.procs[pid].uid_effective = status.uid.effective
@@ -761,9 +766,13 @@ def extract_from_status(data: ProcFsData, pid: int, should_print=False):
     print(data.procs[pid].cap_bnd)
     print(data.procs[pid].cap_amb)
 
-def get_host_pid(task) -> int:
+def get_host_pid(task, fallback_pid: int = None) -> int:
     ns_pids = task.get_status(set()).ns_pid
-
+    if not ns_pids:
+        if fallback_pid is not None:
+            ns_pids = [fallback_pid]
+        else:
+            raise IndexError("ns_pid is empty and no fallback_pid provided")
     host_pid = ns_pids[0]
     # Out script only supports only 1 level of PID namespaces for now.
     # So that is:
@@ -783,13 +792,13 @@ ignore_process_names = {
 }
 
 def extract_all_process_data(data: ProcFsData, should_print=False):
-    processes = pfs_obj.get_processes()
-
-    for idx, task in enumerate(processes):
+    proc_pids = sorted(int(d) for d in os.listdir('/proc') if d.isdigit())
+    for idx, pid in enumerate(proc_pids):
         try:
-            host_pid = get_host_pid(task)
+            task = pfs_obj.get_task(pid)
+            host_pid = get_host_pid(task, fallback_pid=pid)
         except Exception as e:
-            print(f"\033[91mError getting host PID: {e}\033[0m")
+            print(f"\033[91mError getting host PID for {pid}: {e}\033[0m")
             continue
         p = psutil.Process(host_pid)
         if p.name() in ignore_process_names:
@@ -1116,9 +1125,16 @@ def extract_all_namespaces(data_main, should_print=False):
     def create_pid_ns_generic_data(pid):
         status = read_status_file(pid)
         ns_pid = status.ns_pid
+        if not ns_pid:
+            # gVisor's virtual /proc omits NSpid; treat as single-level PID NS
+            ns_pid = [pid]
         assert (pid == ns_pid[0])
-        child_ns_id, parent_ns_id = getNSInfo(pid, "pid")
-        if parent_ns_id == -1:
+        try:
+            child_ns_id, parent_ns_id = getNSInfo(pid, "pid")
+        except OSError:
+            # gVisor's virtual kernel doesn't support NS_GET_PARENT ioctl
+            return [(ns_pid[0], -1)]
+        if parent_ns_id == -1 or len(ns_pid) < 2:
             return [
             (ns_pid[0], parent_ns_id)
         ]
@@ -1132,10 +1148,17 @@ def extract_all_namespaces(data_main, should_print=False):
     def create_mnt_ns_generic_data(pid):
         pass
 
-    # get_processes returns a list of tasks
-    processes = pfs_obj.get_processes()
-    for task in processes:
+    # Enumerate PIDs from /proc directly so we always have the numeric PID
+    # available as fallback (gVisor's virtual /proc omits NSpid from status).
+    proc_pids = sorted(int(d) for d in os.listdir('/proc') if d.isdigit())
+    for pid in proc_pids:
+        try:
+            task = pfs_obj.get_task(pid)
+        except Exception:
+            continue
         ns_pids = task.get_status(set()).ns_pid
+        if not ns_pids:
+            ns_pids = [pid]
         host_pid = ns_pids[0]
         # Out script only supports only 1 level of PID namespaces for now.
         # So that is:

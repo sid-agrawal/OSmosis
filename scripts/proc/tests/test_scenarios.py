@@ -803,3 +803,65 @@ def test_fuse_mnt_namespace_space_modeling(scenario_graph):
                        and G.nodes.get(v, {}).get("type") == "RESOURCE_SPACE"
                        and "MNT" in G.nodes[v].get("data", "")}
         assert len(held_spaces) >= 1, f"{pd} should hold at least one MNT resource space"
+
+
+# ---------------------------------------------------------------------------
+# gVisor two-level vm_model extraction (host + guest)
+# ---------------------------------------------------------------------------
+
+# Check that the gVisor vm-model test container image and setup are available.
+# Uses ubuntu:24.04 (not ubuntu:22.04) because pypfs requires glibc 2.38.
+_gvisor_vm_model_setup = os.path.exists(
+    os.path.join(PROC_DIR, "test_configs", "gvisor-vm-model", "setup.sh"))
+_vm_model_py = os.path.join(PROC_DIR, "vm_model.py")
+
+
+@pytest.mark.skipif(not gvisor_available, reason="runsc not installed")
+@pytest.mark.skipif(not _gvisor_vm_model_setup, reason="gvisor-vm-model setup missing")
+def test_gvisor_vm_model_guest_csv_nonempty(tmp_path):
+    """Two-level gVisor extraction: guest.csv must contain at least the sleep process."""
+    import subprocess, csv
+
+    # Start the container via the standard setup script
+    setup = os.path.join(PROC_DIR, "test_configs", "gvisor-vm-model", "setup.sh")
+    result = subprocess.run(["bash", setup], capture_output=True, text=True)
+    if result.returncode != 0:
+        skip_line = next((l for l in result.stderr.splitlines() if l.startswith("SKIP=")), None)
+        if skip_line:
+            pytest.skip(skip_line[len("SKIP="):])
+        raise subprocess.CalledProcessError(result.returncode, ["bash", setup],
+                                            result.stdout, result.stderr)
+
+    out_dir = str(tmp_path / "gvisor-vm")
+    os.makedirs(out_dir)
+    guest_csv = os.path.join(out_dir, "guest.csv")
+    host_csv  = os.path.join(out_dir, "host.csv")
+    g2h_csv   = os.path.join(out_dir, "g2h.csv")
+
+    try:
+        subprocess.check_call(
+            ["sudo", "-E", "python3", _vm_model_py,
+             "--vmm", "gvisor", "--container", "osmosis-gvisor-vm-test"],
+            cwd=PROC_DIR, env=os.environ.copy())
+
+        # vm_model.py writes into ./outputs/gvisor/<timestamp>/; find the latest
+        import glob
+        latest = sorted(glob.glob(os.path.join(PROC_DIR, "outputs", "gvisor", "*")))[-1]
+        guest_csv = os.path.join(latest, "guest.csv")
+        g2h_csv   = os.path.join(latest, "g2h_file.csv")
+
+        assert os.path.exists(guest_csv), "guest.csv not produced"
+        with open(guest_csv) as f:
+            rows = list(csv.reader(f))
+        assert len(rows) > 1, "guest.csv is empty"
+
+        # At least one PD node (from the sleep process inside the sandbox)
+        pd_rows = [r for r in rows if len(r) > 0 and r[0] == "PD"]
+        assert len(pd_rows) >= 1, "No PD nodes in guest.csv"
+
+        # g2h.csv should exist (may be empty in KVM mode if no MOs match)
+        assert os.path.exists(g2h_csv), "g2h_file.csv not produced"
+
+    finally:
+        teardown = os.path.join(PROC_DIR, "test_configs", "gvisor-vm-model", "teardown.sh")
+        subprocess.run(["bash", teardown], capture_output=True)
