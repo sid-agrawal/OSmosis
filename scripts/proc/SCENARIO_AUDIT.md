@@ -51,6 +51,27 @@ incorrect PAGE_QUOTA sharing. Always use: `sudo proc_model.py --pids ...`
 - **gVisor Sentry appears as `exe`**: gVisor's Sentry binary is memfd-mapped; `/proc/comm`
   shows `exe` not `runsc`. Fixed via `_meaningful_process_name()` in proc_model.py: falls back
   to `os.path.basename(cmdline[0])` = `runsc-sandbox` when name is `exe`.
+- **gVisor shim is `containerd-shim-runc-v2` not `containerd-shim-runsc-v2`**: when registered
+  via `daemon.json` as a plain OCI runtime (`"path": "/usr/bin/runsc"`), Docker uses the generic
+  runc-v2 shim for gVisor containers, not a gVisor-specific shim. The shim calls `runsc` as its
+  OCI runtime binary. This affects TCB identification: searching for `containerd-shim-runsc-v2`
+  will miss the shim.
+- **`--with-ancestors` only walks one level up from the target PID**: it finds the immediate
+  parent (the shim), but not containerd or dockerd above it. `common_ancestors(app, kvs)` returns
+  only `{Host Linux}` for gVisor, missing the containerd and dockerd that are the real shared
+  principals above both Sentries. **TODO: extend `--with-ancestors` to walk the full process
+  ancestry chain until a known daemon root (containerd, dockerd, systemd) is reached.**
+- **gVisor mutual hold edges via TCP**: the two Sentries show mutual HOLD edges (each holds the
+  other) because Lintool detects a TCP connection between them. This appears even when the
+  workloads are just `sleep 3600` — the connection may be from Docker's networking setup.
+- **gVisor running in ptrace mode by default**: `daemon.json` `runsc` runtime has no
+  `--platform` flag → ptrace mode. A `runsc-kvm` entry with `runtimeArgs: ["--platform=kvm"]`
+  has been added. KVM mode confirmed via 36 kvm-vcpu fds + `anon_inode:kvm-vm` in maps.
+  `vm_boundary=True` is correct in both modes; KVM mode backs it with hardware virtualization.
+- **pagemap reader hangs on gVisor KVM Sentry**: the KVM Sentry maps a ~7.5 TB reserved
+  region (`---p`, no permissions) to back guest physical memory. `proc_model.py`'s pagemap
+  reader iterates every 4 KB page (~2 billion entries), making extraction take ~20 hours.
+  **TODO (code):** skip `---p` VMA regions in the pagemap reader. See Scenario 12 for details.
 
 ---
 
@@ -634,6 +655,10 @@ a gVisor Sentry (user-space kernel process). From the host, the PD is the Sentry
 - AppArmor: `unconfined` (no gVisor-specific AppArmor profile)
 - seccomp_mode: 2 (Sentry IS seccomp-filtered)
 - Namespaces: each Sentry gets its own MNT, IPC, NET namespaces (unlike Kata: IPC is isolated!)
+- **Platform: ptrace mode** — cmdline has no `--platform=kvm`; Sentry has no open `/dev/kvm` fd.
+  Running KVM mode requires adding `--platform=kvm` to the runtime args in `daemon.json`.
+- **Shim: `containerd-shim-runc-v2`** (not `containerd-shim-runsc-v2`). Our `daemon.json`
+  registers runsc as a plain OCI runtime; Docker uses the generic shim for all OCI runtimes.
 
 **Code changes made:**
 1. `proc_model.py`: Added `_meaningful_process_name()` — uses `cmdline[0]` when `/proc/comm`
@@ -642,13 +667,26 @@ a gVisor Sentry (user-space kernel process). From the host, the PD is the Sentry
 3. `procfs_data.py`: Added `is_gvisor_sentry` branch (seccomp=2 + name contains "runsc")
    → `allowed_syscalls=[]`, same treatment as docker-default containers
 
-**Queries and results:**
+**Queries and results (ptrace mode):**
 ```
-Layer 1 – PDs
-  PD_1: Host Linux
-  PD_N: runsc-sandbox (app Sentry)
-  PD_M: runsc-sandbox (kvs Sentry)
-  Only 3 PDs — in-sandbox workloads opaque to host /proc
+Layer 1 – PDs (--with-ancestors, one level up)
+  PD_1:   Host Linux
+  PD_N:   runsc-sandbox (app Sentry)           ← our app PD
+  PD_M:   runsc-sandbox (kvs Sentry)           ← our kvs PD
+  PD_P:   containerd-shim-runc-v2 (app shim)  ← added by --with-ancestors
+  PD_Q:   containerd-shim-runc-v2 (kvs shim)  ← added by --with-ancestors
+  NOTE: containerd and dockerd above the shims are NOT captured (ancestor walk stops at depth 1)
+  In-sandbox workloads opaque to host /proc
+
+Layer 1 – TCB (controlled_by app Sentry)
+  Host Linux
+  containerd-shim-runc-v2 (app shim)
+  containerd-shim-runc-v2 (kvs shim)  ← cross-hold via TCP between siblings
+  kvs runsc-sandbox                    ← mutual hold via TCP connection between Sentries
+
+Layer 1 – common_ancestors(app, kvs)
+  Host Linux   ← only because containerd/dockerd not extracted
+  TODO: full chain would be: Host Linux → dockerd → containerd → shim → Sentry
 
 Layer 3 – Resource Spaces (siblings)
   MNT: 0 shared    ← separate overlay per Sentry ✓
@@ -656,7 +694,7 @@ Layer 3 – Resource Spaces (siblings)
   NET: 0 shared    ← gVisor has own netstack per sandbox ✓
   PAGE_QUOTA: 0    ← per-container cgroup ✓
 
-Layer 5 – isolation_layers
+Layer 5 – isolation_layers (ptrace mode — same expected for KVM mode)
   different_mnt_ns:          ✓
   different_ipc_ns:          ✓  ← novel vs Kata (False)
   different_net_ns:          ✓
@@ -674,10 +712,45 @@ Layer 5 – isolation_layers
 | vm_boundary | ✓ | ✓ | ✓ |
 | MNT/IPC/NET/cgroup all isolated | all ✓ | all ✓ | ✓ |
 | gVisor scores 5/7 (highest) | 5/7 | 5/7 | ✓ |
+| gVisor KVM mode also scores 5/7 | 5/7 | analytical (not extracted — see below) | ✓* |
 
 **Key insight for paper:** gVisor combines full namespace isolation (4/7 like Docker) with
 a VM-like boundary (like Kata), scoring 5/7. The distinguishing dimension vs Kata is IPC:
 gVisor Sentries get separate IPC namespaces; Kata QEMU processes share the host IPC.
+
+**KVM mode extraction attempt (2026-05-03):**
+
+Configured `runsc-kvm` runtime in `/etc/docker/daemon.json` (`runtimeArgs: ["--platform=kvm"]`).
+Launched two containers with `--runtime=runsc-kvm`. Confirmed KVM mode via:
+- 36 kvm-vcpu fds visible in `/proc/<sentry_pid>/fd/` (vs 0 in ptrace mode)
+- `anon_inode:kvm-vm` and `anon_inode:kvm-vcpu:N` in `/proc/<sentry>/maps`
+
+Ran `proc_model.py --pids APP,KVS --csv /tmp/gvisor_kvm.csv`. Process ran at 99.9% CPU for
+>44 minutes without completing. Root cause: the gVisor KVM Sentry maps a ~7.5 TB virtual
+address space reservation (`c559000000-79ceb2000000 ---p`) to back the guest physical memory.
+The pagemap reader in `proc_model.py` iterates every 4 KB page in this region (~2 billion
+entries) via read/lseek, which would take ~20 hours at observed throughput.
+
+**proc_model.py bug found:** The pagemap reader should skip regions with `---p` permissions
+(reserved/guard regions with no read/write/exec). For a KVM gVisor Sentry, these regions
+constitute the bulk of the virtual address space and contain no meaningful page residency data.
+**TODO (code):** In `procfs_data.py` or wherever pagemap is read, skip VMA regions where
+permissions are `---` (no read, no write, no exec).
+
+**Analytical result for KVM mode (5/7):** The `isolation_layers()` dimensions are all
+determined by Docker's namespace isolation and the process name check for `vm_boundary`:
+- MNT/IPC/NET/cgroup: these come from Docker's container setup, unchanged by `--platform=kvm`
+- vm_boundary: `"runsc"` is in `_HYPERVISOR_NAMES` regardless of ptrace vs KVM mode
+- MAC/syscall: gVisor Sentries are `unconfined` and get empty allowed_syscalls in both modes
+Therefore KVM mode scores 5/7, identical to ptrace mode. The difference is that in KVM mode
+`vm_boundary` is backed by hardware virtualization rather than software ptrace interception.
+
+**Open items:**
+- **TODO (code):** `--with-ancestors` should walk the full process tree to a known daemon root
+  (containerd, dockerd, systemd), not just one level. This would make `common_ancestors(app, kvs)`
+  correctly show containerd and dockerd as shared principals above both Sentries.
+- **TODO (code):** pagemap reader must skip `---p` VMA regions; gVisor KVM maps ~7.5 TB of
+  reserved virtual address space that cannot be iterated page-by-page in reasonable time.
 
 ---
 
