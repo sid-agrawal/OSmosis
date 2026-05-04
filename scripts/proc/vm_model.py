@@ -450,42 +450,53 @@ def _find_pfs_lib() -> str:
     raise FileNotFoundError("pypfs library not found; set PYTHONPATH or place it under ~/proc/pfs/lib")
 
 
-def _try_kata_g2h_mapping(container_name: str, guest_file: str,
-                           host_file: str, g2h_file: str):
-    """
-    Attempt GPA→HPA translation using kata's QEMU QMP socket.
-    QMP socket is at /run/vc/vm/<sandbox_id>/qmp.sock.
-    Writes empty g2h_file if QMP is not accessible.
-    TODO: implement full translation (mirrors get_qemu_vm_state logic).
-    """
-    import glob
-    qmp_socks = glob.glob("/run/vc/vm/*/qmp.sock")
-    mapping_graph = gm.ModelGraph(id_offset=10000*10000)
-    mapping_graph.to_csv(g2h_file, only_edge=True)
-    print(f"[kata] GPA→HPA mapping not yet implemented; empty g2h written to {g2h_file}")
-    print(f"[kata] TODO: connect to QMP socket {qmp_socks} for full translation")
+# ---------------------------------------------------------------------------
+# Shared CSV helpers
+# ---------------------------------------------------------------------------
+
+def _build_gpa_to_mo(guest_file: str) -> dict:
+    """Parse guest CSV: return mapping of GPA (int) → guest MO node ID (str)."""
+    gPA_to_MO = {}
+    with open(guest_file, mode='r', newline='') as f:
+        for row in csv.reader(f):
+            if len(row) < 2:
+                continue
+            if row[0] == "RESOURCE" and row[1].startswith("MO_") and row[-1]:
+                extra = json.loads(row[-1])
+                gpa = int(extra["pa"], 16)
+                if gpa in gPA_to_MO:
+                    raise KeyError(f"Duplicate GPA key 0x{gpa:x} in guest CSV")
+                gPA_to_MO[gpa] = row[1]
+    return gPA_to_MO
 
 
-def get_kata_vm_state(container_name: str, guest_file: str,
-                      host_file: str, g2h_file: str):
-    """
-    Extract two-level model state for a running kata container.
-    - guest_file: proc_model output from INSIDE the kata VM (via docker exec)
-    - host_file:  proc_model output of the QEMU process on the host
-    - g2h_file:   GPA→HPA mapping edges (via kata's QMP socket, if accessible)
-    """
+def _build_host_maps(host_file: str) -> tuple:
+    """Parse host CSV: return (hPA_to_MO, hVA_to_VMR) lookup dicts."""
+    hPA_to_MO = {}
+    hVA_to_VMR = {}
+    with open(host_file, mode='r', newline='') as f:
+        for row in csv.reader(f):
+            if len(row) < 2 or row[0] != "RESOURCE" or not row[-1]:
+                continue
+            extra = json.loads(row[-1])
+            if row[1].startswith("MO_") and extra.get("num_pages", "0") != "0":
+                hpa = int(extra["pa"], 16)
+                if hpa in hPA_to_MO:
+                    raise KeyError(f"Duplicate HPA key 0x{hpa:x} in host CSV")
+                hPA_to_MO[hpa] = row[1]
+            elif row[1].startswith("VMR_") and extra.get("num_pages", "0") != "0":
+                hva = int(extra["va"], 16)
+                if hva in hVA_to_VMR:
+                    raise KeyError(f"Duplicate HVA key 0x{hva:x} in host CSV")
+                hVA_to_VMR[hva] = row[1]
+    print(f"hPA_to_MO has {len(hPA_to_MO)} entries")
+    print(f"hVA_to_VMR has {len(hVA_to_VMR)} entries")
+    return hPA_to_MO, hVA_to_VMR
+
+
+def _push_and_run_proc_model(container_name: str, guest_file: str):
+    """Push proc_model.py + pypfs into a container, run it, copy guest CSV out."""
     import subprocess
-
-    # 1. Get the QEMU PID on the host
-    inspect = json.loads(
-        subprocess.check_output(["docker", "inspect", container_name], text=True))
-    qemu_pid = inspect[0]["State"]["Pid"]
-    assert qemu_pid != 0, "kata container QEMU PID is 0 — container not running?"
-
-    # 2. Extract host QEMU state (reuses existing get_host_state)
-    get_host_state(qemu_pid, host_file=host_file)
-
-    # 3. Push pypfs + proc_model.py into the container
     pfs_lib = _find_pfs_lib()
     proc_dir = os.path.dirname(os.path.abspath(__file__))
     subprocess.check_call(
@@ -499,8 +510,6 @@ def get_kata_vm_state(container_name: str, guest_file: str,
         if os.path.exists(src):
             subprocess.check_call(["docker", "cp", src,
                                    f"{container_name}:/tmp/lintool/{f}"])
-
-    # 4. Run proc_model.py inside the kata VM
     subprocess.check_call([
         "docker", "exec",
         "-e", "PYTHONPATH=/tmp/lintool/pfs/lib",
@@ -511,8 +520,208 @@ def get_kata_vm_state(container_name: str, guest_file: str,
     subprocess.check_call(
         ["docker", "cp", f"{container_name}:/tmp/guest.csv", guest_file])
 
-    # 5. Memory address translation via QMP (optional)
+
+# ---------------------------------------------------------------------------
+# QMP client helpers (for Kata)
+# ---------------------------------------------------------------------------
+
+def _qmp_connect(sock_path: str):
+    """Open QMP Unix socket, perform capabilities handshake, return connected socket."""
+    import socket as _socket
+    s = _socket.socket(_socket.AF_UNIX, _socket.SOCK_STREAM)
+    s.connect(sock_path)
+    s.settimeout(10.0)
+    greeting = json.loads(s.recv(4096))
+    assert "QMP" in greeting, f"Unexpected QMP greeting: {greeting}"
+    s.sendall(b'{"execute": "qmp_capabilities"}\n')
+    json.loads(s.recv(4096))  # expect {"return": {}}
+    return s
+
+
+def _qmp_hmp_command(s, cmd: str) -> str:
+    """Send a Human Monitor Protocol (HMP) command via QMP; return the text response."""
+    payload = json.dumps({
+        "execute": "human-monitor-command",
+        "arguments": {"command-line": cmd}
+    }) + "\n"
+    s.sendall(payload.encode())
+    return json.loads(s.recv(4096)).get("return", "")
+
+
+def _qmp_translate_gpa(s, gpa: int) -> tuple:
+    """Translate GPA → (HPA, HVA) via QMP gpa2hpa/gpa2hva. Returns (None, None) on failure."""
+    def _parse(text):
+        for ln in text.splitlines():
+            if f"address for 0x{gpa:x}" in ln:
+                return int(ln.split()[-1], 16)
+        return None
+    hpa = _parse(_qmp_hmp_command(s, f"gpa2hpa 0x{gpa:x}"))
+    hva = _parse(_qmp_hmp_command(s, f"gpa2hva 0x{gpa:x}"))
+    return hpa, hva
+
+
+def _kata_qmp_sock(container_name: str) -> str | None:
+    """Return the QMP socket path for the kata container, or None if not found."""
+    import subprocess, glob
+    full_id = subprocess.check_output(
+        ["docker", "inspect", "--format", "{{.Id}}", container_name],
+        text=True).strip()
+    direct = f"/run/vc/vm/{full_id}/qmp.sock"
+    if os.path.exists(direct):
+        return direct
+    for sock in glob.glob("/run/vc/vm/*/qmp.sock"):
+        sandbox_id = os.path.basename(os.path.dirname(sock))
+        if full_id.startswith(sandbox_id) or sandbox_id.startswith(full_id[:12]):
+            return sock
+    return None
+
+
+def _try_kata_g2h_mapping(container_name: str, guest_file: str,
+                           host_file: str, g2h_file: str):
+    """
+    GPA→HPA translation using kata's QEMU QMP socket at /run/vc/vm/<sandbox_id>/qmp.sock.
+    Writes empty g2h_file if QMP socket is not accessible.
+    """
+    mapping_graph = gm.ModelGraph(id_offset=10000*10000)
+
+    sock_path = _kata_qmp_sock(container_name)
+    if sock_path is None:
+        print(f"[kata] QMP socket not found for container '{container_name}'; writing empty g2h")
+        mapping_graph.to_csv(g2h_file, only_edge=True)
+        return
+
+    gPA_to_MO = _build_gpa_to_mo(guest_file)
+    hPA_to_MO, hVA_to_VMR = _build_host_maps(host_file)
+
+    print(f"[kata] Connecting to QMP socket: {sock_path}")
+    s = _qmp_connect(sock_path)
+    start_time = time.time()
+    matched = 0
+    for gpa, g_mo_id in gPA_to_MO.items():
+        hpa, hva = _qmp_translate_gpa(s, gpa)
+        host_mo_id  = hPA_to_MO.get(hpa)  if hpa is not None else None
+        host_vmr_id = hVA_to_VMR.get(hva) if hva is not None else None
+        if host_mo_id:
+            mapping_graph.add_map_edge_raw(g_mo_id, host_mo_id,  "QEMU_PD")
+            matched += 1
+        if host_vmr_id:
+            mapping_graph.add_map_edge_raw(g_mo_id, host_vmr_id, "QEMU_PD")
+    s.close()
+    print(f"[kata] QMP translation: {time.time() - start_time:.1f}s; "
+          f"{matched}/{len(gPA_to_MO)} GPAs matched to host MOs")
+    mapping_graph.to_csv(g2h_file, only_edge=True)
+
+
+def get_kata_vm_state(container_name: str, guest_file: str,
+                      host_file: str, g2h_file: str):
+    """
+    Extract two-level model state for a running kata container.
+    - guest_file: proc_model output from INSIDE the kata VM (via docker exec)
+    - host_file:  proc_model output of the QEMU process on the host
+    - g2h_file:   GPA→HPA mapping edges via kata's QMP socket
+    """
+    import subprocess
+
+    # 1. Get the QEMU PID on the host
+    inspect = json.loads(
+        subprocess.check_output(["docker", "inspect", container_name], text=True))
+    qemu_pid = inspect[0]["State"]["Pid"]
+    assert qemu_pid != 0, "kata container QEMU PID is 0 — container not running?"
+
+    # 2. Extract host QEMU state
+    get_host_state(qemu_pid, host_file=host_file)
+
+    # 3. Push proc_model.py into the kata VM and run it
+    _push_and_run_proc_model(container_name, guest_file)
+
+    # 4. Memory address translation via QMP
     _try_kata_g2h_mapping(container_name, guest_file, host_file, g2h_file)
+
+
+# ---------------------------------------------------------------------------
+# gVisor helpers
+# ---------------------------------------------------------------------------
+
+def _gvisor_is_kvm_mode(sentry_pid: int) -> bool:
+    """Return True if the gVisor Sentry is running in KVM mode (has kvm-vm fd)."""
+    with open(f"/proc/{sentry_pid}/maps") as f:
+        return any("anon_inode:kvm-vm" in line for line in f)
+
+
+def _gvisor_memfd_base(sentry_pid: int) -> int:
+    """Return the host VA of the start of memfd:runsc-memory in the Sentry's address space."""
+    with open(f"/proc/{sentry_pid}/maps") as f:
+        for line in f:
+            if "/memfd:runsc-memory" in line:
+                return int(line.split("-")[0], 16)
+    raise RuntimeError(f"memfd:runsc-memory not found in /proc/{sentry_pid}/maps")
+
+
+def _hva_to_hpa(pid: int, hva: int):
+    """Translate a host virtual address to a host physical address via /proc/pid/pagemap."""
+    from read_pagemap import PAMap
+    try:
+        return PAMap(pid=str(pid)).pa(hva)
+    except Exception:
+        return None
+
+
+def get_gvisor_vm_state(container_name: str, guest_file: str,
+                         host_file: str, g2h_file: str):
+    """
+    Extract two-level model state for a running gVisor container.
+
+    gVisor backs guest physical memory with a single memfd:runsc-memory mapping.
+    Translation is arithmetic: host_VA = memfd_base_VA + guest_PA. No QMP needed.
+
+    - guest_file: proc_model output from INSIDE the gVisor sandbox (via docker exec)
+    - host_file:  proc_model output of the Sentry process on the host
+    - g2h_file:   bridge MAP edges from guest MOs to host MOs/VMRs
+    """
+    import subprocess
+
+    # 1. Get the Sentry PID
+    sentry_pid = int(subprocess.check_output(
+        ["docker", "inspect", "--format", "{{.State.Pid}}", container_name],
+        text=True).strip())
+    assert sentry_pid != 0, "gVisor Sentry PID is 0 — container not running?"
+    print(f"[gVisor] Sentry PID: {sentry_pid}")
+
+    # 2. Extract host Sentry state
+    get_host_state(sentry_pid, host_file=host_file)
+
+    # 3. Push proc_model.py into the gVisor sandbox and run it
+    _push_and_run_proc_model(container_name, guest_file)
+
+    # 4. Parse both CSVs
+    gPA_to_MO = _build_gpa_to_mo(guest_file)
+    hPA_to_MO, hVA_to_VMR = _build_host_maps(host_file)
+
+    # 5. Bridge edges via memfd offset arithmetic
+    mapping_graph = gm.ModelGraph(id_offset=10000*10000)
+    memfd_base = _gvisor_memfd_base(sentry_pid)
+    kvm_mode = _gvisor_is_kvm_mode(sentry_pid)
+    mode_str = "KVM" if kvm_mode else "ptrace"
+    print(f"[gVisor] {mode_str} mode; memfd base VA: 0x{memfd_base:x}")
+
+    start_time = time.time()
+    for gpa, g_mo_id in gPA_to_MO.items():
+        hva = memfd_base + gpa
+        host_vmr_id = hVA_to_VMR.get(hva)
+        # Per-page MO matching via host pagemap (skip in KVM mode to avoid ---p hang
+        # if the pagemap fix is not yet applied, or if the Sentry maps huge regions)
+        host_mo_id = None
+        if not kvm_mode:
+            hpa = _hva_to_hpa(sentry_pid, hva)
+            host_mo_id = hPA_to_MO.get(hpa) if hpa is not None else None
+        if host_vmr_id:
+            mapping_graph.add_map_edge_raw(g_mo_id, host_vmr_id, "gVisor_Sentry")
+        if host_mo_id:
+            mapping_graph.add_map_edge_raw(g_mo_id, host_mo_id,  "gVisor_Sentry")
+
+    print(f"[gVisor] address translation took {time.time() - start_time:.1f}s "
+          f"({len(gPA_to_MO)} guest MOs)")
+    mapping_graph.to_csv(g2h_file, only_edge=True)
 
 
 def main():
@@ -542,15 +751,15 @@ def main():
     parser.add_argument(
         "--vmm",
         type=str,
-        choices=["qemu-x86", "cellulos", "kata"],
+        choices=["qemu-x86", "cellulos", "kata", "gvisor"],
         required=True,
-        help="Qemu, CellulOS(on Qemu), or kata as the VMM"
+        help="Qemu, CellulOS(on Qemu), Kata, or gVisor as the VMM"
     )
     parser.add_argument(
         "--container",
         type=str,
         default=None,
-        help="Container name for --vmm kata (e.g. osmosis-kata-app)"
+        help="Container name for --vmm kata/gvisor (e.g. osmosis-kata-app)"
     )
     parser.add_argument(
         "--clean",
@@ -600,6 +809,10 @@ def main():
         assert is_root(), "kata extraction requires root"
         assert args.container, "--container required for --vmm kata"
         get_kata_vm_state(args.container, guest_file, host_file, g2h_file)
+    elif args.vmm == "gvisor":
+        assert is_root(), "gVisor extraction requires root"
+        assert args.container, "--container required for --vmm gvisor"
+        get_gvisor_vm_state(args.container, guest_file, host_file, g2h_file)
     else:
         raise ValueError("Invalid VMM")
 

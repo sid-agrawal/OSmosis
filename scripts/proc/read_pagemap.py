@@ -457,6 +457,12 @@ def get_va_pa_mappings(pid, should_print = False):
             results.append(result_obj)
             continue
 
+        # Skip guard/reserved regions (---p): no pages are resident, and iterating
+        # their pagemap entries page-by-page can take hours for large regions
+        # (e.g. gVisor KVM Sentry maps ~7.5 TB of ---p for guest physical memory).
+        perms = split_line[1]
+        if perms.startswith("---"):
+            continue
 
         maps = m.pa_range(vaddr, vaend-vaddr)
         for mapping in maps:
