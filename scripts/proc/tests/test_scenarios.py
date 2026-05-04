@@ -865,3 +865,51 @@ def test_gvisor_vm_model_guest_csv_nonempty(tmp_path):
     finally:
         teardown = os.path.join(PROC_DIR, "test_configs", "gvisor-vm-model", "teardown.sh")
         subprocess.run(["bash", teardown], capture_output=True)
+
+
+# ---------------------------------------------------------------------------
+# Firecracker two-level vm_model extraction (host VMM + guest)
+# ---------------------------------------------------------------------------
+
+_FC_KERNEL   = "/usr/local/share/firecracker/vmlinux.bin"
+_FC_ROOTFS   = "/usr/local/share/firecracker/rootfs-noble.ext4"
+_fc_vm_model_available = (
+    firecracker_available
+    and os.path.exists(_FC_KERNEL)
+    and os.path.exists(_FC_ROOTFS)
+)
+
+
+@pytest.mark.skipif(not firecracker_available, reason="firecracker not installed")
+@pytest.mark.skipif(not _fc_vm_model_available,
+                    reason="FC kernel/rootfs-noble.ext4 not present")
+def test_firecracker_vm_model_guest_csv_nonempty():
+    """Two-level FC extraction: guest.csv must contain PD nodes from inside the microVM."""
+    import subprocess, csv, glob
+
+    _vm_model_py = os.path.join(PROC_DIR, "vm_model.py")
+    subprocess.check_call(
+        ["sudo", "-E", "python3", _vm_model_py,
+         "--vmm", "firecracker",
+         "--kernel", _FC_KERNEL,
+         "--rootfs", _FC_ROOTFS],
+        cwd=PROC_DIR)
+
+    latest = sorted(glob.glob(os.path.join(PROC_DIR, "outputs", "firecracker", "*")))[-1]
+    guest_csv = os.path.join(latest, "guest.csv")
+    g2h_csv   = os.path.join(latest, "g2h_file.csv")
+
+    assert os.path.exists(guest_csv), "guest.csv not produced"
+    with open(guest_csv) as f:
+        rows = list(csv.reader(f))
+    assert len(rows) > 1, "guest.csv is empty"
+
+    pd_rows = [r for r in rows if len(r) > 0 and r[0] == "PD"]
+    assert len(pd_rows) >= 1, "No PD nodes in guest.csv"
+
+    # g2h CSV must exist and have MAP edges (FC always has pagemap access)
+    assert os.path.exists(g2h_csv), "g2h_file.csv not produced"
+    with open(g2h_csv) as f:
+        g2h_rows = list(csv.reader(f))
+    edge_rows = [r for r in g2h_rows if len(r) > 3 and r[3] == "FC_mmap"]
+    assert len(edge_rows) >= 1, "No FC_mmap edges in g2h_file.csv"

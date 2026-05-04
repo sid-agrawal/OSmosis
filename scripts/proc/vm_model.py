@@ -7,6 +7,9 @@ import time
 import json
 import argparse
 import traceback
+import socket
+import http.client
+import shutil as _shutil
 from enum import Enum
 from proc_model import extract_process_data, ProcFsData, MappingType
 from proc_utils import getPIDByName
@@ -481,7 +484,11 @@ def _build_host_maps(host_file: str) -> tuple:
     hVA_to_VMR = {}
     with open(host_file, mode='r', newline='') as f:
         for row in csv.reader(f):
-            if len(row) < 2 or row[0] != "RESOURCE" or not row[-1]:
+            if len(row) < 2 or row[0] != "RESOURCE":
+                continue
+            if not (row[1].startswith("MO_") or row[1].startswith("VMR_")):
+                continue
+            if not row[-1] or not row[-1].startswith("{"):
                 continue
             extra = json.loads(row[-1])
             if row[1].startswith("MO_") and extra.get("num_pages", "0") != "0":
@@ -597,18 +604,20 @@ def _push_and_run_proc_model(container_name: str, guest_file: str):
             # DEBIAN_FRONTEND=noninteractive: prevents tzdata interactive prompt.
             install_script = (
                 "export DEBIAN_FRONTEND=noninteractive && "
-                "apt-get update -qq && "
-                "apt-get install -y -qq curl && "
+                # apt-get update: retry and tolerate partial mirror failures (e.g. in gVisor)
+                "( apt-get -o Acquire::Retries=3 update -qq 2>/dev/null || true ) && "
+                # curl: best-effort only (fallback for pip bootstrap; ubuntu:24.04 has ensurepip)
+                "( apt-get install -y -qq --fix-missing curl 2>/dev/null || true ) && "
                 # Try system repos; if python3.X is not there, add deadsnakes PPA
-                f"( apt-get install -y -qq python{py_ver} 2>/dev/null || "
-                f"  ( apt-get install -y -qq software-properties-common && "
+                f"( apt-get install -y -qq --fix-missing python{py_ver} 2>/dev/null || "
+                f"  ( apt-get install -y -qq --fix-missing software-properties-common && "
                 f"    add-apt-repository -y ppa:deadsnakes/ppa && "
-                f"    apt-get update -qq && "
+                f"    ( apt-get -o Acquire::Retries=3 update -qq 2>/dev/null || true ) && "
                 f"    apt-get install -y -qq python{py_ver} ) ) && "
                 # Upgrade libstdc++ if the toolchain PPA is reachable (best-effort)
                 "( apt-get install -y -qq software-properties-common 2>/dev/null && "
                 "  add-apt-repository -y ppa:ubuntu-toolchain-r/test 2>/dev/null && "
-                "  apt-get update -qq 2>/dev/null && "
+                "  ( apt-get -o Acquire::Retries=3 update -qq 2>/dev/null || true ) && "
                 "  apt-get install -y -qq libstdc++6 2>/dev/null ) || true && "
                 # Bootstrap pip if not present, then install packages to isolated dir
                 f"( python{py_ver} -m ensurepip --upgrade 2>/dev/null || "
@@ -842,6 +851,175 @@ def get_gvisor_vm_state(container_name: str, guest_file: str,
     mapping_graph.to_csv(g2h_file, only_edge=True)
 
 
+# ---------------------------------------------------------------------------
+# Firecracker two-level extraction
+# ---------------------------------------------------------------------------
+
+class _UnixSocketHTTP(http.client.HTTPConnection):
+    """HTTPConnection that connects over a Unix-domain socket."""
+    def __init__(self, sock_path: str):
+        super().__init__("localhost")
+        self._sock_path = sock_path
+
+    def connect(self):
+        s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        s.connect(self._sock_path)
+        self.sock = s
+
+
+def _fc_api_put(sock_path: str, path: str, body: dict) -> dict:
+    """PUT a JSON body to Firecracker's REST API via a unix socket."""
+    conn = _UnixSocketHTTP(sock_path)
+    payload = json.dumps(body).encode()
+    conn.request("PUT", path, body=payload,
+                 headers={"Content-Type": "application/json",
+                          "Accept": "application/json"})
+    resp = conn.getresponse()
+    text = resp.read().decode()
+    if resp.status not in (200, 204):
+        raise RuntimeError(f"FC API PUT {path} → {resp.status}: {text}")
+    return json.loads(text) if text.strip() else {}
+
+
+def _fc_guest_ram_base(fc_pid: int, mem_mib: int) -> int:
+    """Find host VA of guest physical address 0 inside a running FC process.
+
+    FC maps guest RAM as a single anonymous rw-p mmap of exactly mem_mib MiB.
+    In /proc/maps this appears as a 5-field line (no pathname) with inode 0.
+    """
+    target_size = mem_mib * 1024 * 1024
+    with open(f"/proc/{fc_pid}/maps") as f:
+        for line in f:
+            parts = line.split()
+            # Anonymous mappings have 5 fields: addr-range perms offset dev inode
+            if len(parts) != 5:
+                continue
+            start, end = [int(x, 16) for x in parts[0].split("-")]
+            perms, offset, inode = parts[1], parts[2], parts[4]
+            if (end - start == target_size and perms == "rw-p"
+                    and offset == "00000000" and inode == "0"):
+                return start
+    raise RuntimeError(
+        f"FC guest RAM ({mem_mib} MiB) anonymous mmap not found in "
+        f"/proc/{fc_pid}/maps")
+
+
+def get_firecracker_vm_state(
+    kernel: str, rootfs: str,
+    guest_file: str, host_file: str, g2h_file: str,
+    mem_mib: int = 256, vcpus: int = 2,
+    mount_point: str = "/mnt/fc-guest-extract",
+) -> None:
+    """
+    Two-level extraction for a Firecracker microVM.
+
+    Steps:
+      1. Launch FC via pexpect (pty = serial console).
+      2. Configure + boot via REST API.
+      3. Wait for login on serial console (--autologin root).
+      4. Extract host FC process state.
+      5. Run proc_model.py inside the guest via serial console.
+      6. Graceful shutdown; mount rootfs; extract guest.csv.
+      7. Build GPA→HPA bridge (anonymous mmap arithmetic).
+    """
+    import subprocess
+
+    sock_path = f"/tmp/osmosis-fc-{os.getpid()}.sock"
+
+    # --- Step 1: launch FC (pty becomes serial console) ---
+    fc = pexpect.spawn(
+        f"firecracker --api-sock {sock_path}",
+        timeout=60, encoding="utf-8",
+        codec_errors="replace",
+    )
+    time.sleep(0.3)  # let FC open the API socket
+
+    # --- Step 2: configure via REST API ---
+    _fc_api_put(sock_path, "/boot-source", {
+        "kernel_image_path": kernel,
+        "boot_args": (
+            "console=ttyS0 reboot=k panic=1 pci=off nomodules "
+            "root=/dev/vda rw"
+        ),
+    })
+    _fc_api_put(sock_path, "/machine-config",
+                {"vcpu_count": vcpus, "mem_size_mib": mem_mib})
+    _fc_api_put(sock_path, "/drives/rootfs", {
+        "drive_id": "rootfs",
+        "path_on_host": rootfs,
+        "is_root_device": True,
+        "is_read_only": False,
+    })
+    _fc_api_put(sock_path, "/actions", {"action_type": "InstanceStart"})
+
+    # --- Step 3: wait for login prompt (autologin or manual login) ---
+    idx = fc.expect(["# ", r"\$ ", "login:", "Password:"], timeout=60)
+    if idx == 2:  # "login:" prompt
+        fc.sendline("root")
+        idx2 = fc.expect(["# ", r"\$ ", "Password:"], timeout=15)
+        if idx2 == 2:  # password prompt
+            fc.sendline("root")
+            fc.expect(["# ", r"\$ "], timeout=15)
+    elif idx == 3:  # autologin sent password prompt directly
+        fc.sendline("root")
+        fc.expect(["# ", r"\$ "], timeout=15)
+
+    # --- Step 4: host FC state (while FC process is still alive) ---
+    fc_pid = fc.pid
+    print(f"[FC] VMM PID: {fc_pid}")
+    get_host_state(fc_pid, host_file=host_file)
+
+    # Read guest RAM base VA from host process maps while FC is still running
+    ram_base = _fc_guest_ram_base(fc_pid, mem_mib)
+    print(f"[FC] guest RAM base VA: 0x{ram_base:x}")
+
+    # --- Step 5: run proc_model.py inside the guest ---
+    guest_csv_in_vm = "/root/guest.csv"
+    py_cmd = "PYTHONPATH=/root/lintool-pkgs:/root/lintool/pfs/lib python3.12"
+    fc.sendline(
+        f"{py_cmd} /root/lintool/proc_model.py "
+        f"--os linux --csv {guest_csv_in_vm} -g --pid 0"
+    )
+    fc.expect("# ", timeout=300)
+
+    # --- Step 6: graceful shutdown, mount rootfs, extract CSV ---
+    fc.sendline("reboot")
+    try:
+        fc.expect(pexpect.EOF, timeout=20)
+    except pexpect.TIMEOUT:
+        fc.terminate(force=True)
+
+    os.makedirs(mount_point, exist_ok=True)
+    subprocess.check_call(
+        ["mount", "-o", "loop,rw", rootfs, mount_point])
+    try:
+        src = os.path.join(mount_point, guest_csv_in_vm.lstrip("/"))
+        _shutil.copy2(src, guest_file)
+    finally:
+        subprocess.check_call(["umount", mount_point])
+
+    # --- Step 7: GPA→HPA bridge via anonymous mmap arithmetic ---
+    gPA_to_MO = _build_gpa_to_mo(guest_file)
+    hPA_to_MO, hVA_to_VMR = _build_host_maps(host_file)
+
+    mapping_graph = gm.ModelGraph(id_offset=10000 * 10000)
+    start_time = time.time()
+    matched = 0
+    for gpa, g_mo_id in gPA_to_MO.items():
+        hva = ram_base + gpa
+        host_vmr_id = hVA_to_VMR.get(hva)
+        host_mo_id  = hPA_to_MO.get(_hva_to_hpa(fc_pid, hva))
+        if host_vmr_id:
+            mapping_graph.add_map_edge_raw(g_mo_id, host_vmr_id, "FC_mmap")
+            matched += 1
+        if host_mo_id:
+            mapping_graph.add_map_edge_raw(g_mo_id, host_mo_id, "FC_mmap")
+
+    print(f"[FC] address translation took {time.time()-start_time:.1f}s "
+          f"({matched}/{len(gPA_to_MO)} guest MOs matched)")
+    mapping_graph.to_csv(g2h_file, only_edge=True)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Extract the model state from the Qemu guest and merge it with the model state"
@@ -869,15 +1047,27 @@ def main():
     parser.add_argument(
         "--vmm",
         type=str,
-        choices=["qemu-x86", "cellulos", "kata", "gvisor"],
+        choices=["qemu-x86", "cellulos", "kata", "gvisor", "firecracker"],
         required=True,
-        help="Qemu, CellulOS(on Qemu), Kata, or gVisor as the VMM"
+        help="Qemu, CellulOS(on Qemu), Kata, gVisor, or Firecracker as the VMM"
     )
     parser.add_argument(
         "--container",
         type=str,
         default=None,
         help="Container name for --vmm kata/gvisor (e.g. osmosis-kata-app)"
+    )
+    parser.add_argument(
+        "--kernel",
+        type=str,
+        default="/usr/local/share/firecracker/vmlinux.bin",
+        help="Path to vmlinux kernel image (for --vmm firecracker)",
+    )
+    parser.add_argument(
+        "--rootfs",
+        type=str,
+        default="/usr/local/share/firecracker/rootfs-noble.ext4",
+        help="Path to ext4 rootfs image (for --vmm firecracker)",
     )
     parser.add_argument(
         "--clean",
@@ -931,6 +1121,15 @@ def main():
         assert is_root(), "gVisor extraction requires root"
         assert args.container, "--container required for --vmm gvisor"
         get_gvisor_vm_state(args.container, guest_file, host_file, g2h_file)
+    elif args.vmm == "firecracker":
+        assert is_root(), "Firecracker extraction requires root"
+        get_firecracker_vm_state(
+            kernel=args.kernel,
+            rootfs=args.rootfs,
+            guest_file=guest_file,
+            host_file=host_file,
+            g2h_file=g2h_file,
+        )
     else:
         raise ValueError("Invalid VMM")
 
