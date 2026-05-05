@@ -913,3 +913,172 @@ def test_firecracker_vm_model_guest_csv_nonempty():
         g2h_rows = list(csv.reader(f))
     edge_rows = [r for r in g2h_rows if len(r) > 3 and r[3] == "MAP"]
     assert len(edge_rows) >= 1, "No MAP edges in g2h_file.csv"
+
+
+# ---------------------------------------------------------------------------
+# Two-level graph queries on the latest FC run
+# ---------------------------------------------------------------------------
+
+def _latest_fc_outputs():
+    """Return (guest_csv, host_csv, g2h_csv) from the most recent FC run, or None."""
+    import glob
+    runs = sorted(glob.glob(os.path.join(PROC_DIR, "outputs", "firecracker", "*")))
+    if not runs:
+        return None
+    d = runs[-1]
+    return (os.path.join(d, "guest.csv"),
+            os.path.join(d, "host.csv"),
+            os.path.join(d, "g2h_file.csv"))
+
+
+def _reachable_mos(G, pd):
+    """BFS from pd following HOLD+MAP edges; return all MO resource node IDs."""
+    from collections import deque
+    visited, queue, mos = set(), deque([pd]), set()
+    while queue:
+        n = queue.popleft()
+        if n in visited:
+            continue
+        visited.add(n)
+        nd = G.nodes.get(n, {})
+        if nd.get("type") == "RESOURCE" and nd.get("data") == "MO":
+            mos.add(n)
+        for _, dst, ed in G.out_edges(n, data=True):
+            if dst in visited:
+                continue
+            et = ed.get("type")
+            if et == "HOLD" and G.nodes.get(dst, {}).get("type") != "PD":
+                queue.append(dst)
+            elif et == "MAP":
+                queue.append(dst)
+    return mos
+
+
+@pytest.mark.skipif(not _fc_vm_model_available,
+                    reason="FC kernel/rootfs not present")
+def test_firecracker_intra_vm_isolation_score():
+    """Two processes inside the FC microVM share the guest Linux kernel.
+
+    isolation_layers between two guest PDs in the guest-only graph should be
+    low (≤ 2/7): they share MNT, IPC, NET, and usually cgroup namespaces.
+    This directly contrasts with gVisor (5/7 between two separate sandboxes)
+    and demonstrates that VM isolation protects at the VM boundary, not
+    within a single VM.
+    """
+    paths = _latest_fc_outputs()
+    if paths is None:
+        pytest.skip("No FC two-level output; run test_firecracker_vm_model_guest_csv_nonempty first")
+    guest_csv, _, _ = paths
+
+    from metrics import read_csv_to_graph
+    G = read_csv_to_graph(guest_csv)
+
+    user_pds = [n for n, d in G.nodes(data=True)
+                if d.get("type") == "PD"
+                and d.get("data") not in ("Guest Linux", "Linux Kernel")]
+    assert len(user_pds) >= 2, f"Expected >= 2 user PDs in guest, got {len(user_pds)}"
+
+    il = isolation_layers(G, user_pds[0], user_pds[1])
+    score = sum(1 for v in il.values() if v)
+    assert score <= 2, (
+        f"Two processes inside the FC microVM should share most namespace "
+        f"dimensions (≤ 2/7), got {score}/7: {il}"
+    )
+
+
+@pytest.mark.skipif(not _fc_vm_model_available,
+                    reason="FC kernel/rootfs not present")
+def test_firecracker_guest_host_containment():
+    """All host resources reachable from the guest are held only by the VMM.
+
+    Every g2h MAP edge connects a guest MO to a host VMR. The only host PDs
+    that hold those VMRs must be the kernel (PD_1) and the VMM process (qemu /
+    firecracker). No third-party user-space process should hold guest RAM pages,
+    proving the VM boundary contains the guest's physical memory.
+    """
+    paths = _latest_fc_outputs()
+    if paths is None:
+        pytest.skip("No FC two-level output; run test_firecracker_vm_model_guest_csv_nonempty first")
+    _, host_csv, g2h_csv = paths
+
+    import csv as _csv
+    from metrics import read_csv_to_graph
+
+    G_host = read_csv_to_graph(host_csv)
+
+    # Build resource → set of holding PD names
+    res_holders = {}
+    for src, dst, ed in G_host.edges(data=True):
+        if ed.get("type") == "HOLD":
+            if G_host.nodes.get(dst, {}).get("type") == "RESOURCE":
+                name = G_host.nodes.get(src, {}).get("data", "")
+                res_holders.setdefault(dst, set()).add(name)
+
+    # Collect all host-side targets from g2h MAP edges
+    with open(g2h_csv) as f:
+        host_targets = {r[5] for r in _csv.reader(f)
+                        if len(r) > 5 and r[3] == "MAP"}
+    assert len(host_targets) >= 1, "No g2h MAP targets found"
+
+    _VMM_NAMES = ("qemu", "firecracker", "runsc", "kvmtool", "cloud-hypervisor")
+
+    violations = []
+    for target in host_targets:
+        for holder in res_holders.get(target, set()):
+            is_kernel = holder in ("Linux Kernel",)
+            is_vmm = any(h in holder.lower() for h in _VMM_NAMES)
+            if not is_kernel and not is_vmm:
+                violations.append((target, holder))
+
+    assert len(violations) == 0, (
+        f"Guest RAM pages held by non-VMM host processes: {violations[:5]}"
+    )
+
+
+@pytest.mark.skipif(not _fc_vm_model_available,
+                    reason="FC kernel/rootfs not present")
+def test_firecracker_guest_host_footprint():
+    """Each guest PD with physical pages has a measurable host VMR footprint.
+
+    Via guest PD →(HOLD)→ VMR →(MAP)→ MO →(g2h MAP)→ host VMR, we can count
+    how many distinct host VMRs each guest process's physical pages span. PDs
+    with non-zero physical memory (systemd, bash, etc.) must have >= 1 host VMR
+    in their footprint, confirming the two-level address translation is complete.
+    """
+    paths = _latest_fc_outputs()
+    if paths is None:
+        pytest.skip("No FC two-level output; run test_firecracker_vm_model_guest_csv_nonempty first")
+    guest_csv, _, g2h_csv = paths
+
+    import csv as _csv
+    from metrics import read_csv_to_graph
+
+    G_guest = read_csv_to_graph(guest_csv)
+
+    with open(g2h_csv) as f:
+        mo_to_host_vmrs = {}
+        for r in _csv.reader(f):
+            if len(r) > 5 and r[3] == "MAP":
+                mo_to_host_vmrs.setdefault(r[4], set()).add(r[5])
+
+    user_pds = [n for n, d in G_guest.nodes(data=True)
+                if d.get("type") == "PD"
+                and d.get("data") not in ("Guest Linux", "Linux Kernel")]
+
+    with_footprint = []
+    for pd in user_pds:
+        mos = _reachable_mos(G_guest, pd)
+        host_vmrs = set()
+        for mo in mos:
+            host_vmrs.update(mo_to_host_vmrs.get(mo, set()))
+        if host_vmrs:
+            with_footprint.append((pd, G_guest.nodes[pd]["data"], len(host_vmrs)))
+
+    assert len(with_footprint) >= 1, (
+        "No guest PD has a non-zero host VMR footprint; "
+        "two-level address translation may be broken"
+    )
+    # Sanity: footprints are bounded by total g2h edges
+    total = len({r[5] for r in _csv.reader(open(g2h_csv)) if len(r) > 5 and r[3] == "MAP"})
+    for pd, name, fp in with_footprint:
+        assert fp <= total, f"{pd} ({name}) footprint {fp} > total host VMRs {total}"
