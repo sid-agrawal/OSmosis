@@ -911,5 +911,5 @@ def test_firecracker_vm_model_guest_csv_nonempty():
     assert os.path.exists(g2h_csv), "g2h_file.csv not produced"
     with open(g2h_csv) as f:
         g2h_rows = list(csv.reader(f))
-    edge_rows = [r for r in g2h_rows if len(r) > 3 and r[3] == "FC_mmap"]
-    assert len(edge_rows) >= 1, "No FC_mmap edges in g2h_file.csv"
+    edge_rows = [r for r in g2h_rows if len(r) > 3 and r[3] == "MAP"]
+    assert len(edge_rows) >= 1, "No MAP edges in g2h_file.csv"
