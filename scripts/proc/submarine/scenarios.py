@@ -1357,6 +1357,71 @@ def build_webapp_3tier_graph():
     return graph
 
 
+def build_ml_tenant_hw_isolation_graph():
+    """Build a 4-tenant ML-inference-on-shared-hardware graph, combining ml_tenant's
+    memory/KV-cache isolation with cache_same_core_conflict's CPU/cache-set isolation.
+
+    Real-world grounding: co-located ML inference tenants on a shared GPU/CPU box face
+    both memory pressure (private KV-caches) and cache-timing side channels (Prime+Probe
+    across tenants sharing an L3 cache set or CPU core) simultaneously.
+
+    PDs: PD_t1..PD_t4 (four tenants, all pre-existing).
+
+    Resources:
+      FILE space: Res_model (shared, held by all four), Res_kv1..Res_kv4 (meant to become
+        each tenant's private cache; all four tenants hold all four caches at G0).
+      CPU space: CPU_1..CPU_4. All four tenants share CPU_1 at G0 (maximal collision).
+      CACHE_SET space: 4 sets (0-3). PHYS_PAGE space: 8 pages, modulo-4 mapped to cache
+        sets (page i and page i+4 map to the same set), matching cache_same_core_conflict's
+        pattern. At G0: PD_t1 holds page 1 (set 1), PD_t2 holds page 5 (also set 1 --
+        collision); PD_t3 holds page 2 (set 2), PD_t4 holds page 6 (also set 2 --
+        collision).
+
+    G_0: RSI:CPU = 1.0 for all 6 tenant pairs (shared CPU_1); TransitiveRSI:CACHE_SET = 1.0
+    for (t1,t2) and (t3,t4); all four tenants share all four KV-caches (GlobalRSI high).
+    """
+    graph = ModelGraph()
+
+    pd_ids = [NodeTransformations.add_pd_node(graph, f"PD_t{i}") for i in range(1, 5)]  # PD_1..PD_4
+
+    # FILE resources: shared model + 4 private-to-be KV-caches
+    file_space_id = NodeTransformations.add_resource_space(graph, ResourceType.FILE)
+    model_id = NodeTransformations.add_file_resource(graph, file_space_id, FileType.CONFIG, "ml_model.bin", 100_000_000)
+    cache_ids = [
+        NodeTransformations.add_file_resource(graph, file_space_id, FileType.TEMP, f"kv_cache_t{i}.bin", 20_000_000)
+        for i in range(1, 5)
+    ]
+    for pd in pd_ids:
+        for res in [model_id] + cache_ids:
+            EdgeTransformations.add_hold_edge(graph, {Permission.R, Permission.W}, pd, ResourceType.FILE, file_space_id, res)
+
+    # CPU resources: 4 cores, all tenants start on CPU_1
+    cpu_space_id = NodeTransformations.add_resource_space(graph, ResourceType.CPU)
+    cpu_ids = [NodeTransformations.add_cpu_resource(graph, cpu_space_id, i) for i in range(1, 5)]
+    for pd in pd_ids:
+        EdgeTransformations.add_hold_edge(graph, {Permission.R}, pd, ResourceType.CPU, cpu_space_id, cpu_ids[0])
+
+    # Cache-set + physical-page resources: modulo-4 mapping, 2 colliding pairs at G0
+    cache_set_space_id = NodeTransformations.add_resource_space(graph, ResourceType.CACHE_SET)
+    for i in range(4):
+        NodeTransformations.add_cache_set_resource(graph, cache_set_space_id, i)
+    phys_space_id = NodeTransformations.add_resource_space(graph, ResourceType.PHYS_PAGE)
+    for i in range(1, 9):
+        NodeTransformations.add_phys_page_resource(graph, phys_space_id, i)
+    for page_id in range(1, 9):
+        cache_set_id = page_id % 4
+        EdgeTransformations.add_map_edge(
+            graph, ResourceType.PHYS_PAGE, ResourceType.CACHE_SET,
+            phys_space_id, cache_set_space_id, page_id, cache_set_id
+        )
+    # PD_t1 -> page 1 (set 1); PD_t2 -> page 5 (set 1, collision)
+    # PD_t3 -> page 2 (set 2); PD_t4 -> page 6 (set 2, collision)
+    for pd, page in zip(pd_ids, [1, 5, 2, 6]):
+        EdgeTransformations.add_hold_edge(graph, {Permission.R, Permission.W}, pd, ResourceType.PHYS_PAGE, phys_space_id, page)
+
+    return graph
+
+
 def build_ml_tenant_graph():
     """G0 for ml_tenant: a single monolithic ML server PD holds the model and all KV-caches.
 
@@ -1704,6 +1769,52 @@ SCENARIOS = {
         ],
         allowed_multistep=[],
         graph_builder=build_ssh_discover_graph
+    ),
+
+    "ml_tenant_hw_isolation": Scenario(
+        name="Multi-Tenant ML Platform on Shared Hardware",
+        description=(
+            "Four ML-inference tenants sharing a GPU/CPU box, fully collided at G0: all four "
+            "share CPU_1, and two pairs collide on an L3 cache set. IsoSearch must "
+            "simultaneously separate CPU cores (RSI:CPU) and cache sets "
+            "(TransitiveRSI:CACHE_SET) for the two colliding tenant pairs. "
+            "NOTE: an earlier version of this scenario also required a GlobalRSI/KV-cache "
+            "sharing goal (co-hold-prohibited FILE resources), matching ml_tenant's memory "
+            "isolation story; that combination did not converge in beam search (0 solutions "
+            "through depth 20, beam width 24, ~4.5 min) even though the target state is "
+            "reachable and well-posed (hand-verified GoalsMet=True). This is a genuine beam "
+            "search / candidate-volume limitation at this many simultaneous goals mixing FILE "
+            "co-hold constraints with typed CPU/cache goals, not a scoring bug. Left for "
+            "future work; this scenario keeps the hardware-isolation half only, which "
+            "converges reliably."
+        ),
+        goals=[
+            # The two colliding pairs must not share a CPU core
+            Goal("RSI:CPU", 0.0, "minimize", "PD_1,PD_2"),
+            Goal("RSI:CPU", 0.0, "minimize", "PD_3,PD_4"),
+            # The two colliding pairs must not share a cache set
+            Goal("TransitiveRSI:CACHE_SET", 0.0, "minimize", "PD_1,PD_2"),
+            Goal("TransitiveRSI:CACHE_SET", 0.0, "minimize", "PD_3,PD_4"),
+        ],
+        constraints=[
+            # Each tenant must retain direct access to its own KV-cache
+            Constraint("requires_resource_access", 1, "FILE_1_2", properties={"access_type": "direct"}),
+            Constraint("requires_resource_access", 2, "FILE_1_3", properties={"access_type": "direct"}),
+            Constraint("requires_resource_access", 3, "FILE_1_4", properties={"access_type": "direct"}),
+            Constraint("requires_resource_access", 4, "FILE_1_5", properties={"access_type": "direct"}),
+            # Each tenant must retain at least one CPU and one physical page
+            Constraint("requires_resource_type", 1, "CPU", properties={"min_count": 1}),
+            Constraint("requires_resource_type", 2, "CPU", properties={"min_count": 1}),
+            Constraint("requires_resource_type", 3, "CPU", properties={"min_count": 1}),
+            Constraint("requires_resource_type", 4, "CPU", properties={"min_count": 1}),
+            Constraint("requires_resource_type", 1, "PHYS_PAGE", properties={"min_count": 1}),
+            Constraint("requires_resource_type", 2, "PHYS_PAGE", properties={"min_count": 1}),
+            Constraint("requires_resource_type", 3, "PHYS_PAGE", properties={"min_count": 1}),
+            Constraint("requires_resource_type", 4, "PHYS_PAGE", properties={"min_count": 1}),
+        ],
+        allowed_primitives=PRIMITIVES,
+        allowed_multistep=[],
+        graph_builder=build_ml_tenant_hw_isolation_graph
     ),
 
     "webapp_3tier": Scenario(
