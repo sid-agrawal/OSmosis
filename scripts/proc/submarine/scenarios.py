@@ -1305,6 +1305,58 @@ def build_ssh_discover_graph():
     return graph
 
 
+def build_webapp_3tier_graph():
+    """Build a graph modeling a 5-PD three-tier web application, fully shared at G0.
+
+    Five-component decomposition of a typical web application deployment:
+      PD_1 (PD_frontend) - public-facing web/reverse-proxy tier
+      PD_2 (PD_api)       - application/API server; the only intended path to the DB
+      PD_3 (PD_db)        - database holding customer records
+      PD_4 (PD_auth)      - authentication service holding session/auth tokens
+      PD_5 (PD_cache)     - cache tier holding cache access keys
+
+    Resources (all FILE type, one FILE_SPACE):
+      FILE_1_1  DATABASE  /var/db/customers      Customer database credentials/data
+      FILE_1_2  CONFIG    /etc/app/auth_tokens    Auth/session signing tokens
+      FILE_1_3  SOCKET    /var/run/cache.sock     Cache access key/socket
+      FILE_1_4  TEMP      /tmp/app_session        Session state
+      FILE_1_5  LOG       /var/log/app_request.log  Request log
+
+    G_0 (fully-shared baseline):
+      All 5 PDs hold all 5 resources. 25 HOLD edges. RSI = 1.0 for all 10 pairs.
+
+    Target: IsoSearch should rediscover that the database is reachable only via
+    the API server, i.e. PD_frontend/PD_auth/PD_cache lose direct access to
+    FILE_1_1 (customer DB) while PD_api and PD_db retain it.
+    """
+    graph = ModelGraph()
+
+    pd_frontend_id = NodeTransformations.add_pd_node(graph, "PD_frontend")  # PD_1
+    pd_api_id      = NodeTransformations.add_pd_node(graph, "PD_api")        # PD_2
+    pd_db_id       = NodeTransformations.add_pd_node(graph, "PD_db")         # PD_3
+    pd_auth_id     = NodeTransformations.add_pd_node(graph, "PD_auth")       # PD_4
+    pd_cache_id    = NodeTransformations.add_pd_node(graph, "PD_cache")      # PD_5
+
+    space_id = NodeTransformations.add_resource_space(graph, ResourceType.FILE)
+
+    db_id      = NodeTransformations.add_file_resource(graph, space_id, FileType.DATABASE, "/var/db/customers",         4096)  # FILE_1_1
+    auth_id    = NodeTransformations.add_file_resource(graph, space_id, FileType.CONFIG,   "/etc/app/auth_tokens",       512)  # FILE_1_2
+    cache_id   = NodeTransformations.add_file_resource(graph, space_id, FileType.SOCKET,   "/var/run/cache.sock",          0)  # FILE_1_3
+    session_id = NodeTransformations.add_file_resource(graph, space_id, FileType.TEMP,     "/tmp/app_session",           512)  # FILE_1_4
+    log_id     = NodeTransformations.add_file_resource(graph, space_id, FileType.LOG,      "/var/log/app_request.log", 8192)  # FILE_1_5
+
+    # G_0: all PDs hold all resources (fully-shared baseline)
+    pd_ids  = [pd_frontend_id, pd_api_id, pd_db_id, pd_auth_id, pd_cache_id]
+    res_ids = [db_id, auth_id, cache_id, session_id, log_id]
+    for pd in pd_ids:
+        for res in res_ids:
+            EdgeTransformations.add_hold_edge(
+                graph, {Permission.R, Permission.W}, pd, ResourceType.FILE, space_id, res
+            )
+
+    return graph
+
+
 def build_ml_tenant_graph():
     """G0 for ml_tenant: a single monolithic ML server PD holds the model and all KV-caches.
 
@@ -1652,6 +1704,40 @@ SCENARIOS = {
         ],
         allowed_multistep=[],
         graph_builder=build_ssh_discover_graph
+    ),
+
+    "webapp_3tier": Scenario(
+        name="Three-Tier Web Application",
+        description=(
+            "Five-PD three-tier web application (frontend, api, db, auth, cache) starting "
+            "from a fully-shared monolithic baseline. IsoSearch must discover that the "
+            "database is reachable only via the API server: frontend, auth, and cache lose "
+            "direct access to the customer database, mirroring a real deployment where only "
+            "the application tier talks to the DB directly."
+        ),
+        goals=[
+            # Primary: DB must not be directly shared with frontend, auth, or cache
+            Goal("RSI", 0.0, "minimize", "PD_1,PD_3"),  # frontend (PD_1) <-> db (PD_3)
+            Goal("RSI", 0.0, "minimize", "PD_3,PD_4"),  # db (PD_3) <-> auth (PD_4)
+            Goal("RSI", 0.0, "minimize", "PD_3,PD_5"),  # db (PD_3) <-> cache (PD_5)
+            # Secondary: reduce overall sharing across the deployment
+            Goal("GlobalRSI", 0.3, "minimize"),
+        ],
+        constraints=[
+            # Functional: each PD must retain direct access to its own resource
+            Constraint("requires_resource_access", 1, "FILE_1_5", properties={"access_type": "direct"}),  # frontend keeps request log
+            Constraint("requires_resource_access", 2, "FILE_1_1", properties={"access_type": "direct"}),  # api keeps DB access
+            Constraint("requires_resource_access", 3, "FILE_1_1", properties={"access_type": "direct"}),  # db keeps DB access
+            Constraint("requires_resource_access", 4, "FILE_1_2", properties={"access_type": "direct"}),  # auth keeps auth tokens
+            Constraint("requires_resource_access", 5, "FILE_1_3", properties={"access_type": "direct"}),  # cache keeps cache socket
+            # Security invariants: only PD_api and PD_db may directly hold the customer DB
+            Constraint("prohibit_direct_hold", 1, "FILE_1_1"),  # frontend never holds DB directly
+            Constraint("prohibit_direct_hold", 4, "FILE_1_1"),  # auth never holds DB directly
+            Constraint("prohibit_direct_hold", 5, "FILE_1_1"),  # cache never holds DB directly
+        ],
+        allowed_primitives=PRIMITIVES,
+        allowed_multistep=[],
+        graph_builder=build_webapp_3tier_graph
     ),
 
     "ml_tenant": Scenario(

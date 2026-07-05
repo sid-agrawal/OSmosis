@@ -11,7 +11,8 @@ import io
 import re
 from contextlib import redirect_stdout, redirect_stderr
 
-sys.path.insert(0, '/Users/siagraw/Documents/OSmosis-mac/scripts/proc/submarine')
+import os
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import builtins
 _real_print = builtins.print

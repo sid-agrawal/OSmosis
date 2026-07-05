@@ -1617,6 +1617,7 @@ def _fast_goal_progress(graph, goals):
 
     progress = 0.0
     for goal in goals:
+        is_typed_rsi = ":" in goal.metric_name and goal.metric_name.split(":")[0] in ("RSI", "TransitiveRSI")
         if goal.metric_name in ("RSI", "TransitiveRSI"):
             parts = goal.target_spec.split(',')
             if len(parts) != 2:
@@ -1627,6 +1628,25 @@ def _fast_goal_progress(graph, goals):
             union = res_i | res_j
             shared = res_i & res_j
             rsi = len(shared) / len(union) if union else 0.0
+            if goal.direction == "minimize":
+                progress += max(0.0, (1.0 - rsi) * 10.0)
+            else:
+                progress += rsi * 10.0
+        elif is_typed_rsi:
+            # Per-resource-type metrics (e.g. "RSI:CPU", "TransitiveRSI:CACHE_SET") aren't
+            # captured by the plain HOLD-edge map above (no type filtering, no MAP-edge
+            # following), so fall back to the authoritative per-pair calculator.
+            base_metric, res_type = goal.metric_name.split(":", 1)
+            parts = goal.target_spec.split(',')
+            if len(parts) != 2:
+                continue
+            pd_i, pd_j = parts[0].strip(), parts[1].strip()
+            pair_rsi = _calculate_rsi_per_pd_pair(
+                graph, [pd_i, pd_j],
+                follow_map_edges=(base_metric == "TransitiveRSI"),
+                resource_type_filter=res_type
+            )
+            rsi = pair_rsi.get(f"{pd_i},{pd_j}", 0.0)
             if goal.direction == "minimize":
                 progress += max(0.0, (1.0 - rsi) * 10.0)
             else:
