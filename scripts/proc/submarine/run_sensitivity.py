@@ -2,7 +2,7 @@
 Sensitivity analysis for scoring weights in BeamSearchExploration.
 
 Varies constraint_weight across {5, 10, 20, 50} on three representative scenarios
-(mediation, ssh_prune, ml_tenant) and reports iterations-to-first-solution and
+(mediation, db_trust, ml_tenant) and reports iterations-to-first-solution and
 whether the final solution graph structure changes.
 """
 import sys
@@ -70,16 +70,17 @@ def solution_fingerprint(result):
 
 
 # Scenarios: (label, scenario_name, beam_width, depth)
+# Labels match the case-study names in tab:case-study-summary / content/exploring.tex.
 SENSITIVITY_SCENARIOS = [
-    ('Mediation',        'mediator_test_primitive', 12, 10),
-    ('Priv Sep (Prune)', 'ssh_prune',               12, 13),
-    ('ML Tenant',        'ml_tenant',               12, 12),
+    ('Mediation',                          'mediator_test_primitive', 12, 10),
+    ('Policy-Driven Privilege Separation', 'db_trust',                12, 25),
+    ('Budget-Constrained Tenant Isolation','ml_tenant',               12, 12),
 ]
 
 CONSTRAINT_WEIGHTS = [5, 10, 20, 50]
 
 _real_print("Sensitivity Analysis: varying constraint_weight")
-_real_print(f"Scenarios: Mediation, Priv Sep (Prune), ML Tenant")
+_real_print("Scenarios: Mediation, Policy-Driven Privilege Separation, Budget-Constrained Tenant Isolation")
 _real_print(f"Weights tested: {CONSTRAINT_WEIGHTS}")
 _real_print("=" * 90)
 
