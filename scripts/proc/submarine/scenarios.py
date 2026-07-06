@@ -958,6 +958,43 @@ def build_mediator_test_graph():
     return graph
 
 
+def build_kv_mediator_shared_graph():
+    """Build the GPIISO001 shape: 2 client PDs (PD_1, PD_2) mediated through a single
+    shared server PD (PD_3), each with its own private entry (FILE_1_1, FILE_1_2) --
+    matching the real extracted GPIISO001 graph, where the two clients already hold
+    fully disjoint KVSTORE entries even while sharing one mediator.
+
+    Mirrors CellulOS's real design-space sweep (GPIKV002 -> GPIISO001 -> GPIKV007): both
+    clients already have RSI=0 with respect to direct resource holding (neither holds any
+    resource directly, matching the mediation pattern), so the goal that distinguishes a
+    *shared* mediator (GPIISO001) from *independent* mediators (GPIKV007) has to be fault
+    radius (FR, the REQUEST-edge common-ancestor distance), not RSI. Giving each client its
+    own entry from the start (rather than one shared entry) also avoids a modeling dead end:
+    requiring PD_2 to keep reaching the *same* entry as PD_1 is unsatisfiable together with
+    full privatization (any path to PD_1's entry keeps a common REQUEST ancestor); requiring
+    it to keep reaching *its own* entry is exactly what privatization can satisfy.
+    """
+    graph = ModelGraph()
+
+    pd1_id = NodeTransformations.add_pd_node(graph, "PD_1")  # client 1
+    pd2_id = NodeTransformations.add_pd_node(graph, "PD_2")  # client 2
+    pd3_id = NodeTransformations.add_pd_node(graph, "PD_3")  # shared mediator
+
+    space_id = NodeTransformations.add_resource_space(graph, ResourceType.FILE)
+    file1_id = NodeTransformations.add_file_resource(graph, space_id, FileType.TEMP, "/kv/entry_1", 4096)
+    file2_id = NodeTransformations.add_file_resource(graph, space_id, FileType.TEMP, "/kv/entry_2", 4096)
+
+    # Mediator holds both entries exclusively
+    EdgeTransformations.add_hold_edge(graph, {Permission.R, Permission.W}, pd3_id, ResourceType.FILE, space_id, file1_id)
+    EdgeTransformations.add_hold_edge(graph, {Permission.R, Permission.W}, pd3_id, ResourceType.FILE, space_id, file2_id)
+
+    # Both clients reach it only through the mediator (REQUEST, no direct hold)
+    EdgeTransformations.add_request_edge(graph, pd1_id, pd3_id, ResourceType.FILE, space_id)
+    EdgeTransformations.add_request_edge(graph, pd2_id, pd3_id, ResourceType.FILE, space_id)
+
+    return graph
+
+
 def build_reduce_isolation_graph():
     """Build a graph with mediated access: PD1 -> PD3 -> R0, PD2 -> PD4 -> R0"""
     graph = ModelGraph()
@@ -1585,6 +1622,40 @@ SCENARIOS = {
         allowed_primitives=PRIMITIVES,  # All primitives allowed
         allowed_multistep=[],  # No multi-step transitions
         graph_builder=build_mediator_test_graph
+    ),
+
+    "kv_mediator_privatization": Scenario(
+        name="KV-Store Mediator Privatization",
+        description=(
+            "Two clients share a single mediator PD holding a KV-store-like resource "
+            "(mirrors CellulOS's GPIISO001, the mediation-pattern proof of concept). "
+            "RSI(PD_1,PD_2) is already 0 at G0 -- neither client directly holds the "
+            "resource -- so it cannot distinguish a shared mediator from independent "
+            "ones. The goal instead maximizes fault radius (FR), the REQUEST-edge "
+            "common-ancestor distance: FR=2 while both clients share PD_3 as their "
+            "sole mediator (1 hop each); a fully privatized mediator per client (an "
+            "independent PD_4 for PD_2, matching CellulOS's GPIKV007 topology) drives "
+            "FR to infinity since no common REQUEST ancestor remains. This formalizes, "
+            "as a real IsoSearch scenario, the design-space axis measured empirically "
+            "in THESIS_STATUS.md workstream 6's GPIISO001-vs-GPIKV007 performance sweep."
+        ),
+        goals=[
+            Goal("FR", 4.0, "maximize", "PD_1,PD_2"),
+        ],
+        constraints=[
+            # Each client must keep reaching its own entry indirectly (never hold it
+            # directly) -- both entries exist from G0, so privatizing PD_2's mediator
+            # doesn't require abandoning its own resource, only rerouting to it.
+            Constraint("requires_indirect_access", 1, "FILE_1_1", properties={"through_pd": True}),
+            Constraint("requires_indirect_access", 2, "FILE_1_2", properties={"through_pd": True}),
+            Constraint("requires_resource_exists", None, "FILE_1_1", properties={"mandatory": True}),
+            Constraint("requires_resource_exists", None, "FILE_1_2", properties={"mandatory": True}),
+            Constraint("prohibit_direct_hold", 1, "FILE_1_1"),
+            Constraint("prohibit_direct_hold", 2, "FILE_1_2"),
+        ],
+        allowed_primitives=PRIMITIVES,
+        allowed_multistep=[],
+        graph_builder=build_kv_mediator_shared_graph
     ),
 
     "reduce_isolation": Scenario(

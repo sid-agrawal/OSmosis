@@ -1599,9 +1599,10 @@ def _fast_tcb(graph, target_pd):
 def _fast_goal_progress(graph, goals):
     """Compute goal progress without calling the expensive full ComputeMetrics.
 
-    Calculates RSI for specific PD pairs, GlobalRSI, MemoryConsumption, and
-    TCB for specific PDs — avoiding FR and verbose print statements.  Much
-    faster for the beam search inner loop where we evaluate hundreds of
+    Calculates RSI for specific PD pairs, GlobalRSI, MemoryConsumption, TCB
+    for specific PDs, and FR (fault radius, via the authoritative
+    _calculate_fr) for specific PD pairs — avoiding verbose print statements.
+    Much faster for the beam search inner loop where we evaluate hundreds of
     candidate states per iteration.
 
     Returns: goal_progress score (float)
@@ -1676,6 +1677,25 @@ def _fast_goal_progress(graph, goals):
                         progress += max(0.0, (1.0 - tcb / (pd_count - 1)) * 10.0)
                     else:
                         progress += min(1.0, tcb / (pd_count - 1)) * 10.0
+        elif goal.metric_name == "FR":
+            # Fault radius (distance to common ancestor via REQUEST edges) for a PD pair.
+            # No cheap incremental version exists; reuse the authoritative calculator
+            # directly since REQUEST-edge chains are typically shallow.
+            parts = goal.target_spec.split(',') if goal.target_spec else []
+            if len(parts) != 2:
+                continue
+            pd_i, pd_j = parts[0].strip(), parts[1].strip()
+            pd_nodes = [n for n, d in graph.g.nodes(data=True) if d.get('type') == 'PD']
+            fr_by_pair = _calculate_fr(graph, pd_nodes)
+            fr = fr_by_pair.get(f"{pd_i},{pd_j}", fr_by_pair.get(f"{pd_j},{pd_i}", float('inf')))
+            # Normalize against target_value (the FR the scenario is aiming for), capping
+            # at 1.0 so an infinite (no common ancestor) fault radius scores as fully met.
+            target = goal.target_value if goal.target_value else 1.0
+            normalized = min(1.0, fr / target) if target > 0 else (1.0 if fr > 0 else 0.0)
+            if goal.direction == "maximize":
+                progress += normalized * 10.0
+            else:
+                progress += max(0.0, (1.0 - normalized)) * 10.0
     return progress
 
 
