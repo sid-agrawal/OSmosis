@@ -1652,8 +1652,23 @@ SCENARIOS = {
             Constraint("requires_resource_exists", None, "FILE_1_2", properties={"mandatory": True}),
             Constraint("prohibit_direct_hold", 1, "FILE_1_1"),
             Constraint("prohibit_direct_hold", 2, "FILE_1_2"),
+            # Bound total PDs via memory budget (same mechanism ml_tenant uses): each PD
+            # has real per-PD overhead, so creating one isn't free. G0 has 3 PDs; the
+            # target needs exactly 1 more (a private mediator for PD_2) = 4 PDs, 200MB.
+            # A 5th PD would exceed the budget -- turning the "add unrelated orphan PDs"
+            # noise that crowded out the real solution into an actual constraint
+            # violation instead of a free, harmless move.
+            Constraint("max_memory_bytes", None, None, properties={
+                "limit_bytes":       210_000_000,
+                "pd_overhead_bytes": 50_000_000,
+            }),
         ],
-        allowed_primitives=PRIMITIVES,
+        # Restricted to just the primitives the privatization move needs. The full
+        # PRIMITIVES set let the beam spend its whole budget on candidates like
+        # "add another PD unrelated to PD_1/PD_2" (harmless to every constraint, so
+        # never penalized, and crowded out the specific 5-edit sequence that matters).
+        allowed_primitives=["add_pd", "add_hold_edge", "remove_hold_edge",
+                            "add_request_edge", "remove_request_edge"],
         allowed_multistep=[],
         graph_builder=build_kv_mediator_shared_graph
     ),
