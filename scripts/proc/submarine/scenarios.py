@@ -1958,6 +1958,15 @@ SCENARIOS = {
             Constraint("requires_resource_held", None, "FILE_1_2"),  # cache_t1
             Constraint("requires_resource_held", None, "FILE_1_3"),  # cache_t2
             Constraint("requires_resource_held", None, "FILE_1_4"),  # cache_t3
+            # The shared model is functional: every tenant PD must hold it. Without
+            # this, minimizing GlobalRSI drives the model into a single PD (RSI=0),
+            # a formally-optimal but degenerate design leaving other tenants without
+            # the model. Forcing all three tenants to hold it makes the intended
+            # shared-model design (GlobalRSI=1/3) the optimum. (PD_1 is G0's monolith;
+            # PD_2/PD_3 are added during search, capped at 3 by the memory budget.)
+            Constraint("requires_resource_access", 1, "FILE_1_1", properties={"access_type": "direct"}),
+            Constraint("requires_resource_access", 2, "FILE_1_1", properties={"access_type": "direct"}),
+            Constraint("requires_resource_access", 3, "FILE_1_1", properties={"access_type": "direct"}),
             # Memory budget: 320MB total; 50MB per-PD process overhead
             # 3 PDs: 3×50 + 160 = 310MB ✓   4 PDs: 4×50 + 160 = 360MB ✗
             Constraint("max_memory_bytes", None, None, properties={
