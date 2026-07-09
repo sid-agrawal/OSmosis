@@ -1,0 +1,6 @@
+spawn ./simulate -m 8G
+./simulate: QEMU command: qemu-system-aarch64 -machine virt,virtualization=on,highmem=off,secure=off -cpu cortex-a53 -nographic  -m size=8G -smp cores=4  -kernel images/sel4test-driver-image-arm-qemu-arm-virt qemu-system-aarch64: Addressing limited to 32 bits, but memory exceeds it by 5368709120 bytes
+
+
+./simulate: QEMU failed; resetting terminal in 5 seconds--interrupt to abort
+PHASE:EOF
