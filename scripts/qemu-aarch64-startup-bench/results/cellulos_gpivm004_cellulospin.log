@@ -1,5 +1,0 @@
-spawn ./simulate
-couldn't execute "./simulate": no such file or directory
-    while executing
-"spawn ./simulate"
-    (file "cellulos_phases.exp" line 22)
