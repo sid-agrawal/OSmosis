@@ -1,0 +1,2 @@
+iterations=300 child=./trivial
+mean_ms=27.1501 median_ms=25.6064 stddev_ms=4.9513 min_ms=21.4291 max_ms=76.4506

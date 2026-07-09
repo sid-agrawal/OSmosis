@@ -1,0 +1,14 @@
+# Large guest binaries (copied from apps/vmm/board/qemu_arm_virt; rebuildable)
+guest/linux
+guest/debuglinux
+guest/rootfs.cpio.gz
+# L1 Debian VM images / firmware / seed (multi-GB, generated)
+l1/
+# Compiled harness binaries (rebuild via aarch64-linux-gnu-gcc)
+procbench
+trivial
+# Bulky raw serial logs; keep CSVs, SUMMARY.md, and short phase logs
+results/*_kvm_*.log
+results/l2_kvm*.log
+results/single_level_boot_*.log
+__pycache__/

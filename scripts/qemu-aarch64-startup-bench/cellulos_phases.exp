@@ -1,0 +1,33 @@
+#!/usr/bin/env expect
+# Capture CellulOS-as-HV VM boot phases: spawn ./simulate (seL4 sel4test image
+# running GPIVM002/GPIVM004, which boots the identical 5.18 Linux guest and loops).
+# Timestamps (host wall-clock ms) at the same guest boot markers used for Linux-as-HV,
+# so the two hypervisors are directly comparable.
+#
+# Usage: run from the build dir:  expect <path>/cellulos_phases.exp <timeout_s>
+# p0 = VMM begins creating the guest ("STARTING: test_linux_vm...")
+# p1/p2 = first guest/Linux instruction ("Booting Linux on physical CPU")
+# p3 = first userspace ("Run /init as init process")
+# p4 = login prompt ("login:")
+
+set tmo [lindex $argv 0]
+set timeout $tmo
+match_max 400000
+
+set t0 0
+proc stamp {name} { global t0; puts "\nPHASE:$name:[expr {[clock milliseconds]-$t0}]"; flush stdout }
+
+# t0 is set when the VMM begins (STARTING), not at simulate launch, so seL4's own
+# boot time is excluded and p0 aligns with Linux-as-HV's "qemu launch of the guest".
+spawn ./simulate
+
+expect {
+    -re "STARTING: test_linux_vm"        { set t0 [clock milliseconds]; puts "\nPHASE:p0_start:0"; flush stdout; exp_continue }
+    -re "Booting Linux on physical CPU"  { stamp guest_entry; exp_continue }
+    -re "Run /init as init process"      { stamp userspace;   exp_continue }
+    -re "Freeing unused kernel memory"   { stamp freeing;     exp_continue }
+    -re "login:"                         { stamp login; puts "PHASE:done:[expr {[clock milliseconds]-$t0}]" }
+    timeout                              { puts "PHASE:TIMEOUT" }
+    eof                                  { puts "PHASE:EOF" }
+}
+catch { exec pkill -9 -f "qemu-system-aarch64.*sel4test" }
