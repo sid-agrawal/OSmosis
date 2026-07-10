@@ -1,0 +1,156 @@
+./simulate: QEMU command: qemu-system-aarch64 -machine virt,virtualization=on,highmem=off,secure=off -cpu cortex-a53 -nographic  -m size=2G -smp cores=4  -kernel images/sel4test-driver-image-arm-qemu-arm-virt 
+ELF-loader started on CPU: ARM Ltd. Cortex-A53 r0p4
+  paddr=[6e9bf000..74f800cf]
+No DTB passed in from boot loader.
+Looking for DTB in CPIO archive...found at 6eac1a38.
+Loaded DTB from 6eac1a38.
+   paddr=[60242000..60243fff]
+ELF-loading image 'kernel' to 60000000
+  paddr=[60000000..60241fff]
+  vaddr=[8060000000..8060241fff]
+  virt_entry=8060000000
+ELF-loading image 'sel4test-driver' to 60244000
+  paddr=[60244000..6e5c9fff]
+  vaddr=[400000..e785fff]
+  virt_entry=45aa50
+Enabling hypervisor MMU and paging
+Jumping to kernel-image entry point...
+
+Bootstrapping kernel
+available phys memory regions: 1
+  [60000000..80000000]
+reserved virt address space regions: 3
+  [8060000000..8060242000]
+  [8060242000..8060243e98]
+  [8060244000..806e5ca000]
+Booting all finished, dropped to user space
+Node 0 of 1
+IOPT levels:     0
+IPC buffer:      0xe786000
+Empty slots:     [58436 --> 131072)
+sharedFrames:    [0 --> 0)
+userImageFrames: [133 --> 58379)
+userImagePaging: [16 --> 131)
+untypeds:        [58379 --> 58436)
+Initial thread domain: 0
+Initial thread cnode size: 17
+List of untypeds
+------------------
+Paddr    | Size |  SizeBits   | Device
+0x60000000 | 16 | 64.0 KB | 0
+0x60243ea0 | 5 | 32 bytes | 0
+0x60243ec0 | 6 | 64 bytes | 0
+0x60243f00 | 8 | 256 bytes | 0
+0x6e5ca000 | 13 | 8.0 KB | 0
+0x6e5cc000 | 14 | 16.0 KB | 0
+0x6e5d0000 | 16 | 64.0 KB | 0
+0x6e5e0000 | 17 | 128.0 KB | 0
+0x6e600000 | 21 | 2.0 MB | 0
+0x6e800000 | 23 | 8.0 MB | 0
+0x6f000000 | 24 | 16.0 MB | 0
+0x70000000 | 27 | 128.0 MB | 0
+0x78000000 | 26 | 64.0 MB | 0
+0x7c000000 | 25 | 32.0 MB | 0
+0x7e000000 | 24 | 16.0 MB | 0
+0x7f000000 | 23 | 8.0 MB | 0
+0x7fc7a800 | 11 | 2.0 KB | 0
+0x7fc7b000 | 12 | 4.0 KB | 0
+0x7fc7c000 | 14 | 16.0 KB | 0
+0x7fc80000 | 19 | 512.0 KB | 0
+0x7fd00000 | 20 | 1.0 MB | 0
+0x7fe00000 | 21 | 2.0 MB | 0
+1 untypeds of size 5
+1 untypeds of size 6
+1 untypeds of size 8
+1 untypeds of size 11
+1 untypeds of size 12
+1 untypeds of size 13
+2 untypeds of size 14
+2 untypeds of size 16
+1 untypeds of size 17
+1 untypeds of size 19
+1 untypeds of size 20
+2 untypeds of size 21
+2 untypeds of size 23
+2 untypeds of size 24
+1 untypeds of size 25
+1 untypeds of size 26
+1 untypeds of size 27
+Switching to a safer, bigger stack... 
+
+seL4 Test!!
+=========
+
+vspace_reserve_range_at@vspace.h:742 vspace is NULL
+create_reservations@elf.c:253 Failed to make reservation: 0x400000, 2293760
+elf_reserve_regions_in_vspace@elf.c:452 Failed to create reservations
+sel4utils_elf_reserve@elf.c:479 Failed to reserve regions
+GPIServ Parent: Starting GPI server...
+Starting test suite sel4test TT: 3 Count: 2
+Starting test 0: Test that there are tests
+Starting test 1: GPIBM003_000000000
+----Starting process at 0x40019c, stack 0x10011e10
+Added 0x6400000 Bytes to the test processRunning test GPIBM003_000000000 (sel4utils bench process spawn / send cap)
+----Starting process at 0x40021c, stack 0x10011df0
+RESULT>44644140
+WALLCLOCK_US>44642 (cntvct_diff=2790136 cntfrq=62500000)
+RESULT>34100
+RESULT>734581
+Test GPIBM003_000000000 passed
+
+
+*** LISTING REMAINING RESOURCES ***
+ - PD (0), refcount 1
+ - ADS (7), refcount 1
+ - MO (1), refcount 1
+ - MO (2), refcount 1
+*** DONE LISTING RESOURCES ***
+
+Expected resources to remain:
+ - RT PD (0)
+ - RT ADS (7)
+ - RT MO (1)
+ - RT MO (2)
+
+
+Starting test 2: GPIBM004_000000000
+Running test GPIBM004_000000000 (osm bench process spawn / send cap)
+[34msel4gpi_configure_process():	[0mConfiguring new process with image: hello_benchmark
+[34msel4gpi_ads_configure():	[0mLoading Elf
+[34msel4gpi_ads_configure():	[0mAllocating VMR (HEAP) with 100 pages at 0x5000000000
+[34msel4gpi_ads_configure():	[0mAllocating stack (16 pages)
+[34msel4gpi_ads_configure():	[0mAllocating VMR (IPC_BUF) with 1 pages at 0
+[34mrde_configure():	[0mSharing RDE (type: MO, space ID: 255)
+[34mrde_configure():	[0mSharing RDE (type: RESSPC, space ID: 255)
+[34mrde_configure():	[0mSharing RDE (type: VMR, space ID: 9)
+[34msel4gpi_prepare_pd():	[0mAllocated new fault EP 
+[34msel4gpi_prepare_pd():	[0mSent fault EP to PD in slot 0x39
+[34msel4gpi_prepare_pd():	[0mConfiguring CPU Object, fault_ep: 39 entry: 0x40021c
+[34msel4gpi_start_pd():	[0mStarting CPU
+RESULT>50250695
+WALLCLOCK_US>50247 (cntvct_diff=3140488 cntfrq=62500000)
+RESULT>278790
+RESULT>555095
+Test GPIBM004_000000000 passed
+
+
+*** LISTING REMAINING RESOURCES ***
+ - PD (0), refcount 1
+ - ADS (7), refcount 1
+ - MO (1), refcount 1
+ - MO (2), refcount 1
+*** DONE LISTING RESOURCES ***
+
+Expected resources to remain:
+ - RT PD (0)
+ - RT ADS (7)
+ - RT MO (1)
+ - RT MO (2)
+
+
+Starting test 4: Test all tests ran
+Test suite passed. 4 tests passed. 0 tests disabled.
+All is well in the universe
+
+
+qemu-system-aarch64: terminating on signal 15 from pid 4243 (timeout)
