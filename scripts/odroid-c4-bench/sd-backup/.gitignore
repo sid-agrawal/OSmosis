@@ -1,0 +1,3 @@
+# Raw SD card images (multi-GB) - never commit
+*.img
+*.img.gz

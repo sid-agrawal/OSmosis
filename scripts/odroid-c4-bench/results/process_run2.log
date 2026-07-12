@@ -1,0 +1,169 @@
+# config=process run=2 status=OK
+# t_sec_since_go	text
+   0.1003	go 0x20000000
+   0.1004	## Starting application at 0x20000000 ...
+   0.2004	
+   0.2004	ELF-loader started on CPU: ARM Ltd. Cortex-A55 r1p0
+   0.2004	  paddr=[10728000..1376012f]
+   0.2004	No DTB passed in from boot loader.
+   0.2004	Looking for DTB in CPIO archive...found at 1082a5c0.
+   0.2004	Loaded DTB from 1082a5c0.
+   0.2004	   paddr=[242000..24dfff]
+   0.2004	ELF-loading image 'kernel' to 0
+   0.2004	  paddr=[0..241fff]
+   0.2004	  vaddr=[8000000000..8000241fff]
+   0.2004	  virt_entry=8000000000
+   0.2004	ELF-loading image 'sel4test-driver' to 80000000
+   0.2004	  paddr=[80000000..8ade5fff]
+   0.2004	  vaddr=[400000..b1e5fff]
+   0.2004	  virt_entry=45aa60
+   0.6017	Enabling hypervisor MMU and paging
+   0.6017	Jumping to kernel-image entry point...
+   0.6017	
+   0.6017	Bootstrapping kernel
+   0.6017	available phys memory regions: 2
+   0.6017	  [0..5000000]
+   0.6017	  [5300000..f5800000]
+   0.6017	reserved virt address space regions: 3
+   0.6017	  [8000000000..8000242000]
+   0.6017	  [8000242000..800024dbc7]
+   0.6017	  [8080000000..808ade6000]
+   0.6017	Booting all finished, dropped to user space
+   1.0026	Node 0 of 1
+   1.0026	IOPT levels:     0
+   1.0026	IPC buffer:      0xb1e6000
+   1.1027	Empty slots:     [44702 --> 131072)
+   1.1027	sharedFrames:    [0 --> 0)
+   1.1027	userImageFrames: [116 --> 44634)
+   1.1027	userImagePaging: [16 --> 104)
+   1.1027	untypeds:        [44634 --> 44702)
+   1.1027	Initial thread domain: 0
+   1.1027	Initial thread cnode size: 17
+   1.1027	List of untypeds
+   1.1027	------------------
+   1.1027	Paddr    | Size |  SizeBits   | Device
+   1.1027	0 | 16 | 64.0 KB | 0
+   1.1027	0x24dbd0 | 4 | 16 bytes | 0
+   1.1027	0x24dbe0 | 5 | 32 bytes | 0
+   1.1027	0x24dc00 | 10 | 1.0 KB | 0
+   1.1027	0x24e000 | 13 | 8.0 KB | 0
+   1.1027	0x250000 | 16 | 64.0 KB | 0
+   1.1027	0x260000 | 17 | 128.0 KB | 0
+   1.1027	0x280000 | 19 | 512.0 KB | 0
+   1.1027	0x300000 | 20 | 1.0 MB | 0
+   1.1027	0x400000 | 22 | 4.0 MB | 0
+   1.1027	0x800000 | 23 | 8.0 MB | 0
+   1.1027	0x1000000 | 24 | 16.0 MB | 0
+   1.1027	0x2000000 | 25 | 32.0 MB | 0
+   1.1027	0x4000000 | 24 | 16.0 MB | 0
+   1.1027	0x5300000 | 20 | 1.0 MB | 0
+   1.1027	0x5400000 | 22 | 4.0 MB | 0
+   1.1027	0x5800000 | 23 | 8.0 MB | 0
+   1.1027	0x6000000 | 25 | 32.0 MB | 0
+   1.1027	0x8000000 | 27 | 128.0 MB | 0
+   1.1027	0x10000000 | 28 | 256.0 MB | 0
+   1.1027	0x20000000 | 29 | 512.0 MB | 0
+   1.1027	0x40000000 | 30 | 1.0 GB | 0
+   1.1027	0x8ade6000 | 13 | 8.0 KB | 0
+   1.1027	0x8ade8000 | 15 | 32.0 KB | 0
+   1.1027	0x8adf0000 | 16 | 64.0 KB | 0
+   1.1027	0x8ae00000 | 21 | 2.0 MB | 0
+   1.1027	0x8b000000 | 24 | 16.0 MB | 0
+   1.1027	0x8c000000 | 26 | 64.0 MB | 0
+   1.1027	0x90000000 | 28 | 256.0 MB | 0
+   1.1027	0xa0000000 | 29 | 512.0 MB | 0
+   1.2030	0xc0000000 | 29 | 512.0 MB | 0
+   1.2030	0xe0000000 | 28 | 256.0 MB | 0
+   1.2030	0xf0000000 | 26 | 64.0 MB | 0
+   1.2030	0xf4000000 | 24 | 16.0 MB | 0
+   1.2030	0xf546d800 | 11 | 2.0 KB | 0
+   1.2030	0xf546e000 | 13 | 8.0 KB | 0
+   1.2030	0xf5470000 | 16 | 64.0 KB | 0
+   1.2030	0xf5480000 | 19 | 512.0 KB | 0
+   1.2030	0xf5500000 | 20 | 1.0 MB | 0
+   1.2030	0xf5600000 | 21 | 2.0 MB | 0
+   1.2030	1 untypeds of size 4
+   1.2030	1 untypeds of size 5
+   1.2030	1 untypeds of size 10
+   1.2030	1 untypeds of size 11
+   1.2030	3 untypeds of size 13
+   1.2030	1 untypeds of size 15
+   1.2030	4 untypeds of size 16
+   1.2030	1 untypeds of size 17
+   1.2030	2 untypeds of size 19
+   1.2030	3 untypeds of size 20
+   1.2030	2 untypeds of size 21
+   1.2030	2 untypeds of size 22
+   1.2030	2 untypeds of size 23
+   1.2030	4 untypeds of size 24
+   1.2030	2 untypeds of size 25
+   1.2030	2 untypeds of size 26
+   1.2030	1 untypeds of size 27
+   1.2030	3 untypeds of size 28
+   1.2030	3 untypeds of size 29
+   1.2030	1 untypeds of size 30
+   1.2030	Switching to a safer, bigger stack... 
+   1.2030	
+   1.2030	seL4 Test!!
+   1.2030	=========
+   1.2030	
+   2.1055	vspace_reserve_range_at@vspace.h:742 vspace is NULL
+   2.1055	create_reservations@elf.c:253 Failed to make reservation: 0x400000, 2293760
+   2.1055	elf_reserve_regions_in_vspace@elf.c:452 Failed to create reservations
+   2.2058	sel4utils_elf_reserve@elf.c:479 Failed to reserve regions
+   2.2058	GPIServ Parent: Starting GPI server...
+   2.2058	Starting test suite sel4test TT: 3 Count: 2
+   2.2058	Starting test 0: Test that there are tests
+   2.2058	Starting test 1: GPIBM003_000000000
+   2.5066	----Starting process at 0x40019c, stack 0x10011e10
+   2.6067	Added 0x12c00000 Bytes to the test processRunning test GPIBM003_000000000 (sel4utils bench process spawn / send cap)
+   2.6067	----Starting process at 0x40021c, stack 0x10011df0
+   2.6067	RESULT>9812030
+   2.6067	WALLCLOCK_US>8176 (cntvct_diff=196238 cntfrq=24000000)
+   2.6067	RESULT>3702
+   2.6067	RESULT>8153
+   2.6067	Test GPIBM003_000000000 passed
+   2.7070	
+   2.7070	
+   2.7070	*** LISTING REMAINING RESOURCES ***
+   2.7070	 - PD (0), refcount 1
+   2.7070	 - ADS (7), refcount 1
+   2.7070	 - MO (1), refcount 1
+   2.7070	 - MO (2), refcount 1
+   2.7070	*** DONE LISTING RESOURCES ***
+   2.7070	
+   2.7070	Expected resources to remain:
+   2.7070	 - RT PD (0)
+   2.7070	 - RT ADS (7)
+   2.7070	 - RT MO (1)
+   2.7070	 - RT MO (2)
+   2.7070	
+   2.7070	
+   2.7070	Starting test 2: GPIBM004_000000000
+   2.9073	Running test GPIBM004_000000000 (osm bench process spawn / send cap)
+   2.9073	RESULT>12284568
+   2.9073	WALLCLOCK_US>10236 (cntvct_diff=245685 cntfrq=24000000)
+   2.9073	RESULT>84062
+   2.9073	RESULT>8849
+   2.9073	Test GPIBM004_000000000 passed
+   3.0074	
+   3.0074	
+   3.0074	*** LISTING REMAINING RESOURCES ***
+   3.0074	 - PD (0), refcount 1
+   3.0074	 - ADS (7), refcount 1
+   3.0074	 - MO (1), refcount 1
+   3.0074	 - MO (2), refcount 1
+   3.0074	*** DONE LISTING RESOURCES ***
+   3.0074	
+   3.0074	Expected resources to remain:
+   3.0074	 - RT PD (0)
+   3.0074	 - RT ADS (7)
+   3.0074	 - RT MO (1)
+   3.0074	 - RT MO (2)
+   3.0074	
+   3.0074	
+   3.1075	Starting test 4: Test all tests ran
+   3.1075	Test suite passed. 4 tests passed. 0 tests disabled.
+   3.1075	All is well in the universe
+   3.1075	
+   3.1075	

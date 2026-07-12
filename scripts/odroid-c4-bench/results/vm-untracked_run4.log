@@ -1,0 +1,287 @@
+# config=vm-untracked run=4 status=OK
+# t_sec_since_go	text
+   0.1003	go 0x20000000
+   0.1003	## Starting application at 0x20000000 ...
+   0.2004	
+   0.2004	ELF-loader started on CPU: ARM Ltd. Cortex-A55 r1p0
+   0.2004	  paddr=[1072b000..1376012f]
+   0.2004	No DTB passed in from boot loader.
+   0.2004	Looking for DTB in CPIO archive...found at 1082d5c0.
+   0.2005	Loaded DTB from 1082d5c0.
+   0.2005	   paddr=[242000..24dfff]
+   0.2005	ELF-loading image 'kernel' to 0
+   0.2005	  paddr=[0..241fff]
+   0.2005	  vaddr=[8000000000..8000241fff]
+   0.2005	  virt_entry=8000000000
+   0.2005	ELF-loading image 'sel4test-driver' to 80000000
+   0.2005	  paddr=[80000000..8ade5fff]
+   0.2005	  vaddr=[400000..b1e5fff]
+   0.2005	  virt_entry=45aa60
+   0.6016	Enabling hypervisor MMU and paging
+   0.6016	Jumping to kernel-image entry point...
+   0.6016	
+   0.6016	Bootstrapping kernel
+   0.6016	available phys memory regions: 2
+   0.6016	  [0..5000000]
+   0.6016	  [5300000..f5800000]
+   0.6016	reserved virt address space regions: 3
+   0.6016	  [8000000000..8000242000]
+   0.6016	  [8000242000..800024dbc7]
+   0.6016	  [8080000000..808ade6000]
+   0.6016	Booting all finished, dropped to user space
+   1.0026	Node 0 of 1
+   1.0026	IOPT levels:     0
+   1.0026	IPC buffer:      0xb1e6000
+   1.0026	Empty slots:     [44702 --> 131072)
+   1.1026	sharedFrames:    [0 --> 0)
+   1.1026	userImageFrames: [116 --> 44634)
+   1.1026	userImagePaging: [16 --> 104)
+   1.1026	untypeds:        [44634 --> 44702)
+   1.1026	Initial thread domain: 0
+   1.1026	Initial thread cnode size: 17
+   1.1026	List of untypeds
+   1.1026	------------------
+   1.1026	Paddr    | Size |  SizeBits   | Device
+   1.1026	0 | 16 | 64.0 KB | 0
+   1.1026	0x24dbd0 | 4 | 16 bytes | 0
+   1.1026	0x24dbe0 | 5 | 32 bytes | 0
+   1.1026	0x24dc00 | 10 | 1.0 KB | 0
+   1.1026	0x24e000 | 13 | 8.0 KB | 0
+   1.1026	0x250000 | 16 | 64.0 KB | 0
+   1.1026	0x260000 | 17 | 128.0 KB | 0
+   1.1026	0x280000 | 19 | 512.0 KB | 0
+   1.1026	0x300000 | 20 | 1.0 MB | 0
+   1.1026	0x400000 | 22 | 4.0 MB | 0
+   1.1026	0x800000 | 23 | 8.0 MB | 0
+   1.1026	0x1000000 | 24 | 16.0 MB | 0
+   1.1026	0x2000000 | 25 | 32.0 MB | 0
+   1.1026	0x4000000 | 24 | 16.0 MB | 0
+   1.1026	0x5300000 | 20 | 1.0 MB | 0
+   1.1026	0x5400000 | 22 | 4.0 MB | 0
+   1.1026	0x5800000 | 23 | 8.0 MB | 0
+   1.1026	0x6000000 | 25 | 32.0 MB | 0
+   1.1026	0x8000000 | 27 | 128.0 MB | 0
+   1.1026	0x10000000 | 28 | 256.0 MB | 0
+   1.1026	0x20000000 | 29 | 512.0 MB | 0
+   1.1026	0x40000000 | 30 | 1.0 GB | 0
+   1.1026	0x8ade6000 | 13 | 8.0 KB | 0
+   1.1026	0x8ade8000 | 15 | 32.0 KB | 0
+   1.1026	0x8adf0000 | 16 | 64.0 KB | 0
+   1.1026	0x8ae00000 | 21 | 2.0 MB | 0
+   1.1026	0x8b000000 | 24 | 16.0 MB | 0
+   1.1026	0x8c000000 | 26 | 64.0 MB | 0
+   1.1026	0x90000000 | 28 | 256.0 MB | 0
+   1.1026	0xa0000000 | 29 | 512.0 MB | 0
+   1.2029	0xc0000000 | 29 | 512.0 MB | 0
+   1.2030	0xe0000000 | 28 | 256.0 MB | 0
+   1.2030	0xf0000000 | 26 | 64.0 MB | 0
+   1.2030	0xf4000000 | 24 | 16.0 MB | 0
+   1.2030	0xf546d800 | 11 | 2.0 KB | 0
+   1.2030	0xf546e000 | 13 | 8.0 KB | 0
+   1.2030	0xf5470000 | 16 | 64.0 KB | 0
+   1.2030	0xf5480000 | 19 | 512.0 KB | 0
+   1.2030	0xf5500000 | 20 | 1.0 MB | 0
+   1.2030	0xf5600000 | 21 | 2.0 MB | 0
+   1.2030	1 untypeds of size 4
+   1.2030	1 untypeds of size 5
+   1.2030	1 untypeds of size 10
+   1.2030	1 untypeds of size 11
+   1.2030	3 untypeds of size 13
+   1.2030	1 untypeds of size 15
+   1.2030	4 untypeds of size 16
+   1.2030	1 untypeds of size 17
+   1.2030	2 untypeds of size 19
+   1.2030	3 untypeds of size 20
+   1.2030	2 untypeds of size 21
+   1.2030	2 untypeds of size 22
+   1.2030	2 untypeds of size 23
+   1.2030	4 untypeds of size 24
+   1.2030	2 untypeds of size 25
+   1.2030	2 untypeds of size 26
+   1.2030	1 untypeds of size 27
+   1.2030	3 untypeds of size 28
+   1.2030	3 untypeds of size 29
+   1.2030	1 untypeds of size 30
+   1.2030	Switching to a safer, bigger stack... 
+   1.2030	
+   1.2030	seL4 Test!!
+   1.2030	=========
+   1.2030	
+   2.1053	vspace_reserve_range_at@vspace.h:742 vspace is NULL
+   2.1053	create_reservations@elf.c:253 Failed to make reservation: 0x400000, 2306048
+   2.1053	elf_reserve_regions_in_vspace@elf.c:452 Failed to create reservations
+   2.1053	sel4utils_elf_reserve@elf.c:479 Failed to reserve regions
+   2.1053	GPIServ Parent: Starting GPI server...
+   2.2056	Starting test suite sel4test TT: 3 Count: 1
+   2.2056	Starting test 0: Test that there are tests
+   2.2056	Starting test 1: GPIVM002
+   2.5063	----Starting process at 0x40019c, stack 0x10011e10
+   2.6064	Added 0x12c00000 Bytes to the test processRunning test GPIVM002 (Test VMM that starts one Linux guest (sel4test))
+   2.6064	------------------STARTING: test_linux_vm_sel4test------------------
+   2.6064	Got IRQ 225 handler
+   2.6064	virq_controller_init@virq.c:26 initialised virtual GICv2 driver
+   2.6064	[37m[VMM] setup_guest_devices():	[0mMapping GIC interface - seL4: ffc06000, linux: ffc02000
+   2.6064	[37m[VMM] setup_dev_frames():	[0mSetting up dev frame at 0xff600000 with 512 pages
+   2.6064	[37m[VMM] setup_dev_frames():	[0mSetting up dev frame at 0xff800000 with 512 pages
+   2.7065	[37m[VMM] setup_dev_frames():	[0mSetting up dev frame at 0xffd00000 with 256 pages
+   2.7065	[37m[VMM] linux_copy_kernel_image():	[0mimages locations  vspace as returned by CPIO:
+   2.7066		 kernel_image 0x814d40:0x155ef40, initrd: 0x155efc0:0x161a02e, dtb: 0x162357c:0x162f714 
+   2.7066	[37m[VMM] linux_copy_kernel_image():	[0mcurrent vspace location:
+   2.7066		 Linux guest ram: 0x2f600000:0x0, initrd: 0x3cd00000:0x3cdbb06e, dtb: 0x3c600000:0x3c60c198 
+   2.7066	[37m[VMM] linux_setup_images():	[0mCopying guest kernel image to 0x2f600000 (0xd4a200 bytes)
+   2.7066	[37m[VMM] linux_setup_images():	[0mCopying guest DTB to 0x3c600000 (0xc198 bytes)
+   2.7066	[37m[VMM] linux_setup_images():	[0mCopying guest initial RAM disk to 0x3cd00000 (0xbb06e bytes)
+   2.9070	[    0.000000] Booting Linux on physical CPU 0x0000000000 [0x411fd050]
+   3.0070	[    0.000000] Linux version 6.1.0 (linh@lindt) (aarch64-none-elf-gcc (Arm GNU Toolchain 13.2.rel1 (Build arm-13.7)) 13.2.1 20231009, GNU ld (Arm GNU Toolchain 13.2.rel1 (Build arm-13.7)) 2.41.0.20231009) #1 SMP PREEMPT Thu Jul  4 13:15:57 PDT 2024
+   3.0070	[    0.000000] Machine model: Hardkernel ODROID-C4
+   3.0070	[    0.000000] efi: UEFI not found.
+   3.0070	[    0.000000] OF: reserved mem: invalid alloc-ranges property in 'linux,cma', skipping node.
+   3.0071	[    0.000000] NUMA: No NUMA configuration found
+   3.0071	[    0.000000] NUMA: Faking a node at [mem 0x0000000020000000-0x000000002fffffff]
+   3.0071	[    0.000000] NUMA: NODE_DATA [mem 0x2d61fa00-0x2d621fff]
+   3.0071	[    0.000000] Zone ranges:
+   3.0071	[    0.000000]   DMA      [mem 0x0000000020000000-0x000000002fffffff]
+   3.0071	[    0.000000]   DMA32    empty
+   3.0071	[    0.000000]   Normal   empty
+   3.0071	[    0.000000] Movable zone start for each node
+   3.0071	[    0.000000] Early memory node ranges
+   3.0071	[    0.000000]   node   0: [mem 0x0000000020000000-0x000000002fffffff]
+   3.1071	[    0.000000] Initmem setup node 0 [mem 0x0000000020000000-0x000000002fffffff]
+   3.1071	[    0.000000] cma: Reserved 32 MiB at 0x000000002b000000
+   3.1071	[    0.000000] psci: probing for conduit method from DT.
+   3.1071	[    0.000000] psci: PSCIv1.2 detected in firmware.
+   3.1071	[    0.000000] psci: Using standard PSCI v0.2 function IDs
+   3.1071	[    0.000000] psci: Trusted OS migration not required
+   3.1071	[    0.000000] psci: SMC Calling Convention v1.0
+   3.1072	[    0.000000] percpu: Embedded 19 pages/cpu s40904 r8192 d28728 u77824
+   3.1072	[    0.000000] pcpu-alloc: s40904 r8192 d28728 u77824 alloc=19*4096
+   3.1072	[    0.000000] pcpu-alloc: [0] 0 [0] 1 [0] 2 [0] 3 
+   3.1072	[    0.000000] Detected VIPT I-cache on CPU0
+   3.1072	[    0.000000] CPU features: detected: Qualcomm erratum 1009, or ARM erratum 1286807, 2441009
+   3.1072	[    0.000000] CPU features: detected: ARM errata 1165522, 1319367, or 1530923
+   3.1072	[    0.000000] alternatives: applying boot alternatives
+   3.1072	[    0.000000] Fallback order for Node 0: 0 
+   3.1072	[    0.000000] Built 1 zonelists, mobility grouping on.  Total pages: 64512
+   3.1072	[    0.000000] Policy zone: DMA
+   3.2072	[    0.000000] Kernel command line: console=ttyAML0,115200n8 root=/dev/ram0 nosmp rw debug loglevel=8 pci=nomsi earlyprintk=serial maxcpus=1
+   3.2072	[    0.000000] Unknown kernel command line parameters "pci=nomsi earlyprintk=serial", will be passed to user space.
+   3.2072	[    0.000000] Dentry cache hash table entries: 32768 (order: 6, 262144 bytes, linear)
+   3.2072	[    0.000000] Inode-cache hash table entries: 16384 (order: 5, 131072 bytes, linear)
+   3.2072	[    0.000000] mem auto-init: stack:off, heap alloc:off, heap free:off
+   3.2072	[    0.000000] Memory: 167520K/262144K available (8384K kernel code, 1000K rwdata, 2388K rodata, 1664K init, 462K bss, 61856K reserved, 32768K cma-reserved)
+   3.2072	[    0.000000] SLUB: HWalign=64, Order=0-3, MinObjects=0, CPUs=4, Nodes=1
+   3.2072	[    0.000000] rcu: Preemptible hierarchical RCU implementation.
+   3.2072	[    0.000000] rcu: 	RCU event tracing is enabled.
+   3.2072	[    0.000000] rcu: 	RCU restricting CPUs from NR_CPUS=256 to nr_cpu_ids=4.
+   3.3073	[    0.000000] 	Trampoline variant of Tasks RCU enabled.
+   3.3073	[    0.000000] 	Tracing variant of Tasks RCU enabled.
+   3.3073	[    0.000000] rcu: RCU calculated value of scheduler-enlistment delay is 25 jiffies.
+   3.3073	[    0.000000] rcu: Adjusting geometry for rcu_fanout_leaf=16, nr_cpu_ids=4
+   3.3073	[    0.000000] NR_IRQS: 64, nr_irqs: 64, preallocated irqs: 0
+   3.3073	[    0.000000] Root IRQ handler: gic_handle_irq
+   3.3073	[    0.000000] rcu: srcu_init: Setting srcu_struct sizes based on contention.
+   3.3073	[    0.000000] arch_timer: cp15 timer(s) running at 24.00MHz (virt).
+   3.3073	[    0.000000] clocksource: arch_sys_counter: mask: 0xffffffffffffff max_cycles: 0x588fe9dc0, max_idle_ns: 440795202592 ns
+   3.3073	[    0.000000] sched_clock: 56 bits at 24MHz, resolution 41ns, wraps every 4398046511097ns
+   3.3073	[    0.000164] Console: colour dummy device 80x25
+   3.3073	[    0.000225] Calibrating delay loop (skipped), value calculated using timer frequency.. 48.00 BogoMIPS (lpj=96000)
+   3.3073	[    0.000237] pid_max: default: 32768 minimum: 301
+   3.3073	[    0.000302] LSM: Security Framework initializing
+   3.4074	[    0.000343] Mount-cache hash table entries: 512 (order: 0, 4096 bytes, linear)
+   3.4074	[    0.000353] Mountpoint-cache hash table entries: 512 (order: 0, 4096 bytes, linear)
+   3.4074	[    0.001819] cblist_init_generic: Setting adjustable number of callback queues.
+   3.4074	[    0.001831] cblist_init_generic: Setting shift to 2 and lim to 1.
+   3.4074	[    0.001913] cblist_init_generic: Setting shift to 2 and lim to 1.
+   3.4074	[    0.002083] rcu: Hierarchical SRCU implementation.
+   3.4074	[    0.002088] rcu: 	Max phase no-delay instances is 1000.
+   3.4074	[    0.003482] EFI services will not be available.
+   3.4074	[    0.003764] smp: Bringing up secondary CPUs ...
+   3.4074	[    0.003771] smp: Brought up 1 node, 1 CPU
+   3.4074	[    0.003776] SMP: Total of 1 processors activated.
+   3.4074	[    0.003783] CPU features: detected: 32-bit EL0 Support
+   3.4074	[    0.003786] CPU features: detected: 32-bit EL1 Support
+   3.4074	[    0.003791] CPU features: detected: Data cache clean to the PoU not required for I/D coherence
+   3.4074	[    0.003795] CPU features: detected: Common not Private translations
+   3.4074	[    0.003798] CPU features: detected: CRC32 instructions
+   3.5075	[    0.003805] CPU features: detected: RCpc load-acquire (LDAPR)
+   3.5075	[    0.003808] CPU features: detected: LSE atomic instructions
+   3.5076	[    0.003811] CPU features: detected: Privileged Access Never
+   3.5076	[    0.003814] CPU features: detected: RAS Extension Support
+   3.5076	[    0.003944] CPU: All CPU(s) started at EL1
+   3.5076	[    0.003964] alternatives: applying system-wide alternatives
+   3.5076	[    0.006307] devtmpfs: initialized
+   3.5076	[    0.015228] clocksource: jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 7645041785100000 ns
+   3.5076	[    0.015250] futex hash table entries: 1024 (order: 4, 65536 bytes, linear)
+   3.5076	[    0.016397] DMI not present or invalid.
+   3.5076	[    0.017141] DMA: preallocated 128 KiB GFP_KERNEL pool for atomic allocations
+   3.5076	[    0.017212] DMA: preallocated 128 KiB GFP_KERNEL|GFP_DMA pool for atomic allocations
+   3.5076	[    0.017292] DMA: preallocated 128 KiB GFP_KERNEL|GFP_DMA32 pool for atomic allocations
+   3.5076	[    0.017637] thermal_sys: Registered thermal governor 'step_wise'
+   3.6077	[    0.017643] thermal_sys: Registered thermal governor 'power_allocator'
+   3.6077	[    0.017677] cpuidle: using governor menu
+   3.6077	[    0.017771] hw-breakpoint: found 6 breakpoint and 4 watchpoint registers.
+   3.6077	[    0.017798] ASID allocator initialised with 65536 entries
+   3.6077	[    0.018653] Serial: AMBA PL011 UART driver
+   3.6077	[    0.035210] platform hdmi-connector: Fixing up cyclic dependency with ff600000.hdmi-tx
+   3.6077	[    0.035945] KASLR disabled due to lack of seed
+   3.6077	[    0.040469] HugeTLB: registered 1.00 GiB page size, pre-allocated 0 pages
+   3.6077	[    0.040479] HugeTLB: 16380 KiB vmemmap can be freed for a 1.00 GiB page
+   3.6077	[    0.040484] HugeTLB: registered 32.0 MiB page size, pre-allocated 0 pages
+   3.6077	[    0.040488] HugeTLB: 508 KiB vmemmap can be freed for a 32.0 MiB page
+   3.6077	[    0.040492] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+   3.6077	[    0.040495] HugeTLB: 28 KiB vmemmap can be freed for a 2.00 MiB page
+   3.6077	[    0.040499] HugeTLB: registered 64.0 KiB page size, pre-allocated 0 pages
+   3.6077	[    0.040502] HugeTLB: 0 KiB vmemmap can be freed for a 64.0 KiB page
+   3.6077	[    0.041907] iommu: Default domain type: Translated 
+   3.7077	[    0.041915] iommu: DMA domain TLB invalidation policy: strict mode 
+   3.7077	[    0.042163] SCSI subsystem initialized
+   3.7077	[    0.042294] libata version 3.00 loaded.
+   3.7077	[    0.042514] pps_core: LinuxPPS API ver. 1 registered
+   3.7077	[    0.042519] pps_core: Software ver. 5.3.6 - Copyright 2005-2007 Rodolfo Giometti <giometti@linux.it>
+   3.7077	[    0.042663] EDAC MC: Ver: 3.0.0
+   3.7077	[    0.043418] FPGA manager framework
+   3.7077	[    0.043604] clocksource: Switched to clocksource arch_sys_counter
+   3.7077	[    0.043794] VFS: Disk quotas dquot_6.6.0
+   3.7077	[    0.043837] VFS: Dquot-cache hash table entries: 512 (order 0, 4096 bytes)
+   3.7077	[    0.051080] kvm [1]: HYP mode not available
+   3.7077	[    0.051908] Initialise system trusted keyrings
+   3.7077	[    0.052202] Unpacking initramfs...
+   3.7077	[    0.059723] workingset: timestamp_bits=42 max_order=16 bucket_order=0
+   3.7077	[    0.065184] squashfs: version 4.0 (2009/01/31) Phillip Lougher
+   3.7077	[    0.140747] Key type asymmetric registered
+   3.7077	[    0.140761] Asymmetric key parser 'x509' registered
+   3.7077	[    0.140852] Block layer SCSI generic (bsg) driver version 0.4 loaded (major 249)
+   3.7077	[    0.140859] io scheduler mq-deadline registered
+   3.7077	[    0.140864] io scheduler kyber registered
+   3.8078	[    0.141047] io scheduler bfq registered
+   3.8078	[    0.148372] irq_meson_gpio: 100 to 8 gpio interrupt mux initialized
+   3.8078	[    0.164092] Serial: 8250/16550 driver, 4 ports, IRQ sharing enabled
+   3.8078	[    0.169281] ff803000.serial: ttyAML0 at MMIO 0xff803000 (irq = 14, base_baud = 1500000) is a meson_uart
+   3.8078	[    0.794537] Freeing initrd memory: 41980K
+   3.8078	[    1.003314] printk: console [ttyAML0] enabled
+   3.8078	[    1.011144] VFIO - User Level meta-driver version: 0.3
+   3.8078	[    1.013194] i2c_dev: i2c /dev entries driver
+   3.8078	[    1.018825] cpu cpu0: error -ENODEV: _opp_set_regulators: no regulator (cpu) found
+   3.8078	[    1.024400] cpu cpu0: error -ENODEV: failed to set regulators
+   3.8078	[    1.030497] ledtrig-cpu: registered to indicate activity on CPUs
+   3.8078	[    1.038186] Loading compiled-in X.509 certificates
+   3.8078	[    1.060026] Freeing unused kernel memory: 1664K
+   3.8078	[    1.063753] Run /init as init process
+   3.8078	[    1.063777]   with arguments:
+   3.9080	[    1.064718]     /init
+   3.9080	[    1.066960]   with environment:
+   3.9080	[    1.070094]     HOME=/
+   3.9080	[    1.072403]     TERM=linux
+   3.9080	[    1.075043]     pci=nomsi
+   3.9080	[    1.077641]     earlyprintk=serial
+   3.9080	Starting syslogd: OK
+   3.9080	Starting klogd: OK
+   3.9080	Running sysctl: OK
+   6.0138	Saving random seed: [    3.203619] random: crng init done
+   6.0138	OK
+   6.0138	Starting network: ip: socket: Function not implemented
+   6.0139	ip: socket: Function not implemented
+   6.0139	FAIL
+   6.5153	
+   6.5153	Welcome to Buildroot
+   6.5153	buildroot login: 
