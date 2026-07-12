@@ -3,12 +3,13 @@ Run all 7 paper scenarios with BeamSearchExploration and extract clean stats.
 Uses direct result inspection + regex on verbose output.
 """
 import sys
+import os
 import time
 import io
 import re
 from contextlib import redirect_stdout, redirect_stderr
 
-sys.path.insert(0, '/Users/siagraw/Documents/OSmosis-mac/scripts/proc/submarine')
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import builtins
 _real_print = builtins.print

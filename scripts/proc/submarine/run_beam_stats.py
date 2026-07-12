@@ -4,11 +4,12 @@ Suppresses verbose output, reports: iter-to-first-solution, total candidates eva
 total discarded, solutions found, wall-clock time.
 """
 import sys
+import os
 import time
 import io
 from contextlib import redirect_stdout, redirect_stderr
 
-sys.path.insert(0, '/Users/siagraw/Documents/OSmosis-mac/scripts/proc/submarine')
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # We need to import the module but suppress all its startup prints
 import builtins
