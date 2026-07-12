@@ -1,0 +1,10 @@
+run 1: p1_first_guest_instr=0.183s  p3_first_userspace=0.473s  p4_login_prompt=2.722s
+run 2: p1_first_guest_instr=0.181s  p3_first_userspace=0.469s  p4_login_prompt=2.718s
+run 3: p1_first_guest_instr=0.181s  p3_first_userspace=0.469s  p4_login_prompt=2.718s
+run 4: p1_first_guest_instr=0.180s  p3_first_userspace=0.471s  p4_login_prompt=2.721s
+run 5: p1_first_guest_instr=0.179s  p3_first_userspace=0.462s  p4_login_prompt=2.712s
+
+=== means (N=5) ===
+p1_first_guest_instr      0.181 s  (sd 0.001, n=5)
+p3_first_userspace        0.469 s  (sd 0.004, n=5)
+p4_login_prompt           2.718 s  (sd 0.004, n=5)

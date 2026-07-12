@@ -33,11 +33,24 @@ class SerialShell:
         time.sleep(1.5)
         self.con.reset_input_buffer()
         self.con.write(b"\n")
-        ok, buf = self._wait(PROMPT, 6)
-        if ok:
+        # Watch for a shell prompt and the login prompt in the *same* pass: the
+        # console only re-emits "login:" in response to input, so consuming it
+        # while looking for a shell prompt and then waiting for a fresh one hangs.
+        buf = b""
+        t0 = time.time()
+        state = None
+        while time.time() - t0 < 20:
+            buf += self.con.read(4096)
+            tail = buf[-500:]
+            if PROMPT.encode() in tail:
+                state = "shell"
+                break
+            if b"login:" in tail:
+                state = "login"
+                break
+        if state == "shell":
             return True
-        ok, _ = self._wait("login:", 20)
-        if not ok:
+        if state != "login":
             raise RuntimeError("no login prompt on console")
         self.con.write((USER + "\n").encode())
         if not self._wait("Password:", 10)[0]:

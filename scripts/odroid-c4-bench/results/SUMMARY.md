@@ -93,3 +93,37 @@ The Linux+KVM VM-boot comparison needs a mainline kernel with KVM enabled.
 
 Raw per-run logs: `{process,vm-untracked,vm-tracked}_run{1..5}.log`
 (format: `<seconds since go>\t<line>`), `linux_process_run{1..5}.log`.
+
+## Linux + KVM on the board (completes the VM comparison)
+
+The stock image cannot run KVM (see above). To get this measurement we rebuilt the
+board's own kernel (hardkernel/linux, branch `odroidg12-4.9.y`, 4.9.337) with:
+
+1. `CONFIG_KVM=y` / `CONFIG_KVM_ARM_HOST=y`, and
+2. a device-tree fix (`odroid-c4-kvm-gic.patch`): the vendor DTS declares only the
+   GIC-400's GICD and a truncated GICC, omitting GICH (hypervisor control) and GICV
+   (virtual CPU interface). KVM's vGICv2 needs all four, so the vendor kernel could
+   not have run KVM even with the config flag on.
+
+After that: `kvm: Hyp mode initialized successfully`, `kvm: vgic-v2@ffc04000`,
+`/dev/kvm` present, `KVM_GET_API_VERSION = 12`. Kernel installed to /media/boot
+(originals backed up as `*.orig`), so it is persistent.
+
+Guest: the *identical* image CellulOS's VMM boots (`apps/vmm/board/odroidc4/{linux,
+rootfs.cpio.gz}`, Linux 6.1.0 + 766 KB buildroot initramfs), same 256 MB of guest
+memory, under `qemu-system-aarch64` 6.2 with `-enable-kvm -cpu host
+-M virt,gic-version=2`. t0 = qemu launch. N=5 (`bench_kvm_vm.py`).
+
+| phase (cumulative, from VMM start) | seL4 untracked | CellulOS tracked | Linux+KVM |
+|---|---|---|---|
+| p1 first guest instruction | 2.81 s | 4.71 s | **0.181 s** (sd 0.001) |
+| p3 first userspace | 3.69 s | 5.69 s | **0.469 s** (sd 0.004) |
+| p4 login prompt | 6.31 s | 13.13 s | **2.718 s** (sd 0.004) |
+
+Under QEMU, Linux+KVM took 73 s vs seL4's 6.1 s, and §7.1 argued that was an
+emulated-EL2 artifact that would vanish on hardware. It does, and then some: the
+true ordering is the *reverse* of the emulated one. Linux+KVM beats CellulOS's VMM
+by 4.8x to login and the untracked seL4 VMM by 2.3x. The gap is widest in VM
+creation (0.18 s vs 2.81/4.71 s), where KVM does little eagerly while the seL4 VMMs
+build the guest address space and copy the 13.9 MB kernel image up front -- the same
+eager-construction pattern that makes CellulOS's process spawn slower than fork().
