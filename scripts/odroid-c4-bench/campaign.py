@@ -55,15 +55,20 @@ def run_once(cfg_name, run_idx):
         con.reset_input_buffer()
         power_cycle()
 
-        # Spam newlines to catch the ~2 s autoboot window.
+        # Catch the ~2 s autoboot window. Two u-boots are in play depending on
+        # which SD card is inserted: the CellulOS card has mainline u-boot 2023.07
+        # (prompt "=>", stops on Enter), the HardKernel Ubuntu card has vendor
+        # u-boot 2015.01 (prompt "odroidc4#", wants Enter/space/Ctrl+C).
         buf = b""
         deadline = time.monotonic() + 45
         at_prompt = False
         while time.monotonic() < deadline:
-            con.write(b"\n")
-            time.sleep(0.08)
+            con.write(b"\x03")
+            con.write(b"\r\n")
+            con.write(b" ")
+            time.sleep(0.06)
             buf += con.read(4096)
-            if b"=> " in buf[-200:] or buf.rstrip().endswith(b"=>"):
+            if re.search(rb"(odroidc4#|=>)\s*$", buf[-120:]):
                 at_prompt = True
                 break
         if not at_prompt:
@@ -73,23 +78,34 @@ def run_once(cfg_name, run_idx):
 
         time.sleep(0.5)
         con.reset_input_buffer()
-        for cmd in (
-            f"setenv ipaddr {BOARD_IP}",
-            f"setenv serverip {HOST_IP}",
-            f"tftpboot {LOAD_ADDR} {cfg['img']}",
-        ):
+        for cmd in (f"setenv ipaddr {BOARD_IP}", f"setenv serverip {HOST_IP}"):
             con.write((cmd + "\n").encode())
             con.flush()
             time.sleep(1.0)
 
-        # Wait for TFTP to finish ("Bytes transferred").
-        tftp_deadline = time.monotonic() + 90
+        # TFTP occasionally drops packets and u-boot gives up ("Retry count
+        # exceeded"); just try again rather than failing the run.
         tbuf = b""
-        while time.monotonic() < tftp_deadline:
-            tbuf += con.read(4096)
+        for attempt in range(3):
+            con.reset_input_buffer()
+            con.write(f"tftpboot {LOAD_ADDR} {cfg['img']}\n".encode())
+            con.flush()
+            tbuf = b""
+            tftp_deadline = time.monotonic() + 90
+            while time.monotonic() < tftp_deadline:
+                tbuf += con.read(4096)
+                if b"Bytes transferred" in tbuf:
+                    break
+                if b"Retry count exceeded" in tbuf[-200:]:
+                    break
             if b"Bytes transferred" in tbuf:
                 break
+            time.sleep(2)
         else:
+            RESULTS.mkdir(exist_ok=True)
+            log_path.write_bytes(b"### TFTP_TIMEOUT; raw serial after uboot prompt:\n" + tbuf)
+            return dict(config=cfg_name, run=run_idx, status="TFTP_TIMEOUT", log=str(log_path))
+        if b"Bytes transferred" not in tbuf:
             RESULTS.mkdir(exist_ok=True)
             log_path.write_bytes(b"### TFTP_TIMEOUT; raw serial after uboot prompt:\n" + tbuf)
             return dict(config=cfg_name, run=run_idx, status="TFTP_TIMEOUT", log=str(log_path))

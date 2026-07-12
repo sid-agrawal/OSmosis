@@ -1,4 +1,4 @@
-# config=vm-tracked run=4 status=OK
+# config=vm-tracked run=4 status=OK src=mmc
 # t_sec_since_go	text
    0.1002	go 0x20000000
    0.1002	## Starting application at 0x20000000 ...
@@ -9,488 +9,296 @@
    0.2003	Looking for DTB in CPIO archive...found at 1082a5c0.
    0.2003	Loaded DTB from 1082a5c0.
    0.2003	   paddr=[242000..24dfff]
-   0.2004	ELF-loading image 'kernel' to 0
-   0.2004	  paddr=[0..241fff]
-   0.2004	  vaddr=[8000000000..8000241fff]
-   0.2004	  virt_entry=8000000000
-   0.2004	ELF-loading image 'sel4test-driver' to 80000000
-   0.2004	  paddr=[80000000..8ade5fff]
-   0.2004	  vaddr=[400000..b1e5fff]
-   0.2004	  virt_entry=45aa60
-   0.6015	Enabling hypervisor MMU and paging
-   0.6015	Jumping to kernel-image entry point...
-   0.6015	
-   0.6015	Bootstrapping kernel
-   0.6015	available phys memory regions: 2
-   0.6015	  [0..5000000]
-   0.6015	  [5300000..f5800000]
-   0.6015	reserved virt address space regions: 3
-   0.6015	  [8000000000..8000242000]
-   0.6015	  [8000242000..800024dbc7]
-   0.6015	  [8080000000..808ade6000]
-   0.6015	Booting all finished, dropped to user space
-   1.0021	Node 0 of 1
-   1.0021	IOPT levels:     0
-   1.0021	IPC buffer:      0xb1e6000
-   1.0021	Empty slots:     [44702 --> 131072)
-   1.1022	sharedFrames:    [0 --> 0)
-   1.1022	userImageFrames: [116 --> 44634)
-   1.1022	userImagePaging: [16 --> 104)
-   1.1022	untypeds:        [44634 --> 44702)
-   1.1022	Initial thread domain: 0
-   1.1022	Initial thread cnode size: 17
-   1.1022	List of untypeds
-   1.1022	------------------
-   1.1022	Paddr    | Size |  SizeBits   | Device
-   1.1022	0 | 16 | 64.0 KB | 0
-   1.1022	0x24dbd0 | 4 | 16 bytes | 0
-   1.1022	0x24dbe0 | 5 | 32 bytes | 0
-   1.1022	0x24dc00 | 10 | 1.0 KB | 0
-   1.1022	0x24e000 | 13 | 8.0 KB | 0
-   1.1022	0x250000 | 16 | 64.0 KB | 0
-   1.1022	0x260000 | 17 | 128.0 KB | 0
-   1.1022	0x280000 | 19 | 512.0 KB | 0
-   1.1022	0x300000 | 20 | 1.0 MB | 0
-   1.1022	0x400000 | 22 | 4.0 MB | 0
-   1.1022	0x800000 | 23 | 8.0 MB | 0
-   1.1022	0x1000000 | 24 | 16.0 MB | 0
-   1.1022	0x2000000 | 25 | 32.0 MB | 0
-   1.1022	0x4000000 | 24 | 16.0 MB | 0
-   1.1022	0x5300000 | 20 | 1.0 MB | 0
-   1.1022	0x5400000 | 22 | 4.0 MB | 0
-   1.1022	0x5800000 | 23 | 8.0 MB | 0
-   1.1022	0x6000000 | 25 | 32.0 MB | 0
-   1.1022	0x8000000 | 27 | 128.0 MB | 0
-   1.1022	0x10000000 | 28 | 256.0 MB | 0
-   1.1022	0x20000000 | 29 | 512.0 MB | 0
-   1.1022	0x40000000 | 30 | 1.0 GB | 0
-   1.1022	0x8ade6000 | 13 | 8.0 KB | 0
-   1.1022	0x8ade8000 | 15 | 32.0 KB | 0
-   1.1022	0x8adf0000 | 16 | 64.0 KB | 0
-   1.1022	0x8ae00000 | 21 | 2.0 MB | 0
-   1.1022	0x8b000000 | 24 | 16.0 MB | 0
-   1.1022	0x8c000000 | 26 | 64.0 MB | 0
-   1.1022	0x90000000 | 28 | 256.0 MB | 0
-   1.1022	0xa0000000 | 29 | 512.0 MB | 0
-   1.2026	0xc0000000 | 29 | 512.0 MB | 0
-   1.2026	0xe0000000 | 28 | 256.0 MB | 0
-   1.2026	0xf0000000 | 26 | 64.0 MB | 0
-   1.2026	0xf4000000 | 24 | 16.0 MB | 0
-   1.2026	0xf546d800 | 11 | 2.0 KB | 0
-   1.2026	0xf546e000 | 13 | 8.0 KB | 0
-   1.2026	0xf5470000 | 16 | 64.0 KB | 0
-   1.2026	0xf5480000 | 19 | 512.0 KB | 0
-   1.2026	0xf5500000 | 20 | 1.0 MB | 0
-   1.2026	0xf5600000 | 21 | 2.0 MB | 0
-   1.2026	1 untypeds of size 4
-   1.2026	1 untypeds of size 5
-   1.2026	1 untypeds of size 10
-   1.2026	1 untypeds of size 11
-   1.2026	3 untypeds of size 13
-   1.2026	1 untypeds of size 15
-   1.2026	4 untypeds of size 16
-   1.2026	1 untypeds of size 17
-   1.2026	2 untypeds of size 19
-   1.2026	3 untypeds of size 20
-   1.2026	2 untypeds of size 21
-   1.2026	2 untypeds of size 22
-   1.2026	2 untypeds of size 23
-   1.2026	4 untypeds of size 24
-   1.2026	2 untypeds of size 25
-   1.2026	2 untypeds of size 26
-   1.2026	1 untypeds of size 27
-   1.2026	3 untypeds of size 28
-   1.2026	3 untypeds of size 29
-   1.2026	1 untypeds of size 30
-   1.2026	Switching to a safer, bigger stack... 
-   1.2026	
-   1.2026	seL4 Test!!
-   1.2026	=========
-   1.2026	
+   0.2003	ELF-loading image 'kernel' to 0
+   0.2003	  paddr=[0..241fff]
+   0.2003	  vaddr=[8000000000..8000241fff]
+   0.2003	  virt_entry=8000000000
+   0.2003	ELF-loading image 'sel4test-driver' to 80000000
+   0.2003	  paddr=[80000000..8ade5fff]
+   0.2003	  vaddr=[400000..b1e5fff]
+   0.2003	  virt_entry=45aa60
+   0.6009	Enabling hypervisor MMU and paging
+   0.6009	Jumping to kernel-image entry point...
+   0.6009	
+   0.6009	Bootstrapping kernel
+   0.6009	available phys memory regions: 2
+   0.6009	  [0..5000000]
+   0.6009	  [5300000..f5800000]
+   0.6009	reserved virt address space regions: 3
+   0.6009	  [8000000000..8000242000]
+   0.6009	  [8000242000..800024dbc7]
+   0.6009	  [8080000000..808ade6000]
+   0.6009	Booting all finished, dropped to user space
+   1.0015	Node 0 of 1
+   1.0015	IOPT levels:     0
+   1.0015	IPC buffer:      0xb1e6000
+   1.0015	Empty slots:     [44702 --> 131072)
+   1.1016	sharedFrames:    [0 --> 0)
+   1.1016	userImageFrames: [116 --> 44634)
+   1.1016	userImagePaging: [16 --> 104)
+   1.1016	untypeds:        [44634 --> 44702)
+   1.1016	Initial thread domain: 0
+   1.1016	Initial thread cnode size: 17
+   1.1016	List of untypeds
+   1.1016	------------------
+   1.1016	Paddr    | Size |  SizeBits   | Device
+   1.1016	0 | 16 | 64.0 KB | 0
+   1.1016	0x24dbd0 | 4 | 16 bytes | 0
+   1.1016	0x24dbe0 | 5 | 32 bytes | 0
+   1.1016	0x24dc00 | 10 | 1.0 KB | 0
+   1.1016	0x24e000 | 13 | 8.0 KB | 0
+   1.1016	0x250000 | 16 | 64.0 KB | 0
+   1.1016	0x260000 | 17 | 128.0 KB | 0
+   1.1016	0x280000 | 19 | 512.0 KB | 0
+   1.1016	0x300000 | 20 | 1.0 MB | 0
+   1.1016	0x400000 | 22 | 4.0 MB | 0
+   1.1016	0x800000 | 23 | 8.0 MB | 0
+   1.1016	0x1000000 | 24 | 16.0 MB | 0
+   1.1016	0x2000000 | 25 | 32.0 MB | 0
+   1.1016	0x4000000 | 24 | 16.0 MB | 0
+   1.1016	0x5300000 | 20 | 1.0 MB | 0
+   1.1016	0x5400000 | 22 | 4.0 MB | 0
+   1.1016	0x5800000 | 23 | 8.0 MB | 0
+   1.1016	0x6000000 | 25 | 32.0 MB | 0
+   1.1016	0x8000000 | 27 | 128.0 MB | 0
+   1.1016	0x10000000 | 28 | 256.0 MB | 0
+   1.1016	0x20000000 | 29 | 512.0 MB | 0
+   1.1016	0x40000000 | 30 | 1.0 GB | 0
+   1.1016	0x8ade6000 | 13 | 8.0 KB | 0
+   1.1016	0x8ade8000 | 15 | 32.0 KB | 0
+   1.1016	0x8adf0000 | 16 | 64.0 KB | 0
+   1.1016	0x8ae00000 | 21 | 2.0 MB | 0
+   1.1016	0x8b000000 | 24 | 16.0 MB | 0
+   1.1016	0x8c000000 | 26 | 64.0 MB | 0
+   1.1016	0x90000000 | 28 | 256.0 MB | 0
+   1.1016	0xa0000000 | 29 | 512.0 MB | 0
+   1.2018	0xc0000000 | 29 | 512.0 MB | 0
+   1.2018	0xe0000000 | 28 | 256.0 MB | 0
+   1.2018	0xf0000000 | 26 | 64.0 MB | 0
+   1.2018	0xf4000000 | 24 | 16.0 MB | 0
+   1.2018	0xf546d800 | 11 | 2.0 KB | 0
+   1.2018	0xf546e000 | 13 | 8.0 KB | 0
+   1.2018	0xf5470000 | 16 | 64.0 KB | 0
+   1.2018	0xf5480000 | 19 | 512.0 KB | 0
+   1.2018	0xf5500000 | 20 | 1.0 MB | 0
+   1.2018	0xf5600000 | 21 | 2.0 MB | 0
+   1.2018	1 untypeds of size 4
+   1.2018	1 untypeds of size 5
+   1.2018	1 untypeds of size 10
+   1.2018	1 untypeds of size 11
+   1.2018	3 untypeds of size 13
+   1.2018	1 untypeds of size 15
+   1.2018	4 untypeds of size 16
+   1.2018	1 untypeds of size 17
+   1.2018	2 untypeds of size 19
+   1.2018	3 untypeds of size 20
+   1.2018	2 untypeds of size 21
+   1.2018	2 untypeds of size 22
+   1.2018	2 untypeds of size 23
+   1.2018	4 untypeds of size 24
+   1.2018	2 untypeds of size 25
+   1.2018	2 untypeds of size 26
+   1.2018	1 untypeds of size 27
+   1.2018	3 untypeds of size 28
+   1.2018	3 untypeds of size 29
+   1.2018	1 untypeds of size 30
+   1.2018	Switching to a safer, bigger stack... 
+   1.2018	
+   1.2018	seL4 Test!!
+   1.2019	=========
+   1.2019	
    2.1044	vspace_reserve_range_at@vspace.h:742 vspace is NULL
    2.1044	create_reservations@elf.c:253 Failed to make reservation: 0x400000, 2293760
-   2.1044	elf_reserve_regions_in_vspace@elf.c:452 Failed to create reservations
-   2.1045	sel4utils_elf_reserve@elf.c:479 Failed to reserve regions
-   2.1045	GPIServ Parent: Starting GPI server...
-   2.2048	Starting test suite sel4test TT: 3 Count: 1
-   2.2048	Starting test 0: Test that there are tests
-   2.2048	Starting test 1: GPIVM004
-   2.5052	Running test GPIVM004 (Test VMM that starts one Linux guest PD (osm))
-   2.5052	------------------STARTING: test_linux_vm_osm------------------
-   2.5052	virq_controller_init@virq.c:26 initialised virtual GICv2 driver
-   3.4076	[37m[VMM] linux_copy_kernel_image():	[0mimages locations  vspace as returned by CPIO:
-   3.4076		 kernel_image 0x811d40:0x155bf40, initrd: 0x155bfc0:0x161702e, dtb: 0x162057c:0x162c714 
-   3.4076	[37m[VMM] linux_copy_kernel_image():	[0mcurrent vspace location:
-   3.4076		 Linux guest ram: 0x20000000:0x0, initrd: 0x2d700000:0x2d7bb06e, dtb: 0x2d000000:0x2d00c198 
-   3.4076	[37m[VMM] linux_setup_images():	[0mCopying guest kernel image to 0x20000000 (0xd4a200 bytes)
-   3.5077	[37m[VMM] linux_setup_images():	[0mCopying guest DTB to 0x2d000000 (0xc198 bytes)
-   3.5077	[37m[VMM] linux_setup_images():	[0mCopying guest initial RAM disk to 0x2d700000 (0xbb06e bytes)
-   3.5077	NODE_TYPE,NODE_ID,DATA,EDGE_TYPE,EDGE_FROM,EDGE_TO,EXTRA
-   3.5077	PD,PD_0,ROOT_TASK,,,,
-   3.5077	RESOURCE_SPACE,ADS_SPACE_7,ADS,,,,
-   3.5077	RESOURCE_SPACE,MO_SPACE_4,MO,,,,
-   3.5077	RESOURCE,VMR_7_1,VMR,,,,"{""va"": ""0x2f401000"", ""vmr_type"": ""STACK"", ""num_pages"": ""17"", ""page_size"": ""4096""}"
-   3.5077	RESOURCE,MO_4_1,MO,,,,"{""pa"": ""0x0"", ""num_pages"": ""16"", ""page_size"": ""4096""}"
-   3.5077	RESOURCE,VMR_7_2,VMR,,,,"{""va"": ""0x10000000"", ""vmr_type"": ""UNKNOWN"", ""num_pages"": ""128000"", ""page_size"": ""4096""}"
-   3.5077	RESOURCE,MO_4_2,MO,,,,"{""pa"": ""0x0"", ""num_pages"": ""0"", ""page_size"": ""4096""}"
-   3.5077	RESOURCE,VMR_7_3,VMR,,,,"{""va"": ""0x2f426000"", ""vmr_type"": ""GENERIC"", ""num_pages"": ""1"", ""page_size"": ""4096""}"
-   3.6078	RESOURCE,MO_4_3,MO,,,,"{""pa"": ""0x3000"", ""num_pages"": ""1"", ""page_size"": ""4096""}"
-   3.6078	RESOURCE,VMR_7_6,VMR,,,,"{""va"": ""0x2f441000"", ""vmr_type"": ""GENERIC"", ""num_pages"": ""1"", ""page_size"": ""4096""}"
-   3.6078	RESOURCE,MO_4_8,MO,,,,"{""pa"": ""0xf486e000"", ""num_pages"": ""1"", ""page_size"": ""4096""}"
-   3.6078	RESOURCE,VMR_7_7,VMR,,,,"{""va"": ""0x2f442000"", ""vmr_type"": ""GENERIC"", ""num_pages"": ""1"", ""page_size"": ""4096""}"
-   3.6078	RESOURCE,MO_4_b,MO,,,,"{""pa"": ""0xf4881000"", ""num_pages"": ""1"", ""page_size"": ""4096""}"
-   3.6078	PD,PD_1,GPIVM004,,,,
-   3.6078	RESOURCE_SPACE,ADS_SPACE_8,ADS,,,,
-   3.6078	RESOURCE,VMR_8_1,VMR,,,,"{""va"": ""0x400000"", ""vmr_type"": ""ELF_CODE"", ""num_pages"": ""560"", ""page_size"": ""4096""}"
-   3.6078	RESOURCE,MO_4_4,MO,,,,"{""pa"": ""0xe000"", ""num_pages"": ""560"", ""page_size"": ""4096""}"
-   3.6078	RESOURCE,VMR_8_2,VMR,,,,"{""va"": ""0x630000"", ""vmr_type"": ""ELF_DATA"", ""num_pages"": ""4656"", ""page_size"": ""4096""}"
-   3.6078	RESOURCE,MO_4_5,MO,,,,"{""pa"": ""0x53fc000"", ""num_pages"": ""4656"", ""page_size"": ""4096""}"
-   3.7079	RESOURCE,VMR_8_3,VMR,,,,"{""va"": ""0x10000000"", ""vmr_type"": ""SHARED_FRAMES"", ""num_pages"": ""1"", ""page_size"": ""4096""}"
-   3.7079	RESOURCE,VMR_8_4,VMR,,,,"{""va"": ""0x10001000"", ""vmr_type"": ""IPC_BUF"", ""num_pages"": ""1"", ""page_size"": ""4096""}"
-   3.7079	RESOURCE,MO_4_6,MO,,,,"{""pa"": ""0xf485b000"", ""num_pages"": ""1"", ""page_size"": ""4096""}"
-   3.7079	RESOURCE,VMR_8_5,VMR,,,,"{""va"": ""0x10002000"", ""vmr_type"": ""STACK"", ""num_pages"": ""17"", ""page_size"": ""4096""}"
-   3.7079	RESOURCE,MO_4_7,MO,,,,"{""pa"": ""0xf485c000"", ""num_pages"": ""16"", ""page_size"": ""4096""}"
-   3.7079	RESOURCE,VMR_8_6,VMR,,,,"{""va"": ""0x10013000"", ""vmr_type"": ""OSM_DATA"", ""num_pages"": ""1"", ""page_size"": ""4096""}"
-   3.7079	RESOURCE,VMR_8_7,VMR,,,,"{""va"": ""0x10014000"", ""vmr_type"": ""STACK"", ""num_pages"": ""17"", ""page_size"": ""4096""}"
-   3.7079	RESOURCE,MO_4_9,MO,,,,"{""pa"": ""0xf486f000"", ""num_pages"": ""16"", ""page_size"": ""4096""}"
-   3.7079	RESOURCE,VMR_8_8,VMR,,,,"{""va"": ""0x10025000"", ""vmr_type"": ""IPC_BUF"", ""num_pages"": ""1"", ""page_size"": ""4096""}"
-   3.7079	RESOURCE,MO_4_a,MO,,,,"{""pa"": ""0xf4880000"", ""num_pages"": ""1"", ""page_size"": ""4096""}"
-   3.7079	RESOURCE,VMR_8_9,VMR,,,,"{""va"": ""0x20000000"", ""vmr_type"": ""GENERIC"", ""num_pages"": ""128"", ""page_size"": ""2097152""}"
-   3.8079	RESOURCE,MO_4_c,MO,,,,"{""pa"": ""0xf4a00000"", ""num_pages"": ""128"", ""page_size"": ""2097152""}"
-   3.8079	RESOURCE_SPACE,VCPU_SPACE_5,VCPU,,,,
-   3.8079	RESOURCE,VCPU_5_1,VCPU,,,,
-   3.8079	RESOURCE,PCPU_1_0,PCPU,,,,
-   3.8079	PD,PD_2,PD,,,,
-   3.8079	RESOURCE,VCPU_5_2,VCPU,,,,
-   3.8080	PD,PD_3,PD,,,,
-   3.8080	RESOURCE,VCPU_5_3,VCPU,,,,"{""elevate"": ""true""}"
-   3.8080	RESOURCE_SPACE,ADS_SPACE_9,ADS,,,,
-   3.8080	RESOURCE,VMR_9_1,VMR,,,,"{""va"": ""0x10000000"", ""vmr_type"": ""OSM_DATA"", ""num_pages"": ""1"", ""page_size"": ""4096""}"
-   3.8080	RESOURCE,VMR_9_2,VMR,,,,"{""va"": ""0xff600000"", ""vmr_type"": ""DEVICE"", ""num_pages"": ""512"", ""page_size"": ""4096""}"
-   3.8080	RESOURCE,MO_4_d,MO,,,,"{""pa"": ""0xff600000"", ""num_pages"": ""512"", ""page_size"": ""4096""}"
-   3.8080	RESOURCE,VMR_9_3,VMR,,,,"{""va"": ""0xff800000"", ""vmr_type"": ""DEVICE"", ""num_pages"": ""512"", ""page_size"": ""4096""}"
-   3.8080	RESOURCE,MO_4_e,MO,,,,"{""pa"": ""0xff800000"", ""num_pages"": ""512"", ""page_size"": ""4096""}"
-   3.8080	RESOURCE,VMR_9_4,VMR,,,,"{""va"": ""0xffd00000"", ""vmr_type"": ""DEVICE"", ""num_pages"": ""256"", ""page_size"": ""4096""}"
-   3.8080	RESOURCE,MO_4_f,MO,,,,"{""pa"": ""0xffd00000"", ""num_pages"": ""256"", ""page_size"": ""4096""}"
-   3.9080	RESOURCE,VMR_9_5,VMR,,,,"{""va"": ""0xffc02000"", ""vmr_type"": ""DEVICE"", ""num_pages"": ""1"", ""page_size"": ""4096""}"
-   3.9080	RESOURCE,MO_4_10,MO,,,,"{""pa"": ""0xffc06000"", ""num_pages"": ""1"", ""page_size"": ""4096""}"
-   3.9080	RESOURCE,VMR_9_6,VMR,,,,"{""va"": ""0x20000000"", ""vmr_type"": ""GENERIC"", ""num_pages"": ""128"", ""page_size"": ""2097152""}"
-   3.9080	,,NONE,MAP,ADS_SPACE_7,MO_SPACE_4,"{""pd_incharge"": ""PD_0""}"
-   3.9080	,,NONE,HOLD,PD_0,ADS_SPACE_7,"{""pd_incharge"": ""PD_0""}"
-   3.9080	,,NONE,SUBSET,VMR_7_1,ADS_SPACE_7,"{""pd_incharge"": ""PD_0""}"
-   3.9080	,,NONE,HOLD,PD_0,VMR_7_1,"{""pd_incharge"": ""PD_0""}"
-   3.9080	,,NONE,MAP,VMR_7_1,MO_4_1,"{""pd_incharge"": ""PD_0""}"
-   3.9080	,,NONE,SUBSET,VMR_7_2,ADS_SPACE_7,"{""pd_incharge"": ""PD_0""}"
-   3.9080	,,NONE,HOLD,PD_0,VMR_7_2,"{""pd_incharge"": ""PD_0""}"
-   3.9080	,,NONE,MAP,VMR_7_2,MO_4_2,"{""pd_incharge"": ""PD_0""}"
-   3.9080	,,NONE,SUBSET,VMR_7_3,ADS_SPACE_7,"{""pd_incharge"": ""PD_0""}"
-   3.9080	,,NONE,HOLD,PD_0,VMR_7_3,"{""pd_incharge"": ""PD_0""}"
-   3.9080	,,NONE,MAP,VMR_7_3,MO_4_3,"{""pd_incharge"": ""PD_0""}"
-   3.9080	,,NONE,SUBSET,VMR_7_6,ADS_SPACE_7,"{""pd_incharge"": ""PD_0""}"
-   3.9080	,,NONE,HOLD,PD_0,VMR_7_6,"{""pd_incharge"": ""PD_0""}"
-   4.0081	,,NONE,MAP,VMR_7_6,MO_4_8,"{""pd_incharge"": ""PD_0""}"
-   4.0081	,,NONE,SUBSET,VMR_7_7,ADS_SPACE_7,"{""pd_incharge"": ""PD_0""}"
-   4.0081	,,NONE,HOLD,PD_0,VMR_7_7,"{""pd_incharge"": ""PD_0""}"
-   4.0081	,,NONE,MAP,VMR_7_7,MO_4_b,"{""pd_incharge"": ""PD_0""}"
-   4.0081	,,NONE,HOLD,PD_0,MO_4_1,"{""pd_incharge"": ""PD_0""}"
-   4.0081	,,NONE,SUBSET,MO_4_1,MO_SPACE_4,"{""pd_incharge"": ""PD_0""}"
-   4.0081	,,NONE,HOLD,PD_0,MO_4_2,"{""pd_incharge"": ""PD_0""}"
-   4.0081	,,NONE,SUBSET,MO_4_2,MO_SPACE_4,"{""pd_incharge"": ""PD_0""}"
-   4.0081	,,NONE,HOLD,PD_0,MO_4_3,"{""pd_incharge"": ""PD_0""}"
-   4.0081	,,NONE,SUBSET,MO_4_3,MO_SPACE_4,"{""pd_incharge"": ""PD_0""}"
-   4.0081	,,ADS,REQUEST,PD_1,PD_0,"{""pd_incharge"": ""PD_0""}"
-   4.0081	,,VMR,REQUEST,PD_1,PD_0,"{""pd_incharge"": ""PD_0""}"
-   4.0081	,,MO,REQUEST,PD_1,PD_0,"{""pd_incharge"": ""PD_0""}"
-   4.0081	,,VCPU,REQUEST,PD_1,PD_0,"{""pd_incharge"": ""PD_0""}"
-   4.0081	,,PD,REQUEST,PD_1,PD_0,"{""pd_incharge"": ""PD_0""}"
-   4.0081	,,EP,REQUEST,PD_1,PD_0,"{""pd_incharge"": ""PD_0""}"
-   4.0081	,,RESSPC,REQUEST,PD_1,PD_0,"{""pd_incharge"": ""PD_0""}"
-   4.0081	,,NONE,MAP,ADS_SPACE_8,MO_SPACE_4,"{""pd_incharge"": ""PD_0""}"
-   4.0081	,,NONE,HOLD,PD_0,ADS_SPACE_8,"{""pd_incharge"": ""PD_0""}"
-   4.0081	,,NONE,SUBSET,VMR_8_1,ADS_SPACE_8,"{""pd_incharge"": ""PD_0""}"
-   4.1082	,,NONE,HOLD,PD_1,VMR_8_1,"{""pd_incharge"": ""PD_0""}"
-   4.1082	,,NONE,MAP,VMR_8_1,MO_4_4,"{""pd_incharge"": ""PD_0""}"
-   4.1082	,,NONE,SUBSET,VMR_8_2,ADS_SPACE_8,"{""pd_incharge"": ""PD_0""}"
-   4.1082	,,NONE,HOLD,PD_1,VMR_8_2,"{""pd_incharge"": ""PD_0""}"
-   4.1082	,,NONE,MAP,VMR_8_2,MO_4_5,"{""pd_incharge"": ""PD_0""}"
-   4.1082	,,NONE,SUBSET,VMR_8_3,ADS_SPACE_8,"{""pd_incharge"": ""PD_0""}"
-   4.1082	,,NONE,HOLD,PD_1,VMR_8_3,"{""pd_incharge"": ""PD_0""}"
-   4.1082	,,NONE,MAP,VMR_8_3,MO_4_3,"{""pd_incharge"": ""PD_0""}"
-   4.1082	,,NONE,SUBSET,VMR_8_4,ADS_SPACE_8,"{""pd_incharge"": ""PD_0""}"
-   4.1082	,,NONE,HOLD,PD_1,VMR_8_4,"{""pd_incharge"": ""PD_0""}"
-   4.1082	,,NONE,MAP,VMR_8_4,MO_4_6,"{""pd_incharge"": ""PD_0""}"
-   4.1082	,,NONE,SUBSET,VMR_8_5,ADS_SPACE_8,"{""pd_incharge"": ""PD_0""}"
-   4.1082	,,NONE,HOLD,PD_1,VMR_8_5,"{""pd_incharge"": ""PD_0""}"
-   4.1082	,,NONE,MAP,VMR_8_5,MO_4_7,"{""pd_incharge"": ""PD_0""}"
-   4.1082	,,NONE,SUBSET,VMR_8_6,ADS_SPACE_8,"{""pd_incharge"": ""PD_0""}"
-   4.1082	,,NONE,HOLD,PD_1,VMR_8_6,"{""pd_incharge"": ""PD_0""}"
-   4.1082	,,NONE,MAP,VMR_8_6,MO_4_8,"{""pd_incharge"": ""PD_0""}"
-   4.1082	,,NONE,SUBSET,VMR_8_7,ADS_SPACE_8,"{""pd_incharge"": ""PD_0""}"
-   4.1082	,,NONE,HOLD,PD_1,VMR_8_7,"{""pd_incharge"": ""PD_0""}"
-   4.1082	,,NONE,MAP,VMR_8_7,MO_4_9,"{""pd_incharge"": ""PD_0""}"
-   4.2083	,,NONE,SUBSET,VMR_8_8,ADS_SPACE_8,"{""pd_incharge"": ""PD_0""}"
-   4.2083	,,NONE,HOLD,PD_1,VMR_8_8,"{""pd_incharge"": ""PD_0""}"
-   4.2083	,,NONE,MAP,VMR_8_8,MO_4_a,"{""pd_incharge"": ""PD_0""}"
-   4.2083	,,NONE,SUBSET,VMR_8_9,ADS_SPACE_8,"{""pd_incharge"": ""PD_0""}"
-   4.2083	,,NONE,HOLD,PD_1,VMR_8_9,"{""pd_incharge"": ""PD_0""}"
-   4.2083	,,NONE,MAP,VMR_8_9,MO_4_c,"{""pd_incharge"": ""PD_0""}"
-   4.2083	,,NONE,HOLD,PD_1,ADS_SPACE_8,"{""pd_incharge"": ""PD_0""}"
-   4.2083	,,NONE,HOLD,PD_0,VCPU_SPACE_5,"{""pd_incharge"": ""PD_0""}"
-   4.2083	,,NONE,HOLD,PD_1,VCPU_5_1,"{""pd_incharge"": ""PD_0""}"
-   4.2083	,,NONE,SUBSET,VCPU_5_1,VCPU_SPACE_5,"{""pd_incharge"": ""PD_0""}"
-   4.2083	,,NONE,MAP,VCPU_5_1,PCPU_1_0,"{""pd_incharge"": ""PD_0""}"
-   4.2083	,,NONE,HOLD,PD_0,PCPU_1_0,"{""pd_incharge"": ""PD_0""}"
-   4.2083	,,NONE,SUBSET,PCPU_1_0,VCPU_SPACE_5,"{""pd_incharge"": ""PD_0""}"
-   4.2083	,,NONE,HOLD,PD_1,MO_4_8,"{""pd_incharge"": ""PD_0""}"
-   4.2083	,,NONE,SUBSET,MO_4_8,MO_SPACE_4,"{""pd_incharge"": ""PD_0""}"
-   4.2083	,,ADS,REQUEST,PD_2,PD_0,"{""pd_incharge"": ""PD_0""}"
-   4.2083	,,VMR,REQUEST,PD_2,PD_0,"{""pd_incharge"": ""PD_0""}"
-   4.2083	,,MO,REQUEST,PD_2,PD_0,"{""pd_incharge"": ""PD_0""}"
-   4.2083	,,VCPU,REQUEST,PD_2,PD_0,"{""pd_incharge"": ""PD_0""}"
-   4.3084	,,PD,REQUEST,PD_2,PD_0,"{""pd_incharge"": ""PD_0""}"
-   4.3084	,,EP,REQUEST,PD_2,PD_0,"{""pd_incharge"": ""PD_0""}"
-   4.3084	,,RESSPC,REQUEST,PD_2,PD_0,"{""pd_incharge"": ""PD_0""}"
-   4.3084	,,NONE,HOLD,PD_2,VCPU_5_2,"{""pd_incharge"": ""PD_0""}"
-   4.3084	,,NONE,SUBSET,VCPU_5_2,VCPU_SPACE_5,"{""pd_incharge"": ""PD_0""}"
-   4.3084	,,NONE,MAP,VCPU_5_2,PCPU_1_0,"{""pd_incharge"": ""PD_0""}"
-   4.3084	,,NONE,HOLD,PD_2,ADS_SPACE_8,"{""pd_incharge"": ""PD_0""}"
-   4.3084	,,NONE,HOLD,PD_2,MO_4_8,"{""pd_incharge"": ""PD_0""}"
-   4.3084	,,NONE,HOLD,PD_2,MO_4_9,"{""pd_incharge"": ""PD_0""}"
-   4.3084	,,NONE,SUBSET,MO_4_9,MO_SPACE_4,"{""pd_incharge"": ""PD_0""}"
-   4.3084	,,NONE,HOLD,PD_2,MO_4_a,"{""pd_incharge"": ""PD_0""}"
-   4.3084	,,NONE,SUBSET,MO_4_a,MO_SPACE_4,"{""pd_incharge"": ""PD_0""}"
-   4.3084	,,NONE,HOLD,PD_1,VCPU_5_2,"{""pd_incharge"": ""PD_0""}"
-   4.3084	,,NONE,HOLD,PD_1,MO_4_9,"{""pd_incharge"": ""PD_0""}"
-   4.3084	,,NONE,HOLD,PD_1,MO_4_a,"{""pd_incharge"": ""PD_0""}"
-   4.3084	,,NONE,HOLD,PD_1,MO_4_b,"{""pd_incharge"": ""PD_0""}"
-   4.3084	,,NONE,SUBSET,MO_4_b,MO_SPACE_4,"{""pd_incharge"": ""PD_0""}"
-   4.3084	,,NONE,HOLD,PD_3,VCPU_5_3,"{""pd_incharge"": ""PD_0""}"
-   4.3084	,,NONE,SUBSET,VCPU_5_3,VCPU_SPACE_5,"{""pd_incharge"": ""PD_0""}"
-   4.3084	,,NONE,MAP,VCPU_5_3,PCPU_1_0,"{""pd_incharge"": ""PD_0""}"
-   4.4084	,,NONE,MAP,ADS_SPACE_9,MO_SPACE_4,"{""pd_incharge"": ""PD_0""}"
-   4.4084	,,NONE,HOLD,PD_0,ADS_SPACE_9,"{""pd_incharge"": ""PD_0""}"
-   4.4084	,,NONE,SUBSET,VMR_9_1,ADS_SPACE_9,"{""pd_incharge"": ""PD_0""}"
-   4.4084	,,NONE,HOLD,PD_3,VMR_9_1,"{""pd_incharge"": ""PD_0""}"
-   4.4084	,,NONE,MAP,VMR_9_1,MO_4_b,"{""pd_incharge"": ""PD_0""}"
-   4.4084	,,NONE,SUBSET,VMR_9_2,ADS_SPACE_9,"{""pd_incharge"": ""PD_0""}"
-   4.4084	,,NONE,HOLD,PD_3,VMR_9_2,"{""pd_incharge"": ""PD_0""}"
-   4.4084	,,NONE,MAP,VMR_9_2,MO_4_d,"{""pd_incharge"": ""PD_0""}"
-   4.4084	,,NONE,SUBSET,VMR_9_3,ADS_SPACE_9,"{""pd_incharge"": ""PD_0""}"
-   4.4084	,,NONE,HOLD,PD_3,VMR_9_3,"{""pd_incharge"": ""PD_0""}"
-   4.4084	,,NONE,MAP,VMR_9_3,MO_4_e,"{""pd_incharge"": ""PD_0""}"
-   4.4084	,,NONE,SUBSET,VMR_9_4,ADS_SPACE_9,"{""pd_incharge"": ""PD_0""}"
-   4.4084	,,NONE,HOLD,PD_3,VMR_9_4,"{""pd_incharge"": ""PD_0""}"
-   4.4084	,,NONE,MAP,VMR_9_4,MO_4_f,"{""pd_incharge"": ""PD_0""}"
-   4.4084	,,NONE,SUBSET,VMR_9_5,ADS_SPACE_9,"{""pd_incharge"": ""PD_0""}"
-   4.4084	,,NONE,HOLD,PD_3,VMR_9_5,"{""pd_incharge"": ""PD_0""}"
-   4.4084	,,NONE,MAP,VMR_9_5,MO_4_10,"{""pd_incharge"": ""PD_0""}"
-   4.4084	,,NONE,SUBSET,VMR_9_6,ADS_SPACE_9,"{""pd_incharge"": ""PD_0""}"
-   4.4084	,,NONE,HOLD,PD_3,VMR_9_6,"{""pd_incharge"": ""PD_0""}"
-   4.4084	,,NONE,MAP,VMR_9_6,MO_4_c,"{""pd_incharge"": ""PD_0""}"
-   4.5085	,,NONE,HOLD,PD_3,ADS_SPACE_9,"{""pd_incharge"": ""PD_0""}"
-   4.5085	,,NONE,HOLD,PD_1,ADS_SPACE_9,"{""pd_incharge"": ""PD_0""}"
-   4.5085	,,NONE,HOLD,PD_1,VCPU_5_3,"{""pd_incharge"": ""PD_0""}"
-   4.5085	,,NONE,HOLD,PD_1,MO_4_c,"{""pd_incharge"": ""PD_0""}"
-   4.5085	,,NONE,SUBSET,MO_4_c,MO_SPACE_4,"{""pd_incharge"": ""PD_0""}"
-   4.5085	,,NONE,HOLD,PD_1,MO_4_d,"{""pd_incharge"": ""PD_0""}"
-   4.5085	,,NONE,SUBSET,MO_4_d,MO_SPACE_4,"{""pd_incharge"": ""PD_0""}"
-   4.5085	,,NONE,HOLD,PD_1,MO_4_e,"{""pd_incharge"": ""PD_0""}"
-   4.5085	,,NONE,SUBSET,MO_4_e,MO_SPACE_4,"{""pd_incharge"": ""PD_0""}"
-   4.5085	,,NONE,HOLD,PD_1,MO_4_f,"{""pd_incharge"": ""PD_0""}"
-   4.5085	,,NONE,SUBSET,MO_4_f,MO_SPACE_4,"{""pd_incharge"": ""PD_0""}"
-   4.5085	,,NONE,HOLD,PD_1,MO_4_10,"{""pd_incharge"": ""PD_0""}"
-   4.5085	,,NONE,SUBSET,MO_4_10,MO_SPACE_4,"{""pd_incharge"": ""PD_0""}"
-   4.5085	,,NONE,HOLD,PD_0,MO_4_4,"{""pd_incharge"": ""PD_0""}"
-   4.5085	,,NONE,SUBSET,MO_4_4,MO_SPACE_4,"{""pd_incharge"": ""PD_0""}"
-   4.5085	,,NONE,HOLD,PD_0,MO_4_5,"{""pd_incharge"": ""PD_0""}"
-   4.5085	,,NONE,SUBSET,MO_4_5,MO_SPACE_4,"{""pd_incharge"": ""PD_0""}"
-   4.5085	,,NONE,HOLD,PD_0,MO_4_6,"{""pd_incharge"": ""PD_0""}"
-   4.5085	,,NONE,SUBSET,MO_4_6,MO_SPACE_4,"{""pd_incharge"": ""PD_0""}"
-   4.6085	,,NONE,HOLD,PD_0,MO_4_7,"{""pd_incharge"": ""PD_0""}"
-   4.6085	,,NONE,SUBSET,MO_4_7,MO_SPACE_4,"{""pd_incharge"": ""PD_0""}"
-   4.6085	,,NONE,HOLD,PD_0,MO_4_8,"{""pd_incharge"": ""PD_0""}"
-   4.6085	,,NONE,HOLD,PD_0,MO_4_9,"{""pd_incharge"": ""PD_0""}"
-   4.6085	,,NONE,HOLD,PD_0,MO_4_a,"{""pd_incharge"": ""PD_0""}"
-   4.6085	,,NONE,HOLD,PD_0,MO_4_b,"{""pd_incharge"": ""PD_0""}"
-   4.6085	,,NONE,HOLD,PD_0,MO_4_c,"{""pd_incharge"": ""PD_0""}"
-   4.6085	,,NONE,HOLD,PD_0,MO_4_d,"{""pd_incharge"": ""PD_0""}"
-   4.6085	,,NONE,HOLD,PD_0,MO_4_e,"{""pd_incharge"": ""PD_0""}"
-   4.6086	,,NONE,HOLD,PD_0,MO_4_f,"{""pd_incharge"": ""PD_0""}"
-   4.6086	,,NONE,HOLD,PD_0,MO_4_10,"{""pd_incharge"": ""PD_0""}"
-   4.6086	vka_cspace_alloc@vka.h:149 Unimplemented
-   4.6086	vka_alloc_object_at_maybe_dev@object.h:49 Failed to allocate cslot: error -1
-   4.6086	Caught cap fault in send phase at address 0
-   4.6086	while trying to handle:
-   4.6086	cap fault in receive phase at address 0
-   4.6086	in thread 0x8000008400 "sel4test-tests" at address 0x42affc
-   4.6086	With stack:
-   4.6086	0x10011920: 0x10011990
-   4.6086	0x10011928: 0x10011998
-   4.6086	0x10011930: 0x100119a0
-   4.6086	0x10011938: 0x100119a8
-   4.6086	0x10011940: 0x100119b8
-   4.6086	0x10011948: 0x100119b0
-   4.6086	0x10011950: 0x0
-   4.6086	0x10011958: 0xfffffffffffffffb
-   4.6086	0x10011960: 0x0
-   4.6086	0x10011968: 0x10011a38
-   4.6086	0x10011970: 0x100119c0
-   4.6086	0x10011978: 0x42d33c
-   4.7087	0x10011980: 0x0
-   4.7087	0x10011988: 0x0
-   4.7087	0x10011990: 0x2
-   4.7087	0x10011998: 0x10011a38
-   4.9090	[    0.000000] Booting Linux on physical CPU 0x0000000000 [0x411fd050]
-   4.9090	[    0.000000] Linux version 6.1.0 (linh@lindt) (aarch64-none-elf-gcc (Arm GNU Toolchain 13.2.rel1 (Build arm-13.7)) 13.2.1 20231009, GNU ld (Arm GNU Toolchain 13.2.rel1 (Build arm-13.7)) 2.41.0.20231009) #1 SMP PREEMPT Thu Jul  4 13:15:57 PDT 2024
-   4.9090	[    0.000000] Machine model: Hardkernel ODROID-C4
-   4.9090	[    0.000000] efi: UEFI not found.
-   4.9090	[    0.000000] OF: reserved mem: invalid alloc-ranges property in 'linux,cma', skipping node.
-   4.9090	[    0.000000] NUMA: No NUMA configuration found
-   5.0091	[    0.000000] NUMA: Faking a node at [mem 0x0000000020000000-0x000000002fffffff]
-   5.0091	[    0.000000] NUMA: NODE_DATA [mem 0x2d61fa00-0x2d621fff]
-   5.0091	[    0.000000] Zone ranges:
-   5.0091	[    0.000000]   DMA      [mem 0x0000000020000000-0x000000002fffffff]
-   5.0091	[    0.000000]   DMA32    empty
-   5.0091	[    0.000000]   Normal   empty
-   5.0091	[    0.000000] Movable zone start for each node
-   5.0091	[    0.000000] Early memory node ranges
-   5.0091	[    0.000000]   node   0: [mem 0x0000000020000000-0x000000002fffffff]
-   5.0091	[    0.000000] Initmem setup node 0 [mem 0x0000000020000000-0x000000002fffffff]
-   5.0091	[    0.000000] cma: Reserved 32 MiB at 0x000000002b000000
-   5.0091	[    0.000000] psci: probing for conduit method from DT.
-   5.0091	[    0.000000] psci: PSCIv1.2 detected in firmware.
-   5.0091	[    0.000000] psci: Using standard PSCI v0.2 function IDs
-   5.0091	[    0.000000] psci: Trusted OS migration not required
-   5.0091	[    0.000000] psci: SMC Calling Convention v1.0
-   5.0091	[    0.000000] percpu: Embedded 19 pages/cpu s40904 r8192 d28728 u77824
-   5.0091	[    0.000000] pcpu-alloc: s40904 r8192 d28728 u77824 alloc=19*4096
-   5.1092	[    0.000000] pcpu-alloc: [0] 0 [0] 1 [0] 2 [0] 3 
-   5.1092	[    0.000000] Detected VIPT I-cache on CPU0
-   5.1092	[    0.000000] CPU features: detected: Qualcomm erratum 1009, or ARM erratum 1286807, 2441009
-   5.1092	[    0.000000] CPU features: detected: ARM errata 1165522, 1319367, or 1530923
-   5.1092	[    0.000000] alternatives: applying boot alternatives
-   5.1092	[    0.000000] Fallback order for Node 0: 0 
-   5.1092	[    0.000000] Built 1 zonelists, mobility grouping on.  Total pages: 64512
-   5.1092	[    0.000000] Policy zone: DMA
-   5.1092	[    0.000000] Kernel command line: console=ttyAML0,115200n8 root=/dev/ram0 nosmp rw debug loglevel=8 pci=nomsi earlyprintk=serial maxcpus=1
-   5.1092	[    0.000000] Unknown kernel command line parameters "pci=nomsi earlyprintk=serial", will be passed to user space.
-   5.1092	[    0.000000] Dentry cache hash table entries: 32768 (order: 6, 262144 bytes, linear)
-   5.1092	[    0.000000] Inode-cache hash table entries: 16384 (order: 5, 131072 bytes, linear)
-   5.1092	[    0.000000] mem auto-init: stack:off, heap alloc:off, heap free:off
-   5.2093	[    0.000000] Memory: 167520K/262144K available (8384K kernel code, 1000K rwdata, 2388K rodata, 1664K init, 462K bss, 61856K reserved, 32768K cma-reserved)
-   5.2093	[    0.000000] SLUB: HWalign=64, Order=0-3, MinObjects=0, CPUs=4, Nodes=1
-   5.2093	[    0.000000] rcu: Preemptible hierarchical RCU implementation.
-   5.2093	[    0.000000] rcu: 	RCU event tracing is enabled.
-   5.2093	[    0.000000] rcu: 	RCU restricting CPUs from NR_CPUS=256 to nr_cpu_ids=4.
-   5.2093	[    0.000000] 	Trampoline variant of Tasks RCU enabled.
-   5.2093	[    0.000000] 	Tracing variant of Tasks RCU enabled.
-   5.2093	[    0.000000] rcu: RCU calculated value of scheduler-enlistment delay is 25 jiffies.
-   5.2094	[    0.000000] rcu: Adjusting geometry for rcu_fanout_leaf=16, nr_cpu_ids=4
-   5.2094	[    0.000000] NR_IRQS: 64, nr_irqs: 64, preallocated irqs: 0
-   5.2094	[    0.000000] Root IRQ handler: gic_handle_irq
-   5.2094	[    0.000000] rcu: srcu_init: Setting srcu_struct sizes based on contention.
-   5.2094	[    0.000000] arch_timer: cp15 timer(s) running at 24.00MHz (virt).
-   5.3095	[    0.000000] clocksource: arch_sys_counter: mask: 0xffffffffffffff max_cycles: 0x588fe9dc0, max_idle_ns: 440795202592 ns
-   5.3095	[    0.000000] sched_clock: 56 bits at 24MHz, resolution 41ns, wraps every 4398046511097ns
-   5.3095	[    0.000170] Console: colour dummy device 80x25
-   5.3095	[    0.000234] Calibrating delay loop (skipped), value calculated using timer frequency.. 48.00 BogoMIPS (lpj=96000)
-   5.3095	[    0.000247] pid_max: default: 32768 minimum: 301
-   5.3095	[    0.000311] LSM: Security Framework initializing
-   5.3095	[    0.000354] Mount-cache hash table entries: 512 (order: 0, 4096 bytes, linear)
-   5.3095	[    0.000364] Mountpoint-cache hash table entries: 512 (order: 0, 4096 bytes, linear)
-   5.3095	[    0.001854] cblist_init_generic: Setting adjustable number of callback queues.
-   5.3095	[    0.001867] cblist_init_generic: Setting shift to 2 and lim to 1.
-   5.3095	[    0.001949] cblist_init_generic: Setting shift to 2 and lim to 1.
-   5.3095	[    0.002120] rcu: Hierarchical SRCU implementation.
-   5.3095	[    0.002125] rcu: 	Max phase no-delay instances is 1000.
-   5.4096	[    0.003492] EFI services will not be available.
-   5.4096	[    0.003780] smp: Bringing up secondary CPUs ...
-   5.4096	[    0.003786] smp: Brought up 1 node, 1 CPU
-   5.4096	[    0.003792] SMP: Total of 1 processors activated.
-   5.4096	[    0.003800] CPU features: detected: 32-bit EL0 Support
-   5.4096	[    0.003803] CPU features: detected: 32-bit EL1 Support
-   5.4096	[    0.003808] CPU features: detected: Data cache clean to the PoU not required for I/D coherence
-   5.4096	[    0.003812] CPU features: detected: Common not Private translations
-   5.4096	[    0.003815] CPU features: detected: CRC32 instructions
-   5.4096	[    0.003822] CPU features: detected: RCpc load-acquire (LDAPR)
-   5.4096	[    0.003825] CPU features: detected: LSE atomic instructions
-   5.4096	[    0.003829] CPU features: detected: Privileged Access Never
-   5.4096	[    0.003832] CPU features: detected: RAS Extension Support
-   5.4096	[    0.003975] CPU: All CPU(s) started at EL1
-   5.4096	[    0.003995] alternatives: applying system-wide alternatives
-   5.4096	[    0.006331] devtmpfs: initialized
-   5.4096	[    0.015254] clocksource: jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 7645041785100000 ns
-   5.5096	[    0.015276] futex hash table entries: 1024 (order: 4, 65536 bytes, linear)
-   5.5096	[    0.016409] DMI not present or invalid.
-   5.5096	[    0.017162] DMA: preallocated 128 KiB GFP_KERNEL pool for atomic allocations
-   5.5096	[    0.017235] DMA: preallocated 128 KiB GFP_KERNEL|GFP_DMA pool for atomic allocations
-   5.5096	[    0.017316] DMA: preallocated 128 KiB GFP_KERNEL|GFP_DMA32 pool for atomic allocations
-   5.5096	[    0.017658] thermal_sys: Registered thermal governor 'step_wise'
-   5.5096	[    0.017663] thermal_sys: Registered thermal governor 'power_allocator'
-   5.5096	[    0.017697] cpuidle: using governor menu
-   5.5096	[    0.017793] hw-breakpoint: found 6 breakpoint and 4 watchpoint registers.
-   5.5096	[    0.017821] ASID allocator initialised with 65536 entries
-   5.5096	[    0.018637] Serial: AMBA PL011 UART driver
-   5.5096	[    0.035344] platform hdmi-connector: Fixing up cyclic dependency with ff600000.hdmi-tx
-   5.5097	[    0.036082] KASLR disabled due to lack of seed
-   5.5097	[    0.040625] HugeTLB: registered 1.00 GiB page size, pre-allocated 0 pages
-   5.6097	[    0.040635] HugeTLB: 16380 KiB vmemmap can be freed for a 1.00 GiB page
-   5.6097	[    0.040640] HugeTLB: registered 32.0 MiB page size, pre-allocated 0 pages
-   5.6097	[    0.040644] HugeTLB: 508 KiB vmemmap can be freed for a 32.0 MiB page
-   5.6097	[    0.040649] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
-   5.6097	[    0.040652] HugeTLB: 28 KiB vmemmap can be freed for a 2.00 MiB page
-   5.6097	[    0.040656] HugeTLB: registered 64.0 KiB page size, pre-allocated 0 pages
-   5.6097	[    0.040659] HugeTLB: 0 KiB vmemmap can be freed for a 64.0 KiB page
-   5.6097	[    0.042072] iommu: Default domain type: Translated 
-   5.6097	[    0.042080] iommu: DMA domain TLB invalidation policy: strict mode 
-   5.6097	[    0.042330] SCSI subsystem initialized
-   5.6097	[    0.042456] libata version 3.00 loaded.
-   5.6097	[    0.042674] pps_core: LinuxPPS API ver. 1 registered
-   5.6097	[    0.042679] pps_core: Software ver. 5.3.6 - Copyright 2005-2007 Rodolfo Giometti <giometti@linux.it>
-   5.6097	[    0.042821] EDAC MC: Ver: 3.0.0
-   5.6097	[    0.043578] FPGA manager framework
-   5.6097	[    0.043765] clocksource: Switched to clocksource arch_sys_counter
-   5.6097	[    0.043953] VFS: Disk quotas dquot_6.6.0
-   5.6097	[    0.043997] VFS: Dquot-cache hash table entries: 512 (order 0, 4096 bytes)
-   5.7097	[    0.051270] kvm [1]: HYP mode not available
-   5.7098	[    0.052105] Initialise system trusted keyrings
-   5.7098	[    0.052406] Unpacking initramfs...
-   5.7098	[    0.059885] workingset: timestamp_bits=42 max_order=16 bucket_order=0
-   5.7098	[    0.065356] squashfs: version 4.0 (2009/01/31) Phillip Lougher
-   5.7098	[    0.140097] Key type asymmetric registered
-   5.7098	[    0.140112] Asymmetric key parser 'x509' registered
-   5.7098	[    0.140202] Block layer SCSI generic (bsg) driver version 0.4 loaded (major 249)
-   5.7098	[    0.140209] io scheduler mq-deadline registered
-   5.7098	[    0.140214] io scheduler kyber registered
-   5.7098	[    0.140397] io scheduler bfq registered
-   5.7098	[    0.144507] irq_meson_gpio: 100 to 8 gpio interrupt mux initialized
-   5.7098	[    0.163965] Serial: 8250/16550 driver, 4 ports, IRQ sharing enabled
-   5.7098	[    0.165703] ff803000.serial: ttyAML0 at MMIO 0xff803000 (irq = 14, base_baud = 1500000) is a meson_uart
-   5.7098	[    0.802922] Freeing initrd memory: 41980K
-   5.7098	[    0.989254] printk: console [ttyAML0] enabled
-   5.7098	[    0.997049] VFIO - User Level meta-driver version: 0.3
-   5.7098	[    0.998793] i2c_dev: i2c /dev entries driver
-   5.7098	[    1.004577] cpu cpu0: error -ENODEV: _opp_set_regulators: no regulator (cpu) found
-   5.8099	[    1.009781] cpu cpu0: error -ENODEV: failed to set regulators
-   5.8099	[    1.015869] ledtrig-cpu: registered to indicate activity on CPUs
-   5.8099	[    1.023282] Loading compiled-in X.509 certificates
-   5.8099	[    1.045025] Freeing unused kernel memory: 1664K
-   5.9100	[    1.047943] Run /init as init process
-   5.9100	[    1.047968]   with arguments:
-   5.9100	[    1.048907]     /init
-   5.9100	[    1.051149]   with environment:
-   5.9100	[    1.054240]     HOME=/
-   5.9100	[    1.056451]     TERM=linux
-   5.9100	[    1.059045]     pci=nomsi
-   5.9100	[    1.061625]     earlyprintk=serial
-   6.0102	Starting syslogd: OK
-   6.0102	Starting klogd: OK
-   6.0102	Running sysctl: OK
-   8.1169	Saving random seed: [    3.187783] random: crng init done
-   8.1169	OK
-   8.1169	Starting network: ip: socket: Function not implemented
-   8.1169	ip: socket: Function not implemented
-   8.1169	FAIL
-  13.4325	
-  13.4325	Welcome to Buildroot
-  13.4325	buildroot login: 
+   2.2045	elf_reserve_regions_in_vspace@elf.c:452 Failed to create reservations
+   2.2045	sel4utils_elf_reserve@elf.c:479 Failed to reserve regions
+   2.2045	GPIServ Parent: Starting GPI server...
+   2.2045	Starting test suite sel4test TT: 3 Count: 1
+   2.2045	Starting test 0: Test that there are tests
+   2.2045	Starting test 1: GPIVM004
+   2.5051	Running test GPIVM004 (Test VMM that starts one Linux guest PD (osm))
+   2.5051	------------------STARTING: test_linux_vm_osm------------------
+   2.5051	virq_controller_init@virq.c:26 initialised virtual GICv2 driver
+   3.4070	[37m[VMM] linux_copy_kernel_image():	[0mimages locations  vspace as returned by CPIO:
+   3.5071		 kernel_image 0x811d40:0x155bf40, initrd: 0x155bfc0:0x161702e, dtb: 0x162057c:0x162c714 
+   3.5071	[37m[VMM] linux_copy_kernel_image():	[0mcurrent vspace location:
+   3.5071		 Linux guest ram: 0x20000000:0x0, initrd: 0x2d700000:0x2d7bb06e, dtb: 0x2d000000:0x2d00c198 
+   3.5071	[37m[VMM] linux_setup_images():	[0mCopying guest kernel image to 0x20000000 (0xd4a200 bytes)
+   3.5071	[37m[VMM] linux_setup_images():	[0mCopying guest DTB to 0x2d000000 (0xc198 bytes)
+   3.5071	[37m[VMM] linux_setup_images():	[0mCopying guest initial RAM disk to 0x2d700000 (0xbb06e bytes)
+   3.5071	vka_cspace_alloc@vka.h:149 Unimplemented
+   3.5071	vka_alloc_object_at_maybe_dev@object.h:49 Failed to allocate cslot: error -1
+   3.5071	Caught cap fault in send phase at address 0
+   3.5071	while trying to handle:
+   3.5071	cap fault in receive phase at address 0
+   3.5071	in thread 0x8000008400 "sel4test-tests" at address 0x42affc
+   3.5071	With stack:
+   3.5071	0x10011920: 0x10011990
+   3.5071	0x10011928: 0x10011998
+   3.5071	0x10011930: 0x100119a0
+   3.5071	0x10011938: 0x100119a8
+   3.5071	0x10011940: 0x100119b8
+   3.6075	0x10011948: 0x100119b0
+   3.6075	0x10011950: 0x0
+   3.6075	0x10011958: 0xfffffffffffffffb
+   3.6075	0x10011960: 0x0
+   3.6075	0x10011968: 0x10011a38
+   3.6075	0x10011970: 0x100119c0
+   3.6075	0x10011978: 0x42d33c
+   3.6075	0x10011980: 0x0
+   3.6075	0x10011988: 0x0
+   3.6075	0x10011990: 0x2
+   3.6075	0x10011998: 0x10011a38
+   3.8079	[    0.000000] Booting Linux on physical CPU 0x0000000000 [0x411fd050]
+   3.8079	[    0.000000] Linux version 6.1.0 (linh@lindt) (aarch64-none-elf-gcc (Arm GNU Toolchain 13.2.rel1 (Build arm-13.7)) 13.2.1 20231009, GNU ld (Arm GNU Toolchain 13.2.rel1 (Build arm-13.7)) 2.41.0.20231009) #1 SMP PREEMPT Thu Jul  4 13:15:57 PDT 2024
+   3.8079	[    0.000000] Machine model: Hardkernel ODROID-C4
+   3.8079	[    0.000000] efi: UEFI not found.
+   3.9080	[    0.000000] OF: reserved mem: invalid alloc-ranges property in 'linux,cma', skipping node.
+   3.9080	[    0.000000] NUMA: No NUMA configuration found
+   3.9080	[    0.000000] NUMA: Faking a node at [mem 0x0000000020000000-0x000000002fffffff]
+   3.9080	[    0.000000] NUMA: NODE_DATA [mem 0x2d61fa00-0x2d621fff]
+   3.9080	[    0.000000] Zone ranges:
+   3.9080	[    0.000000]   DMA      [mem 0x0000000020000000-0x000000002fffffff]
+   3.9080	[    0.000000]   DMA32    empty
+   3.9080	[    0.000000]   Normal   empty
+   3.9080	[    0.000000] Movable zone start for each node
+   3.9080	[    0.000000] Early memory node ranges
+   3.9080	[    0.000000]   node   0: [mem 0x0000000020000000-0x000000002fffffff]
+   3.9080	[    0.000000] Initmem setup node 0 [mem 0x0000000020000000-0x000000002fffffff]
+   3.9080	[    0.000000] cma: Reserved 32 MiB at 0x000000002b000000
+   3.9080	[    0.000000] psci: probing for conduit method from DT.
+   3.9080	[    0.000000] psci: PSCIv1.2 detected in firmware.
+   3.9080	[    0.000000] psci: Using standard PSCI v0.2 function IDs
+   3.9080	[    0.000000] psci: Trusted OS migration not required
+   3.9080	[    0.000000] psci: SMC Calling Convention v1.0
+   4.0081	[    0.000000] percpu: Embedded 19 pages/cpu s40904 r8192 d28728 u77824
+   4.0081	[    0.000000] pcpu-alloc: s40904 r8192 d28728 u77824 alloc=19*4096
+   4.0081	[    0.000000] pcpu-alloc: [0] 0 [0] 1 [0] 2 [0] 3 
+   4.0081	[    0.000000] Detected VIPT I-cache on CPU0
+   4.0081	[    0.000000] CPU features: detected: Qualcomm erratum 1009, or ARM erratum 1286807, 2441009
+   4.0081	[    0.000000] CPU features: detected: ARM errata 1165522, 1319367, or 1530923
+   4.0081	[    0.000000] alternatives: applying boot alternatives
+   4.0081	[    0.000000] Fallback order for Node 0: 0 
+   4.0081	[    0.000000] Built 1 zonelists, mobility grouping on.  Total pages: 64512
+   4.0081	[    0.000000] Policy zone: DMA
+   4.0081	[    0.000000] Kernel command line: console=ttyAML0,115200n8 root=/dev/ram0 nosmp rw debug loglevel=8 pci=nomsi earlyprintk=serial maxcpus=1
+   4.0081	[    0.000000] Unknown kernel command line parameters "pci=nomsi earlyprintk=serial", will be passed to user space.
+   4.0081	[    0.000000] Dentry cache hash table entries: 32768 (order: 6, 262144 bytes, linear)
+   4.1081	[    0.000000] Inode-cache hash table entries: 16384 (order: 5, 131072 bytes, linear)
+   4.1081	[    0.000000] mem auto-init: stack:off, heap alloc:off, heap free:off
+   4.1081	[    0.000000] Memory: 167520K/262144K available (8384K kernel code, 1000K rwdata, 2388K rodata, 1664K init, 462K bss, 61856K reserved, 32768K cma-reserved)
+   4.1081	[    0.000000] SLUB: HWalign=64, Order=0-3, MinObjects=0, CPUs=4, Nodes=1
+   4.1081	[    0.000000] rcu: Preemptible hierarchical RCU implementation.
+   4.1081	[    0.000000] rcu: 	RCU event tracing is enabled.
+   4.1081	[    0.000000] rcu: 	RCU restricting CPUs from NR_CPUS=256 to nr_cpu_ids=4.
+   4.1081	[    0.000000] 	Trampoline variant of Tasks RCU enabled.
+   4.1081	[    0.000000] 	Tracing variant of Tasks RCU enabled.
+   4.1081	[    0.000000] rcu: RCU calculated value of scheduler-enlistment delay is 25 jiffies.
+   4.1081	[    0.000000] rcu: Adjusting geometry for rcu_fanout_leaf=16, nr_cpu_ids=4
+   4.1081	[    0.000000] NR_IRQS: 64, nr_irqs: 64, preallocated irqs: 0
+   4.2082	[    0.000000] Root IRQ handler: gic_handle_irq
+   4.2082	[    0.000000] rcu: srcu_init: Setting srcu_struct sizes based on contention.
+   4.2082	[    0.000000] arch_timer: cp15 timer(s) running at 24.00MHz (virt).
+   4.2082	[    0.000000] clocksource: arch_sys_counter: mask: 0xffffffffffffff max_cycles: 0x588fe9dc0, max_idle_ns: 440795202592 ns
+   4.2082	[    0.000000] sched_clock: 56 bits at 24MHz, resolution 41ns, wraps every 4398046511097ns
+   4.2082	[    0.000172] Console: colour dummy device 80x25
+   4.2082	[    0.000238] Calibrating delay loop (skipped), value calculated using timer frequency.. 48.00 BogoMIPS (lpj=96000)
+   4.2082	[    0.000250] pid_max: default: 32768 minimum: 301
+   4.2082	[    0.000315] LSM: Security Framework initializing
+   4.2082	[    0.000356] Mount-cache hash table entries: 512 (order: 0, 4096 bytes, linear)
+   4.2082	[    0.000366] Mountpoint-cache hash table entries: 512 (order: 0, 4096 bytes, linear)
+   4.2082	[    0.001887] cblist_init_generic: Setting adjustable number of callback queues.
+   4.3083	[    0.001899] cblist_init_generic: Setting shift to 2 and lim to 1.
+   4.3083	[    0.001980] cblist_init_generic: Setting shift to 2 and lim to 1.
+   4.3083	[    0.002155] rcu: Hierarchical SRCU implementation.
+   4.3083	[    0.002159] rcu: 	Max phase no-delay instances is 1000.
+   4.3083	[    0.003546] EFI services will not be available.
+   4.3083	[    0.003842] smp: Bringing up secondary CPUs ...
+   4.3083	[    0.003848] smp: Brought up 1 node, 1 CPU
+   4.3083	[    0.003916] SMP: Total of 1 processors activated.
+   4.3083	[    0.003925] CPU features: detected: 32-bit EL0 Support
+   4.3083	[    0.003928] CPU features: detected: 32-bit EL1 Support
+   4.3083	[    0.003933] CPU features: detected: Data cache clean to the PoU not required for I/D coherence
+   4.3083	[    0.003938] CPU features: detected: Common not Private translations
+   4.3083	[    0.003941] CPU features: detected: CRC32 instructions
+   4.3083	[    0.003948] CPU features: detected: RCpc load-acquire (LDAPR)
+   4.3083	[    0.003951] CPU features: detected: LSE atomic instructions
+   4.3083	[    0.003955] CPU features: detected: Privileged Access Never
+   4.3083	[    0.003958] CPU features: detected: RAS Extension Support
+   4.4084	[    0.004046] CPU: All CPU(s) started at EL1
+   4.4084	[    0.004066] alternatives: applying system-wide alternatives
+   4.4084	[    0.006454] devtmpfs: initialized
+   4.4084	[    0.015454] clocksource: jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 7645041785100000 ns
+   4.4084	[    0.015476] futex hash table entries: 1024 (order: 4, 65536 bytes, linear)
+   4.4084	[    0.016633] DMI not present or invalid.
+   4.4084	[    0.017399] DMA: preallocated 128 KiB GFP_KERNEL pool for atomic allocations
+   4.4084	[    0.017471] DMA: preallocated 128 KiB GFP_KERNEL|GFP_DMA pool for atomic allocations
+   4.4084	[    0.017552] DMA: preallocated 128 KiB GFP_KERNEL|GFP_DMA32 pool for atomic allocations
+   4.4084	[    0.017909] thermal_sys: Registered thermal governor 'step_wise'
+   4.4084	[    0.017915] thermal_sys: Registered thermal governor 'power_allocator'
+   4.4084	[    0.017950] cpuidle: using governor menu
+   4.4084	[    0.018046] hw-breakpoint: found 6 breakpoint and 4 watchpoint registers.
+   4.4084	[    0.018075] ASID allocator initialised with 65536 entries
+   4.5084	[    0.018907] Serial: AMBA PL011 UART driver
+   4.5084	[    0.035761] platform hdmi-connector: Fixing up cyclic dependency with ff600000.hdmi-tx
+   4.5084	[    0.036565] KASLR disabled due to lack of seed
+   4.5084	[    0.041083] HugeTLB: registered 1.00 GiB page size, pre-allocated 0 pages
+   4.5084	[    0.041093] HugeTLB: 16380 KiB vmemmap can be freed for a 1.00 GiB page
+   4.5084	[    0.041099] HugeTLB: registered 32.0 MiB page size, pre-allocated 0 pages
+   4.5084	[    0.041102] HugeTLB: 508 KiB vmemmap can be freed for a 32.0 MiB page
+   4.5084	[    0.041107] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+   4.5084	[    0.041110] HugeTLB: 28 KiB vmemmap can be freed for a 2.00 MiB page
+   4.5084	[    0.041115] HugeTLB: registered 64.0 KiB page size, pre-allocated 0 pages
+   4.5084	[    0.041118] HugeTLB: 0 KiB vmemmap can be freed for a 64.0 KiB page
+   4.5084	[    0.042557] iommu: Default domain type: Translated 
+   4.5085	[    0.042565] iommu: DMA domain TLB invalidation policy: strict mode 
+   4.5085	[    0.042819] SCSI subsystem initialized
+   4.5085	[    0.042950] libata version 3.00 loaded.
+   4.5085	[    0.043175] pps_core: LinuxPPS API ver. 1 registered
+   4.6085	[    0.043179] pps_core: Software ver. 5.3.6 - Copyright 2005-2007 Rodolfo Giometti <giometti@linux.it>
+   4.6085	[    0.043322] EDAC MC: Ver: 3.0.0
+   4.6085	[    0.044098] FPGA manager framework
+   4.6085	[    0.044372] clocksource: Switched to clocksource arch_sys_counter
+   4.6085	[    0.044572] VFS: Disk quotas dquot_6.6.0
+   4.6085	[    0.044617] VFS: Dquot-cache hash table entries: 512 (order 0, 4096 bytes)
+   4.6085	[    0.052011] kvm [1]: HYP mode not available
+   4.6085	[    0.052867] Initialise system trusted keyrings
+   4.6085	[    0.053176] Unpacking initramfs...
+   4.6085	[    0.060484] workingset: timestamp_bits=42 max_order=16 bucket_order=0
+   4.6085	[    0.065985] squashfs: version 4.0 (2009/01/31) Phillip Lougher
+   4.6085	[    0.141454] Key type asymmetric registered
+   4.6085	[    0.141469] Asymmetric key parser 'x509' registered
+   4.6085	[    0.141564] Block layer SCSI generic (bsg) driver version 0.4 loaded (major 249)
+   4.6085	[    0.141571] io scheduler mq-deadline registered
+   4.6085	[    0.141575] io scheduler kyber registered
+   4.6085	[    0.141758] io scheduler bfq registered
+   4.6085	[    0.149127] irq_meson_gpio: 100 to 8 gpio interrupt mux initialized
+   4.6085	[    0.167186] Serial: 8250/16550 driver, 4 ports, IRQ sharing enabled
+   4.6085	[    0.169057] ff803000.serial: ttyAML0 at MMIO 0xff803000 (irq = 14, base_baud = 1500000) is a meson_uart
+   4.7086	[    0.803870] Freeing initrd memory: 41980K
+   4.7086	[    0.999895] printk: console [ttyAML0] enabled
+   4.7086	[    1.007702] VFIO - User Level meta-driver version: 0.3
+   4.7086	[    1.009465] i2c_dev: i2c /dev entries driver
+   4.7086	[    1.015032] cpu cpu0: error -ENODEV: _opp_set_regulators: no regulator (cpu) found
+   4.7086	[    1.020426] cpu cpu0: error -ENODEV: failed to set regulators
+   4.7086	[    1.026459] ledtrig-cpu: registered to indicate activity on CPUs
+   4.7086	[    1.034105] Loading compiled-in X.509 certificates
+   4.7086	[    1.055868] Freeing unused kernel memory: 1664K
+   4.7086	[    1.056582] Run /init as init process
+   4.7086	[    1.056607]   with arguments:
+   4.7086	[    1.057547]     /init
+   4.7086	[    1.059790]   with environment:
+   4.7086	[    1.062882]     HOME=/
+   4.7086	[    1.065092]     TERM=linux
+   4.7086	[    1.067685]     pci=nomsi
+   4.7086	[    1.070236]     earlyprintk=serial
+   4.8089	Starting syslogd: OK
+   4.8089	Starting klogd: OK
+   4.8089	Running sysctl: OK
+   6.9145	Saving random seed: [    3.200374] random: crng init done
+   6.9145	OK
+   6.9145	Starting network: ip: socket: Function not implemented
+   6.9145	ip: socket: Function not implemented
+   6.9145	FAIL
+  12.1276	
+  12.1276	Welcome to Buildroot
+  12.1276	buildroot login: 
