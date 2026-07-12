@@ -158,12 +158,25 @@ class Transition:
 
         return candidates
 
+    def _is_g0_node(self, graph, node):
+        """True if `node` was present in G0.
+
+        Transitions may not delete G0 objects. The scenario's constraints are stated over
+        exactly these nodes, so deleting one is a degenerate way to satisfy a constraint
+        about it (remove the resource and it can no longer be co-held, reachable, etc.)
+        rather than a design decision. Nodes the search creates itself carry no `g0` flag
+        and may be deleted, so the search can still undo its own moves.
+        """
+        return graph.g.nodes.get(node, {}).get('g0', False)
+
     def _find_remove_pd_candidates(self, graph, constraints):
         """Find PDs that can be safely removed"""
         candidates = []
         pds = [node for node, data in graph.g.nodes(data=True) if data.get('type') == 'PD']
 
         for pd in pds:
+            if self._is_g0_node(graph, pd):
+                continue
             # Check if PD has no connections (orphaned)
             has_outgoing = any(graph.g.has_edge(pd, neighbor) for neighbor in graph.g.nodes())
             has_incoming = any(graph.g.has_edge(neighbor, pd) for neighbor in graph.g.nodes())
@@ -323,6 +336,8 @@ class Transition:
                     if data.get('type') == 'RESOURCE' and data.get('data') == 'FILE']
 
         for resource in resources:
+            if self._is_g0_node(graph, resource):
+                continue
             holders = self._get_resource_holders(graph, resource)
             candidates.append({
                 'param_values': {'resource': resource},
@@ -350,6 +365,8 @@ class Transition:
         spaces = [node for node, data in graph.g.nodes(data=True) if data.get('type') == 'RESOURCE_SPACE']
 
         for space in spaces:
+            if self._is_g0_node(graph, space):
+                continue
             # Check if space has resources
             has_resources = any(graph.g.has_edge(resource, space)
                                for resource in graph.g.nodes()
@@ -1517,7 +1534,8 @@ def build_db_trust_graph():
 
     TCB(PD_1) = {PD_2 [tls_key shared], PD_3 [REQUEST]} = 2
     TCB(PD_2) = {PD_1 [tls_key shared]}                 = 1
-    Memory at G0: 3x30MB + 350MB = 440MB (budget = 530MB; max 6 PDs)
+    Memory at G0: 3x30MB + 350.02MB = 440.02MB (budget = 530MB; max 5 PDs --
+    a 6th needs 530.02MB, just over, because the resources total 350,016,384 B)
 
     Path to solution (~6 steps):
       1. remove_hold(PD_1, tls_key):       +4 (fixes A, B, C, F)
@@ -1974,13 +1992,10 @@ SCENARIOS = {
                 "pd_overhead_bytes":  50_000_000,
             }),
         ],
-        # Restrict to hold-edge primitives only.
-        # Deletion primitives removed: remove_file_resource would trivially satisfy
-        # co-hold constraints by deleting caches; remove_pd allows thrashing.
-        # Request-edge primitives removed: irrelevant for cache isolation (no request
-        # edges in the optimal solution), and they generate many score-90 lateral states
-        # that crowd out useful score-89 intermediates in the beam.
-        allowed_primitives=["add_pd", "add_hold_edge", "remove_hold_edge"],
+        # All transitions. Degenerate deletions (removing the caches a co-hold constraint
+        # is about) are ruled out generally by the G0 precondition in _is_g0_node(), not by
+        # hand-picking a transition set per scenario.
+        allowed_primitives=PRIMITIVES,
         allowed_multistep=[],
         graph_builder=build_ml_tenant_graph
     ),
@@ -1991,7 +2006,7 @@ SCENARIOS = {
             "Over-provisioned 3-PD PostgreSQL-like deployment → trust-tiered design with "
             "signing-oracle pattern (Pattern B). PD_frontend must reach tls_key only via "
             "a REQUEST edge to PD_tls (signing oracle), and auth_hba only via REQUEST to "
-            "PD_admin. A 530 MB budget caps PD count at 6. IsoSearch minimizes "
+            "PD_admin. A 530 MB budget caps PD count at 5. IsoSearch minimizes "
             "TCB(PD_frontend)≤2, TCB(PD_backend)=0, and GlobalRSI simultaneously using "
             "all five constraint types."
         ),
@@ -2010,6 +2025,17 @@ SCENARIOS = {
             Constraint("prohibit_co_hold", None, "FILE_1_3,FILE_1_6"),  # txn_temp <-> tls_key [VIOLATED: PD_1]
             Constraint("prohibit_co_hold", None, "FILE_1_1,FILE_1_6"),  # conn.sock <-> tls_key [VIOLATED: PD_1]
             Constraint("prohibit_co_hold", None, "FILE_1_6,FILE_1_7"),  # tls_key <-> auth_hba [VIOLATED: PD_1]
+            # auth_hba (FILE_1_7) is the authentication policy and must likewise be kept
+            # out of the data path. Without these, the search can satisfy every other
+            # constraint by moving auth_hba into the storage tier (PD_backend), which frees
+            # PD_admin to hold tls_key and yields a formally-optimal 3-PD design that puts
+            # the authentication policy inside the storage manager -- cheaper, valid, and
+            # not what anyone would ship. The intent was always that auth_hba belongs with
+            # the authentication subsystem; it simply was not stated.
+            Constraint("prohibit_co_hold", None, "FILE_1_1,FILE_1_7"),  # conn.sock <-> auth_hba
+            Constraint("prohibit_co_hold", None, "FILE_1_3,FILE_1_7"),  # txn_temp  <-> auth_hba
+            Constraint("prohibit_co_hold", None, "FILE_1_4,FILE_1_7"),  # datadir   <-> auth_hba
+            Constraint("prohibit_co_hold", None, "FILE_1_5,FILE_1_7"),  # wal       <-> auth_hba
             # Direct-hold prohibition: PD_frontend must never directly hold tls_key [VIOLATED at G0]
             Constraint("prohibit_direct_hold", 1, "FILE_1_6"),
             # Indirect access (auth): PD_frontend must reach auth_hba through a mediator.
@@ -2044,7 +2070,9 @@ SCENARIOS = {
         # for requires_indirect_access(PD_1, auth_hba) and must not be removable.
         # Flood control: spurious REQUEST edges increase TCB(PD_1), directly penalising the
         # minimize-TCB goal; only the two mandated edges (PD_admin, PD_tls) hit TCB=2.
-        allowed_primitives=["add_pd", "add_hold_edge", "remove_hold_edge", "add_request_edge"],
+        # All transitions. Degenerate deletions are ruled out generally by the G0
+        # precondition in _is_g0_node(), not by hand-picking a transition set here.
+        allowed_primitives=PRIMITIVES,
         allowed_multistep=[],
         graph_builder=build_db_trust_graph
     ),

@@ -1908,7 +1908,7 @@ def _select_beam_specific_candidates(all_candidates, beam_idx, beam_width, exist
 def BeamSearchExploration(scenario, beam_width=3, max_depth=8,
                           early_stop_on_convergence=True,
                           plateau_patience=3, plateau_delta=0.01,
-                          constraint_weight=20.0):
+                          constraint_weight=50.0):
     """
     Beam search implementation for design space exploration
     Explores multiple promising paths simultaneously instead of greedy single-path
@@ -1920,7 +1920,11 @@ def BeamSearchExploration(scenario, beam_width=3, max_depth=8,
         early_stop_on_convergence - Stop when all beam states have found solutions (default: True)
         plateau_patience - Stop after this many iterations without score improvement (default: 3, 0=disabled)
         plateau_delta - Minimum score improvement to not count as plateau (default: 0.01)
-        constraint_weight - Weight multiplier for constraint_score in the scoring formula (default: 20.0)
+        constraint_weight - Weight multiplier for constraint_score in the scoring formula (default: 50.0).
+                            Constraint dominance requires alpha > 10 * |goals|, since each goal
+                            contributes at most 10 to goal_progress and each violation costs alpha.
+                            50 covers up to 4 goals; db_trust has 3. (Was 20, which only sufficed
+                            for single-goal scenarios.)
     Returns: list of explored mechanisms
     """
     import copy
@@ -1930,6 +1934,14 @@ def BeamSearchExploration(scenario, beam_width=3, max_depth=8,
     constraints = scenario.constraints
     transitions = scenario.get_allowed_transitions()
     initial_graph = scenario.build_graph()
+
+    # Mark every node present in G0. Deleting one of these is never a design decision:
+    # the constraints are stated over exactly these objects, so removing a resource is a
+    # degenerate way to "satisfy" a constraint about it (delete the cache and it can no
+    # longer be co-held). Objects the search creates itself are not constrained and may be
+    # freely deleted, which keeps backtracking available. See _is_g0_node().
+    for _n in initial_graph.g.nodes:
+        initial_graph.g.nodes[_n]['g0'] = True
 
     print(f"🔍 Starting beam search exploration (beam_width={beam_width})")
     print(f"   Goals: {len(goals)}, Constraints: {len(constraints)}, Transitions: {len(transitions)}")
