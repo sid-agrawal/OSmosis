@@ -53,5 +53,43 @@ affected. Note that the guest's own printk timestamps cannot show this: they run
 on the guest clock and are nearly identical across the two configs (`Run /init`
 at [1.044] untracked vs [1.064] tracked). Host-side timestamps are required.
 
+## Linux reference on the same board (Part B)
+
+Board booted to its stock Ubuntu 22.04 (HardKernel BSP kernel 4.9.312-6 aarch64),
+static IP 10.42.0.2, driven over ssh. Same `procbench`/`trivial` binaries as the
+QEMU experiments (`../qemu-aarch64-startup-bench/`): `fork()`+`execve()` of a
+trivial static binary, `clock_gettime(CLOCK_MONOTONIC)`, 300 iterations, 5 runs.
+
+| run | mean (ms) | median (ms) |
+|---|---|---|
+| 1 | 0.6213 | 0.6099 |
+| 2 | 0.6179 | 0.6058 |
+| 3 | 0.6202 | 0.6061 |
+| 4 | 0.6281 | 0.6080 |
+| 5 | 0.6124 | 0.5981 |
+| **mean** | **0.620** | **0.606** |
+
+Process creation, all three systems on this board:
+
+| system | time | vs Linux |
+|---|---|---|
+| Linux (fork+exec)      | 0.620 ms  | 1× |
+| seL4 untracked spawn   | 8.180 ms  | 13.2× |
+| CellulOS tracked spawn | 10.230 ms | 16.5× |
+
+Under QEMU the same comparison put Linux (27.2 ms) and CellulOS (48.7 ms) within
+1.8× of each other. Emulation penalizes the two very unequally: hardware speeds
+CellulOS's spawn ~5×, but Linux's fork/exec ~44×, because Linux defers nearly all
+the work (COW fork, demand-paged exec) to page faults that are cheap on real
+silicon and expensive under TCG. Cross-system startup comparisons under emulation
+are therefore systematically misleading; the tracked-vs-untracked comparison,
+which holds the kernel constant, is the one that survives the platform change.
+
+### Not possible on this image: Linux as hypervisor
+
+The stock Odroid Ubuntu image's 4.9 BSP kernel is built with `# CONFIG_KVM is not
+set` and has no kvm modules, so there is no `/dev/kvm` (the CPUs do start at EL2).
+The Linux+KVM VM-boot comparison needs a mainline kernel with KVM enabled.
+
 Raw per-run logs: `{process,vm-untracked,vm-tracked}_run{1..5}.log`
-(format: `<seconds since go>\t<line>`).
+(format: `<seconds since go>\t<line>`), `linux_process_run{1..5}.log`.
