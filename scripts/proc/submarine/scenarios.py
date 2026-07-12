@@ -1685,6 +1685,13 @@ SCENARIOS = {
         # PRIMITIVES set let the beam spend its whole budget on candidates like
         # "add another PD unrelated to PD_1/PD_2" (harmless to every constraint, so
         # never penalized, and crowded out the specific 5-edit sequence that matters).
+        # NOT the full transition set, and not for soundness: degenerate deletion is
+        # already ruled out by the G0 precondition. This scenario simply does not converge
+        # at beam_width=12 with all 12 transitions (0 solutions; it needs beam_width>=36).
+        # The extra transitions generate lateral states that tie on score and crowd the beam,
+        # displacing the specific edit sequence this scenario needs. Restricting the
+        # transition set is a workaround for that beam-search limitation. Not a paper
+        # scenario; the five in Table 1 all run the full set.
         allowed_primitives=["add_pd", "add_hold_edge", "remove_hold_edge",
                             "add_request_edge", "remove_request_edge"],
         allowed_multistep=[],
@@ -1865,12 +1872,9 @@ SCENARIOS = {
             Constraint("requires_resource_held", None, "FILE_1_4"),
             Constraint("requires_resource_held", None, "FILE_1_5"),
         ],
-        # Restrict to additive primitives only — resource/PD deletion would trivially
-        # satisfy co-hold constraints by removing resources rather than redistributing them.
-        allowed_primitives=[
-            "add_pd", "add_hold_edge", "remove_hold_edge",
-            "add_request_edge", "remove_request_edge",
-        ],
+        # All transitions. Degenerate deletion (removing the resources a co-hold constraint
+        # is about) is ruled out generally by the G0 precondition in _is_g0_node().
+        allowed_primitives=PRIMITIVES,
         allowed_multistep=[],
         graph_builder=build_ssh_discover_graph
     ),
@@ -2017,25 +2021,25 @@ SCENARIOS = {
         ],
         constraints=[
             # Co-hold prohibitions — no single PD may hold both resources simultaneously.
-            # tls_key (FILE_1_6) must be isolated from all other sensitive resources.
-            # Five co-holds involving tls_key ensure each removal of tls_key from a PD
-            # fixes multiple violations at once, giving the scoring strong positive signal.
-            Constraint("prohibit_co_hold", None, "FILE_1_4,FILE_1_6"),  # datadir <-> tls_key [VIOLATED: PD_2]
-            Constraint("prohibit_co_hold", None, "FILE_1_5,FILE_1_6"),  # wal <-> tls_key [VIOLATED: PD_2]
-            Constraint("prohibit_co_hold", None, "FILE_1_3,FILE_1_6"),  # txn_temp <-> tls_key [VIOLATED: PD_1]
-            Constraint("prohibit_co_hold", None, "FILE_1_1,FILE_1_6"),  # conn.sock <-> tls_key [VIOLATED: PD_1]
-            Constraint("prohibit_co_hold", None, "FILE_1_6,FILE_1_7"),  # tls_key <-> auth_hba [VIOLATED: PD_1]
-            # auth_hba (FILE_1_7) is the authentication policy and must likewise be kept
-            # out of the data path. Without these, the search can satisfy every other
-            # constraint by moving auth_hba into the storage tier (PD_backend), which frees
-            # PD_admin to hold tls_key and yields a formally-optimal 3-PD design that puts
-            # the authentication policy inside the storage manager -- cheaper, valid, and
-            # not what anyone would ship. The intent was always that auth_hba belongs with
-            # the authentication subsystem; it simply was not stated.
-            Constraint("prohibit_co_hold", None, "FILE_1_1,FILE_1_7"),  # conn.sock <-> auth_hba
-            Constraint("prohibit_co_hold", None, "FILE_1_3,FILE_1_7"),  # txn_temp  <-> auth_hba
-            Constraint("prohibit_co_hold", None, "FILE_1_4,FILE_1_7"),  # datadir   <-> auth_hba
-            Constraint("prohibit_co_hold", None, "FILE_1_5,FILE_1_7"),  # wal       <-> auth_hba
+            # C1: the TLS private key gets a protection domain of its own -- it may not
+            # share a PD with ANY other resource.
+            #
+            # This replaces an enumerated list ("tls_key must not co-reside with connection
+            # or storage resources"), which is where the holes were. Every enumeration we
+            # tried leaked: omit query_pipe and the key can sit with it; name only the data
+            # path and the key moves in with PD_admin; protect the key from auth_hba alone
+            # and the search relocates auth_hba into the storage tier instead, freeing
+            # PD_admin to hold the key (a valid, cheaper 3-PD design that puts the
+            # authentication policy inside the storage manager). "The key shares a PD with
+            # nothing" has no gaps to find, and is what the case study always meant.
+            Constraint("prohibit_co_hold", None, "FILE_1_1,FILE_1_6"),  # conn.sock  <-> tls_key
+            Constraint("prohibit_co_hold", None, "FILE_1_2,FILE_1_6"),  # query_pipe <-> tls_key
+            Constraint("prohibit_co_hold", None, "FILE_1_3,FILE_1_6"),  # txn_temp   <-> tls_key
+            Constraint("prohibit_co_hold", None, "FILE_1_4,FILE_1_6"),  # datadir    <-> tls_key
+            Constraint("prohibit_co_hold", None, "FILE_1_5,FILE_1_6"),  # wal        <-> tls_key
+            Constraint("prohibit_co_hold", None, "FILE_1_6,FILE_1_7"),  # tls_key <-> auth_hba
+            Constraint("prohibit_co_hold", None, "FILE_1_6,FILE_1_8"),  # tls_key <-> audit_log
+            Constraint("prohibit_co_hold", None, "FILE_1_6,FILE_1_9"),  # tls_key <-> admin_sock
             # Direct-hold prohibition: PD_frontend must never directly hold tls_key [VIOLATED at G0]
             Constraint("prohibit_direct_hold", 1, "FILE_1_6"),
             # Indirect access (auth): PD_frontend must reach auth_hba through a mediator.
