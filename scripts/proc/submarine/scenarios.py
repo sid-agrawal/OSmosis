@@ -1625,17 +1625,35 @@ SCENARIOS = {
             Goal("RSI", 0.0, "minimize", "PD_1,PD_2")   # Complete isolation required
         ],
         constraints=[
-            # Both PDs need indirect access to the shared resource FILE_1_1
-            Constraint("requires_indirect_access", 1, "FILE_1_1", properties={"through_pd": True}),
-            Constraint("requires_indirect_access", 2, "FILE_1_1", properties={"through_pd": True}),
-            # The shared resource must exist
+            # The shared log must exist and remain owned.
             Constraint("requires_resource_exists", None, "FILE_1_1", properties={"mandatory": True}),
-            # Prohibit direct access to force mediation
-            Constraint("prohibit_direct_hold", 1, "FILE_1_1"),
-            Constraint("prohibit_direct_hold", 2, "FILE_1_1"),
-            # Basic file access requirements
-            # Constraint("requires_file_access", 1, "FILE", properties={"file_type": "any", "min_size_kb": 1}),
-            # Constraint("requires_file_access", 2, "FILE", properties={"file_type": "any", "min_size_kb": 1}),
+
+            # C1: both clients must be able to reach the log, directly or indirectly.
+            Constraint("requires_resource_access", 1, "FILE_1_1",
+                       properties={"access_type": "direct_or_indirect"}),
+            Constraint("requires_resource_access", 2, "FILE_1_1",
+                       properties={"access_type": "direct_or_indirect"}),
+
+            # C2: the log has a single owner (one incoming Hold edge).
+            Constraint("max_direct_holders", None, "FILE_1_1", properties={"max": 1}),
+
+            # C3: the two clients must not have to trust each other -- neither may appear in
+            # the other's TCB.
+            #
+            # C1-C3 state *what the design must guarantee*, not *what it must look like*. The
+            # mediator is not mandated anywhere; it is the only structure that satisfies them.
+            # This matters, and the alternatives were tested:
+            #   - C1+C2 alone: 14 of 15 solutions simply give the log to one client and let the
+            #     other request it. C2 permits that -- a single owner IS one owner.
+            #   - C1 alone: the search leaves two direct holders.
+            #   - Adding a TCB-size goal does not help: the single-owner design has a SMALLER
+            #     total TCB than the mediator (1 vs 2), so minimising TCB size prefers it.
+            #   - RSI cannot distinguish them either: it counts only directly-held resources,
+            #     so "one client gives up its copy" already scores RSI = 0.
+            # What rules the single-owner design out is not its shape but its trust: the
+            # webserver would have to trust the database. Say that, and the mediator emerges.
+            Constraint("prohibit_tcb_membership", 1, "PD_2"),   # PD_2 not in TCB(PD_1)
+            Constraint("prohibit_tcb_membership", 2, "PD_1"),   # PD_1 not in TCB(PD_2)
         ],
         allowed_primitives=PRIMITIVES,  # All primitives allowed
         allowed_multistep=[],  # No multi-step transitions

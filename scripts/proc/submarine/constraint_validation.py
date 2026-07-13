@@ -82,6 +82,10 @@ def validate_constraint(graph, constraint):
         return validate_prohibit_co_hold(graph, constraint)
     elif constraint.constraint_type == "requires_resource_held":
         return validate_requires_resource_held(graph, constraint)
+    elif constraint.constraint_type == "prohibit_tcb_membership":
+        return validate_prohibit_tcb_membership(graph, constraint)
+    elif constraint.constraint_type == "max_direct_holders":
+        return validate_max_direct_holders(graph, constraint)
     else:
         return False, f"Unknown constraint type: {constraint.constraint_type}"
 
@@ -504,3 +508,39 @@ def validate_requires_resource_held(graph, constraint):
         if d.get('type') == 'HOLD' and v == res_id:
             return True, f"{res_id} is held by {u}"
     return False, f"{res_id} has no holder"
+
+
+def validate_prohibit_tcb_membership(graph, constraint):
+    """PD_a must not appear in TCB(PD_b): the two PDs must not have to trust each other.
+
+    This states a security property (mutual distrust) rather than a structure. It does not
+    say "build a mediator"; a mediator is one way to satisfy it.
+
+    constraint.pd_id = PD_b (whose TCB is constrained)
+    constraint.resource_info = PD_a (the PD that must not be in it)
+    """
+    import isosearch
+    pd_b = f"PD_{constraint.pd_id}" if not str(constraint.pd_id).startswith("PD") else str(constraint.pd_id)
+    pd_a = str(constraint.resource_info)
+    pd_nodes = [n for n, d in graph.g.nodes(data=True) if d.get('type') == 'PD']
+    tcb_by_pd = isosearch._calculate_tcb(graph, pd_nodes)
+    tcb = {str(x) for x in tcb_by_pd.get(pd_b, [])}
+    if pd_a in tcb:
+        return False, f"{pd_a} is in TCB({pd_b}) -- they must not have to trust each other"
+    return True, f"{pd_a} not in TCB({pd_b})"
+
+
+def validate_max_direct_holders(graph, constraint):
+    """At most N PDs may hold a resource directly (default 1).
+
+    This is the paper's original C2 for the mediation example: "Res_log must have only one
+    incoming Hold edge". On its own it does NOT force a mediator (one client may be the sole
+    holder), but combined with a mutual-distrust constraint it does.
+    """
+    res_id = constraint.resource_info
+    n_max = (constraint.properties or {}).get("max", 1)
+    holders = [u for u, v, d in graph.g.edges(data=True)
+               if d.get('type') == 'HOLD' and v == res_id]
+    if len(holders) <= n_max:
+        return True, f"{res_id} has {len(holders)} holder(s) <= {n_max}"
+    return False, f"{res_id} has {len(holders)} direct holders (max {n_max})"
