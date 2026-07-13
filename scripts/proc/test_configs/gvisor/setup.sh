@@ -6,14 +6,14 @@ set -euo pipefail
 export DOCKER_HOST=unix:///var/run/docker.sock
 
 # Check gVisor runtime is configured in Docker
-if ! sudo docker info --format '{{range $k,$v := .Runtimes}}{{$k}} {{end}}' 2>/dev/null | grep -qw runsc; then
-    echo "SKIP=runsc runtime not configured in Docker" >&2
+if ! sudo docker info --format '{{range $k,$v := .Runtimes}}{{$k}} {{end}}' 2>/dev/null | grep -qw runsc-kvm; then
+    echo "SKIP=runsc-kvm runtime not configured in Docker (needs --platform=kvm)" >&2
     exit 1
 fi
 
 sudo docker rm -f osmosis-gvisor-app osmosis-gvisor-kvs 2>/dev/null || true
-sudo docker run -d --runtime=runsc --name osmosis-gvisor-app ubuntu:22.04 sleep 3600
-sudo docker run -d --runtime=runsc --name osmosis-gvisor-kvs ubuntu:22.04 sleep 3600
+sudo docker run -d --runtime=runsc-kvm --name osmosis-gvisor-app ubuntu:22.04 sleep 3600
+sudo docker run -d --runtime=runsc-kvm --name osmosis-gvisor-kvs ubuntu:22.04 sleep 3600
 sleep 3
 
 APP_PID=$(sudo docker inspect --format '{{.State.Pid}}' osmosis-gvisor-app)

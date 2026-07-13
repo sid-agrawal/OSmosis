@@ -33,3 +33,6 @@ test_programs/hello_static
 test_programs/hello_file
 test_programs/hello_new_uid_ns
 test_programs/hello_new_net_ns
+test_configs/firecracker/images/vmlinux
+test_configs/firecracker/images/rootfs.ext4
+test_configs/firecracker/images/*.ext4

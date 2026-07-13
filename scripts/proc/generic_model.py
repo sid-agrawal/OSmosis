@@ -34,6 +34,7 @@ class ResourceType(Enum):
     MNT = 10  # Mount namespace resource space
     IPC = 11  # IPC namespace resource space
     APPARMOR_PROFILE = 12  # AppArmor/SELinux MAC profile space
+    VM_DEVICE = 13  # Hardware-virtualization device (/dev/kvm) held by a VMM process
 
 
 class VmrType(Enum):

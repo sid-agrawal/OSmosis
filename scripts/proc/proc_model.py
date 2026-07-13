@@ -282,19 +282,49 @@ def run_process(name: str, start_type: ProcessStartType = False) -> tuple[int, i
         return pid
 
     elif start_type == ProcessStartType.KATA:
+        # Launched through containerd, not Docker. Docker + Kata 3.x fails with
+        # "failed to create shim task: invalid namespace type": Docker hands the shim a
+        # namespace type it rejects. containerd drives the same shim successfully.
+        #
+        # The host-visible process for a Kata sandbox is its QEMU, which is what we want
+        # to model: it is the process that holds /dev/kvm. Its cmdline carries
+        # "-name sandbox-<container>", so we find it by that.
         args_list = name.split()
         assert len(args_list) == 3
         image, container_name, cmd = args_list[0], args_list[1], args_list[2]
-        subprocess.run(["docker", "rm", "-f", container_name], capture_output=True)
-        subprocess.run(["docker", "run", "--rm", "-id",
-                        "--runtime=io.containerd.kata.v2",
-                        "--name", container_name, image, cmd],
+        ref = image if "/" in image else f"docker.io/library/{image}:22.04"
+
+        subprocess.run(["ctr", "-n", "default", "task", "kill", "-s", "SIGKILL",
+                        container_name], capture_output=True)
+        time.sleep(1)
+        subprocess.run(["ctr", "-n", "default", "container", "rm", container_name],
                        capture_output=True)
-        inspect_output = subprocess.check_output(
-            ["docker", "inspect", container_name], text=True)
-        inspect_json = json.loads(inspect_output)
-        pid = inspect_json[0]["State"]["Pid"]
-        assert pid != 0 and pid is not None
+        subprocess.run(["ctr", "-n", "default", "images", "pull", ref],
+                       capture_output=True)
+        subprocess.run(["ctr", "-n", "default", "run", "-d",
+                        "--runtime", "io.containerd.run.kata.v2",
+                        ref, container_name, "sleep", "3600"],
+                       capture_output=True)
+
+        pid = None
+        for _ in range(30):
+            out = subprocess.run(["pgrep", "-f", f"sandbox-{container_name}"],
+                                 capture_output=True, text=True)
+            cands = [int(x) for x in out.stdout.split() if x.strip().isdigit()]
+            for c in cands:
+                try:
+                    with open(f"/proc/{c}/comm") as f:
+                        if "qemu" in f.read():
+                            pid = c
+                            break
+                except OSError:
+                    continue
+            if pid:
+                break
+            time.sleep(1)
+
+        assert pid is not None and pid != 0, (
+            f"no QEMU process found for Kata sandbox {container_name}")
         return pid
 
     else:
@@ -861,6 +891,39 @@ def extract_process_data(data: ProcFsData, pid: int, name: str, should_print=Fal
     extract_cgroups_for_pid(data, pid, should_print)
     extract_namespaces_for_pid(data, pid, should_print)
     extract_mountinfo_for_pid(data, pid, should_print)
+    extract_vm_device_for_pid(data, pid, should_print)
+
+
+def extract_vm_device_for_pid(data: ProcFsData, pid: int, should_print: bool = False):
+    """
+    Record whether this process holds the hardware-virtualization device (/dev/kvm).
+
+    Must run while the process is alive: to_generic_model() builds the graph after the
+    processes have been terminated, so /proc/<pid>/fd no longer exists by then. Same
+    constraint as TCP and FUSE connection detection.
+
+    A process holds /dev/kvm exactly when it has asked the kernel for a virtualization
+    context, which is what a VM boundary actually is. Detecting it by process name instead
+    (calling anything named "qemu" or "firecracker" a VM) is wrong in both directions: an
+    idle Firecracker waiting on its API socket has not opened the device, and gVisor on its
+    default systrap platform never opens it at all.
+    """
+    fd_dir = f"/proc/{pid}/fd"
+    holds = False
+    try:
+        for fd in os.listdir(fd_dir):
+            try:
+                if os.readlink(os.path.join(fd_dir, fd)) == "/dev/kvm":
+                    holds = True
+                    break
+            except OSError:
+                continue
+    except (PermissionError, FileNotFoundError, ProcessLookupError):
+        holds = False
+
+    data.procs[pid].holds_vm_device = holds
+    if should_print and holds:
+        print(f"  PID {pid} holds /dev/kvm (VM boundary)")
 
 
 def terminate_process(pid: int):

@@ -1,5 +1,6 @@
 from enum import Enum
 import math
+import os
 from dataclasses import dataclass, field
 from utils import (
     EasyDict,
@@ -690,6 +691,8 @@ class Process:
     pid_mounts: list[pypfs.mount] = field(default_factory=lambda: list())
     cgroup_path: str = ""  # cgroup v2 path for this process
     ppid: int = 0          # Parent PID in host namespace (from /proc/PID/status PPid:)
+    holds_vm_device: bool = False  # process has /dev/kvm open (captured live, see
+                                   # proc_model.extract_vm_device_for_pid)
 
 
 @dataclass
@@ -989,6 +992,40 @@ class ProcFsData:
             self.model.add_hold_edge(
                 gm.perms_all, proc_info.model_id, gm.ResourceType.PAGE_QUOTA, space_id,
                 pd_incharge=self.os_name
+            )
+
+    def __add_vm_device_resources(self, kernel_id: int):
+        """
+        Model the hardware-virtualization device (/dev/kvm) as a VM_DEVICE resource.
+
+        A process that has /dev/kvm open is running a hardware VM: it has asked the kernel
+        for a virtualization context. We record that as a HOLD edge from the PD to the
+        device, so that "is there a VM boundary between these two PDs?" becomes a
+        structural question over held resources rather than a guess from the process name.
+
+        The fd scan itself happens live, in proc_model.extract_vm_device_for_pid(), because
+        by the time this runs the processes have already been terminated and /proc/<pid>/fd
+        is gone. Same reason TCP and FUSE connection detection run before termination.
+        """
+        space_id = None
+        for proc_info in self.procs.values():
+            if not proc_info.holds_vm_device:
+                continue
+
+            if space_id is None:
+                # One global device space; /dev/kvm is a single kernel-managed device.
+                space_id = self.model.add_resource_space_node(gm.ResourceType.VM_DEVICE)
+                self.model.add_hold_edge(
+                    gm.perms_all, kernel_id, gm.ResourceType.VM_DEVICE, space_id,
+                    pd_incharge=self.os_name
+                )
+                self.model.add_resource_node(
+                    gm.ResourceType.VM_DEVICE, space_id, res_id=0, extra="/dev/kvm"
+                )
+
+            self.model.add_hold_edge(
+                gm.perms_all, proc_info.model_id, gm.ResourceType.VM_DEVICE, space_id,
+                res_id=0, pd_incharge=self.os_name
             )
 
     def __add_net_namespace_spaces(self, kernel_id: int):
@@ -1526,6 +1563,7 @@ class ProcFsData:
         self.__add_inter_process_hold_edges(kernel_id=kernel_id)
         self.__add_file_resources(kernel_id=kernel_id)
         self.__add_cgroup_resource_spaces(kernel_id=kernel_id)
+        self.__add_vm_device_resources(kernel_id=kernel_id)
         self.__add_net_namespace_spaces(kernel_id=kernel_id)
         self.__add_mnt_namespaces(kernel_id=kernel_id)
         self.__add_ipc_namespace_spaces(kernel_id=kernel_id)

@@ -299,17 +299,32 @@ def _different_syscall_surface(G: nx.MultiDiGraph, pd1: str, pd2: str) -> bool:
 
 
 # Known hypervisor process name substrings (case-insensitive).
+# Retained only as a fallback for graphs extracted before VM_DEVICE resources existed;
+# _holds_vm_device() below is the real, structural test.
 _HYPERVISOR_NAMES = ("qemu", "kvmtool", "firecracker", "cloud-hypervisor", "runsc")
 
 
 def _is_hypervisor(G: nx.MultiDiGraph, pd: str) -> bool:
-    """True if pd is a hypervisor process (inferred from process name).
+    """True if pd LOOKS like a hypervisor process, by name.
 
-    Detects QEMU, Firecracker, kvmtool, and cloud-hypervisor by name.
-    Can be extended to check for KVM device HOLD edges in the graph.
+    This is a heuristic and is not used to decide vm_boundary. A process being called
+    "firecracker" says nothing about whether it ever created a VM: an idle Firecracker
+    waiting on its API socket has not opened /dev/kvm, and gVisor on its default
+    (systrap) platform never does. Use _holds_vm_device().
     """
     name = G.nodes.get(pd, {}).get("data", "").lower()
     return any(h in name for h in _HYPERVISOR_NAMES)
+
+
+def _holds_vm_device(G: nx.MultiDiGraph, pd: str) -> bool:
+    """True if pd holds the hardware-virtualization device (/dev/kvm).
+
+    Structural: looks for a HOLD edge from pd to a VM_DEVICE resource, which
+    procfs_data.__add_vm_device_resources() emits when the process has /dev/kvm open.
+    A process holds /dev/kvm exactly when it has asked the kernel for a virtualization
+    context, which is what "there is a VM boundary here" actually means.
+    """
+    return bool(_reachable_resources(G, pd, res_type="VM_DEVICE"))
 
 
 def isolation_layers(G: nx.MultiDiGraph, pd1: str, pd2: str) -> dict:
@@ -325,8 +340,8 @@ def isolation_layers(G: nx.MultiDiGraph, pd1: str, pd2: str) -> dict:
       different_cgroup          — separate cgroup hierarchies
       different_mac_profile     — different AppArmor/SELinux label
       different_syscall_surface — different effective syscall surfaces
-      vm_boundary               — at least one PD is a hypervisor process,
-                                  indicating a VM isolation boundary
+      vm_boundary               — at least one PD holds the hardware-virtualization
+                                  device (/dev/kvm), i.e. it really is running a VM
     """
     return {
         "different_mnt_ns":
@@ -342,5 +357,5 @@ def isolation_layers(G: nx.MultiDiGraph, pd1: str, pd2: str) -> dict:
         "different_syscall_surface":
             _different_syscall_surface(G, pd1, pd2),
         "vm_boundary":
-            _is_hypervisor(G, pd1) or _is_hypervisor(G, pd2),
+            _holds_vm_device(G, pd1) or _holds_vm_device(G, pd2),
     }
