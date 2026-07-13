@@ -1935,11 +1935,12 @@ def BeamSearchExploration(scenario, beam_width=3, max_depth=8,
     transitions = scenario.get_allowed_transitions()
     initial_graph = scenario.build_graph()
 
-    # Mark every node present in G0. Deleting one of these is never a design decision:
-    # the constraints are stated over exactly these objects, so removing a resource is a
-    # degenerate way to "satisfy" a constraint about it (delete the cache and it can no
-    # longer be co-held). Objects the search creates itself are not constrained and may be
-    # freely deleted, which keeps backtracking available. See _is_g0_node().
+    # Mark every node present in G0. Deleting one of these is never a design decision: the
+    # constraints are stated over exactly these objects, and a constraint is trivially met once
+    # the object it names is deleted (delete the cache and it can no longer be co-held), which
+    # dodges the requirement rather than meeting it. Objects the search creates itself are not
+    # constrained and may be freely deleted, which keeps backtracking available. See
+    # _is_g0_node().
     for _n in initial_graph.g.nodes:
         initial_graph.g.nodes[_n]['g0'] = True
 

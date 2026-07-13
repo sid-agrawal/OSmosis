@@ -161,11 +161,12 @@ class Transition:
     def _is_g0_node(self, graph, node):
         """True if `node` was present in G0.
 
-        Transitions may not delete G0 objects. The scenario's constraints are stated over
-        exactly these nodes, so deleting one is a degenerate way to satisfy a constraint
-        about it (remove the resource and it can no longer be co-held, reachable, etc.)
-        rather than a design decision. Nodes the search creates itself carry no `g0` flag
-        and may be deleted, so the search can still undo its own moves.
+        Transitions may not delete G0 objects. A scenario's constraints are stated over exactly
+        these nodes, and a constraint is trivially met once the object it names is deleted --
+        two resources cannot be co-held if one of them is gone. Deleting a G0 object therefore
+        dodges a requirement rather than meeting it, and is never a design decision. Nodes the
+        search creates itself carry no `g0` flag and may be deleted, so it can still undo its
+        own moves.
         """
         return graph.g.nodes.get(node, {}).get('g0', False)
 
