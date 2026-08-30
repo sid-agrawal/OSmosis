@@ -66,8 +66,37 @@ def calculate_goal_driven_score(operation_name, params, current_graph, new_graph
     base_score = 0.1
     
     # Calculate current and new metrics
-    current_metrics = ComputeMetrics(current_graph)
-    new_metrics = ComputeMetrics(new_graph)
+    # Restrict pairwise metrics to the PDs the goals name. The improvement functions
+    # below only ever read those pairs, so the values they see are unchanged; what is
+    # skipped is the rest of the graph's pairs, which on a large graph is nearly all of
+    # them. Goals that are inherently whole-graph (GlobalRSI, ASR) disable the filter.
+    _pd_filter = set()
+    _needs_all = False
+    for _g in goals or []:
+        _m = getattr(_g, 'metric_name', '')
+        if _m in ('GlobalRSI', 'ASR', 'MemoryConsumption'):
+            _needs_all = True
+        _spec = getattr(_g, 'target_spec', None)
+        if _spec:
+            _pd_filter.update(x.strip() for x in str(_spec).split(',') if x.strip())
+    if _needs_all or not _pd_filter:
+        _pd_filter = None
+
+    _wanted_metrics = set()
+    for _g in goals or []:
+        _m = getattr(_g, 'metric_name', '')
+        if _m:
+            _wanted_metrics.add(_m)
+            if _m.startswith('TCB'):
+                _wanted_metrics.add('TCB')      # TCB:SPACE improvement reads plain TCB
+    _wanted_metrics |= {'TCB', 'MemoryConsumption'}   # read unconditionally below
+    if _needs_all:
+        _wanted_metrics = None
+
+    current_metrics = ComputeMetrics(current_graph, requested_metrics=_wanted_metrics,
+                                     pd_filter=_pd_filter)
+    new_metrics = ComputeMetrics(new_graph, requested_metrics=_wanted_metrics,
+                                 pd_filter=_pd_filter)
     
     # OPTION A: Constraint satisfaction gets HIGHEST priority
     constraint_score = calculate_enhanced_constraint_score(operation_name, params, constraints, current_graph, new_graph)

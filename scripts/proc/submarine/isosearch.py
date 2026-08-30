@@ -9,6 +9,24 @@ from scenarios import get_scenario, list_scenarios, SCENARIOS, Goal, Constraint,
 
 # Goal, Constraint, and Transition classes are now imported from scenarios.py
 
+import random as _random_module
+
+# Candidate selection takes a non-best candidate 15% of the time (see GenerateCandidate).
+# That draw used the global `random` module unseeded. It affects only the GREEDY path:
+# beam search discards GenerateCandidate's chosen candidate and iterates all_candidates,
+# which is built before the draw, so beam-search results are deterministic either way.
+# Seeding here removes the latent nondeterminism from the greedy path and makes any run
+# reproducible from its seed.
+DEFAULT_SEED = 20260822
+_RNG = _random_module.Random(DEFAULT_SEED)
+
+
+def set_seed(seed):
+    """Reseed the exploration RNG. Same seed + same scenario => identical run."""
+    global _RNG
+    _RNG = _random_module.Random(seed)
+    return seed
+
 
 def _calculate_memory_consumption(graph):
     """Sum size_bytes for FILE resources (+ pages*size for VMR/PHYS_PAGE) held by any PD.
@@ -33,7 +51,7 @@ def _calculate_memory_consumption(graph):
     return total
 
 
-def ComputeMetrics(candidate, requested_metrics=None):
+def ComputeMetrics(candidate, requested_metrics=None, pd_filter=None):
     """
     Compute metrics for a candidate graph (RSI, TransitiveRSI, FR, TCB, ASR)
 
@@ -41,6 +59,12 @@ def ComputeMetrics(candidate, requested_metrics=None):
         candidate: The graph to compute metrics for
         requested_metrics: Optional list of specific metrics to compute (for efficiency).
                           Supports per-resource-type metrics like "RSI:CPU", "TransitiveRSI:CACHE_SET"
+        pd_filter: Optional set of PDs to restrict pairwise metrics to. The pairwise
+                   metrics below are computed for every pair of PDs, fourteen times over,
+                   which on a graph with 104 PDs is 5,356 pairs and dominates the cost of
+                   ranking a candidate. A caller that only reads the pairs its goals name
+                   can pass those PDs here and get identical values for them. Callers that
+                   need whole-graph metrics (GlobalRSI, ASR) must leave this as None.
 
     Returns: dictionary of metric values
     """
@@ -49,35 +73,73 @@ def ComputeMetrics(candidate, requested_metrics=None):
     # Find all PDs in the graph
     pd_nodes = [node for node, data in candidate.g.nodes(data=True)
                 if data.get('type') == 'PD']
+    # Pairwise metrics need at least two PDs to be meaningful, so they keep the full list
+    # unless the filter leaves two or more. Per-PD metrics (TCB) are correct for any PD
+    # computed, so they use the filter whenever it names one.
+    pd_pairwise = pd_nodes
+    pd_per_pd = pd_nodes
+    if pd_filter:
+        scoped = [n for n in pd_nodes if n in pd_filter]
+        if scoped:
+            pd_per_pd = scoped
+        if len(scoped) >= 2:
+            pd_pairwise = scoped
+    pd_nodes = pd_pairwise
 
     metrics = {}
 
+    # When the caller names the metrics it will read, skip the rest. Each pairwise family
+    # below costs a pass over every PD pair, and there are fourteen of them; a caller
+    # scoring a TCB goal reads none of them. Callers that pass nothing get everything, as
+    # before.
+    def _wanted(name):
+        return requested_metrics is None or name in requested_metrics
+
     # Calculate RSI (Resource Sharing Index) as per PD pair metric - direct HOLD edges only
-    metrics['RSI'] = _calculate_rsi_per_pd_pair(candidate, pd_nodes, follow_map_edges=False)
+    if _wanted('RSI'):
+        metrics['RSI'] = _calculate_rsi_per_pd_pair(candidate, pd_nodes, follow_map_edges=False)
 
     # Calculate TransitiveRSI - follows MAP edges to find effective resource sharing
     # (e.g., for cache scenarios: PHYS_PAGE -> CACHE_SET)
-    metrics['TransitiveRSI'] = _calculate_rsi_per_pd_pair(candidate, pd_nodes, follow_map_edges=True)
+    if _wanted('TransitiveRSI'):
+        metrics['TransitiveRSI'] = _calculate_rsi_per_pd_pair(candidate, pd_nodes, follow_map_edges=True)
 
     # Calculate per-resource-type RSI metrics if requested
     # Format: "RSI:CPU", "RSI:PHYS_PAGE", "TransitiveRSI:CACHE_SET", etc.
     resource_types = ['CPU', 'PHYS_PAGE', 'FILE', 'CACHE_SET', 'VMR', 'MO']
     for res_type in resource_types:
         # Direct RSI per resource type (e.g., RSI:CPU = direct CPU sharing)
-        metrics[f'RSI:{res_type}'] = _calculate_rsi_per_pd_pair(
-            candidate, pd_nodes, follow_map_edges=False, resource_type_filter=res_type)
+        if _wanted(f'RSI:{res_type}'):
+            metrics[f'RSI:{res_type}'] = _calculate_rsi_per_pd_pair(
+                candidate, pd_nodes, follow_map_edges=False, resource_type_filter=res_type)
         # Transitive RSI per resource type (e.g., TransitiveRSI:CACHE_SET)
-        metrics[f'TransitiveRSI:{res_type}'] = _calculate_rsi_per_pd_pair(
-            candidate, pd_nodes, follow_map_edges=True, resource_type_filter=res_type)
+        if _wanted(f'TransitiveRSI:{res_type}'):
+            metrics[f'TransitiveRSI:{res_type}'] = _calculate_rsi_per_pd_pair(
+                candidate, pd_nodes, follow_map_edges=True, resource_type_filter=res_type)
 
     # Calculate ASR (Attack Surface Ratio) - attack paths per PD
-    metrics['ASR'] = _calculate_asr(candidate, pd_nodes)
+    if _wanted('ASR'):
+        metrics['ASR'] = _calculate_asr(candidate, pd_nodes)
 
     # Calculate TCB (Trusted Computing Base) size
-    metrics['TCB'] = _calculate_tcb(candidate, pd_nodes)
+    if _wanted('TCB'):
+        metrics['TCB'] = _calculate_tcb(candidate, pd_per_pd)
+    metrics['TCB:SPACE'] = {pd: _fast_tcb_spaces(candidate, pd) for pd in pd_per_pd}
+    # Per-space-type sharing, keyed the same way. GoalsMet resolves a goal by looking up
+    # metrics[goal.metric_name], so a goal naming TCB:SPACE:IPC can only ever be reported
+    # as met if that key exists here. Emitting it in the scoring path alone is not enough:
+    # the search would reach a satisfying graph and be unable to say so.
+    _space_types = {d.get('data') for _, d in candidate.g.nodes(data=True)
+                    if d.get('type') == 'RESOURCE_SPACE' and d.get('data')}
+    for _st in _space_types:
+        key = f'TCB:SPACE:{_st}'
+        if _wanted(key):
+            metrics[key] = {pd: _fast_tcb_spaces_of_type(candidate, pd, _st)
+                            for pd in pd_per_pd}
 
     # Calculate FR (Fault Radius) - distance to common ancestor via REQUEST edges
-    metrics['FR'] = _calculate_fr(candidate, pd_nodes)
+    if _wanted('FR'):
+        metrics['FR'] = _calculate_fr(candidate, pd_nodes)
 
     # Calculate total memory consumption (sum of file sizes + page memory held by any PD)
     metrics['MemoryConsumption'] = _calculate_memory_consumption(candidate)
@@ -90,7 +152,8 @@ def ComputeMetrics(candidate, requested_metrics=None):
     metrics['GlobalRSI'] = _compute_global_rsi(pd_resources)
 
     # Print summary (only base metrics to avoid clutter)
-    print(f"    RSI: {metrics['RSI']}, TransitiveRSI: {metrics['TransitiveRSI']}, ASR: {metrics['ASR']}, TCB: {metrics['TCB']}, FR: {metrics['FR']}, Mem: {metrics['MemoryConsumption']}B")
+    print("    " + ", ".join(f"{k}: {metrics[k]}" for k in
+          ('RSI','TransitiveRSI','ASR','TCB','FR','MemoryConsumption') if k in metrics))
     return metrics
 
 
@@ -446,7 +509,8 @@ def GoalsMet(metrics, goals):
 
         # Handle targeted goals
         if goal.target_spec:
-            if goal.metric_name == "TCB" and isinstance(metric_value, dict):
+            if (goal.metric_name == "TCB" or goal.metric_name.startswith("TCB:SPACE")) \
+                    and isinstance(metric_value, dict):
                 # TCB goal for specific PD
                 target_pd = goal.target_spec
                 if target_pd not in metric_value:
@@ -454,16 +518,21 @@ def GoalsMet(metrics, goals):
                     return False
 
                 tcb_list = metric_value[target_pd]
-                tcb_count = len(tcb_list)
+                # TCB is a list of PDs; the space-restricted variants are already counts.
+                tcb_count = tcb_list if isinstance(tcb_list, int) else len(tcb_list)
 
                 if goal.direction == "minimize":
                     if tcb_count > goal.target_value:
-                        dependencies = ", ".join(tcb_list) if tcb_list else "none"
+                        dependencies = (", ".join(tcb_list)
+                                        if isinstance(tcb_list, (list, tuple, set)) and tcb_list
+                                        else str(tcb_list))
                         print(f"    Goal not met: TCB[{target_pd}]={tcb_count} > {goal.target_value} (dependencies: {dependencies})")
                         return False
                 elif goal.direction == "maximize":
                     if tcb_count < goal.target_value:
-                        dependencies = ", ".join(tcb_list) if tcb_list else "none"
+                        dependencies = (", ".join(tcb_list)
+                                        if isinstance(tcb_list, (list, tuple, set)) and tcb_list
+                                        else str(tcb_list))
                         print(f"    Goal not met: TCB[{target_pd}]={tcb_count} < {goal.target_value} (dependencies: {dependencies})")
                         return False
 
@@ -564,7 +633,7 @@ def GenerateCandidate(graph, constraints, transitions, goals, last_transition_ty
 
     for transition in transitions:
         # Use new transition system's find_candidates method
-        candidates = transition.find_candidates(graph, constraints)
+        candidates = transition.find_candidates(graph, constraints, goals)
         # Add predicted improvement and other metadata
         for candidate in candidates:
             candidate['transition_name'] = transition.name
@@ -623,11 +692,10 @@ def GenerateCandidate(graph, constraints, transitions, goals, last_transition_ty
     transformation_candidates.sort(key=candidate_priority, reverse=True)
 
     # Add exploration diversity - sometimes pick from top candidates instead of always the best
-    import random
     exploration_factor = 0.15  # 15% chance to explore alternatives
-    if len(transformation_candidates) > 1 and random.random() < exploration_factor:
+    if len(transformation_candidates) > 1 and _RNG.random() < exploration_factor:
         top_n = min(3, len(transformation_candidates))
-        selected_index = random.randint(0, top_n - 1)
+        selected_index = _RNG.randint(0, top_n - 1)
         best_candidate = transformation_candidates[selected_index]
         print(f"  🎲 Exploration: selecting candidate #{selected_index + 1} instead of best")
     else:
@@ -695,6 +763,24 @@ def GenerateCandidate(graph, constraints, transitions, goals, last_transition_ty
         return None, candidate_info
 
 
+# Above this many nodes, rank candidates with the fast progress function rather than a
+# full before/after metric comparison. Case-study graphs are far below it, so their
+# ranking, and therefore their results, are unchanged.
+#
+# The test is on node count, not edge count: MultiDiGraph.number_of_edges() sums over
+# every node's adjacency dict, so asking it once per candidate costs a pass over the
+# whole graph and made this check more expensive than the work it was guarding.
+# number_of_nodes() is a dict length.
+FAST_RANKING_NODE_THRESHOLD = 2000
+
+
+def operation_name_of(transition):
+    """The operation name _apply_transformation_for_scoring expects."""
+    if hasattr(transition, 'operation'):
+        return transition.operation
+    return getattr(transition, 'name', str(transition))
+
+
 def _predict_improvement(transition, candidate, graph, goals, constraints=None, transition_history=None):
     """
     Context-aware improvement prediction that considers current graph state and constraints
@@ -704,6 +790,22 @@ def _predict_improvement(transition, candidate, graph, goals, constraints=None, 
     # Use goal-driven scoring (the active scoring system)
     if goals:
         from goal_driven_scoring import calculate_goal_driven_score
+        # On a large graph, ranking a candidate by a full before/after ComputeMetrics
+        # costs seconds per candidate and dominates the search: the pair of calls below
+        # were measured at 12.8 s each on a graph extracted from a live system. Above a
+        # threshold we rank with the same fast progress function the beam loop scores
+        # with, applied through the journal so no copy is made. This is a ranking
+        # heuristic in both cases; what changes is its fidelity, not the validity of any
+        # solution, since every candidate admitted as a solution is still re-validated
+        # against every constraint and goal.
+        if graph.g.number_of_nodes() > FAST_RANKING_NODE_THRESHOLD:
+            try:
+                with _Journal(graph):
+                    if _apply_transformation_for_scoring(graph, operation_name_of(transition), candidate):
+                        return 0.1 + _fast_goal_progress(graph, goals)
+                return 0.1
+            except Exception:
+                return 0.1
         try:
             # Apply the operation to get the new graph
             from copy import deepcopy
@@ -1596,6 +1698,245 @@ def _fast_tcb(graph, target_pd):
     return len(tcb)
 
 
+class _Journal:
+    """Record mutations to a ModelGraph so they can be undone.
+
+    Beam search scores far more candidates than it keeps: every candidate was
+    materialized with a whole-graph deepcopy, and all but beam_width of them were then
+    thrown away. On a graph extracted from a real system that copy dominates the search
+    (measured at 1.57 s per candidate). Instead we apply the transition in place, score
+    it, and roll it back, paying only for the handful of nodes and edges a transition
+    actually touches. A candidate that survives into the beam is copied once, at that
+    point.
+
+    The recorder wraps the four mutating networkx calls on the instance and keeps enough
+    state to reverse each one. ModelGraph's own counters are snapshotted separately,
+    since transitions bump them when they invent PDs, resources, or spaces.
+    """
+
+    def __init__(self, model_graph):
+        self.mg = model_graph
+        self.g = model_graph.g
+        self.ops = []
+        self._saved = None
+
+    def __enter__(self):
+        g = self.g
+        self._orig = (g.add_node, g.remove_node, g.add_edge, g.remove_edge)
+        self._saved = (self.mg.pd_counter, self.mg.space_counter,
+                       dict(self.mg.resource_counters))
+        ops = self.ops
+
+        def add_node(n, **attr):
+            existed = n in g
+            prev = dict(g.nodes[n]) if existed else None
+            self._orig[0](n, **attr)
+            ops.append(("node", n, existed, prev))
+
+        def remove_node(n):
+            attrs = dict(g.nodes[n]) if n in g else {}
+            inc = [(u, v, k, dict(d)) for u, v, k, d in g.in_edges(n, keys=True, data=True)]
+            inc += [(u, v, k, dict(d)) for u, v, k, d in g.out_edges(n, keys=True, data=True)]
+            self._orig[1](n)
+            ops.append(("rmnode", n, attrs, inc))
+
+        def add_edge(u, v, key=None, **attr):
+            u_new, v_new = u not in g, v not in g
+            k = self._orig[2](u, v, key=key, **attr)
+            ops.append(("edge", u, v, k, u_new, v_new))
+            return k
+
+        def remove_edge(u, v, key=None):
+            if key is None:
+                k, d = next(iter(g[u][v].items()))
+            else:
+                k, d = key, g[u][v][key]
+            d = dict(d)
+            self._orig[3](u, v, key=k)
+            ops.append(("rmedge", u, v, k, d))
+
+        g.add_node, g.remove_node = add_node, remove_node
+        g.add_edge, g.remove_edge = add_edge, remove_edge
+        return self
+
+    def __exit__(self, *exc):
+        g = self.g
+        g.add_node, g.remove_node, g.add_edge, g.remove_edge = self._orig
+        for op in reversed(self.ops):
+            kind = op[0]
+            try:
+                if kind == "node":
+                    _, n, existed, prev = op
+                    if existed:
+                        g.nodes[n].clear(); g.nodes[n].update(prev)
+                    elif n in g:
+                        g.remove_node(n)
+                elif kind == "rmnode":
+                    _, n, attrs, inc = op
+                    g.add_node(n, **attrs)
+                    for u, v, k, d in inc:
+                        g.add_edge(u, v, key=k, **d)
+                elif kind == "edge":
+                    _, u, v, k, u_new, v_new = op
+                    if g.has_edge(u, v, k):
+                        g.remove_edge(u, v, key=k)
+                    if u_new and u in g and g.degree(u) == 0:
+                        g.remove_node(u)
+                    if v_new and v in g and g.degree(v) == 0:
+                        g.remove_node(v)
+                elif kind == "rmedge":
+                    _, u, v, k, d = op
+                    g.add_edge(u, v, key=k, **d)
+            except Exception:
+                # A failed undo would silently corrupt every later candidate, so make it
+                # loud rather than plausible.
+                raise
+        self.ops = []
+        self.mg.pd_counter, self.mg.space_counter, rc = self._saved
+        self.mg.resource_counters.clear(); self.mg.resource_counters.update(rc)
+        return False
+
+
+def _fast_tcb_spaces_of_type(graph, target_pd, space_type):
+    """PDs sharing a resource-space of ONE type with target_pd.
+
+    The aggregate over all types is a union, and on a real system each namespace alone
+    already reaches nearly every PD, so privatizing one leaves the union unchanged and
+    the search sees no progress. Scoring each space type separately restores the signal:
+    privatizing the IPC namespace takes the IPC-specific count to zero even though the
+    union barely moves.
+    """
+    g = graph.g
+    if target_pd not in g:
+        return 0
+    spaces = {v for _, v, d in g.out_edges(target_pd, data=True)
+              if d.get('type') == 'HOLD'
+              and g.nodes.get(v, {}).get('type') == 'RESOURCE_SPACE'
+              and g.nodes.get(v, {}).get('data') == space_type}
+    if not spaces:
+        return 0
+    holders = set()
+    for sp in spaces:
+        for u, _, d in g.in_edges(sp, data=True):
+            if d.get('type') == 'HOLD' and u != target_pd \
+                    and g.nodes.get(u, {}).get('type') == 'PD':
+                holders.add(u)
+    return len(holders)
+
+
+def _fast_tcb_spaces(graph, target_pd):
+    """PDs sharing a resource-SPACE with target_pd.
+
+    The component of TCB that a container boundary actually moves. Plain TCB is
+    dominated by redundant sharing on a real system: a PD reaches the same co-holders
+    through shared resources, shared spaces and shared PDs at once, so removing any one
+    route leaves the count unchanged and the search sees a flat score. Restricting the
+    metric to resource-spaces gives back a gradient, and corresponds to the real
+    operation of giving a process its own namespaces.
+    """
+    g = graph.g
+    if target_pd not in g:
+        return 0
+    # Use the adjacency index rather than scanning every edge: this is evaluated once
+    # per candidate, and on an extracted system graph the two whole-graph sweeps it
+    # replaces dominated the entire search.
+    spaces = {v for _, v, d in g.out_edges(target_pd, data=True)
+              if d.get('type') == 'HOLD'
+              and g.nodes.get(v, {}).get('type') == 'RESOURCE_SPACE'}
+    if not spaces:
+        return 0
+    holders = set()
+    for sp in spaces:
+        for u, _, d in g.in_edges(sp, data=True):
+            if d.get('type') == 'HOLD' and u != target_pd \
+                    and g.nodes.get(u, {}).get('type') == 'PD':
+                holders.add(u)
+    return len(holders)
+
+
+def _pd_count(graph):
+    """Number of PDs, cached on the graph.
+
+    Used only to normalize goal progress, but recomputing it scans every node in the
+    graph for every candidate. The cache is invalidated by node-count change, which is
+    enough: a transition that adds or removes a PD also changes the node count.
+    """
+    g = graph.g
+    n = g.number_of_nodes()
+    cached = getattr(graph, "_pdcount_cache", None)
+    if cached is not None and cached[0] == n:
+        return cached[1]
+    c = sum(1 for _, d in g.nodes(data=True) if d.get('type') == 'PD')
+    try:
+        graph._pdcount_cache = (n, c)
+    except Exception:
+        pass
+    return c
+
+
+def set_goal_baselines(graph, goals):
+    """Record each goal's metric value on the starting graph.
+
+    Progress is measured as a fraction of the distance from where the search began to
+    the goal's threshold, so the reference must be fixed before any candidate is
+    applied. Capturing it lazily during scoring is not good enough: the first candidate
+    scored would set the reference from its own post-transition graph, making the
+    baseline depend on evaluation order.
+    """
+    for goal in goals or []:
+        mn = getattr(goal, "metric_name", "")
+        if not goal.target_spec:
+            continue
+        try:
+            if mn.startswith("TCB:SPACE:"):
+                goal._baseline = float(_fast_tcb_spaces_of_type(
+                    graph, goal.target_spec, mn.split(":", 2)[2]))
+            elif mn == "TCB:SPACE":
+                goal._baseline = float(_fast_tcb_spaces(graph, goal.target_spec))
+        except Exception:
+            pass
+
+
+def _goal_baseline(graph, goal, current):
+    """The goal's metric on the starting graph, set by set_goal_baselines."""
+    b = getattr(goal, "_baseline", None)
+    return float(current) if b is None else b
+
+
+def goal_values(graph, goals):
+    """Current value of each goal's metric on this graph, as {label: value}.
+
+    Used to report progress per iteration. A search that prints only candidate counts
+    tells you it is busy, not whether it is getting anywhere: on the real-system case
+    study the candidate counts were flat across every iteration while the metric moved
+    from 103 to 0, and vice versa. Report the quantity being optimized.
+    """
+    out = {}
+    for goal in goals or []:
+        mn = getattr(goal, "metric_name", "")
+        spec = getattr(goal, "target_spec", None)
+        try:
+            if mn.startswith("TCB:SPACE:") and spec:
+                out[f"{mn}[{spec}]"] = _fast_tcb_spaces_of_type(graph, spec, mn.split(":", 2)[2])
+            elif mn == "TCB:SPACE" and spec:
+                out[f"{mn}[{spec}]"] = _fast_tcb_spaces(graph, spec)
+            elif mn == "TCB" and spec:
+                out[f"{mn}[{spec}]"] = _fast_tcb(graph, spec)
+            elif mn == "MemoryConsumption":
+                out[mn] = _calculate_memory_consumption(graph)
+            elif _is_rsi_like_metric(mn) and spec and "," in str(spec):
+                a, b = [x.strip() for x in str(spec).split(",")[:2]]
+                base = mn.split(":")[0]
+                rt = mn.split(":", 1)[1] if ":" in mn else None
+                r = _calculate_rsi_per_pd_pair(graph, [a, b],
+                                               follow_map_edges=(base == "TransitiveRSI"),
+                                               resource_type_filter=rt)
+                out[f"{mn}[{spec}]"] = round(list(r.values())[0], 3) if r else None
+        except Exception:
+            pass
+    return out
+
+
 def _fast_goal_progress(graph, goals):
     """Compute goal progress without calling the expensive full ComputeMetrics.
 
@@ -1607,14 +1948,27 @@ def _fast_goal_progress(graph, goals):
 
     Returns: goal_progress score (float)
     """
-    # Build PD → held resources map from HOLD edges
-    pd_resources = {}
+    # Build PD -> held resources, but only for the PDs the goals actually name. This
+    # map used to be built by scanning every edge in the graph on every candidate; the
+    # goals reference a handful of PDs, so the adjacency index answers it directly.
     g = graph.g
-    for u, v, d in g.edges(data=True):
-        if d.get('type') == 'HOLD' and u.startswith('PD_'):
-            if u not in pd_resources:
-                pd_resources[u] = set()
-            pd_resources[u].add(v)
+    wanted = set()
+    for goal in goals:
+        spec = getattr(goal, 'target_spec', None)
+        if spec:
+            wanted.update(part.strip() for part in str(spec).split(',') if part.strip())
+    needs_all = any(getattr(gl, 'metric_name', '') in ('GlobalRSI', 'MemoryConsumption', 'ASR')
+                    for gl in goals)
+    pd_resources = {}
+    if needs_all:
+        for u, v, d in g.edges(data=True):
+            if d.get('type') == 'HOLD' and u.startswith('PD_'):
+                pd_resources.setdefault(u, set()).add(v)
+    else:
+        for pd in wanted:
+            if pd in g:
+                pd_resources[pd] = {v for _, v, d in g.out_edges(pd, data=True)
+                                    if d.get('type') == 'HOLD'}
 
     progress = 0.0
     for goal in goals:
@@ -1666,12 +2020,42 @@ def _fast_goal_progress(graph, goals):
                     progress += max(0.0, (1.0 - mem / target) * 10.0)
                 else:
                     progress += min(1.0, mem / target) * 10.0
+        elif goal.metric_name.startswith("TCB:SPACE:"):
+            target_pd = goal.target_spec
+            space_type = goal.metric_name.split(":", 2)[2]
+            if target_pd:
+                v = _fast_tcb_spaces_of_type(graph, target_pd, space_type)
+                target = float(goal.target_value) if goal.target_value else 0.0
+                if goal.direction == "minimize":
+                    if v <= target:
+                        progress += 10.0
+                    else:
+                        span = max(1.0, _goal_baseline(graph, goal, v) - target)
+                        progress += max(0.0, (1.0 - (v - target) / span) * 10.0)
+        elif goal.metric_name == "TCB:SPACE":
+            target_pd = goal.target_spec
+            if target_pd:
+                tcb = _fast_tcb_spaces(graph, target_pd)
+                # Score against the goal's own threshold, not against the number of PDs
+                # in the graph. Normalizing by the PD count makes adding a protection
+                # domain raise the score without changing the quantity the goal tests,
+                # and the search will do exactly that: it inflates the denominator
+                # instead of reducing sharing. The goal is checked as a raw count, so
+                # progress toward it is measured as one too.
+                target = float(goal.target_value) if goal.target_value else 0.0
+                if goal.direction == "minimize":
+                    if tcb <= target:
+                        progress += 10.0
+                    else:
+                        span = max(1.0, _goal_baseline(graph, goal, tcb) - target)
+                        progress += max(0.0, (1.0 - (tcb - target) / span) * 10.0)
+                else:
+                    progress += min(10.0, tcb / max(1.0, target) * 10.0)
         elif goal.metric_name == "TCB":
             target_pd = goal.target_spec
             if target_pd:
                 tcb = _fast_tcb(graph, target_pd)
-                pd_count = sum(1 for n, d in graph.g.nodes(data=True)
-                               if d.get('type') == 'PD')
+                pd_count = _pd_count(graph)
                 if pd_count > 1:
                     if goal.direction == "minimize":
                         progress += max(0.0, (1.0 - tcb / (pd_count - 1)) * 10.0)
@@ -1699,12 +2083,53 @@ def _fast_goal_progress(graph, goals):
     return progress
 
 
+def _fp_after(parent_fp, transition, params):
+    """HOLD-edge fingerprint after applying one transition, or None if not derivable.
+
+    Only transitions that change HOLD edges can change the fingerprint; everything else
+    inherits the parent's unchanged. Returning None falls back to the full computation,
+    so an unrecognized transition is slow rather than wrong.
+    """
+    name = getattr(transition, "name", "")
+    if name == "add_hold_edge":
+        pd, res = params.get("pd"), params.get("resource")
+        if pd is None or res is None:
+            return None
+        return parent_fp | {(pd, res)}
+    if name == "remove_hold_edge":
+        u, v = params.get("from_node"), params.get("to_node")
+        if u is None or v is None:
+            return None
+        return parent_fp - {(u, v)}
+    if name in ("add_pd", "add_resource_space", "add_file_resource",
+                "add_request_edge", "remove_request_edge",
+                "add_subset_edge", "remove_subset_edge"):
+        # None of these add or remove a PD-to-resource HOLD edge.
+        return parent_fp
+    return None
+
+
 def _hold_edge_fingerprint(state):
     """Return a frozenset of (from, to) HOLD edges for the state's graph.
 
     Two states with identical HOLD-edge sets represent the same isolation
     configuration regardless of how they were reached.  Used for dedup.
     """
+    cached = getattr(state, "_fp_cache", None)
+    if cached is not None:
+        return cached
+
+    # Derive from the parent rather than materializing this state's graph. Dedup runs
+    # over every candidate, so touching .graph here would deep-copy all of them and
+    # undo the point of building them lazily.
+    if getattr(state, "_graph", None) is None and getattr(state, "_recipe", None):
+        parent_fp = _hold_edge_fingerprint(state.parent)
+        transition, params = state._recipe
+        fp = _fp_after(parent_fp, transition, params)
+        if fp is not None:
+            state._fp_cache = fp
+            return fp
+
     g = state.graph.g
     edges = set()
     for u, v, d in g.edges(data=True):
@@ -1717,7 +2142,12 @@ def _hold_edge_fingerprint(state):
             # Also handle flat edge-data dicts
             if d.get('type') == 'HOLD':
                 edges.add((u, v))
-    return frozenset(edges)
+    fp = frozenset(edges)
+    try:
+        state._fp_cache = fp
+    except Exception:
+        pass
+    return fp
 
 
 def _select_diverse_beam_states_enhanced(candidates, beam_width):
@@ -1908,7 +2338,7 @@ def _select_beam_specific_candidates(all_candidates, beam_idx, beam_width, exist
 def BeamSearchExploration(scenario, beam_width=3, max_depth=8,
                           early_stop_on_convergence=True,
                           plateau_patience=3, plateau_delta=0.01,
-                          constraint_weight=50.0):
+                          constraint_weight=50.0, seed=None):
     """
     Beam search implementation for design space exploration
     Explores multiple promising paths simultaneously instead of greedy single-path
@@ -1929,11 +2359,15 @@ def BeamSearchExploration(scenario, beam_width=3, max_depth=8,
     """
     import copy
 
+    if seed is not None:
+        set_seed(seed)
+
     # Step 1: Initialize components from scenario
     goals = scenario.goals
     constraints = scenario.constraints
     transitions = scenario.get_allowed_transitions()
     initial_graph = scenario.build_graph()
+    set_goal_baselines(initial_graph, goals)
 
     # Mark every node present in G0. Deleting one of these is never a design decision: the
     # constraints are stated over exactly these objects, and a constraint is trivially met once
@@ -1954,12 +2388,24 @@ def BeamSearchExploration(scenario, beam_width=3, max_depth=8,
     # Initialize beam with initial state
     class BeamState:
         def __init__(self, graph, iteration=0, path_description="initial", score=0.0, parent=None):
-            self.graph = graph
+            self._graph = graph
+            self._recipe = None
             self.iteration = iteration
             self.path_description = path_description
             self.score = score
             self.parent = parent
             self.path_history = [] if parent is None else parent.path_history + [path_description]
+
+        @property
+        def graph(self):
+            """Materialize on first use: copy the parent and replay this state's transition."""
+            if self._graph is None:
+                transition, param_values = self._recipe
+                g = copy.deepcopy(self.parent.graph)
+                if not transition.apply(g, param_values):
+                    raise RuntimeError(f"could not replay {transition.name} for {self.path_description}")
+                self._graph = g
+            return self._graph
 
         def __str__(self):
             return f"BeamState(iter={self.iteration}, score={self.score:.3f}, path={' → '.join(self.path_history[-3:])})"
@@ -2042,7 +2488,6 @@ def BeamSearchExploration(scenario, beam_width=3, max_depth=8,
 
             for candidate_data in all_candidates:
                 try:
-                    new_graph = copy.deepcopy(state.graph)
                     transition_name = candidate_data['transition_name']
                     param_values = candidate_data.get('param_values', {})
 
@@ -2054,28 +2499,35 @@ def BeamSearchExploration(scenario, beam_width=3, max_depth=8,
                     if transition is None:
                         continue
 
-                    success = transition.apply(new_graph, param_values)
+                    # Apply in place, score, then roll back (see _Journal). Only a
+                    # candidate that scores well enough to be kept is copied, which is
+                    # what makes the search affordable on a large graph.
+                    from constraint_validation import validate_all_constraints
+                    with _Journal(state.graph):
+                        success = transition.apply(state.graph, param_values)
+                        if success:
+                            cs_ok, violations = validate_all_constraints(
+                                state.graph, constraints, mode="strict")
+                            constraint_score = 5.0 if cs_ok else max(0.0, 5.0 - len(violations))
+                            goal_progress = _fast_goal_progress(state.graph, goals)
                     if not success:
                         continue
-
-                    # Score the resulting state by actual graph quality using fast helpers
-                    # (avoids expensive full ComputeMetrics + verbose prints for every candidate).
-                    from constraint_validation import validate_all_constraints
-                    cs_ok, violations = validate_all_constraints(new_graph, constraints, mode="strict")
-                    constraint_score = 5.0 if cs_ok else max(0.0, 5.0 - len(violations))
-                    goal_progress = _fast_goal_progress(new_graph, goals)
 
                     # Constraint satisfaction weighted heavily to prevent states that remove required
                     # hold edges from scoring higher than valid partially-solved states.
                     state_score = constraint_score * constraint_weight + goal_progress
 
+                    # Do not materialize yet: most candidates are outscored and dropped
+                    # by the beam selection below. Record how to build the graph and pay
+                    # for the copy only if this state survives.
                     new_state = BeamState(
-                        graph=new_graph,
+                        graph=None,
                         iteration=iteration,
                         path_description=f"{transition_name}({candidate_data.get('target_description', '')})",
                         score=state_score,
                         parent=state
                     )
+                    new_state._recipe = (transition, param_values)
                     next_beam.append(new_state)
                     total_candidates += 1
 
@@ -2090,6 +2542,17 @@ def BeamSearchExploration(scenario, beam_width=3, max_depth=8,
 
         # Apply enhanced diversity enforcement to prevent beam convergence
         current_beam = _select_diverse_beam_states_enhanced(next_beam, beam_width)
+
+        # Report the quantity being optimized, not just how much work was done.
+        if current_beam:
+            try:
+                best = max(current_beam, key=lambda st: st.score)
+                vals = goal_values(best.graph, goals)
+                if vals:
+                    shown = ", ".join(f"{k}={v}" for k, v in sorted(vals.items()))
+                    print(f"  📈 Iteration {iteration} best-state metrics: {shown}")
+            except Exception as e:
+                print(f"  📈 Iteration {iteration} metrics unavailable: {e}")
 
         print(f"  🔍 Selected {len(current_beam)} diverse states from {len(next_beam)} candidates")
 
@@ -2529,6 +2992,12 @@ def _print_exploration_summary(summary):
     print(f"\n{'='*60}")
 
 
+# Above this many PDs, the per-PD path enumeration below costs more than the search it
+# is meant to illustrate: on an extracted Linux graph it ran ~19 s per PD, and it is
+# called three times before the first iteration. Debug output should not dominate a run.
+MAX_PDS_TO_PRINT = 24
+
+
 def _print_graph_arrows(graph):
     """Print ASCII art using arrow notation like PD_1 -> FILE_SPACE_1 -> FILE_1_1"""
 
@@ -2536,6 +3005,12 @@ def _print_graph_arrows(graph):
     pd_nodes = [node for node, data in graph.g.nodes(data=True)
                 if data.get('type') == 'PD']
     pd_nodes.sort()
+
+    if len(pd_nodes) > MAX_PDS_TO_PRINT:
+        print(f"        # Graph structure: {len(pd_nodes)} PDs, "
+              f"{graph.g.number_of_nodes()} nodes, {graph.g.number_of_edges()} edges "
+              f"(too large to draw)")
+        return
 
     print("        # Graph structure:")
 
@@ -2831,7 +3306,7 @@ def run_scenario(scenario_name, enable_visualization=False, max_iterations=10):
             result = TrueBFSExploration(scenario, max_depth=args.bfs_max_depth, max_states=args.bfs_max_states)
         elif args.beam_search:
             print(f"🔍 Using beam search (width={args.beam_width})")
-            result = BeamSearchExploration(scenario, beam_width=args.beam_width, max_depth=args.bfs_max_depth)
+            result = BeamSearchExploration(scenario, beam_width=args.beam_width, max_depth=args.bfs_max_depth, seed=getattr(args, 'seed', None))
         else:
             result = GreedyDesignSpaceExploration(scenario, max_iterations=max_iterations)
 
@@ -2963,6 +3438,13 @@ Examples:
         type=int,
         default=3,
         help='Beam width for beam search (default: 3)'
+    )
+
+    parser.add_argument(
+        '--seed',
+        type=int,
+        default=DEFAULT_SEED,
+        help=f'Seed for the exploration RNG, for reproducible runs (default: {DEFAULT_SEED})'
     )
 
     parser.add_argument(

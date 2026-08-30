@@ -76,6 +76,71 @@ class Primitive:
         return f"Primitive({self.operation}, {self.params})"
 
 
+def goal_scope(graph, constraints, goals):
+    """Nodes the objectives and constraints actually name, plus their immediate context.
+
+    Returns None (meaning "no restriction") when goals are absent or name nothing in the
+    graph, so callers keep the previous exhaustive behaviour rather than silently
+    searching an empty region.
+
+    The scope is deliberately generous: the PDs and resources named by goals and
+    constraints, everything those PDs hold, and every PD co-holding one of those
+    resources. Privatization and mediation both need the co-holders, and a resource named
+    by a constraint must stay reachable so that a freshly created PD can be attached to it.
+    """
+    if not goals:
+        return None
+
+    named = set()
+    for goal in goals:
+        spec = getattr(goal, "target_spec", None)
+        if spec:
+            named.update(part.strip() for part in str(spec).split(",") if part.strip())
+    for c in constraints or []:
+        pid = getattr(c, "pd_id", None)
+        if pid is not None:
+            named.add(pid if str(pid).startswith("PD_") else f"PD_{pid}")
+        info = getattr(c, "resource_info", None)
+        if isinstance(info, str):
+            named.add(info)
+        tgt = getattr(c, "target_pd", None)
+        if tgt is not None:
+            named.add(tgt if str(tgt).startswith("PD_") else f"PD_{tgt}")
+
+    named = {n for n in named if n in graph.g}
+    if not named:
+        return None
+
+    scope = set(named)
+    # everything the named PDs hold, and the spaces those resources belong to
+    for u, v, d in graph.g.edges(data=True):
+        if d.get("type") == "HOLD" and u in named:
+            scope.add(v)
+    # Every PD co-holding a scoped resource: privatization and mediation act on them.
+    for u, v, d in graph.g.edges(data=True):
+        if d.get("type") == "HOLD" and v in scope and graph.g.nodes.get(u, {}).get("type") == "PD":
+            scope.add(u)
+
+    # Resources of a type a goal names, even when nobody holds them yet. A goal such as
+    # RSI:CPU is met by moving a PD onto a core it does not currently hold, so a scope
+    # limited to what is already held would put that goal out of reach.
+    named_types = set()
+    for goal in goals:
+        metric = str(getattr(goal, "metric_name", ""))
+        if ":" in metric:
+            named_types.add(metric.split(":", 1)[1])
+    if named_types:
+        typed = {n for n, dd in graph.g.nodes(data=True)
+                 if dd.get("type") == "RESOURCE" and dd.get("data") in named_types}
+        scope |= typed
+        # and whatever maps onto them: a cache set is reached through a physical page,
+        # so the page is part of the design decision even though the goal names the set
+        for u, v, d in graph.g.edges(data=True):
+            if d.get("type") == "MAP" and v in typed:
+                scope.add(u)
+    return scope
+
+
 class Transition:
     """Transition structure for graph operations"""
     def __init__(self, name, description, transition_type, primitives=None, parameters=None):
@@ -85,12 +150,35 @@ class Transition:
         self.primitives = primitives or []  # List of Primitive objects for multistep
         self.parameters = parameters or []  # Required parameters for multistep
 
-    def find_candidates(self, graph, constraints):
-        """Find all valid parameter bindings for this transition"""
-        if self.transition_type == "primitive":
-            return self._find_primitive_candidates(graph, constraints)
-        else:
-            return self._find_multistep_candidates(graph, constraints)
+    def find_candidates(self, graph, constraints, goals=None):
+        """Find all valid parameter bindings for this transition.
+
+        When `goals` is given, bindings are restricted to the region of the graph the
+        objectives and constraints actually name (see goal_scope). This is the
+        objective-aware binding that Listing 6.1's bind_params(st, tr, consts, objs)
+        signature calls for: enumerating every (PD, resource) pair makes cost grow with
+        the whole graph even when a goal names two PDs. With goals=None the binding is
+        exhaustive, preserving the previous behaviour.
+        """
+        self._scope = goal_scope(graph, constraints, goals)
+        try:
+            if self.transition_type == "primitive":
+                return self._find_primitive_candidates(graph, constraints)
+            else:
+                return self._find_multistep_candidates(graph, constraints)
+        finally:
+            self._scope = None
+
+    def _in_scope(self, *nodes):
+        """A binding is kept when ANY node it touches is in scope.
+
+        Permissive by design: a newly created PD is not named by any goal, but a binding
+        that attaches it to a named resource is still relevant.
+        """
+        scope = getattr(self, "_scope", None)
+        if scope is None:
+            return True
+        return any(n in scope for n in nodes)
 
     def _find_primitive_candidates(self, graph, constraints):
         """Find candidates for primitive operations"""
@@ -196,7 +284,11 @@ class Transition:
         """Find PD-resource connections to add"""
         candidates = []
 
-        # Find PDs
+        # Restrict the resource list (the large dimension) to the goal's scope, but keep
+        # every PD: a binding is relevant when EITHER endpoint is in scope. A mediator PD
+        # the search has just created is named by no goal, yet attaching it to a
+        # goal-named resource is exactly the move mediation depends on.
+        scope = getattr(self, "_scope", None)
         pds = [node for node, data in graph.g.nodes(data=True) if data.get('type') == 'PD']
 
         # Find resources by type - FILE, CPU, PHYS_PAGE
@@ -206,6 +298,7 @@ class Transition:
             resources_by_type[res_type] = [
                 node for node, data in graph.g.nodes(data=True)
                 if data.get('type') == 'RESOURCE' and data.get('data') == res_type
+                and (scope is None or node in scope)
             ]
 
         for pd in pds:
@@ -214,6 +307,8 @@ class Transition:
             # Process each resource type
             for res_type, resources in resources_by_type.items():
                 for resource in resources:
+                    if not self._in_scope(pd, resource):
+                        continue
                     if resource not in current_resources:
                         # Check if connection is prohibited
                         prohibited = self._is_connection_prohibited(pd, resource, constraints)
@@ -305,6 +400,8 @@ class Transition:
         candidates = []
         for from_node, to_node, edge_data in graph.g.edges(data=True):
             if edge_data.get('type') == 'HOLD':
+                if not self._in_scope(from_node, to_node):
+                    continue
                 can_remove = self._can_safely_remove_hold_edge(graph, from_node, to_node, constraints)
                 if can_remove:
                     candidates.append({
@@ -385,7 +482,9 @@ class Transition:
     def _find_add_request_edge_candidates(self, graph, constraints):
         """Find PD-PD authority relationships to add"""
         candidates = []
-        pds = [node for node, data in graph.g.nodes(data=True) if data.get('type') == 'PD']
+        scope = getattr(self, "_scope", None)
+        pds = [node for node, data in graph.g.nodes(data=True)
+               if data.get('type') == 'PD' and (scope is None or node in scope)]
 
         for from_pd in pds:
             for to_pd in pds:
@@ -404,6 +503,8 @@ class Transition:
         candidates = []
         for from_node, to_node, edge_data in graph.g.edges(data=True):
             if edge_data.get('type') == 'REQUEST':
+                if not self._in_scope(from_node, to_node):
+                    continue
                 candidates.append({
                     'param_values': {'from_node': from_node, 'to_node': to_node},
                     'target_description': f"remove {from_node} -> {to_node} REQUEST edge"
@@ -413,8 +514,11 @@ class Transition:
     def _find_add_subset_edge_candidates(self, graph, constraints):
         """Find resource-space relationships to add"""
         candidates = []
-        resources = [node for node, data in graph.g.nodes(data=True) if data.get('type') == 'RESOURCE']
-        spaces = [node for node, data in graph.g.nodes(data=True) if data.get('type') == 'RESOURCE_SPACE']
+        scope = getattr(self, "_scope", None)
+        resources = [node for node, data in graph.g.nodes(data=True)
+                     if data.get('type') == 'RESOURCE' and (scope is None or node in scope)]
+        spaces = [node for node, data in graph.g.nodes(data=True)
+                  if data.get('type') == 'RESOURCE_SPACE']
 
         for resource in resources:
             for space in spaces:

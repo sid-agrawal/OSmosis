@@ -76,6 +76,8 @@ def validate_constraint(graph, constraint):
         return validate_requires_tcb_dependency(graph, constraint)
     elif constraint.constraint_type == "requires_resource_type":
         return validate_requires_resource_type(graph, constraint)
+    elif constraint.constraint_type == "requires_resource_space_type":
+        return validate_requires_resource_space_type(graph, constraint)
     elif constraint.constraint_type == "max_memory_bytes":
         return validate_max_memory_bytes(graph, constraint)
     elif constraint.constraint_type == "prohibit_co_hold":
@@ -329,6 +331,40 @@ def validate_requires_tcb_dependency(graph, constraint):
             return False, f"{dependent_pd} does not depend on {target_pd} (missing TCB relationship)"
     else:
         return False, f"Unknown dependency type: {dependency_type}"
+
+
+def validate_requires_resource_space_type(graph, constraint):
+    """A PD must hold at least one resource-space of the given type.
+
+    Resource-spaces are how membership of a namespace is represented: a PD in the host
+    IPC namespace holds the node for that namespace. Without this constraint a search can
+    satisfy an isolation goal by having the PD hold no namespace at all, which reduces
+    sharing to zero and describes a process that cannot run. The existing
+    requires_resource_type constraint cannot express this: it matches only nodes typed
+    RESOURCE, and a namespace is a RESOURCE_SPACE.
+
+    Constraint properties:
+        - resource_info: the space type (e.g. "IPC", "NET", "MNT")
+        - min_count: minimum number required (default: 1)
+    """
+    pd_string = constraint.pd_id if str(constraint.pd_id).startswith("PD_") else f"PD_{constraint.pd_id}"
+    required_type = constraint.resource_info
+    min_count = constraint.properties.get('min_count', 1)
+
+    # Use the adjacency index rather than scanning every edge: this runs once per
+    # constraint per candidate, and a whole-graph sweep here costs more than the search.
+    count = 0
+    if pd_string in graph.g:
+        for _, to_node, edge_data in graph.g.out_edges(pd_string, data=True):
+            if edge_data.get('type') == 'HOLD':
+                nd = graph.g.nodes.get(to_node, {})
+                if nd.get('type') == 'RESOURCE_SPACE' and nd.get('data') == required_type:
+                    count += 1
+
+    if count >= min_count:
+        return True, f"{pd_string} holds {count} {required_type} space(s)"
+    return False, (f"{pd_string} holds {count} {required_type} space(s), "
+                   f"needs at least {min_count}")
 
 
 def validate_requires_resource_type(graph, constraint):
