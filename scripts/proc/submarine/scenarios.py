@@ -76,7 +76,7 @@ class Primitive:
         return f"Primitive({self.operation}, {self.params})"
 
 
-def goal_scope(graph, constraints, goals):
+def goal_scope(graph, constraints, goals, scope_spaces=False):
     """Nodes the objectives and constraints actually name, plus their immediate context.
 
     Returns None (meaning "no restriction") when goals are absent or name nothing in the
@@ -128,10 +128,18 @@ def goal_scope(graph, constraints, goals):
     for goal in goals:
         metric = str(getattr(goal, "metric_name", ""))
         if ":" in metric:
-            named_types.add(metric.split(":", 1)[1])
+            # The type is the last component: RSI:CPU names CPU, and TCB:SPACE:IPC
+            # names IPC. Splitting on the first colon yields "SPACE:IPC" for the
+            # latter, which matches no node and silently empties the scope.
+            named_types.add(metric.rsplit(":", 1)[1])
     if named_types:
+        # Resource-spaces of a named type belong in scope as well as resources. A goal
+        # over namespace sharing is met by taking a space of one's own, and a space the
+        # search has just created is named by no goal and held by nobody, so a scope
+        # built only from what is already held would put it out of reach.
+        kinds = ("RESOURCE", "RESOURCE_SPACE") if scope_spaces else ("RESOURCE",)
         typed = {n for n, dd in graph.g.nodes(data=True)
-                 if dd.get("type") == "RESOURCE" and dd.get("data") in named_types}
+                 if dd.get("type") in kinds and dd.get("data") in named_types}
         scope |= typed
         # and whatever maps onto them: a cache set is reached through a physical page,
         # so the page is part of the design decision even though the goal names the set
@@ -150,7 +158,7 @@ class Transition:
         self.primitives = primitives or []  # List of Primitive objects for multistep
         self.parameters = parameters or []  # Required parameters for multistep
 
-    def find_candidates(self, graph, constraints, goals=None):
+    def find_candidates(self, graph, constraints, goals=None, mutable_pds=None, scope_spaces=False):
         """Find all valid parameter bindings for this transition.
 
         When `goals` is given, bindings are restricted to the region of the graph the
@@ -160,7 +168,8 @@ class Transition:
         the whole graph even when a goal names two PDs. With goals=None the binding is
         exhaustive, preserving the previous behaviour.
         """
-        self._scope = goal_scope(graph, constraints, goals)
+        self._scope = goal_scope(graph, constraints, goals, scope_spaces=scope_spaces)
+        self._mutable = set(mutable_pds) if mutable_pds else None
         try:
             if self.transition_type == "primitive":
                 return self._find_primitive_candidates(graph, constraints)
@@ -168,6 +177,7 @@ class Transition:
                 return self._find_multistep_candidates(graph, constraints)
         finally:
             self._scope = None
+            self._mutable = None
 
     def _in_scope(self, *nodes):
         """A binding is kept when ANY node it touches is in scope.
@@ -301,6 +311,27 @@ class Transition:
                 and (scope is None or node in scope)
             ]
 
+        # A PD can hold a resource-space as well as a resource: that is how membership of
+        # a namespace is represented. Binding only PD-to-resource pairs meant the second
+        # half of "create a private namespace, then join it" could never be applied.
+        spaces = [n for n, d in graph.g.nodes(data=True)
+                  if d.get('type') == 'RESOURCE_SPACE' and (scope is None or n in scope)]
+        for pd in pds:
+            held_spaces = {v for _, v, d in graph.g.out_edges(pd, data=True)
+                           if d.get('type') == 'HOLD'}
+            for sp in spaces:
+                if sp in held_spaces:
+                    continue
+                if not self._in_scope(pd, sp):
+                    continue
+                candidates.append({
+                    'param_values': {'pd': pd, 'resource': sp,
+                                     'from_node': pd, 'to_node': sp},
+                    'target_description': f"connect {pd} to {sp}",
+                    'constraint_relevance': 0.4,
+                    'addresses_violation': False
+                })
+
         for pd in pds:
             current_resources = self._get_pd_held_resources(graph, pd)
 
@@ -400,6 +431,11 @@ class Transition:
         candidates = []
         for from_node, to_node, edge_data in graph.g.edges(data=True):
             if edge_data.get('type') == 'HOLD':
+                # Removing a hold-edge changes the PD that holds it, so when the scenario
+                # says which PDs may be modified, that PD must be one of them.
+                mutable = getattr(self, "_mutable", None)
+                if mutable is not None and from_node not in mutable:
+                    continue
                 if not self._in_scope(from_node, to_node):
                     continue
                 can_remove = self._can_safely_remove_hold_edge(graph, from_node, to_node, constraints)
@@ -447,14 +483,24 @@ class Transition:
         return candidates
 
     def _find_add_resource_space_candidates(self, graph, constraints):
-        """Find opportunities to add resource spaces"""
+        """Find opportunities to add resource spaces.
+
+        Bind over the space types the graph actually contains, not FILE alone. A design
+        that gives a PD its own namespace needs a space of that namespace's type, and
+        binding only FILE made that move unreachable however the search was configured.
+        """
         candidates = []
-        candidates.append({
-            'param_values': {'space_type': 'FILE'},
-            'target_description': "create new FILE resource space",
-            'constraint_relevance': 0.2,
-            'addresses_violation': False
-        })
+        types = {d.get('data') for _, d in graph.g.nodes(data=True)
+                 if d.get('type') == 'RESOURCE_SPACE' and d.get('data')}
+        if not types:
+            types = {'FILE'}
+        for t in sorted(types):
+            candidates.append({
+                'param_values': {'space_type': t},
+                'target_description': f"create new {t} resource space",
+                'constraint_relevance': 0.2,
+                'addresses_violation': False
+            })
         return candidates
 
     def _find_remove_resource_space_candidates(self, graph, constraints):
@@ -737,6 +783,16 @@ class Transition:
                 pd_string = param_values['pd']
                 resource_string = param_values['resource']
 
+                # A hold-edge may target a resource-space as well as a resource: that is
+                # how membership of a namespace is represented. The parsing below expects
+                # a resource name of the form TYPE_SPACE_ID, which a space name does not
+                # match, so handle spaces directly rather than falling through and
+                # silently doing nothing.
+                if graph.g.nodes.get(resource_string, {}).get('type') == 'RESOURCE_SPACE':
+                    if not graph.g.has_edge(pd_string, resource_string):
+                        graph.g.add_edge(pd_string, resource_string, type='HOLD')
+                    return True
+
                 # Extract PD ID
                 pd_id = int(pd_string.split('_')[1]) if pd_string.startswith('PD_') else 1
 
@@ -851,8 +907,17 @@ class Transition:
             elif self.name == "add_resource_space":
                 from graph_transformations import NodeTransformations
                 from generic_model import ResourceType
-                resource_type = getattr(ResourceType, param_values['space_type'])
-                NodeTransformations.add_resource_space(graph, resource_type)
+                st = param_values['space_type']
+                # ResourceType is a closed enum covering the types the prototype was built
+                # around. A graph extracted from Linux carries space types outside it
+                # (IPC, NET, MNT, PAGE_QUOTA, APPARMOR_PROFILE), because extraction records
+                # what it finds rather than what the enum anticipated. Add those directly.
+                if hasattr(ResourceType, st):
+                    NodeTransformations.add_resource_space(graph, getattr(ResourceType, st))
+                else:
+                    n = 1 + sum(1 for _, d in graph.g.nodes(data=True)
+                                if d.get('type') == 'RESOURCE_SPACE' and d.get('data') == st)
+                    graph.g.add_node(f"{st}_SPACE_new_{n}", type='RESOURCE_SPACE', data=st)
                 return True
             elif self.name == "remove_resource_space":
                 # Remove resource space node and all its edges
@@ -936,8 +1001,17 @@ class Transition:
 
 
 class Scenario:
-    """Complete scenario definition"""
-    def __init__(self, name, description, goals, constraints, allowed_primitives, allowed_multistep, graph_builder):
+    """Complete scenario definition.
+
+    `mutable_pds` names the PDs the search is permitted to modify. It is part of the
+    problem statement rather than a tuning knob: an operator asking to containerize one
+    process cannot rewrite the other hundred on the machine, and a design that reduces
+    that process's sharing by evicting everybody else from a namespace is not a design
+    they can enact. Left as None, any PD may be modified, which is the behaviour every
+    scenario had before and which mediation depends on, since interposing a mediator
+    rewires the other sharer.
+    """
+    def __init__(self, name, description, goals, constraints, allowed_primitives, allowed_multistep, graph_builder, mutable_pds=None):
         self.name = name
         self.description = description
         self.goals = goals
@@ -945,6 +1019,11 @@ class Scenario:
         self.allowed_primitives = allowed_primitives
         self.allowed_multistep = allowed_multistep
         self.graph_builder = graph_builder
+        self.mutable_pds = set(mutable_pds) if mutable_pds else None
+        # Off by default: see find_candidates. A scenario whose goals name resource-space
+        # types must turn these on; the case studies do not and are unaffected.
+        self.fine_fingerprint = False
+        self.scope_spaces = False
 
     def get_allowed_transitions(self):
         """Get all allowed transitions for this scenario"""

@@ -17,6 +17,11 @@ import random as _random_module
 # which is built before the draw, so beam-search results are deterministic either way.
 # Seeding here removes the latent nondeterminism from the greedy path and makes any run
 # reproducible from its seed.
+# Weight on holding a private space of a goal-named type, relative to the ten points a
+# fully-met goal scores. Large enough that acquiring a space of one's own outranks
+# evicting one other PD from a shared one, small enough not to outrank meeting the goal.
+PRIVATE_SPACE_CREDIT = 2.0
+
 DEFAULT_SEED = 20260822
 _RNG = _random_module.Random(DEFAULT_SEED)
 
@@ -617,7 +622,7 @@ def GoalsMet(metrics, goals):
     return True
 
 
-def GenerateCandidate(graph, constraints, transitions, goals, last_transition_type=None, transition_history=None):
+def GenerateCandidate(graph, constraints, transitions, goals, last_transition_type=None, transition_history=None, mutable_pds=None, scope_spaces=False):
     """
     Generate a new candidate graph by applying a transition
     Uses smart selection to choose the best node/edge for transformation
@@ -633,7 +638,7 @@ def GenerateCandidate(graph, constraints, transitions, goals, last_transition_ty
 
     for transition in transitions:
         # Use new transition system's find_candidates method
-        candidates = transition.find_candidates(graph, constraints, goals)
+        candidates = transition.find_candidates(graph, constraints, goals, mutable_pds, scope_spaces)
         # Add predicted improvement and other metadata
         for candidate in candidates:
             candidate['transition_name'] = transition.name
@@ -1797,6 +1802,37 @@ class _Journal:
         return False
 
 
+def _private_space_fraction(graph, target_pd, space_type):
+    """Fraction of the target's spaces of this type that nobody else holds.
+
+    Two designs can drive the same sharing count to zero: the target can take a private
+    space of its own, or every other PD can be evicted from the shared one. The count
+    cannot tell them apart, because sharing is symmetric while the intervention is not.
+    The first is three transitions and touches one PD; the second is a hundred and
+    rewrites the machine. Crediting the target for holding a space of its own gives the
+    search a reason to prefer it, and gives partial credit to a half-built design that
+    has acquired a private space but not yet released the shared one, which otherwise
+    scores exactly as though nothing had happened.
+    """
+    g = graph.g
+    if target_pd not in g:
+        return 0.0
+    spaces = [v for _, v, d in g.out_edges(target_pd, data=True)
+              if d.get('type') == 'HOLD'
+              and g.nodes.get(v, {}).get('type') == 'RESOURCE_SPACE'
+              and g.nodes.get(v, {}).get('data') == space_type]
+    if not spaces:
+        return 0.0
+    private = 0
+    for sp in spaces:
+        others = sum(1 for u, _, d in g.in_edges(sp, data=True)
+                     if d.get('type') == 'HOLD' and u != target_pd
+                     and g.nodes.get(u, {}).get('type') == 'PD')
+        if others == 0:
+            private += 1
+    return private / len(spaces)
+
+
 def _fast_tcb_spaces_of_type(graph, target_pd, space_type):
     """PDs sharing a resource-space of ONE type with target_pd.
 
@@ -2032,6 +2068,10 @@ def _fast_goal_progress(graph, goals):
                     else:
                         span = max(1.0, _goal_baseline(graph, goal, v) - target)
                         progress += max(0.0, (1.0 - (v - target) / span) * 10.0)
+                    # Credit a design in which the target holds a space of its own, which
+                    # the count alone cannot see until the shared space is released.
+                    progress += (PRIVATE_SPACE_CREDIT
+                                 * _private_space_fraction(graph, target_pd, space_type))
         elif goal.metric_name == "TCB:SPACE":
             target_pd = goal.target_spec
             if target_pd:
@@ -2084,27 +2124,32 @@ def _fast_goal_progress(graph, goals):
 
 
 def _fp_after(parent_fp, transition, params):
-    """HOLD-edge fingerprint after applying one transition, or None if not derivable.
+    """Fingerprint after applying one transition, or None if not derivable.
 
-    Only transitions that change HOLD edges can change the fingerprint; everything else
-    inherits the parent's unchanged. Returning None falls back to the full computation,
-    so an unrecognized transition is slow rather than wrong.
+    Returning None falls back to the full computation, so an unrecognized transition is
+    slow rather than wrong. Transitions that create nodes are deliberately not derived
+    here: the new node's name is chosen during application, so the resulting state cannot
+    be described without applying it.
     """
     name = getattr(transition, "name", "")
+    if isinstance(parent_fp, tuple):
+        edges, spaces = parent_fp
+        wrap = lambda e: (e, spaces)
+    else:
+        edges, wrap = parent_fp, (lambda e: e)
     if name == "add_hold_edge":
         pd, res = params.get("pd"), params.get("resource")
         if pd is None or res is None:
             return None
-        return parent_fp | {(pd, res)}
+        return wrap(edges | {(pd, res)})
     if name == "remove_hold_edge":
         u, v = params.get("from_node"), params.get("to_node")
         if u is None or v is None:
             return None
-        return parent_fp - {(u, v)}
-    if name in ("add_pd", "add_resource_space", "add_file_resource",
-                "add_request_edge", "remove_request_edge",
+        return wrap(edges - {(u, v)})
+    if name in ("add_request_edge", "remove_request_edge",
                 "add_subset_edge", "remove_subset_edge"):
-        # None of these add or remove a PD-to-resource HOLD edge.
+        # These touch neither HOLD edges nor the set of resource-spaces.
         return parent_fp
     return None
 
@@ -2132,6 +2177,22 @@ def _hold_edge_fingerprint(state):
 
     g = state.graph.g
     edges = set()
+    # Resource-space nodes participate in the identity of a state. A transition may add
+    # one without touching any HOLD edge, and that graph is not the graph it came from:
+    # it is the first half of giving a PD a namespace of its own. Keyed on HOLD edges
+    # alone, such a state is indistinguishable from its parent and is discarded as a
+    # duplicate, which removes the only route to that design however wide the beam.
+    if not getattr(state, "_fine_fingerprint", False):
+        # Default: two states with the same HOLD edges are the same design. This holds
+        # while every transition changes a HOLD edge, which is true of the transition
+        # set the case studies use.
+        spaces = None
+    else:
+        # A scenario that can create resource-spaces needs them in the key: adding one
+        # touches no HOLD edge, so without this the state is indistinguishable from its
+        # parent and is discarded as a duplicate, removing the only route to a design in
+        # which a PD takes a space of its own.
+        spaces = frozenset(n for n, d in g.nodes(data=True) if d.get('type') == 'RESOURCE_SPACE')
     for u, v, d in g.edges(data=True):
         if isinstance(d, dict):
             # MultiDiGraph: d is a dict of edge-key → edge-data
@@ -2142,7 +2203,7 @@ def _hold_edge_fingerprint(state):
             # Also handle flat edge-data dicts
             if d.get('type') == 'HOLD':
                 edges.add((u, v))
-    fp = frozenset(edges)
+    fp = frozenset(edges) if spaces is None else (frozenset(edges), spaces)
     try:
         state._fp_cache = fp
     except Exception:
@@ -2412,6 +2473,7 @@ def BeamSearchExploration(scenario, beam_width=3, max_depth=8,
 
     # Initialize beam
     initial_state = BeamState(initial_graph, 0, "initial")
+    initial_state._fine_fingerprint = getattr(scenario, "fine_fingerprint", False)
     current_beam = [initial_state]
 
     # Track all discovered mechanisms
@@ -2481,7 +2543,9 @@ def BeamSearchExploration(scenario, beam_width=3, max_depth=8,
             _, candidate_info = GenerateCandidate(
                 state.graph, constraints, transitions, goals,
                 last_transition_type=None,          # No diversity filter here — scoring handles it
-                transition_history=transition_history
+                transition_history=transition_history,
+                mutable_pds=getattr(scenario, "mutable_pds", None),
+                scope_spaces=getattr(scenario, "scope_spaces", False)
             )
             all_candidates = candidate_info.get('all_candidates', [])
             print(f"  📋 Generated {len(all_candidates)} candidate(s)")
@@ -2528,6 +2592,7 @@ def BeamSearchExploration(scenario, beam_width=3, max_depth=8,
                         parent=state
                     )
                     new_state._recipe = (transition, param_values)
+                    new_state._fine_fingerprint = getattr(scenario, "fine_fingerprint", False)
                     next_beam.append(new_state)
                     total_candidates += 1
 
