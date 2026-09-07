@@ -1,0 +1,2166 @@
+{
+  "weights": {
+    "Mediation": {
+      "5": {
+        "beam_width": 12,
+        "max_depth": 10,
+        "constraint_weight": 5,
+        "candidates_generated": 1433,
+        "solutions": 8,
+        "first_solution_iteration": 7,
+        "time_to_first_solution": 0.35782427701633424,
+        "time_to_first_solution_lower": 0.2732640670146793,
+        "total_elapsed": 0.624764877022244,
+        "fingerprint": [
+          [
+            3,
+            1
+          ],
+          [
+            4,
+            1
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            5,
+            2
+          ]
+        ]
+      },
+      "10": {
+        "beam_width": 12,
+        "max_depth": 10,
+        "constraint_weight": 10,
+        "candidates_generated": 1433,
+        "solutions": 8,
+        "first_solution_iteration": 7,
+        "time_to_first_solution": 0.3640535720041953,
+        "time_to_first_solution_lower": 0.27876196400029585,
+        "total_elapsed": 0.6342611729633063,
+        "fingerprint": [
+          [
+            3,
+            1
+          ],
+          [
+            4,
+            1
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            5,
+            2
+          ]
+        ]
+      },
+      "20": {
+        "beam_width": 12,
+        "max_depth": 10,
+        "constraint_weight": 20,
+        "candidates_generated": 1433,
+        "solutions": 8,
+        "first_solution_iteration": 7,
+        "time_to_first_solution": 0.363691481994465,
+        "time_to_first_solution_lower": 0.278909539047163,
+        "total_elapsed": 0.6317028630292043,
+        "fingerprint": [
+          [
+            3,
+            1
+          ],
+          [
+            4,
+            1
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            5,
+            2
+          ]
+        ]
+      },
+      "50": {
+        "beam_width": 12,
+        "max_depth": 10,
+        "constraint_weight": 50,
+        "candidates_generated": 1433,
+        "solutions": 8,
+        "first_solution_iteration": 7,
+        "time_to_first_solution": 0.3631710580084473,
+        "time_to_first_solution_lower": 0.2780072170426138,
+        "total_elapsed": 0.6365315020084381,
+        "fingerprint": [
+          [
+            3,
+            1
+          ],
+          [
+            4,
+            1
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            5,
+            2
+          ]
+        ]
+      }
+    },
+    "Policy-Driven Privilege Separation": {
+      "5": {
+        "beam_width": 12,
+        "max_depth": 25,
+        "constraint_weight": 5,
+        "candidates_generated": 10876,
+        "solutions": 109,
+        "first_solution_iteration": 7,
+        "time_to_first_solution": 5.431152944045607,
+        "time_to_first_solution_lower": 4.3658474840340205,
+        "total_elapsed": 19.21138036204502,
+        "fingerprint": [
+          [
+            4,
+            9
+          ],
+          [
+            4,
+            10
+          ],
+          [
+            5,
+            9
+          ],
+          [
+            5,
+            10
+          ],
+          [
+            5,
+            11
+          ]
+        ]
+      },
+      "10": {
+        "beam_width": 12,
+        "max_depth": 25,
+        "constraint_weight": 10,
+        "candidates_generated": 6070,
+        "solutions": 43,
+        "first_solution_iteration": 7,
+        "time_to_first_solution": 5.335788054973818,
+        "time_to_first_solution_lower": 4.290386678010691,
+        "total_elapsed": 10.945890928967856,
+        "fingerprint": [
+          [
+            4,
+            9
+          ],
+          [
+            4,
+            10
+          ],
+          [
+            5,
+            9
+          ],
+          [
+            5,
+            10
+          ]
+        ]
+      },
+      "20": {
+        "beam_width": 12,
+        "max_depth": 25,
+        "constraint_weight": 20,
+        "candidates_generated": 10710,
+        "solutions": 109,
+        "first_solution_iteration": 7,
+        "time_to_first_solution": 5.328699100995436,
+        "time_to_first_solution_lower": 4.281107013986912,
+        "total_elapsed": 19.516298084985465,
+        "fingerprint": [
+          [
+            4,
+            9
+          ],
+          [
+            4,
+            10
+          ],
+          [
+            5,
+            9
+          ],
+          [
+            5,
+            10
+          ],
+          [
+            5,
+            11
+          ]
+        ]
+      },
+      "50": {
+        "beam_width": 12,
+        "max_depth": 25,
+        "constraint_weight": 50,
+        "candidates_generated": 10710,
+        "solutions": 109,
+        "first_solution_iteration": 7,
+        "time_to_first_solution": 5.380864022008609,
+        "time_to_first_solution_lower": 4.3165959370089695,
+        "total_elapsed": 19.64713145501446,
+        "fingerprint": [
+          [
+            4,
+            9
+          ],
+          [
+            4,
+            10
+          ],
+          [
+            5,
+            9
+          ],
+          [
+            5,
+            10
+          ],
+          [
+            5,
+            11
+          ]
+        ]
+      }
+    },
+    "Budget-Constrained Tenant Isolation": {
+      "5": {
+        "beam_width": 12,
+        "max_depth": 12,
+        "constraint_weight": 5,
+        "candidates_generated": 2708,
+        "solutions": 12,
+        "first_solution_iteration": 9,
+        "time_to_first_solution": 1.8539271560148336,
+        "time_to_first_solution_lower": 1.6447351920069195,
+        "total_elapsed": 3.0715293519897386,
+        "fingerprint": [
+          [
+            3,
+            6
+          ]
+        ]
+      },
+      "10": {
+        "beam_width": 12,
+        "max_depth": 12,
+        "constraint_weight": 10,
+        "candidates_generated": 2708,
+        "solutions": 12,
+        "first_solution_iteration": 9,
+        "time_to_first_solution": 1.8501312140142545,
+        "time_to_first_solution_lower": 1.6354193239822052,
+        "total_elapsed": 3.0651209249626845,
+        "fingerprint": [
+          [
+            3,
+            6
+          ]
+        ]
+      },
+      "20": {
+        "beam_width": 12,
+        "max_depth": 12,
+        "constraint_weight": 20,
+        "candidates_generated": 2708,
+        "solutions": 12,
+        "first_solution_iteration": 9,
+        "time_to_first_solution": 1.8501145509653725,
+        "time_to_first_solution_lower": 1.6360373849747702,
+        "total_elapsed": 3.0576230489532463,
+        "fingerprint": [
+          [
+            3,
+            6
+          ]
+        ]
+      },
+      "50": {
+        "beam_width": 12,
+        "max_depth": 12,
+        "constraint_weight": 50,
+        "candidates_generated": 2708,
+        "solutions": 12,
+        "first_solution_iteration": 9,
+        "time_to_first_solution": 1.846649368002545,
+        "time_to_first_solution_lower": 1.6321296009700745,
+        "total_elapsed": 3.060218657949008,
+        "fingerprint": [
+          [
+            3,
+            6
+          ]
+        ]
+      }
+    }
+  },
+  "beam_width": {
+    "Mediation": {
+      "4": {
+        "beam_width": 4,
+        "max_depth": 10,
+        "constraint_weight": null,
+        "candidates_generated": 371,
+        "solutions": 5,
+        "first_solution_iteration": 7,
+        "time_to_first_solution": 0.1302633230225183,
+        "time_to_first_solution_lower": 0.11086631001671776,
+        "total_elapsed": 0.16320993000408635,
+        "fingerprint": [
+          [
+            3,
+            1
+          ],
+          [
+            4,
+            1
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ]
+        ]
+      },
+      "8": {
+        "beam_width": 8,
+        "max_depth": 10,
+        "constraint_weight": null,
+        "candidates_generated": 922,
+        "solutions": 8,
+        "first_solution_iteration": 7,
+        "time_to_first_solution": 0.27434408297995105,
+        "time_to_first_solution_lower": 0.21823348401812837,
+        "total_elapsed": 0.4306247850181535,
+        "fingerprint": [
+          [
+            3,
+            1
+          ],
+          [
+            4,
+            1
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            5,
+            2
+          ]
+        ]
+      },
+      "12": {
+        "beam_width": 12,
+        "max_depth": 10,
+        "constraint_weight": null,
+        "candidates_generated": 1433,
+        "solutions": 8,
+        "first_solution_iteration": 7,
+        "time_to_first_solution": 0.391900785965845,
+        "time_to_first_solution_lower": 0.3001605909666978,
+        "total_elapsed": 0.6853285789838992,
+        "fingerprint": [
+          [
+            3,
+            1
+          ],
+          [
+            4,
+            1
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            5,
+            2
+          ]
+        ]
+      },
+      "20": {
+        "beam_width": 20,
+        "max_depth": 10,
+        "constraint_weight": null,
+        "candidates_generated": 2404,
+        "solutions": 8,
+        "first_solution_iteration": 7,
+        "time_to_first_solution": 0.5750917020486668,
+        "time_to_first_solution_lower": 0.3913712089997716,
+        "total_elapsed": 1.145416779036168,
+        "fingerprint": [
+          [
+            3,
+            1
+          ],
+          [
+            4,
+            1
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            5,
+            2
+          ]
+        ]
+      }
+    },
+    "Policy-Driven Privilege Separation": {
+      "4": {
+        "beam_width": 4,
+        "max_depth": 25,
+        "constraint_weight": null,
+        "candidates_generated": 3464,
+        "solutions": 37,
+        "first_solution_iteration": 7,
+        "time_to_first_solution": 1.8838543550227769,
+        "time_to_first_solution_lower": 1.5755027350387536,
+        "total_elapsed": 6.430372085014824,
+        "fingerprint": [
+          [
+            4,
+            9
+          ],
+          [
+            4,
+            10
+          ],
+          [
+            5,
+            9
+          ],
+          [
+            5,
+            10
+          ],
+          [
+            5,
+            11
+          ]
+        ]
+      },
+      "8": {
+        "beam_width": 8,
+        "max_depth": 25,
+        "constraint_weight": null,
+        "candidates_generated": 7279,
+        "solutions": 73,
+        "first_solution_iteration": 7,
+        "time_to_first_solution": 3.7396022109896876,
+        "time_to_first_solution_lower": 3.0158236129791476,
+        "total_elapsed": 13.743661573971622,
+        "fingerprint": [
+          [
+            4,
+            9
+          ],
+          [
+            4,
+            10
+          ],
+          [
+            5,
+            9
+          ],
+          [
+            5,
+            10
+          ],
+          [
+            5,
+            11
+          ]
+        ]
+      },
+      "12": {
+        "beam_width": 12,
+        "max_depth": 25,
+        "constraint_weight": null,
+        "candidates_generated": 10710,
+        "solutions": 109,
+        "first_solution_iteration": 7,
+        "time_to_first_solution": 5.472323588037398,
+        "time_to_first_solution_lower": 4.404153102019336,
+        "total_elapsed": 20.076045916997828,
+        "fingerprint": [
+          [
+            4,
+            9
+          ],
+          [
+            4,
+            10
+          ],
+          [
+            5,
+            9
+          ],
+          [
+            5,
+            10
+          ],
+          [
+            5,
+            11
+          ]
+        ]
+      },
+      "20": {
+        "beam_width": 20,
+        "max_depth": 25,
+        "constraint_weight": null,
+        "candidates_generated": 9968,
+        "solutions": 95,
+        "first_solution_iteration": 7,
+        "time_to_first_solution": 9.279745448962785,
+        "time_to_first_solution_lower": 7.423937363957521,
+        "total_elapsed": 18.773774561006576,
+        "fingerprint": [
+          [
+            4,
+            9
+          ],
+          [
+            4,
+            10
+          ],
+          [
+            5,
+            9
+          ],
+          [
+            5,
+            10
+          ]
+        ]
+      }
+    },
+    "Budget-Constrained Tenant Isolation": {
+      "4": {
+        "beam_width": 4,
+        "max_depth": 12,
+        "constraint_weight": null,
+        "candidates_generated": 1005,
+        "solutions": 2,
+        "first_solution_iteration": 9,
+        "time_to_first_solution": 0.6878135839942843,
+        "time_to_first_solution_lower": 0.5830175550072454,
+        "total_elapsed": 1.1444243779988028,
+        "fingerprint": [
+          [
+            3,
+            6
+          ]
+        ]
+      },
+      "8": {
+        "beam_width": 8,
+        "max_depth": 12,
+        "constraint_weight": null,
+        "candidates_generated": 1834,
+        "solutions": 8,
+        "first_solution_iteration": 9,
+        "time_to_first_solution": 1.2782686009886675,
+        "time_to_first_solution_lower": 1.1361651149927638,
+        "total_elapsed": 2.104162808973342,
+        "fingerprint": [
+          [
+            3,
+            6
+          ]
+        ]
+      },
+      "12": {
+        "beam_width": 12,
+        "max_depth": 12,
+        "constraint_weight": null,
+        "candidates_generated": 2708,
+        "solutions": 12,
+        "first_solution_iteration": 9,
+        "time_to_first_solution": 1.8840792420087382,
+        "time_to_first_solution_lower": 1.6706866010208614,
+        "total_elapsed": 3.125788954028394,
+        "fingerprint": [
+          [
+            3,
+            6
+          ]
+        ]
+      },
+      "20": {
+        "beam_width": 20,
+        "max_depth": 12,
+        "constraint_weight": null,
+        "candidates_generated": 3694,
+        "solutions": 18,
+        "first_solution_iteration": 9,
+        "time_to_first_solution": 3.054310509003699,
+        "time_to_first_solution_lower": 2.6036516969907098,
+        "total_elapsed": 4.105669474985916,
+        "fingerprint": [
+          [
+            3,
+            6
+          ]
+        ]
+      }
+    },
+    "CPU Isolation": {
+      "4": {
+        "beam_width": 4,
+        "max_depth": 12,
+        "constraint_weight": null,
+        "candidates_generated": 2671,
+        "solutions": 13,
+        "first_solution_iteration": 5,
+        "time_to_first_solution": 0.9408973069512285,
+        "time_to_first_solution_lower": 0.8125905029592104,
+        "total_elapsed": 2.6883956359815784,
+        "fingerprint": [
+          [
+            2,
+            4
+          ],
+          [
+            2,
+            5
+          ],
+          [
+            2,
+            6
+          ],
+          [
+            3,
+            6
+          ],
+          [
+            3,
+            7
+          ],
+          [
+            4,
+            6
+          ],
+          [
+            5,
+            6
+          ],
+          [
+            5,
+            7
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            6
+          ]
+        ]
+      },
+      "8": {
+        "beam_width": 8,
+        "max_depth": 12,
+        "constraint_weight": null,
+        "candidates_generated": 4980,
+        "solutions": 29,
+        "first_solution_iteration": 5,
+        "time_to_first_solution": 1.8164300830103457,
+        "time_to_first_solution_lower": 1.5579491489916109,
+        "total_elapsed": 5.031003776006401,
+        "fingerprint": [
+          [
+            2,
+            4
+          ],
+          [
+            2,
+            5
+          ],
+          [
+            2,
+            6
+          ],
+          [
+            3,
+            6
+          ],
+          [
+            3,
+            7
+          ],
+          [
+            4,
+            6
+          ],
+          [
+            5,
+            6
+          ],
+          [
+            5,
+            7
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            7,
+            6
+          ]
+        ]
+      },
+      "12": {
+        "beam_width": 12,
+        "max_depth": 12,
+        "constraint_weight": null,
+        "candidates_generated": 7012,
+        "solutions": 47,
+        "first_solution_iteration": 5,
+        "time_to_first_solution": 2.6840401170193218,
+        "time_to_first_solution_lower": 2.298270035011228,
+        "total_elapsed": 7.057634758006316,
+        "fingerprint": [
+          [
+            2,
+            4
+          ],
+          [
+            2,
+            5
+          ],
+          [
+            2,
+            6
+          ],
+          [
+            2,
+            7
+          ],
+          [
+            3,
+            6
+          ],
+          [
+            3,
+            7
+          ],
+          [
+            4,
+            6
+          ],
+          [
+            4,
+            7
+          ],
+          [
+            5,
+            6
+          ],
+          [
+            5,
+            7
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            6,
+            7
+          ],
+          [
+            7,
+            6
+          ]
+        ]
+      },
+      "20": {
+        "beam_width": 20,
+        "max_depth": 12,
+        "constraint_weight": null,
+        "candidates_generated": 11494,
+        "solutions": 80,
+        "first_solution_iteration": 5,
+        "time_to_first_solution": 4.414614582026843,
+        "time_to_first_solution_lower": 3.7719161059940234,
+        "total_elapsed": 12.30556972604245,
+        "fingerprint": [
+          [
+            2,
+            4
+          ],
+          [
+            2,
+            5
+          ],
+          [
+            2,
+            6
+          ],
+          [
+            2,
+            7
+          ],
+          [
+            3,
+            6
+          ],
+          [
+            3,
+            7
+          ],
+          [
+            4,
+            6
+          ],
+          [
+            4,
+            7
+          ],
+          [
+            5,
+            6
+          ],
+          [
+            5,
+            7
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            6,
+            7
+          ],
+          [
+            7,
+            6
+          ]
+        ]
+      }
+    },
+    "Multi-Tenant ML Platform": {
+      "4": {
+        "beam_width": 4,
+        "max_depth": 24,
+        "constraint_weight": null,
+        "candidates_generated": 13955,
+        "solutions": 32,
+        "first_solution_iteration": 9,
+        "time_to_first_solution": 12.734942896990106,
+        "time_to_first_solution_lower": 11.651064940961078,
+        "total_elapsed": 32.83446268795524,
+        "fingerprint": [
+          [
+            4,
+            28
+          ],
+          [
+            4,
+            29
+          ],
+          [
+            4,
+            30
+          ],
+          [
+            4,
+            31
+          ],
+          [
+            5,
+            30
+          ],
+          [
+            6,
+            30
+          ],
+          [
+            6,
+            31
+          ],
+          [
+            7,
+            30
+          ],
+          [
+            8,
+            30
+          ],
+          [
+            8,
+            31
+          ],
+          [
+            9,
+            30
+          ],
+          [
+            10,
+            30
+          ],
+          [
+            10,
+            31
+          ],
+          [
+            11,
+            30
+          ],
+          [
+            12,
+            30
+          ],
+          [
+            12,
+            31
+          ],
+          [
+            13,
+            30
+          ],
+          [
+            14,
+            30
+          ],
+          [
+            14,
+            31
+          ],
+          [
+            15,
+            30
+          ],
+          [
+            16,
+            30
+          ],
+          [
+            16,
+            31
+          ],
+          [
+            17,
+            30
+          ]
+        ]
+      },
+      "8": {
+        "beam_width": 8,
+        "max_depth": 24,
+        "constraint_weight": null,
+        "candidates_generated": 10899,
+        "solutions": 10,
+        "first_solution_iteration": 9,
+        "time_to_first_solution": 25.021214595006313,
+        "time_to_first_solution_lower": 22.598545002983883,
+        "total_elapsed": 25.04241750499932,
+        "fingerprint": [
+          [
+            4,
+            28
+          ],
+          [
+            4,
+            29
+          ]
+        ]
+      },
+      "12": {
+        "beam_width": 12,
+        "max_depth": 24,
+        "constraint_weight": null,
+        "candidates_generated": 16435,
+        "solutions": 14,
+        "first_solution_iteration": 9,
+        "time_to_first_solution": 38.417427321954165,
+        "time_to_first_solution_lower": 34.37316214997554,
+        "total_elapsed": 38.44806836900534,
+        "fingerprint": [
+          [
+            4,
+            28
+          ],
+          [
+            4,
+            29
+          ]
+        ]
+      },
+      "20": {
+        "beam_width": 20,
+        "max_depth": 24,
+        "constraint_weight": null,
+        "candidates_generated": 27161,
+        "solutions": 24,
+        "first_solution_iteration": 9,
+        "time_to_first_solution": 57.77924389898544,
+        "time_to_first_solution_lower": 51.92730241594836,
+        "total_elapsed": 57.82737756095594,
+        "fingerprint": [
+          [
+            4,
+            28
+          ],
+          [
+            4,
+            29
+          ]
+        ]
+      },
+      "24": {
+        "beam_width": 24,
+        "max_depth": 24,
+        "constraint_weight": null,
+        "candidates_generated": 32697,
+        "solutions": 28,
+        "first_solution_iteration": 9,
+        "time_to_first_solution": 72.38510388403665,
+        "time_to_first_solution_lower": 64.28922041703481,
+        "total_elapsed": 72.4501437190338,
+        "fingerprint": [
+          [
+            4,
+            28
+          ],
+          [
+            4,
+            29
+          ]
+        ]
+      }
+    }
+  },
+  "depth": {
+    "Mediation": {
+      "8": {
+        "beam_width": 12,
+        "max_depth": 8,
+        "constraint_weight": null,
+        "candidates_generated": 1044,
+        "solutions": 2,
+        "first_solution_iteration": 7,
+        "time_to_first_solution": 0.4454496399848722,
+        "time_to_first_solution_lower": 0.33717627997975796,
+        "total_elapsed": 0.5580816190340556,
+        "fingerprint": [
+          [
+            3,
+            1
+          ],
+          [
+            4,
+            1
+          ]
+        ]
+      },
+      "12": {
+        "beam_width": 12,
+        "max_depth": 12,
+        "constraint_weight": null,
+        "candidates_generated": 1832,
+        "solutions": 15,
+        "first_solution_iteration": 7,
+        "time_to_first_solution": 0.4413576149963774,
+        "time_to_first_solution_lower": 0.3337617209763266,
+        "total_elapsed": 1.0032480259542353,
+        "fingerprint": [
+          [
+            3,
+            1
+          ],
+          [
+            4,
+            1
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            5,
+            2
+          ],
+          [
+            5,
+            3
+          ]
+        ]
+      },
+      "20": {
+        "beam_width": 12,
+        "max_depth": 20,
+        "constraint_weight": null,
+        "candidates_generated": 3762,
+        "solutions": 42,
+        "first_solution_iteration": 7,
+        "time_to_first_solution": 0.4304568400257267,
+        "time_to_first_solution_lower": 0.327519498008769,
+        "total_elapsed": 2.1137322410359047,
+        "fingerprint": [
+          [
+            3,
+            1
+          ],
+          [
+            4,
+            1
+          ],
+          [
+            4,
+            2
+          ],
+          [
+            5,
+            1
+          ],
+          [
+            5,
+            2
+          ],
+          [
+            5,
+            3
+          ]
+        ]
+      }
+    },
+    "Policy-Driven Privilege Separation": {
+      "8": {
+        "beam_width": 12,
+        "max_depth": 8,
+        "constraint_weight": null,
+        "candidates_generated": 3500,
+        "solutions": 8,
+        "first_solution_iteration": 7,
+        "time_to_first_solution": 6.060104336997028,
+        "time_to_first_solution_lower": 4.879459852003492,
+        "total_elapsed": 6.745514614973217,
+        "fingerprint": [
+          [
+            4,
+            9
+          ],
+          [
+            4,
+            10
+          ],
+          [
+            5,
+            9
+          ]
+        ]
+      },
+      "12": {
+        "beam_width": 12,
+        "max_depth": 12,
+        "constraint_weight": null,
+        "candidates_generated": 5138,
+        "solutions": 32,
+        "first_solution_iteration": 7,
+        "time_to_first_solution": 6.136496869032271,
+        "time_to_first_solution_lower": 4.914954156032763,
+        "total_elapsed": 10.364873496000655,
+        "fingerprint": [
+          [
+            4,
+            9
+          ],
+          [
+            4,
+            10
+          ],
+          [
+            5,
+            9
+          ],
+          [
+            5,
+            10
+          ],
+          [
+            5,
+            11
+          ]
+        ]
+      },
+      "20": {
+        "beam_width": 12,
+        "max_depth": 20,
+        "constraint_weight": null,
+        "candidates_generated": 8524,
+        "solutions": 80,
+        "first_solution_iteration": 7,
+        "time_to_first_solution": 6.0807894940371625,
+        "time_to_first_solution_lower": 4.891235546034295,
+        "total_elapsed": 17.54976932099089,
+        "fingerprint": [
+          [
+            4,
+            9
+          ],
+          [
+            4,
+            10
+          ],
+          [
+            5,
+            9
+          ],
+          [
+            5,
+            10
+          ],
+          [
+            5,
+            11
+          ]
+        ]
+      },
+      "25": {
+        "beam_width": 12,
+        "max_depth": 25,
+        "constraint_weight": null,
+        "candidates_generated": 10710,
+        "solutions": 109,
+        "first_solution_iteration": 7,
+        "time_to_first_solution": 6.105798407050315,
+        "time_to_first_solution_lower": 4.920494181045797,
+        "total_elapsed": 22.06816638703458,
+        "fingerprint": [
+          [
+            4,
+            9
+          ],
+          [
+            4,
+            10
+          ],
+          [
+            5,
+            9
+          ],
+          [
+            5,
+            10
+          ],
+          [
+            5,
+            11
+          ]
+        ]
+      }
+    },
+    "Budget-Constrained Tenant Isolation": {
+      "8": {
+        "beam_width": 12,
+        "max_depth": 8,
+        "constraint_weight": null,
+        "candidates_generated": 1556,
+        "solutions": 0,
+        "first_solution_iteration": null,
+        "time_to_first_solution": null,
+        "time_to_first_solution_lower": null,
+        "total_elapsed": 1.852037840988487,
+        "fingerprint": []
+      },
+      "12": {
+        "beam_width": 12,
+        "max_depth": 12,
+        "constraint_weight": null,
+        "candidates_generated": 2708,
+        "solutions": 12,
+        "first_solution_iteration": 9,
+        "time_to_first_solution": 2.081055535993073,
+        "time_to_first_solution_lower": 1.841982836020179,
+        "total_elapsed": 3.3479064779821783,
+        "fingerprint": [
+          [
+            3,
+            6
+          ]
+        ]
+      },
+      "20": {
+        "beam_width": 12,
+        "max_depth": 20,
+        "constraint_weight": null,
+        "candidates_generated": 5876,
+        "solutions": 36,
+        "first_solution_iteration": 9,
+        "time_to_first_solution": 1.8347668779897504,
+        "time_to_first_solution_lower": 1.627169382001739,
+        "total_elapsed": 7.613037572999019,
+        "fingerprint": [
+          [
+            3,
+            6
+          ]
+        ]
+      }
+    },
+    "CPU Isolation": {
+      "8": {
+        "beam_width": 12,
+        "max_depth": 8,
+        "constraint_weight": null,
+        "candidates_generated": 4182,
+        "solutions": 25,
+        "first_solution_iteration": 5,
+        "time_to_first_solution": 2.648551282007247,
+        "time_to_first_solution_lower": 2.2645559230004437,
+        "total_elapsed": 3.9130107569508255,
+        "fingerprint": [
+          [
+            2,
+            4
+          ],
+          [
+            2,
+            5
+          ],
+          [
+            2,
+            6
+          ],
+          [
+            2,
+            7
+          ],
+          [
+            3,
+            6
+          ]
+        ]
+      },
+      "12": {
+        "beam_width": 12,
+        "max_depth": 12,
+        "constraint_weight": null,
+        "candidates_generated": 7012,
+        "solutions": 47,
+        "first_solution_iteration": 5,
+        "time_to_first_solution": 2.6533521059900522,
+        "time_to_first_solution_lower": 2.2677949920180254,
+        "total_elapsed": 6.959032282989938,
+        "fingerprint": [
+          [
+            2,
+            4
+          ],
+          [
+            2,
+            5
+          ],
+          [
+            2,
+            6
+          ],
+          [
+            2,
+            7
+          ],
+          [
+            3,
+            6
+          ],
+          [
+            3,
+            7
+          ],
+          [
+            4,
+            6
+          ],
+          [
+            4,
+            7
+          ],
+          [
+            5,
+            6
+          ],
+          [
+            5,
+            7
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            6,
+            7
+          ],
+          [
+            7,
+            6
+          ]
+        ]
+      },
+      "20": {
+        "beam_width": 12,
+        "max_depth": 20,
+        "constraint_weight": null,
+        "candidates_generated": 16104,
+        "solutions": 91,
+        "first_solution_iteration": 5,
+        "time_to_first_solution": 2.6613464870024472,
+        "time_to_first_solution_lower": 2.2752493389998563,
+        "total_elapsed": 17.860960866964888,
+        "fingerprint": [
+          [
+            2,
+            4
+          ],
+          [
+            2,
+            5
+          ],
+          [
+            2,
+            6
+          ],
+          [
+            2,
+            7
+          ],
+          [
+            3,
+            6
+          ],
+          [
+            3,
+            7
+          ],
+          [
+            4,
+            6
+          ],
+          [
+            4,
+            7
+          ],
+          [
+            5,
+            6
+          ],
+          [
+            5,
+            7
+          ],
+          [
+            6,
+            6
+          ],
+          [
+            6,
+            7
+          ],
+          [
+            7,
+            6
+          ],
+          [
+            7,
+            7
+          ],
+          [
+            8,
+            6
+          ],
+          [
+            8,
+            7
+          ],
+          [
+            9,
+            6
+          ],
+          [
+            9,
+            7
+          ],
+          [
+            10,
+            6
+          ],
+          [
+            10,
+            7
+          ],
+          [
+            11,
+            6
+          ],
+          [
+            11,
+            7
+          ],
+          [
+            12,
+            6
+          ],
+          [
+            12,
+            7
+          ],
+          [
+            13,
+            6
+          ],
+          [
+            13,
+            7
+          ],
+          [
+            14,
+            6
+          ],
+          [
+            14,
+            7
+          ],
+          [
+            15,
+            6
+          ]
+        ]
+      }
+    },
+    "Multi-Tenant ML Platform": {
+      "8": {
+        "beam_width": 24,
+        "max_depth": 8,
+        "constraint_weight": null,
+        "candidates_generated": 29237,
+        "solutions": 0,
+        "first_solution_iteration": null,
+        "time_to_first_solution": null,
+        "time_to_first_solution_lower": null,
+        "total_elapsed": 64.32308115297928,
+        "fingerprint": []
+      },
+      "12": {
+        "beam_width": 24,
+        "max_depth": 12,
+        "constraint_weight": null,
+        "candidates_generated": 32697,
+        "solutions": 28,
+        "first_solution_iteration": 9,
+        "time_to_first_solution": 75.99046871997416,
+        "time_to_first_solution_lower": 67.98339770297753,
+        "total_elapsed": 76.06273249798687,
+        "fingerprint": [
+          [
+            4,
+            28
+          ],
+          [
+            4,
+            29
+          ]
+        ]
+      },
+      "20": {
+        "beam_width": 24,
+        "max_depth": 20,
+        "constraint_weight": null,
+        "candidates_generated": 32697,
+        "solutions": 28,
+        "first_solution_iteration": 9,
+        "time_to_first_solution": 73.54947937402176,
+        "time_to_first_solution_lower": 66.31365899305092,
+        "total_elapsed": 73.60635937104234,
+        "fingerprint": [
+          [
+            4,
+            28
+          ],
+          [
+            4,
+            29
+          ]
+        ]
+      },
+      "24": {
+        "beam_width": 24,
+        "max_depth": 24,
+        "constraint_weight": null,
+        "candidates_generated": 32697,
+        "solutions": 28,
+        "first_solution_iteration": 9,
+        "time_to_first_solution": 69.32746110903099,
+        "time_to_first_solution_lower": 61.93967046501348,
+        "total_elapsed": 69.39377415098716,
+        "fingerprint": [
+          [
+            4,
+            28
+          ],
+          [
+            4,
+            29
+          ]
+        ]
+      }
+    }
+  },
+  "joint": {
+    "Multi-Tenant ML Platform": {
+      "8x8": {
+        "beam_width": 8,
+        "max_depth": 8,
+        "constraint_weight": null,
+        "candidates_generated": 9861,
+        "solutions": 0,
+        "first_solution_iteration": null,
+        "time_to_first_solution": null,
+        "time_to_first_solution_lower": null,
+        "total_elapsed": 22.83180370699847,
+        "fingerprint": []
+      },
+      "8x12": {
+        "beam_width": 8,
+        "max_depth": 12,
+        "constraint_weight": null,
+        "candidates_generated": 10899,
+        "solutions": 10,
+        "first_solution_iteration": 9,
+        "time_to_first_solution": 25.383591638004873,
+        "time_to_first_solution_lower": 22.961641149013303,
+        "total_elapsed": 25.403910244000144,
+        "fingerprint": [
+          [
+            4,
+            28
+          ],
+          [
+            4,
+            29
+          ]
+        ]
+      },
+      "8x16": {
+        "beam_width": 8,
+        "max_depth": 16,
+        "constraint_weight": null,
+        "candidates_generated": 10899,
+        "solutions": 10,
+        "first_solution_iteration": 9,
+        "time_to_first_solution": 25.285559198993724,
+        "time_to_first_solution_lower": 22.86504549800884,
+        "total_elapsed": 25.306364520045463,
+        "fingerprint": [
+          [
+            4,
+            28
+          ],
+          [
+            4,
+            29
+          ]
+        ]
+      },
+      "8x20": {
+        "beam_width": 8,
+        "max_depth": 20,
+        "constraint_weight": null,
+        "candidates_generated": 10899,
+        "solutions": 10,
+        "first_solution_iteration": 9,
+        "time_to_first_solution": 25.462001923006028,
+        "time_to_first_solution_lower": 23.044244081014767,
+        "total_elapsed": 25.48224590602331,
+        "fingerprint": [
+          [
+            4,
+            28
+          ],
+          [
+            4,
+            29
+          ]
+        ]
+      },
+      "8x24": {
+        "beam_width": 8,
+        "max_depth": 24,
+        "constraint_weight": null,
+        "candidates_generated": 10899,
+        "solutions": 10,
+        "first_solution_iteration": 9,
+        "time_to_first_solution": 25.276103676995263,
+        "time_to_first_solution_lower": 22.8794378330349,
+        "total_elapsed": 25.296280356007628,
+        "fingerprint": [
+          [
+            4,
+            28
+          ],
+          [
+            4,
+            29
+          ]
+        ]
+      },
+      "12x8": {
+        "beam_width": 12,
+        "max_depth": 8,
+        "constraint_weight": null,
+        "candidates_generated": 14705,
+        "solutions": 0,
+        "first_solution_iteration": null,
+        "time_to_first_solution": null,
+        "time_to_first_solution_lower": null,
+        "total_elapsed": 33.95765949902125,
+        "fingerprint": []
+      },
+      "12x12": {
+        "beam_width": 12,
+        "max_depth": 12,
+        "constraint_weight": null,
+        "candidates_generated": 16435,
+        "solutions": 14,
+        "first_solution_iteration": 9,
+        "time_to_first_solution": 34.4118897630251,
+        "time_to_first_solution_lower": 30.765970851003658,
+        "total_elapsed": 34.44043768302072,
+        "fingerprint": [
+          [
+            4,
+            28
+          ],
+          [
+            4,
+            29
+          ]
+        ]
+      },
+      "12x16": {
+        "beam_width": 12,
+        "max_depth": 16,
+        "constraint_weight": null,
+        "candidates_generated": 16435,
+        "solutions": 14,
+        "first_solution_iteration": 9,
+        "time_to_first_solution": 34.873343776969705,
+        "time_to_first_solution_lower": 31.194238131982274,
+        "total_elapsed": 34.9016402909765,
+        "fingerprint": [
+          [
+            4,
+            28
+          ],
+          [
+            4,
+            29
+          ]
+        ]
+      },
+      "12x20": {
+        "beam_width": 12,
+        "max_depth": 20,
+        "constraint_weight": null,
+        "candidates_generated": 16435,
+        "solutions": 14,
+        "first_solution_iteration": 9,
+        "time_to_first_solution": 36.06581336801173,
+        "time_to_first_solution_lower": 31.97019528900273,
+        "total_elapsed": 36.09739565901691,
+        "fingerprint": [
+          [
+            4,
+            28
+          ],
+          [
+            4,
+            29
+          ]
+        ]
+      },
+      "12x24": {
+        "beam_width": 12,
+        "max_depth": 24,
+        "constraint_weight": null,
+        "candidates_generated": 16435,
+        "solutions": 14,
+        "first_solution_iteration": 9,
+        "time_to_first_solution": 38.65512355498504,
+        "time_to_first_solution_lower": 34.60637868201593,
+        "total_elapsed": 38.686457966978196,
+        "fingerprint": [
+          [
+            4,
+            28
+          ],
+          [
+            4,
+            29
+          ]
+        ]
+      },
+      "16x8": {
+        "beam_width": 16,
+        "max_depth": 8,
+        "constraint_weight": null,
+        "candidates_generated": 19549,
+        "solutions": 0,
+        "first_solution_iteration": null,
+        "time_to_first_solution": null,
+        "time_to_first_solution_lower": null,
+        "total_elapsed": 45.716640975966584,
+        "fingerprint": []
+      },
+      "16x12": {
+        "beam_width": 16,
+        "max_depth": 12,
+        "constraint_weight": null,
+        "candidates_generated": 21798,
+        "solutions": 19,
+        "first_solution_iteration": 9,
+        "time_to_first_solution": 51.11334224202437,
+        "time_to_first_solution_lower": 45.815686243993696,
+        "total_elapsed": 51.15435878402786,
+        "fingerprint": [
+          [
+            4,
+            28
+          ],
+          [
+            4,
+            29
+          ]
+        ]
+      },
+      "16x16": {
+        "beam_width": 16,
+        "max_depth": 16,
+        "constraint_weight": null,
+        "candidates_generated": 21798,
+        "solutions": 19,
+        "first_solution_iteration": 9,
+        "time_to_first_solution": 50.130409844976384,
+        "time_to_first_solution_lower": 45.49750773300184,
+        "total_elapsed": 50.167747179977596,
+        "fingerprint": [
+          [
+            4,
+            28
+          ],
+          [
+            4,
+            29
+          ]
+        ]
+      },
+      "16x20": {
+        "beam_width": 16,
+        "max_depth": 20,
+        "constraint_weight": null,
+        "candidates_generated": 21798,
+        "solutions": 19,
+        "first_solution_iteration": 9,
+        "time_to_first_solution": 45.73009459901368,
+        "time_to_first_solution_lower": 40.95244541001739,
+        "total_elapsed": 45.76860851602396,
+        "fingerprint": [
+          [
+            4,
+            28
+          ],
+          [
+            4,
+            29
+          ]
+        ]
+      },
+      "16x24": {
+        "beam_width": 16,
+        "max_depth": 24,
+        "constraint_weight": null,
+        "candidates_generated": 21798,
+        "solutions": 19,
+        "first_solution_iteration": 9,
+        "time_to_first_solution": 46.352539021056145,
+        "time_to_first_solution_lower": 41.5269165460486,
+        "total_elapsed": 46.39126224501524,
+        "fingerprint": [
+          [
+            4,
+            28
+          ],
+          [
+            4,
+            29
+          ]
+        ]
+      },
+      "20x8": {
+        "beam_width": 20,
+        "max_depth": 8,
+        "constraint_weight": null,
+        "candidates_generated": 24393,
+        "solutions": 0,
+        "first_solution_iteration": null,
+        "time_to_first_solution": null,
+        "time_to_first_solution_lower": null,
+        "total_elapsed": 56.68039181601489,
+        "fingerprint": []
+      },
+      "20x12": {
+        "beam_width": 20,
+        "max_depth": 12,
+        "constraint_weight": null,
+        "candidates_generated": 27161,
+        "solutions": 24,
+        "first_solution_iteration": 9,
+        "time_to_first_solution": 63.39789043396013,
+        "time_to_first_solution_lower": 56.97009967599297,
+        "total_elapsed": 63.44979527499527,
+        "fingerprint": [
+          [
+            4,
+            28
+          ],
+          [
+            4,
+            29
+          ]
+        ]
+      },
+      "20x16": {
+        "beam_width": 20,
+        "max_depth": 16,
+        "constraint_weight": null,
+        "candidates_generated": 27161,
+        "solutions": 24,
+        "first_solution_iteration": 9,
+        "time_to_first_solution": 63.38420126104029,
+        "time_to_first_solution_lower": 56.97696161601925,
+        "total_elapsed": 63.43678562203422,
+        "fingerprint": [
+          [
+            4,
+            28
+          ],
+          [
+            4,
+            29
+          ]
+        ]
+      },
+      "20x20": {
+        "beam_width": 20,
+        "max_depth": 20,
+        "constraint_weight": null,
+        "candidates_generated": 27161,
+        "solutions": 24,
+        "first_solution_iteration": 9,
+        "time_to_first_solution": 59.71680297900457,
+        "time_to_first_solution_lower": 53.89525953895645,
+        "total_elapsed": 59.76436403498519,
+        "fingerprint": [
+          [
+            4,
+            28
+          ],
+          [
+            4,
+            29
+          ]
+        ]
+      },
+      "20x24": {
+        "beam_width": 20,
+        "max_depth": 24,
+        "constraint_weight": null,
+        "candidates_generated": 27161,
+        "solutions": 24,
+        "first_solution_iteration": 9,
+        "time_to_first_solution": 61.16775945399422,
+        "time_to_first_solution_lower": 54.73999362200266,
+        "total_elapsed": 61.2194895609864,
+        "fingerprint": [
+          [
+            4,
+            28
+          ],
+          [
+            4,
+            29
+          ]
+        ]
+      },
+      "24x8": {
+        "beam_width": 24,
+        "max_depth": 8,
+        "constraint_weight": null,
+        "candidates_generated": 29237,
+        "solutions": 0,
+        "first_solution_iteration": null,
+        "time_to_first_solution": null,
+        "time_to_first_solution_lower": null,
+        "total_elapsed": 68.15184046997456,
+        "fingerprint": []
+      },
+      "24x12": {
+        "beam_width": 24,
+        "max_depth": 12,
+        "constraint_weight": null,
+        "candidates_generated": 32697,
+        "solutions": 28,
+        "first_solution_iteration": 9,
+        "time_to_first_solution": 73.70372710103402,
+        "time_to_first_solution_lower": 66.47459310304839,
+        "total_elapsed": 73.76099574303953,
+        "fingerprint": [
+          [
+            4,
+            28
+          ],
+          [
+            4,
+            29
+          ]
+        ]
+      },
+      "24x16": {
+        "beam_width": 24,
+        "max_depth": 16,
+        "constraint_weight": null,
+        "candidates_generated": 32697,
+        "solutions": 28,
+        "first_solution_iteration": 9,
+        "time_to_first_solution": 73.60103705700021,
+        "time_to_first_solution_lower": 65.53794305998599,
+        "total_elapsed": 73.66512392600998,
+        "fingerprint": [
+          [
+            4,
+            28
+          ],
+          [
+            4,
+            29
+          ]
+        ]
+      },
+      "24x20": {
+        "beam_width": 24,
+        "max_depth": 20,
+        "constraint_weight": null,
+        "candidates_generated": 32697,
+        "solutions": 28,
+        "first_solution_iteration": 9,
+        "time_to_first_solution": 75.24270949198399,
+        "time_to_first_solution_lower": 68.06868789799046,
+        "total_elapsed": 75.29930747498292,
+        "fingerprint": [
+          [
+            4,
+            28
+          ],
+          [
+            4,
+            29
+          ]
+        ]
+      },
+      "24x24": {
+        "beam_width": 24,
+        "max_depth": 24,
+        "constraint_weight": null,
+        "candidates_generated": 32697,
+        "solutions": 28,
+        "first_solution_iteration": 9,
+        "time_to_first_solution": 73.34660412697122,
+        "time_to_first_solution_lower": 65.27537712897174,
+        "total_elapsed": 73.41103653697064,
+        "fingerprint": [
+          [
+            4,
+            28
+          ],
+          [
+            4,
+            29
+          ]
+        ]
+      }
+    }
+  },
+  "meta": {
+    "seed": 20260822,
+    "generated": "2026-09-06 12:20:20"
+  }
+}
