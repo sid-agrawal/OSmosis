@@ -129,8 +129,9 @@ SCENARIOS = [
 ]
 
 WEIGHT_SCENARIOS = ['Mediation', 'Policy-Driven Privilege Separation',
-                    'Budget-Constrained Tenant Isolation']
-CONSTRAINT_WEIGHTS = [5, 10, 20, 50]
+                    'Budget-Constrained Tenant Isolation', 'CPU Isolation',
+                    'Multi-Tenant ML Platform']
+CONSTRAINT_WEIGHTS = [10, 20, 50, 60]
 
 BEAM_WIDTHS = [4, 8, 12, 20]
 DEPTHS = [8, 12, 20]
