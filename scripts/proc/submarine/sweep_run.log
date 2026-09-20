@@ -1,78 +1,86 @@
-Running 75 configurations; results stream to /home/siagraw/OSmosis-isosearch/scripts/proc/submarine/sweep_results.json
-[  1/75] weights     Mediation                              5          1st=7 sol=8 t1st=0.35782427701633424 tot=0.6s
-[  2/75] weights     Mediation                              10         1st=7 sol=8 t1st=0.3640535720041953 tot=0.6s
-[  3/75] weights     Mediation                              20         1st=7 sol=8 t1st=0.363691481994465 tot=0.6s
-[  4/75] weights     Mediation                              50         1st=7 sol=8 t1st=0.3631710580084473 tot=0.6s
-[  5/75] weights     Policy-Driven Privilege Separation     5          1st=7 sol=109 t1st=5.431152944045607 tot=19.2s
-[  6/75] weights     Policy-Driven Privilege Separation     10         1st=7 sol=43 t1st=5.335788054973818 tot=10.9s
-[  7/75] weights     Policy-Driven Privilege Separation     20         1st=7 sol=109 t1st=5.328699100995436 tot=19.5s
-[  8/75] weights     Policy-Driven Privilege Separation     50         1st=7 sol=109 t1st=5.380864022008609 tot=19.6s
-[  9/75] weights     Budget-Constrained Tenant Isolation    5          1st=9 sol=12 t1st=1.8539271560148336 tot=3.1s
-[ 10/75] weights     Budget-Constrained Tenant Isolation    10         1st=9 sol=12 t1st=1.8501312140142545 tot=3.1s
-[ 11/75] weights     Budget-Constrained Tenant Isolation    20         1st=9 sol=12 t1st=1.8501145509653725 tot=3.1s
-[ 12/75] weights     Budget-Constrained Tenant Isolation    50         1st=9 sol=12 t1st=1.846649368002545 tot=3.1s
-[ 13/75] beam_width  Mediation                              4          1st=7 sol=5 t1st=0.1302633230225183 tot=0.2s
-[ 14/75] beam_width  Mediation                              8          1st=7 sol=8 t1st=0.27434408297995105 tot=0.4s
-[ 15/75] beam_width  Mediation                              12         1st=7 sol=8 t1st=0.391900785965845 tot=0.7s
-[ 16/75] beam_width  Mediation                              20         1st=7 sol=8 t1st=0.5750917020486668 tot=1.1s
-[ 17/75] beam_width  Policy-Driven Privilege Separation     4          1st=7 sol=37 t1st=1.8838543550227769 tot=6.4s
-[ 18/75] beam_width  Policy-Driven Privilege Separation     8          1st=7 sol=73 t1st=3.7396022109896876 tot=13.7s
-[ 19/75] beam_width  Policy-Driven Privilege Separation     12         1st=7 sol=109 t1st=5.472323588037398 tot=20.1s
-[ 20/75] beam_width  Policy-Driven Privilege Separation     20         1st=7 sol=95 t1st=9.279745448962785 tot=18.8s
-[ 21/75] beam_width  Budget-Constrained Tenant Isolation    4          1st=9 sol=2 t1st=0.6878135839942843 tot=1.1s
-[ 22/75] beam_width  Budget-Constrained Tenant Isolation    8          1st=9 sol=8 t1st=1.2782686009886675 tot=2.1s
-[ 23/75] beam_width  Budget-Constrained Tenant Isolation    12         1st=9 sol=12 t1st=1.8840792420087382 tot=3.1s
-[ 24/75] beam_width  Budget-Constrained Tenant Isolation    20         1st=9 sol=18 t1st=3.054310509003699 tot=4.1s
-[ 25/75] beam_width  CPU Isolation                          4          1st=5 sol=13 t1st=0.9408973069512285 tot=2.7s
-[ 26/75] beam_width  CPU Isolation                          8          1st=5 sol=29 t1st=1.8164300830103457 tot=5.0s
-[ 27/75] beam_width  CPU Isolation                          12         1st=5 sol=47 t1st=2.6840401170193218 tot=7.1s
-[ 28/75] beam_width  CPU Isolation                          20         1st=5 sol=80 t1st=4.414614582026843 tot=12.3s
-[ 29/75] beam_width  Multi-Tenant ML Platform               4          1st=9 sol=32 t1st=12.734942896990106 tot=32.8s
-[ 30/75] beam_width  Multi-Tenant ML Platform               8          1st=9 sol=10 t1st=25.021214595006313 tot=25.0s
-[ 31/75] beam_width  Multi-Tenant ML Platform               12         1st=9 sol=14 t1st=38.417427321954165 tot=38.4s
-[ 32/75] beam_width  Multi-Tenant ML Platform               20         1st=9 sol=24 t1st=57.77924389898544 tot=57.8s
-[ 33/75] beam_width  Multi-Tenant ML Platform               24         1st=9 sol=28 t1st=72.38510388403665 tot=72.5s
-[ 34/75] depth       Mediation                              8          1st=7 sol=2 t1st=0.4454496399848722 tot=0.6s
-[ 35/75] depth       Mediation                              12         1st=7 sol=15 t1st=0.4413576149963774 tot=1.0s
-[ 36/75] depth       Mediation                              20         1st=7 sol=42 t1st=0.4304568400257267 tot=2.1s
-[ 37/75] depth       Policy-Driven Privilege Separation     8          1st=7 sol=8 t1st=6.060104336997028 tot=6.7s
-[ 38/75] depth       Policy-Driven Privilege Separation     12         1st=7 sol=32 t1st=6.136496869032271 tot=10.4s
-[ 39/75] depth       Policy-Driven Privilege Separation     20         1st=7 sol=80 t1st=6.0807894940371625 tot=17.5s
-[ 40/75] depth       Policy-Driven Privilege Separation     25         1st=7 sol=109 t1st=6.105798407050315 tot=22.1s
-[ 41/75] depth       Budget-Constrained Tenant Isolation    8          1st=None sol=0 t1st=None tot=1.9s
-[ 42/75] depth       Budget-Constrained Tenant Isolation    12         1st=9 sol=12 t1st=2.081055535993073 tot=3.3s
-[ 43/75] depth       Budget-Constrained Tenant Isolation    20         1st=9 sol=36 t1st=1.8347668779897504 tot=7.6s
-[ 44/75] depth       CPU Isolation                          8          1st=5 sol=25 t1st=2.648551282007247 tot=3.9s
-[ 45/75] depth       CPU Isolation                          12         1st=5 sol=47 t1st=2.6533521059900522 tot=7.0s
-[ 46/75] depth       CPU Isolation                          20         1st=5 sol=91 t1st=2.6613464870024472 tot=17.9s
-[ 47/75] depth       Multi-Tenant ML Platform               8          1st=None sol=0 t1st=None tot=64.3s
-[ 48/75] depth       Multi-Tenant ML Platform               12         1st=9 sol=28 t1st=75.99046871997416 tot=76.1s
-[ 49/75] depth       Multi-Tenant ML Platform               20         1st=9 sol=28 t1st=73.54947937402176 tot=73.6s
-[ 50/75] depth       Multi-Tenant ML Platform               24         1st=9 sol=28 t1st=69.32746110903099 tot=69.4s
-[ 51/75] joint       Multi-Tenant ML Platform               8x8        1st=None sol=0 t1st=None tot=22.8s
-[ 52/75] joint       Multi-Tenant ML Platform               8x12       1st=9 sol=10 t1st=25.383591638004873 tot=25.4s
-[ 53/75] joint       Multi-Tenant ML Platform               8x16       1st=9 sol=10 t1st=25.285559198993724 tot=25.3s
-[ 54/75] joint       Multi-Tenant ML Platform               8x20       1st=9 sol=10 t1st=25.462001923006028 tot=25.5s
-[ 55/75] joint       Multi-Tenant ML Platform               8x24       1st=9 sol=10 t1st=25.276103676995263 tot=25.3s
-[ 56/75] joint       Multi-Tenant ML Platform               12x8       1st=None sol=0 t1st=None tot=34.0s
-[ 57/75] joint       Multi-Tenant ML Platform               12x12      1st=9 sol=14 t1st=34.4118897630251 tot=34.4s
-[ 58/75] joint       Multi-Tenant ML Platform               12x16      1st=9 sol=14 t1st=34.873343776969705 tot=34.9s
-[ 59/75] joint       Multi-Tenant ML Platform               12x20      1st=9 sol=14 t1st=36.06581336801173 tot=36.1s
-[ 60/75] joint       Multi-Tenant ML Platform               12x24      1st=9 sol=14 t1st=38.65512355498504 tot=38.7s
-[ 61/75] joint       Multi-Tenant ML Platform               16x8       1st=None sol=0 t1st=None tot=45.7s
-[ 62/75] joint       Multi-Tenant ML Platform               16x12      1st=9 sol=19 t1st=51.11334224202437 tot=51.2s
-[ 63/75] joint       Multi-Tenant ML Platform               16x16      1st=9 sol=19 t1st=50.130409844976384 tot=50.2s
-[ 64/75] joint       Multi-Tenant ML Platform               16x20      1st=9 sol=19 t1st=45.73009459901368 tot=45.8s
-[ 65/75] joint       Multi-Tenant ML Platform               16x24      1st=9 sol=19 t1st=46.352539021056145 tot=46.4s
-[ 66/75] joint       Multi-Tenant ML Platform               20x8       1st=None sol=0 t1st=None tot=56.7s
-[ 67/75] joint       Multi-Tenant ML Platform               20x12      1st=9 sol=24 t1st=63.39789043396013 tot=63.4s
-[ 68/75] joint       Multi-Tenant ML Platform               20x16      1st=9 sol=24 t1st=63.38420126104029 tot=63.4s
-[ 69/75] joint       Multi-Tenant ML Platform               20x20      1st=9 sol=24 t1st=59.71680297900457 tot=59.8s
-[ 70/75] joint       Multi-Tenant ML Platform               20x24      1st=9 sol=24 t1st=61.16775945399422 tot=61.2s
-[ 71/75] joint       Multi-Tenant ML Platform               24x8       1st=None sol=0 t1st=None tot=68.2s
-[ 72/75] joint       Multi-Tenant ML Platform               24x12      1st=9 sol=28 t1st=73.70372710103402 tot=73.8s
-[ 73/75] joint       Multi-Tenant ML Platform               24x16      1st=9 sol=28 t1st=73.60103705700021 tot=73.7s
-[ 74/75] joint       Multi-Tenant ML Platform               24x20      1st=9 sol=28 t1st=75.24270949198399 tot=75.3s
-[ 75/75] joint       Multi-Tenant ML Platform               24x24      1st=9 sol=28 t1st=73.34660412697122 tot=73.4s
+Running 83 configurations; results stream to /home/siagraw/OSmosis-isosearch/scripts/proc/submarine/sweep_results.json
+[  1/83] weights     Mediation                              10         1st=7 sol=8 t1st=0.37112726899795234 tot=0.6s
+[  2/83] weights     Mediation                              20         1st=7 sol=8 t1st=0.3659167061559856 tot=0.6s
+[  3/83] weights     Mediation                              50         1st=7 sol=8 t1st=0.3622732241638005 tot=0.6s
+[  4/83] weights     Mediation                              60         1st=7 sol=8 t1st=0.36214173189364374 tot=0.6s
+[  5/83] weights     Policy-Driven Privilege Separation     10         1st=7 sol=43 t1st=5.1330366970505565 tot=10.6s
+[  6/83] weights     Policy-Driven Privilege Separation     20         1st=7 sol=109 t1st=5.123779530171305 tot=18.8s
+[  7/83] weights     Policy-Driven Privilege Separation     50         1st=7 sol=109 t1st=5.243330194847658 tot=19.2s
+[  8/83] weights     Policy-Driven Privilege Separation     60         1st=7 sol=109 t1st=5.320897317957133 tot=19.4s
+[  9/83] weights     Budget-Constrained Tenant Isolation    10         1st=9 sol=12 t1st=1.8369179428555071 tot=3.1s
+[ 10/83] weights     Budget-Constrained Tenant Isolation    20         1st=9 sol=12 t1st=1.8342014378868043 tot=3.1s
+[ 11/83] weights     Budget-Constrained Tenant Isolation    50         1st=9 sol=12 t1st=1.8302151679527014 tot=3.1s
+[ 12/83] weights     Budget-Constrained Tenant Isolation    60         1st=9 sol=12 t1st=1.8273367208894342 tot=3.0s
+[ 13/83] weights     CPU Isolation                          10         1st=5 sol=47 t1st=2.6183767078910023 tot=6.9s
+[ 14/83] weights     CPU Isolation                          20         1st=5 sol=47 t1st=2.6400686320848763 tot=6.9s
+[ 15/83] weights     CPU Isolation                          50         1st=5 sol=47 t1st=2.6357945138588548 tot=6.9s
+[ 16/83] weights     CPU Isolation                          60         1st=5 sol=47 t1st=2.637826583115384 tot=6.9s
+[ 17/83] weights     Multi-Tenant ML Platform               10         1st=9 sol=28 t1st=74.90780479111709 tot=75.0s
+[ 18/83] weights     Multi-Tenant ML Platform               20         1st=9 sol=28 t1st=75.68161130486988 tot=75.7s
+[ 19/83] weights     Multi-Tenant ML Platform               50         1st=9 sol=28 t1st=75.54688734305091 tot=75.6s
+[ 20/83] weights     Multi-Tenant ML Platform               60         1st=9 sol=28 t1st=72.05905030993745 tot=72.1s
+[ 21/83] beam_width  Mediation                              4          1st=7 sol=5 t1st=0.1301558220293373 tot=0.2s
+[ 22/83] beam_width  Mediation                              8          1st=7 sol=8 t1st=0.2672696108929813 tot=0.4s
+[ 23/83] beam_width  Mediation                              12         1st=7 sol=8 t1st=0.38125492515973747 tot=0.7s
+[ 24/83] beam_width  Mediation                              20         1st=7 sol=8 t1st=0.5737534328363836 tot=1.2s
+[ 25/83] beam_width  Policy-Driven Privilege Separation     4          1st=7 sol=37 t1st=1.8824521750211716 tot=6.4s
+[ 26/83] beam_width  Policy-Driven Privilege Separation     8          1st=7 sol=73 t1st=3.6932581970468163 tot=13.6s
+[ 27/83] beam_width  Policy-Driven Privilege Separation     12         1st=7 sol=109 t1st=5.39808099786751 tot=21.3s
+[ 28/83] beam_width  Policy-Driven Privilege Separation     20         1st=7 sol=95 t1st=10.181879743002355 tot=20.6s
+[ 29/83] beam_width  Budget-Constrained Tenant Isolation    4          1st=9 sol=2 t1st=0.7528141250368208 tot=1.3s
+[ 30/83] beam_width  Budget-Constrained Tenant Isolation    8          1st=9 sol=8 t1st=1.4120787070132792 tot=2.3s
+[ 31/83] beam_width  Budget-Constrained Tenant Isolation    12         1st=9 sol=12 t1st=2.1395137479994446 tot=3.5s
+[ 32/83] beam_width  Budget-Constrained Tenant Isolation    20         1st=9 sol=18 t1st=3.3883561429101974 tot=4.6s
+[ 33/83] beam_width  CPU Isolation                          4          1st=5 sol=13 t1st=1.0699909140821546 tot=3.0s
+[ 34/83] beam_width  CPU Isolation                          8          1st=5 sol=29 t1st=2.0784796338994056 tot=5.7s
+[ 35/83] beam_width  CPU Isolation                          12         1st=5 sol=47 t1st=2.9862513090483844 tot=7.9s
+[ 36/83] beam_width  CPU Isolation                          20         1st=5 sol=80 t1st=4.951865174807608 tot=12.9s
+[ 37/83] beam_width  Multi-Tenant ML Platform               4          1st=9 sol=32 t1st=15.195858058985323 tot=37.8s
+[ 38/83] beam_width  Multi-Tenant ML Platform               8          1st=9 sol=10 t1st=25.802454628050327 tot=25.8s
+[ 39/83] beam_width  Multi-Tenant ML Platform               12         1st=9 sol=14 t1st=39.028653151821345 tot=39.1s
+[ 40/83] beam_width  Multi-Tenant ML Platform               20         1st=9 sol=24 t1st=66.40717130503617 tot=66.5s
+[ 41/83] beam_width  Multi-Tenant ML Platform               24         1st=9 sol=28 t1st=76.11940394202247 tot=76.2s
+[ 42/83] depth       Mediation                              8          1st=7 sol=2 t1st=0.4355092621408403 tot=0.5s
+[ 43/83] depth       Mediation                              12         1st=7 sol=15 t1st=0.4420113670639694 tot=1.0s
+[ 44/83] depth       Mediation                              20         1st=7 sol=42 t1st=0.4294867189601064 tot=2.1s
+[ 45/83] depth       Policy-Driven Privilege Separation     8          1st=7 sol=8 t1st=5.953812761930749 tot=6.6s
+[ 46/83] depth       Policy-Driven Privilege Separation     12         1st=7 sol=32 t1st=5.957176570780575 tot=10.0s
+[ 47/83] depth       Policy-Driven Privilege Separation     20         1st=7 sol=80 t1st=6.038314074045047 tot=17.3s
+[ 48/83] depth       Policy-Driven Privilege Separation     25         1st=7 sol=109 t1st=5.989274546038359 tot=21.8s
+[ 49/83] depth       Budget-Constrained Tenant Isolation    8          1st=None sol=0 t1st=None tot=1.8s
+[ 50/83] depth       Budget-Constrained Tenant Isolation    12         1st=9 sol=12 t1st=2.048249384155497 tot=3.4s
+[ 51/83] depth       Budget-Constrained Tenant Isolation    20         1st=9 sol=36 t1st=2.0456085589248687 tot=8.5s
+[ 52/83] depth       CPU Isolation                          8          1st=5 sol=25 t1st=2.9257651600055397 tot=4.3s
+[ 53/83] depth       CPU Isolation                          12         1st=5 sol=47 t1st=2.9305623259861022 tot=7.7s
+[ 54/83] depth       CPU Isolation                          20         1st=5 sol=91 t1st=2.9233464230783284 tot=19.6s
+[ 55/83] depth       Multi-Tenant ML Platform               8          1st=None sol=0 t1st=None tot=67.5s
+[ 56/83] depth       Multi-Tenant ML Platform               12         1st=9 sol=28 t1st=72.45519485208206 tot=72.5s
+[ 57/83] depth       Multi-Tenant ML Platform               20         1st=9 sol=28 t1st=67.43770977808163 tot=67.5s
+[ 58/83] depth       Multi-Tenant ML Platform               24         1st=9 sol=28 t1st=75.4197113411501 tot=75.5s
+[ 59/83] joint       Multi-Tenant ML Platform               8x8        1st=None sol=0 t1st=None tot=22.8s
+[ 60/83] joint       Multi-Tenant ML Platform               8x12       1st=9 sol=10 t1st=25.039208962814882 tot=25.1s
+[ 61/83] joint       Multi-Tenant ML Platform               8x16       1st=9 sol=10 t1st=25.089133077068254 tot=25.1s
+[ 62/83] joint       Multi-Tenant ML Platform               8x20       1st=9 sol=10 t1st=25.176052518887445 tot=25.2s
+[ 63/83] joint       Multi-Tenant ML Platform               8x24       1st=9 sol=10 t1st=25.122781998943537 tot=25.1s
+[ 64/83] joint       Multi-Tenant ML Platform               12x8       1st=None sol=0 t1st=None tot=34.0s
+[ 65/83] joint       Multi-Tenant ML Platform               12x12      1st=9 sol=14 t1st=37.840067338896915 tot=37.9s
+[ 66/83] joint       Multi-Tenant ML Platform               12x16      1st=9 sol=14 t1st=37.4442648938857 tot=37.5s
+[ 67/83] joint       Multi-Tenant ML Platform               12x20      1st=9 sol=14 t1st=38.03233411698602 tot=38.1s
+[ 68/83] joint       Multi-Tenant ML Platform               12x24      1st=9 sol=14 t1st=37.80578378518112 tot=37.8s
+[ 69/83] joint       Multi-Tenant ML Platform               16x8       1st=None sol=0 t1st=None tot=45.1s
+[ 70/83] joint       Multi-Tenant ML Platform               16x12      1st=9 sol=19 t1st=45.16383881890215 tot=45.2s
+[ 71/83] joint       Multi-Tenant ML Platform               16x16      1st=9 sol=19 t1st=45.04515333217569 tot=45.1s
+[ 72/83] joint       Multi-Tenant ML Platform               16x20      1st=9 sol=19 t1st=49.89208108908497 tot=49.9s
+[ 73/83] joint       Multi-Tenant ML Platform               16x24      1st=9 sol=19 t1st=50.52425898890942 tot=50.6s
+[ 74/83] joint       Multi-Tenant ML Platform               20x8       1st=None sol=0 t1st=None tot=56.3s
+[ 75/83] joint       Multi-Tenant ML Platform               20x12      1st=9 sol=24 t1st=62.60509088495746 tot=62.7s
+[ 76/83] joint       Multi-Tenant ML Platform               20x16      1st=9 sol=24 t1st=62.65681160101667 tot=62.7s
+[ 77/83] joint       Multi-Tenant ML Platform               20x20      1st=9 sol=24 t1st=62.526007991982624 tot=62.6s
+[ 78/83] joint       Multi-Tenant ML Platform               20x24      1st=9 sol=24 t1st=62.327129310928285 tot=62.4s
+[ 79/83] joint       Multi-Tenant ML Platform               24x8       1st=None sol=0 t1st=None tot=60.2s
+[ 80/83] joint       Multi-Tenant ML Platform               24x12      1st=9 sol=28 t1st=73.73852337314747 tot=73.8s
+[ 81/83] joint       Multi-Tenant ML Platform               24x16      1st=9 sol=28 t1st=77.15818488993682 tot=77.2s
+[ 82/83] joint       Multi-Tenant ML Platform               24x20      1st=9 sol=28 t1st=81.87535692402162 tot=81.9s
+[ 83/83] joint       Multi-Tenant ML Platform               24x24      1st=9 sol=28 t1st=76.39621920208447 tot=76.5s
 
-Done. 75 configurations written to /home/siagraw/OSmosis-isosearch/scripts/proc/submarine/sweep_results.json
+Done. 83 configurations written to /home/siagraw/OSmosis-isosearch/scripts/proc/submarine/sweep_results.json
