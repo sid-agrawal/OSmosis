@@ -822,7 +822,21 @@ ignore_process_names = {
 }
 
 def extract_all_process_data(data: ProcFsData, should_print=False):
+    # A PID can be unextractable for reasons that are normal during a whole-machine
+    # scan: kernel threads have no address space, so /proc/PID/pagemap cannot be
+    # opened at all, and an ordinary process can exit part-way through the walk.
+    # Neither is a reason to abandon the run. Built here rather than at module
+    # scope because psutil is imported under `if __name__ == "__main__"`, so it is
+    # not bound until the script runs.
+    unextractable = (
+        ProcessLookupError,
+        FileNotFoundError,
+        PermissionError,
+        psutil.NoSuchProcess,
+        psutil.AccessDenied,
+    )
     proc_pids = sorted(int(d) for d in os.listdir('/proc') if d.isdigit())
+    skipped = []
     for idx, pid in enumerate(proc_pids):
         try:
             task = pfs_obj.get_task(pid)
@@ -830,14 +844,25 @@ def extract_all_process_data(data: ProcFsData, should_print=False):
         except Exception as e:
             print(f"\033[91mError getting host PID for {pid}: {e}\033[0m")
             continue
-        p = psutil.Process(host_pid)
-        if p.name() in ignore_process_names:
-            print(f"\033[93mSkipping process {p.name()} with PID {host_pid}\033[0m")
+        try:
+            p = psutil.Process(host_pid)
+            name = p.name()
+        except unextractable as e:
+            skipped.append((host_pid, "?", type(e).__name__))
+            continue
+        if name in ignore_process_names:
+            print(f"\033[93mSkipping process {name} with PID {host_pid}\033[0m")
             continue
 
         time_histogram = {}
         start_time = time.time()
-        extract_process_data(data, host_pid, p.name(), should_print)
+        try:
+            extract_process_data(data, host_pid, name, should_print)
+        except unextractable as e:
+            skipped.append((host_pid, name, type(e).__name__))
+            print(f"\033[93mSkipping PID {host_pid} ({name}): "
+                  f"{type(e).__name__}\033[0m")
+            continue
         end_time = time.time()
         elapsed_time = end_time - start_time
 
@@ -847,6 +872,12 @@ def extract_all_process_data(data: ProcFsData, should_print=False):
         time_histogram[p.name()].append(elapsed_time)
         if should_print:
             print(f"\033[92m---- Extracted process{idx} {host_pid}\033[0m")
+
+    if skipped:
+        print(f"\033[93mSkipped {len(skipped)} of {len(proc_pids)} PIDs "
+              f"(kernel threads, or exited during the scan):\033[0m")
+        for spid, sname, reason in skipped:
+            print(f"\033[93m    {spid:>7}  {sname:<24} {reason}\033[0m")
 
         # Print the time histogram
         if should_print:
