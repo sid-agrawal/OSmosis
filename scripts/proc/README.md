@@ -1,5 +1,14 @@
 # Proc Model State
 
+> **Superseded. For running Lintool, read [`WORKFLOW.md`](WORKFLOW.md) instead.**
+>
+> The Setup and Run sections below predate the pytest suite and are kept only for the
+> record of which procfs libraries were evaluated (see *Investigation into procfs tools*).
+> They are stale in three ways: the build is now `cmake -B build` rather than `cmake .`
+> plus `make`; scenarios are selected with `pytest -k <scenario>` rather than by editing
+> `to_run = run_configs[<idx>]` in `proc_model.py`; and output paths are set with `--csv`
+> rather than fixed at `proc_model.csv`.
+
 This is a sample script to extract model state from linux `/proc`
 
 ## Setup

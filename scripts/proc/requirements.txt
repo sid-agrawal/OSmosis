@@ -41,6 +41,7 @@ pyelftools==0.31
 pyfdt==0.3
 pylint==3.3.1
 pyparsing==3.2.0
+pytest==9.0.3
 python-dateutil==2.9.0.post0
 pytz==2024.1
 PyYAML==6.0.2

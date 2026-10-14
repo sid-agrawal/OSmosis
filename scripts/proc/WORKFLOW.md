@@ -6,7 +6,7 @@
 |-----------|----------|
 | Source dir | `~/OSmosis/scripts/proc/` |
 | Python venv | `~/OSmosis/scripts/proc/venv/` |
-| pypfs lib | `~/OSmosis/scripts/proc/pfs/lib/pypfs.cpython-312-x86_64-linux-gnu.so` |
+| pypfs lib | `~/OSmosis/scripts/proc/pfs/lib/pypfs.cpython-<ver>-x86_64-linux-gnu.so` |
 | Test binaries | `~/OSmosis/scripts/proc/pfs/build/out/hello` etc. |
 | Results | `~/OSmosis/scripts/proc/outputs/$(hostname)/` |
 
@@ -16,16 +16,27 @@ This is a native x86_64 Linux setup — no VM or shared mount required.
 
 ## One-Time Setup
 
+**Clone the `lintool` branch.** The repository's default branch is `cellulos`, whose
+`scripts/proc/` is a materially different tree (46 files differ). A plain `git clone` gets the
+wrong code.
+
 ```bash
+# 0. Clone, on the right branch
+git clone -b lintool https://github.com/sid-agrawal/OSmosis.git ~/OSmosis
 cd ~/OSmosis
 
-# 1. Populate the pfs submodule (first clone only)
-git submodule update --init scripts/proc/pfs
+# 1. Populate the pfs submodule (first clone only).
+#    .gitmodules records SSH URLs, so plain `git submodule update` fails without a
+#    GitHub SSH key even though every submodule repo is public. Rewrite to HTTPS:
+git -c url."https://github.com/".insteadOf="git@github.com:" \
+    submodule update --init scripts/proc/pfs
+#    With an SSH key configured, `git submodule update --init scripts/proc/pfs` is enough.
 
-# 2. Build pfs C++ pybind module
+# 2. Build pfs C++ pybind module.
+#    The .so name carries the Python minor version, so glob it rather than hardcoding.
 cd scripts/proc/pfs
 cmake -B build . && cmake --build build -j$(nproc)
-mkdir -p lib && ln -sf ../build/lib/pypfs.cpython-312-x86_64-linux-gnu.so lib/
+mkdir -p lib && ln -sf ../build/lib/pypfs.cpython-*-x86_64-linux-gnu.so lib/
 
 # 3. Create venv and install Python dependencies
 cd ~/OSmosis/scripts/proc
@@ -35,6 +46,9 @@ venv/bin/pip install -r requirements.txt
 # 4. (Optional) Install Apptainer for the apptainer scenario
 sudo snap install apptainer --classic
 ```
+
+Only the `scripts/proc/pfs` submodule is needed. Do not run a recursive submodule update: the
+other submodules are the seL4 tree for CellulOS and are large and irrelevant here.
 
 ---
 
