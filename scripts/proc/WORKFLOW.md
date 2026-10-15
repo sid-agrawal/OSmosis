@@ -170,6 +170,68 @@ Available scenarios and their paper claims:
 
 ---
 
+## Reading the output
+
+Lintool emits one CSV that is a node-and-edge list for the OSmosis graph of the machine at
+the moment of extraction.
+
+```
+NODE_TYPE,NODE_ID,DATA,EDGE_TYPE,EDGE_FROM,EDGE_TO,EXTRA
+```
+
+A row is either a node or an edge, never both. Node rows fill the first three columns and
+leave the edge columns empty; edge rows do the reverse. `EXTRA` carries a JSON blob on both.
+
+**Node types**, with the counts from the whole-machine run described in Step 3:
+
+| NODE_TYPE | Count | What it is |
+|---|---|---|
+| `PD` | 383 | A protection domain. One per process, plus the kernel as a distinguished PD. |
+| `RESOURCE` | 730,441 | Anything a PD can hold: a memory object, a file, a VMR, a quota. |
+| `RESOURCE_SPACE` | 568 | The space a resource is drawn from: an address space, a mount namespace, a cgroup. |
+
+**Edge types**, the four from the model:
+
+| EDGE_TYPE | Count | Meaning |
+|---|---|---|
+| `HOLD` | 895,233 | The PD can access this resource, with permissions in `DATA` (`RWX` and so on). |
+| `MAP` | 933,051 | One resource is backed by another, for example a virtual page by a physical frame. |
+| `SUBSET` | 730,441 | The resource is drawn from this resource-space. |
+| `REQUEST` | 951 | The PD can ask another PD for a resource of some type. Inferred for syscalls to the kernel, and from live TCP connections between processes. |
+
+A PD row carries the process attributes in `EXTRA`: effective and host uid, effective
+capability mask, seccomp mode, LSM label, and the allowed syscall set. For example:
+
+```
+PD,PD_1,systemd,,,,{"uid_effective": 0, "cap_eff": "0x1ffffffffff", "seccomp": 0,
+                    "lsm_label": "unconfined", "allowed_syscalls": [...]}
+```
+
+### What a skipped PID looks like
+
+A kernel thread skipped during a whole-machine run is **still present as a PD node** with
+all of the above attributes. Only its memory extraction is skipped, because it has no
+address space. So `PD_2,kthreadd` appears, but holds no `MO` resources. This is why the PD
+count (383) is larger than the extracted count (163): the skip is partial, not total. Do
+not read a PD with no memory resources as a process that holds nothing.
+
+### The queries
+
+`--query all` runs every canned query over the extracted graph and prints the results. Each
+can be run alone, which is the quickest way to tell whether an extraction did something
+sensible before pulling the CSV into neo4j.
+
+| Query | Answers |
+|---|---|
+| `hold-edges` | Which PDs can signal or terminate which others. |
+| `can-control` | The TCB of each PD: everything that could kill it. |
+| `shared-files` | Which pairs of PDs have a file in common. |
+| `shared-cgroups` | Which pairs share a page-quota (cgroup) space. |
+| `shared-vmr` | Which pairs share a memory region. |
+| `service-deps` | REQUEST edges inferred from live TCP connections between PDs. |
+
+---
+
 ## proc_model.py Flags Reference
 
 | Flag | Description |
